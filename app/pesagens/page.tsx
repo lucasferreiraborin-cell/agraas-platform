@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useSearchParams } from "next/navigation";
 
@@ -9,12 +9,32 @@ type Animal = {
   internal_code: string | null;
 };
 
-export default function NovaPesagemPage() {
+export default function PesagensPage() {
+  return (
+    <Suspense fallback={<PesagensLoading />}>
+      <NovaPesagemPage />
+    </Suspense>
+  );
+}
+
+function PesagensLoading() {
+  return (
+    <main className="min-h-screen bg-[#F5F7F4] text-[#1F2A1F]">
+      <div className="mx-auto max-w-3xl px-6 py-8">
+        <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-black/5">
+          <p className="text-sm text-[#5F6B5F]">Carregando pesagem...</p>
+        </section>
+      </div>
+    </main>
+  );
+}
+
+function NovaPesagemPage() {
   const searchParams = useSearchParams();
   const presetAnimalId = searchParams.get("animalId") ?? "";
 
   const [animals, setAnimals] = useState<Animal[]>([]);
-  const [animalId, setAnimalId] = useState(presetAnimalId);
+  const [animalId, setAnimalId] = useState("");
   const [weight, setWeight] = useState("");
   const [recordDate, setRecordDate] = useState("");
   const [loading, setLoading] = useState(false);
@@ -29,21 +49,27 @@ export default function NovaPesagemPage() {
         .select("id, internal_code")
         .order("created_at", { ascending: false });
 
-      if (!error && data) setAnimals(data);
+      if (!error && data) {
+        setAnimals(data);
+      }
     }
 
     loadAnimals();
   }, []);
 
   useEffect(() => {
-    if (presetAnimalId) setAnimalId(presetAnimalId);
+    if (presetAnimalId) {
+      setAnimalId(presetAnimalId);
+    }
   }, [presetAnimalId]);
 
   useEffect(() => {
-    if (!recordDate) setRecordDate(today);
+    if (!recordDate) {
+      setRecordDate(today);
+    }
   }, [recordDate, today]);
 
-  async function registrarPesagem(e: React.FormEvent) {
+  async function registrarPesagem(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
     setMessage("");
@@ -98,7 +124,9 @@ export default function NovaPesagemPage() {
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium">Peso (kg)</label>
+              <label className="mb-2 block text-sm font-medium">
+                Peso (kg)
+              </label>
               <input
                 type="number"
                 step="0.01"
@@ -111,7 +139,9 @@ export default function NovaPesagemPage() {
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium">Data da pesagem</label>
+              <label className="mb-2 block text-sm font-medium">
+                Data da pesagem
+              </label>
               <input
                 type="date"
                 value={recordDate}
