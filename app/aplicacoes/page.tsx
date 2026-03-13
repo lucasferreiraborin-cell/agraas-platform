@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useSearchParams } from "next/navigation";
 
@@ -21,7 +21,27 @@ type StockBatch = {
   lot_code?: string | null;
 };
 
-export default function NovaAplicacaoPage() {
+export default function AplicacoesPage() {
+  return (
+    <Suspense fallback={<AplicacoesLoading />}>
+      <NovaAplicacaoPage />
+    </Suspense>
+  );
+}
+
+function AplicacoesLoading() {
+  return (
+    <main className="min-h-screen bg-[#F5F7F4] text-[#1F2A1F]">
+      <div className="mx-auto max-w-3xl px-6 py-8">
+        <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-black/5">
+          <p className="text-sm text-[#5F6B5F]">Carregando aplicação...</p>
+        </section>
+      </div>
+    </main>
+  );
+}
+
+function NovaAplicacaoPage() {
   const searchParams = useSearchParams();
   const presetAnimalId = searchParams.get("animalId") ?? "";
 
@@ -29,7 +49,7 @@ export default function NovaAplicacaoPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [batches, setBatches] = useState<StockBatch[]>([]);
 
-  const [animalId, setAnimalId] = useState(presetAnimalId);
+  const [animalId, setAnimalId] = useState("");
   const [productId, setProductId] = useState("");
   const [batchId, setBatchId] = useState("");
   const [dose, setDose] = useState("");
@@ -56,25 +76,37 @@ export default function NovaAplicacaoPage() {
           .order("created_at", { ascending: false }),
       ]);
 
-      if (!animalsRes.error && animalsRes.data) setAnimals(animalsRes.data);
-      if (!productsRes.error && productsRes.data) setProducts(productsRes.data);
-      if (!batchesRes.error && batchesRes.data) setBatches(batchesRes.data);
+      if (!animalsRes.error && animalsRes.data) {
+        setAnimals(animalsRes.data);
+      }
+
+      if (!productsRes.error && productsRes.data) {
+        setProducts(productsRes.data);
+      }
+
+      if (!batchesRes.error && batchesRes.data) {
+        setBatches(batchesRes.data);
+      }
     }
 
     loadData();
   }, []);
 
   useEffect(() => {
-    if (presetAnimalId) setAnimalId(presetAnimalId);
+    if (presetAnimalId) {
+      setAnimalId(presetAnimalId);
+    }
   }, [presetAnimalId]);
 
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
   useEffect(() => {
-    if (!applicationDate) setApplicationDate(today);
+    if (!applicationDate) {
+      setApplicationDate(today);
+    }
   }, [applicationDate, today]);
 
-  async function registrarAplicacao(e: React.FormEvent) {
+  async function registrarAplicacao(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
     setMessage("");
