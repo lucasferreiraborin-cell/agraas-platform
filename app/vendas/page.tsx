@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useSearchParams } from "next/navigation";
 
@@ -14,14 +14,34 @@ type Property = {
   name: string | null;
 };
 
-export default function RegistrarVendaPage() {
+export default function VendasPage() {
+  return (
+    <Suspense fallback={<VendasLoading />}>
+      <RegistrarVendaPage />
+    </Suspense>
+  );
+}
+
+function VendasLoading() {
+  return (
+    <main className="min-h-screen bg-[#F5F7F4] text-[#1F2A1F]">
+      <div className="mx-auto max-w-3xl px-6 py-8">
+        <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-black/5">
+          <p className="text-sm text-[#5F6B5F]">Carregando venda...</p>
+        </section>
+      </div>
+    </main>
+  );
+}
+
+function RegistrarVendaPage() {
   const searchParams = useSearchParams();
   const presetAnimalId = searchParams.get("animalId") ?? "";
 
   const [animals, setAnimals] = useState<Animal[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
 
-  const [animalId, setAnimalId] = useState(presetAnimalId);
+  const [animalId, setAnimalId] = useState("");
   const [propertyId, setPropertyId] = useState("");
   const [saleDate, setSaleDate] = useState("");
 
@@ -67,7 +87,7 @@ export default function RegistrarVendaPage() {
     }
   }, [saleDate, today]);
 
-  async function registrarVenda(e: React.FormEvent) {
+  async function registrarVenda(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
     setMessage("");
