@@ -1,61 +1,69 @@
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 
+type PassportCacheRow = {
+  animal_id: string;
+  identity_json: {
+    internal_code?: string | null;
+    sex?: string | null;
+    breed?: string | null;
+    status?: string | null;
+  } | null;
+  score_json: {
+    total_score?: number | null;
+  } | null;
+};
+
 type AnimalRow = {
-  id: string;
+  animal_id: string;
   internal_code: string | null;
   sex: string | null;
   breed: string | null;
-  status: string | null;
-};
-
-type ScoreRow = {
-  animal_id: string;
+  animal_status: string | null;
   total_score: number | null;
 };
 
 export default async function AnimaisPage() {
-  const [{ data: animais, error }, { data: scores }] = await Promise.all([
-    supabase
-      .from("animals")
-      .select("id, internal_code, sex, breed, status")
-      .order("created_at", { ascending: false }),
-    supabase
-      .from("agraas_master_passport")
-      .select("animal_id, total_score"),
-  ]);
+  const { data, error } = await supabase
+    .from("agraas_master_passport_cache")
+    .select("animal_id, identity_json, score_json");
 
-  const rows: AnimalRow[] = animais ?? [];
-  const scoreMap = new Map<string, number | null>();
+  const rawRows: PassportCacheRow[] = (data as PassportCacheRow[] | null) ?? [];
 
-  (scores as ScoreRow[] | null)?.forEach((item) => {
-    scoreMap.set(item.animal_id, item.total_score ?? null);
-  });
-
-  const scoredAnimals = rows.filter((animal) => {
-    const score = scoreMap.get(animal.id);
-    return typeof score === "number";
-  });
+  const rows: AnimalRow[] = rawRows.map((item) => ({
+    animal_id: item.animal_id,
+    internal_code: item.identity_json?.internal_code ?? null,
+    sex: item.identity_json?.sex ?? null,
+    breed: item.identity_json?.breed ?? null,
+    animal_status: item.identity_json?.status ?? null,
+    total_score: item.score_json?.total_score ?? null,
+  }));
 
   const averageScore =
-    scoredAnimals.length > 0
+    rows.length > 0
       ? Math.round(
-          scoredAnimals.reduce((acc, animal) => {
-            return acc + Number(scoreMap.get(animal.id) ?? 0);
-          }, 0) / scoredAnimals.length
+          rows.reduce((acc, animal) => {
+            return acc + Number(animal.total_score ?? 0);
+          }, 0) / rows.length
         )
       : 0;
 
   const activeCount = rows.filter(
-    (animal) => (animal.status ?? "").toLowerCase() === "active"
+    (animal) => (animal.animal_status ?? "").toLowerCase() === "active"
   ).length;
 
   const femaleCount = rows.filter(
-    (animal) => (animal.sex ?? "").toLowerCase() === "female"
+    (animal) => {
+      const value = (animal.sex ?? "").toLowerCase();
+      return value === "female" || value === "fêmea" || value === "femea";
+    }
   ).length;
 
   const maleCount = rows.filter(
-    (animal) => (animal.sex ?? "").toLowerCase() === "male"
+    (animal) => {
+      const value = (animal.sex ?? "").toLowerCase();
+      return value === "male" || value === "macho";
+    }
   ).length;
 
   const breedsCount = new Set(
@@ -63,8 +71,8 @@ export default async function AnimaisPage() {
   ).size;
 
   const topScore =
-    scoredAnimals.length > 0
-      ? Math.max(...scoredAnimals.map((animal) => Number(scoreMap.get(animal.id) ?? 0)))
+    rows.length > 0
+      ? Math.max(...rows.map((animal) => Number(animal.total_score ?? 0)))
       : 0;
 
   return (
@@ -215,15 +223,18 @@ export default async function AnimaisPage() {
 
                 <tbody>
                   {rows.map((animal) => {
-                    const score = scoreMap.get(animal.id);
-                    const scoreValue = typeof score === "number" ? score : null;
+                    const scoreValue =
+                      typeof animal.total_score === "number"
+                        ? animal.total_score
+                        : null;
+
                     const scorePercent =
                       scoreValue !== null
                         ? Math.max(6, Math.min(100, Math.round(scoreValue)))
                         : 0;
 
                     return (
-                      <tr key={animal.id}>
+                      <tr key={animal.animal_id}>
                         <td>
                           <div className="flex items-center gap-4">
                             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--primary-soft)] text-xl shadow-[var(--shadow-soft)]">
@@ -232,10 +243,10 @@ export default async function AnimaisPage() {
 
                             <div>
                               <p className="font-semibold text-[var(--text-primary)]">
-                                {animal.internal_code ?? animal.id}
+                                {animal.internal_code ?? animal.animal_id}
                               </p>
                               <p className="mt-1 text-sm text-[var(--text-muted)]">
-                                ID: {animal.id.slice(0, 8)}...
+                                ID: {animal.animal_id.slice(0, 8)}...
                               </p>
                             </div>
                           </div>
@@ -254,8 +265,8 @@ export default async function AnimaisPage() {
                         </td>
 
                         <td>
-                          <span className={getStatusBadgeClass(animal.status)}>
-                            {formatStatus(animal.status)}
+                          <span className={getStatusBadgeClass(animal.animal_status)}>
+                            {formatStatus(animal.animal_status)}
                           </span>
                         </td>
 
@@ -287,7 +298,7 @@ export default async function AnimaisPage() {
 
                         <td>
                           <Link
-                            href={`/animais/${animal.id}`}
+                            href={`/animais/${animal.animal_id}`}
                             className="inline-flex items-center rounded-2xl border border-[rgba(93,156,68,0.24)] px-4 py-2 text-sm font-medium text-[var(--primary-hover)] transition hover:bg-[var(--primary-soft)]"
                           >
                             Ver passaporte
@@ -400,6 +411,8 @@ function formatStatus(value: string | null) {
     pending: "Pendente",
     blocked: "Bloqueado",
     archived: "Arquivado",
+    sold: "Vendido",
+    slaughtered: "Abatido",
   };
 
   return map[value.toLowerCase()] ?? value;
@@ -422,6 +435,10 @@ function getStatusBadgeClass(value: string | null) {
 
   if (normalized === "blocked") {
     return "inline-flex rounded-full bg-[rgba(214,69,69,0.12)] px-3 py-1.5 text-xs font-semibold text-[var(--danger)]";
+  }
+
+  if (normalized === "sold" || normalized === "slaughtered") {
+    return "inline-flex rounded-full bg-[rgba(31,41,55,0.08)] px-3 py-1.5 text-xs font-semibold text-[var(--text-secondary)]";
   }
 
   return "inline-flex rounded-full bg-[var(--primary-soft)] px-3 py-1.5 text-xs font-semibold text-[var(--primary-hover)]";

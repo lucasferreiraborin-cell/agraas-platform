@@ -4,6 +4,7 @@ import Link from "next/link";
 const menuItems = [
   { href: "/", label: "Painel", icon: "◉" },
   { href: "/animais", label: "Animais", icon: "◌" },
+  { href: "/market", label: "Market", icon: "◈" },
   { href: "/operacoes", label: "Operações", icon: "◎" },
   { href: "/propriedades", label: "Propriedades", icon: "▣" },
   { href: "/aplicacoes", label: "Aplicações", icon: "✚" },
