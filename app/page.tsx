@@ -1,17 +1,58 @@
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 
-type ScoreRow = {
+type PassportCacheRow = {
+  animal_id: string;
+  identity_json: {
+    internal_code?: string | null;
+    sex?: string | null;
+    breed?: string | null;
+    status?: string | null;
+  } | null;
+  score_json: {
+    sanitary_score?: number | null;
+    operational_score?: number | null;
+    continuity_score?: number | null;
+    total_score?: number | null;
+  } | null;
+  health_json: {
+    applications?: number | null;
+    active_withdrawal?: number | null;
+    last_weight?: number | null;
+  } | null;
+  certifications_json:
+    | {
+        certification_code?: string | null;
+        certification_name?: string | null;
+        status?: string | null;
+        issued_at?: string | null;
+      }[]
+    | null;
+  ownership_json: {
+    current_property_id?: string | null;
+    status?: string | null;
+  } | null;
+  last_generated_at?: string | null;
+};
+
+type MarketRow = {
   animal_id: string;
   internal_code: string | null;
+  property_name: string | null;
+  last_weight: number | null;
   total_score: number | null;
-  current_property_name: string | null;
-  active_certifications: string[] | null;
+  status: string | null;
+  certifications:
+    | {
+        code: string;
+        name: string;
+      }[]
+    | null;
 };
 
 type EventRow = {
   animal_id: string;
-  event_type: string;
+  event_type: string | null;
   event_timestamp: string | null;
   notes: string | null;
 };
@@ -20,15 +61,16 @@ export default async function PainelPage() {
   const hoje = new Date().toISOString().slice(0, 10);
 
   const [
-    animalsResult,
-    applicationsResult,
-    certificationsResult,
-    lotsResult,
-    slaughterResult,
-    scoresResult,
-    eventsResult,
+    { data: passportsData, error: passportsError },
+    { data: applicationsCountData, count: applicationsCount },
+    { data: certificationsCountData, count: certificationsCount },
+    { data: propertiesCountData, count: propertiesCount },
+    { data: marketData },
+    { data: eventsData },
   ] = await Promise.all([
-    supabase.from("animals").select("*", { count: "exact", head: true }),
+    supabase
+      .from("agraas_master_passport_cache")
+      .select("*"),
     supabase
       .from("applications")
       .select("*", { count: "exact", head: true })
@@ -36,121 +78,147 @@ export default async function PainelPage() {
     supabase
       .from("animal_certifications")
       .select("*", { count: "exact", head: true })
-      .eq("status", "active"),
+      .in("status", ["ACTIVE", "active"]),
     supabase
-      .from("batch_lots")
-      .select("*", { count: "exact", head: true })
-      .eq("status", "active"),
-    supabase.from("slaughter_records").select("*", {
-      count: "exact",
-      head: true,
-    }),
+      .from("properties")
+      .select("*", { count: "exact", head: true }),
     supabase
-      .from("agraas_master_passport")
-      .select(
-        "animal_id, internal_code, total_score, current_property_name, active_certifications"
-      )
+      .from("agraas_market_animals")
+      .select("*")
       .order("total_score", { ascending: false })
-      .limit(5),
+      .limit(6),
     supabase
       .from("animal_events")
       .select("animal_id, event_type, event_timestamp, notes")
       .order("event_timestamp", { ascending: false })
-      .limit(6),
+      .limit(8),
   ]);
 
-  const totalAnimals = animalsResult.count ?? 0;
-  const totalApplications = applicationsResult.count ?? 0;
-  const totalCertifications = certificationsResult.count ?? 0;
-  const totalLots = lotsResult.count ?? 0;
-  const totalSlaughters = slaughterResult.count ?? 0;
+  const passports =
+    (passportsData as PassportCacheRow[] | null) ?? [];
+  const marketRows = (marketData as MarketRow[] | null) ?? [];
+  const recentEvents = (eventsData as EventRow[] | null) ?? [];
 
-  const kpis = [
+  const totalAnimals = passports.length;
+  const totalApplications = applicationsCount ?? 0;
+  const totalCertifications = certificationsCount ?? 0;
+  const totalProperties = propertiesCount ?? 0;
+
+  const totalScoreAverage =
+    totalAnimals > 0
+      ? Math.round(
+          passports.reduce(
+            (acc, item) => acc + Number(item.score_json?.total_score ?? 0),
+            0
+          ) / totalAnimals
+        )
+      : 0;
+
+  const sanitaryAverage =
+    totalAnimals > 0
+      ? Math.round(
+          passports.reduce(
+            (acc, item) => acc + Number(item.score_json?.sanitary_score ?? 0),
+            0
+          ) / totalAnimals
+        )
+      : 0;
+
+  const operationalAverage =
+    totalAnimals > 0
+      ? Math.round(
+          passports.reduce(
+            (acc, item) => acc + Number(item.score_json?.operational_score ?? 0),
+            0
+          ) / totalAnimals
+        )
+      : 0;
+
+  const continuityAverage =
+    totalAnimals > 0
+      ? Math.round(
+          passports.reduce(
+            (acc, item) => acc + Number(item.score_json?.continuity_score ?? 0),
+            0
+          ) / totalAnimals
+        )
+      : 0;
+
+  const totalCertifiedAnimals = passports.filter(
+    (item) =>
+      Array.isArray(item.certifications_json) &&
+      item.certifications_json.length > 0
+  ).length;
+
+  const animalsWithWithdrawal = passports.filter(
+    (item) => Number(item.health_json?.active_withdrawal ?? 0) > 0
+  ).length;
+
+  const activeAnimals = passports.filter((item) => {
+    const status = (
+      item.ownership_json?.status ??
+      item.identity_json?.status ??
+      ""
+    ).toLowerCase();
+    return status === "active";
+  }).length;
+
+  const topAnimals = passports
+    .map((item) => ({
+      animal_id: item.animal_id,
+      internal_code: item.identity_json?.internal_code ?? item.animal_id,
+      total_score: Number(item.score_json?.total_score ?? 0),
+      sanitary_score: Number(item.score_json?.sanitary_score ?? 0),
+      operational_score: Number(item.score_json?.operational_score ?? 0),
+      continuity_score: Number(item.score_json?.continuity_score ?? 0),
+      status:
+        item.ownership_json?.status ??
+        item.identity_json?.status ??
+        "-",
+      certifications_count: Array.isArray(item.certifications_json)
+        ? item.certifications_json.length
+        : 0,
+      last_weight: item.health_json?.last_weight ?? null,
+    }))
+    .sort((a, b) => b.total_score - a.total_score)
+    .slice(0, 5);
+
+  const heroHighlights = [
     {
-      title: "Animais ativos",
+      label: "Animais monitorados",
       value: totalAnimals,
-      icon: "🐂",
-      tone: "green",
-      detail: "Base rastreável consolidada",
+      description: "ativos no passaporte vivo da Agraas",
     },
     {
-      title: "Em carência",
-      value: totalApplications,
-      icon: "💉",
-      tone: "amber",
-      detail: "Aplicações com janela ativa",
+      label: "Score médio",
+      value: `${totalScoreAverage}`,
+      description: "qualidade consolidada do rebanho",
     },
     {
-      title: "Certificados",
-      value: totalCertifications,
-      icon: "✅",
-      tone: "blue",
-      detail: "Status sanitário e compliance",
-    },
-    {
-      title: "Lotes ativos",
-      value: totalLots,
-      icon: "📦",
-      tone: "purple",
-      detail: "Agrupamentos operacionais vigentes",
-    },
-    {
-      title: "Abates registrados",
-      value: totalSlaughters,
-      icon: "📋",
-      tone: "dark",
-      detail: "Histórico auditável disponível",
+      label: "Certificados",
+      value: totalCertifiedAnimals,
+      description: "ativos com chancela formal na base",
     },
   ];
 
-  const topScores: ScoreRow[] = (scoresResult.data as ScoreRow[] | null) ?? [];
-  const recentEvents: EventRow[] = (eventsResult.data as EventRow[] | null) ?? [];
-
-  const quickActions = [
-    { label: "Novo animal", href: "/animais/novo", icon: "🐂" },
-    { label: "Nova aplicação", href: "/aplicacoes", icon: "💉" },
-    { label: "Nova pesagem", href: "/pesagens", icon: "⚖️" },
-    { label: "Registrar venda", href: "/vendas", icon: "💰" },
-    { label: "Registrar abate", href: "/abates", icon: "🧾" },
-    { label: "Ver histórico", href: "/historico", icon: "🕘" },
-  ];
-
-  const animalModules = [
+  const boardSignals = [
     {
-      title: "Bovinos de corte",
-      icon: "🐂",
-      description:
-        "Score, rastreabilidade, movimentações e histórico completo por animal.",
+      label: "Cobertura de rastreabilidade",
+      value: totalAnimals > 0 ? Math.round((activeAnimals / totalAnimals) * 100) : 0,
+      description: "participação de animais ativos na base monitorada",
+      tone: "green" as const,
     },
     {
-      title: "Bovinos leiteiros",
-      icon: "🐄",
-      description:
-        "Base preparada para performance zootécnica, controle e certificação.",
+      label: "Pressão sanitária",
+      value: totalAnimals > 0 ? Math.round((animalsWithWithdrawal / totalAnimals) * 100) : 0,
+      description: "parcela do rebanho com carência sanitária ativa",
+      tone: "amber" as const,
     },
     {
-      title: "Suínos",
-      icon: "🐖",
-      description:
-        "Estrutura adaptável para lotes, eventos sanitários e desempenho.",
-    },
-    {
-      title: "Ovinos",
-      icon: "🐑",
-      description:
-        "Camada visual premium com identidade por categoria e eventos.",
-    },
-    {
-      title: "Avicultura",
-      icon: "🐔",
-      description:
-        "Expansão futura para agrupamentos operacionais e inteligência produtiva.",
-    },
-    {
-      title: "Equinos",
-      icon: "🐎",
-      description:
-        "Registro refinado com foco em linhagem, status e eventos relevantes.",
+      label: "Cobertura de certificação",
+      value: totalAnimals > 0 ? Math.round((totalCertifiedAnimals / totalAnimals) * 100) : 0,
+      description: "presença de certificações na base monitorada",
+      tone: "blue" as const,
     },
   ];
 
@@ -158,67 +226,9 @@ export default async function PainelPage() {
     totalAnimals,
     totalApplications,
     totalCertifications,
-    totalLots,
-    totalSlaughters,
+    totalProperties,
+    totalCertifiedAnimals,
   ]);
-
-  const maxScore =
-    topScores.length > 0
-      ? Math.max(...topScores.map((item) => Number(item.total_score ?? 0)), 1)
-      : 1;
-
-  const averageTopScore =
-    topScores.length > 0
-      ? Math.round(
-          topScores.reduce(
-            (acc, item) => acc + Number(item.total_score ?? 0),
-            0
-          ) / topScores.length
-        )
-      : 0;
-
-  const coverageIndex =
-    totalAnimals > 0
-      ? Math.min(
-          100,
-          Math.round(((totalCertifications + totalLots) / totalAnimals) * 100)
-        )
-      : 0;
-
-  const traceabilityIndex =
-    totalAnimals > 0
-      ? Math.min(
-          100,
-          Math.round(
-            ((totalLots + totalCertifications + totalSlaughters) /
-              (totalAnimals * 1.5)) *
-              100
-          )
-        )
-      : 0;
-
-  const operationalPressure =
-    totalAnimals > 0
-      ? Math.min(100, Math.round((totalApplications / totalAnimals) * 100))
-      : 0;
-
-  const heroHighlights = [
-    {
-      label: "Cobertura operacional",
-      value: totalAnimals,
-      description: "animais em leitura centralizada",
-    },
-    {
-      label: "Índice de cobertura",
-      value: `${coverageIndex}%`,
-      description: "integração entre lotes e certificações",
-    },
-    {
-      label: "Pressão sanitária",
-      value: `${operationalPressure}%`,
-      description: "aplicações com janela ativa",
-    },
-  ];
 
   return (
     <main className="space-y-8">
@@ -230,21 +240,20 @@ export default async function PainelPage() {
             <div className="ag-badge ag-badge-green">Painel executivo</div>
 
             <h1 className="mt-5 max-w-4xl text-4xl font-semibold leading-[1.02] tracking-[-0.065em] text-[var(--text-primary)] lg:text-6xl">
-              Inteligência operacional e rastreabilidade auditável para a cadeia pecuária.
+              A inteligência operacional da Agraas transforma rastreabilidade em valor.
             </h1>
 
             <p className="mt-5 max-w-3xl text-[1.05rem] leading-8 text-[var(--text-secondary)]">
-              A Agraas transforma eventos operacionais, status sanitário,
-              certificações e cadeia produtiva em um ativo digital confiável,
-              elegante e pronto para decisão.
+              Score, certificações, histórico auditável e leitura comercial do animal
+              em uma única camada de software pronta para board, operação e mercado.
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href="/animais" className="ag-button-primary">
                 Explorar animais
               </Link>
-              <Link href="/operacoes" className="ag-button-secondary">
-                Abrir operações
+              <Link href="/market" className="ag-button-secondary">
+                Abrir market
               </Link>
             </div>
 
@@ -273,44 +282,35 @@ export default async function PainelPage() {
                   Radar da plataforma
                 </p>
                 <h2 className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
-                  Top scores da base
+                  Top ativos do rebanho
                 </h2>
               </div>
 
               <Link href="/scores" className="ag-button-secondary">
-                Ver todos
+                Ver ranking
               </Link>
             </div>
 
             <div className="mt-6 grid gap-4 md:grid-cols-3">
-              <MetricPill
-                label="Score médio"
-                value={averageTopScore}
-                suffix="pts"
-              />
-              <MetricPill
-                label="Melhor score"
-                value={topScores[0]?.total_score ?? 0}
-                suffix="pts"
-              />
-              <MetricPill
-                label="Cobertura"
-                value={coverageIndex}
-                suffix="%"
-              />
+              <MetricPill label="Médio total" value={totalScoreAverage} suffix="pts" />
+              <MetricPill label="Sanitário" value={sanitaryAverage} suffix="pts" />
+              <MetricPill label="Operacional" value={operationalAverage} suffix="pts" />
             </div>
 
             <div className="mt-8 space-y-4">
-              {topScores.length === 0 ? (
+              {passportsError ? (
+                <div className="rounded-3xl bg-white p-5 text-sm text-[var(--danger)] shadow-[var(--shadow-soft)]">
+                  Erro ao carregar a base executiva.
+                </div>
+              ) : topAnimals.length === 0 ? (
                 <div className="rounded-3xl bg-white p-5 text-sm text-[var(--text-muted)] shadow-[var(--shadow-soft)]">
-                  Nenhum score encontrado.
+                  Nenhum animal encontrado.
                 </div>
               ) : (
-                topScores.map((animal, index) => {
-                  const scoreValue = Number(animal.total_score ?? 0);
+                topAnimals.map((animal, index) => {
                   const scorePercent = Math.max(
                     6,
-                    Math.round((scoreValue / maxScore) * 100)
+                    Math.round(Math.min(100, animal.total_score))
                   );
 
                   return (
@@ -325,11 +325,10 @@ export default async function PainelPage() {
                             Top {index + 1}
                           </p>
                           <p className="mt-2 text-lg font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
-                            {animal.internal_code ?? animal.animal_id}
+                            {animal.internal_code}
                           </p>
                           <p className="mt-1 text-sm text-[var(--text-muted)]">
-                            {animal.current_property_name ??
-                              "Propriedade não informada"}
+                            {formatStatus(animal.status)}
                           </p>
                         </div>
 
@@ -338,31 +337,25 @@ export default async function PainelPage() {
                             Score
                           </p>
                           <p className="mt-2 text-2xl font-semibold tracking-[-0.05em] text-[var(--primary-hover)]">
-                            {animal.total_score ?? "-"}
+                            {animal.total_score}
                           </p>
                         </div>
                       </div>
 
                       <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-[rgba(93,156,68,0.10)]">
                         <div
-                          className="h-full rounded-full bg-[linear-gradient(90deg,#7aa84c_0%,#5d9c44_100%)]"
+                          className="h-full rounded-full bg-[linear-gradient(90deg,#8dbc5f_0%,#5d9c44_100%)]"
                           style={{ width: `${scorePercent}%` }}
                         />
                       </div>
 
                       <div className="mt-4 flex flex-wrap gap-2">
-                        {Array.isArray(animal.active_certifications) &&
-                        animal.active_certifications.length > 0 ? (
-                          animal.active_certifications.map((item) => (
-                            <span key={item} className="ag-badge ag-badge-green">
-                              {formatLabel(item)}
-                            </span>
-                          ))
-                        ) : (
-                          <span className="ag-badge ag-badge-dark">
-                            Base ativa
-                          </span>
-                        )}
+                        <span className="ag-badge ag-badge-green">
+                          Certificações: {animal.certifications_count}
+                        </span>
+                        <span className="ag-badge ag-badge-dark">
+                          Peso: {animal.last_weight ?? "-"} kg
+                        </span>
                       </div>
                     </Link>
                   );
@@ -374,24 +367,36 @@ export default async function PainelPage() {
       </section>
 
       <section className="grid gap-4 xl:grid-cols-5">
-        {kpis.map((kpi) => (
-          <div key={kpi.title} className="ag-card p-6">
-            <div className="flex items-start justify-between gap-4">
-              <div className={getToneBadgeClass(kpi.tone)}>
-                <span className="text-lg leading-none">{kpi.icon}</span>
-              </div>
-              <span className="text-xs uppercase tracking-[0.14em] text-[var(--text-muted)]">
-                Live
-              </span>
-            </div>
-
-            <p className="mt-5 ag-kpi-label">{kpi.title}</p>
-            <p className="mt-3 ag-kpi-value">{kpi.value}</p>
-            <p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">
-              {kpi.detail}
-            </p>
-          </div>
-        ))}
+        <KpiCard
+          label="Animais ativos"
+          value={activeAnimals}
+          icon="🐂"
+          subtitle="base animal com status operacional ativo"
+        />
+        <KpiCard
+          label="Em carência"
+          value={totalApplications}
+          icon="💉"
+          subtitle="aplicações com janela sanitária ativa"
+        />
+        <KpiCard
+          label="Certificações"
+          value={totalCertifications}
+          icon="✅"
+          subtitle="chancelas registradas no ambiente"
+        />
+        <KpiCard
+          label="Propriedades"
+          value={totalProperties}
+          icon="📍"
+          subtitle="unidades operacionais mapeadas"
+        />
+        <KpiCard
+          label="Score médio"
+          value={totalScoreAverage}
+          icon="📈"
+          subtitle="confiança média consolidada da base"
+        />
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
@@ -400,8 +405,7 @@ export default async function PainelPage() {
             <div>
               <h2 className="ag-section-title">Leitura visual da operação</h2>
               <p className="ag-section-subtitle">
-                Um gráfico para destacar o peso relativo dos indicadores
-                principais do painel e facilitar a leitura executiva.
+                Resumo executivo dos blocos principais da plataforma para leitura rápida de board.
               </p>
             </div>
 
@@ -438,19 +442,19 @@ export default async function PainelPage() {
 
               <div className="grid gap-4">
                 <StatPanel
-                  title="Base monitorada"
-                  value={totalAnimals}
-                  subtitle="estrutura ativa na plataforma"
+                  title="Score sanitário médio"
+                  value={sanitaryAverage}
+                  subtitle="média da confiança sanitária da base"
                 />
                 <StatPanel
-                  title="Certificação"
-                  value={totalCertifications}
-                  subtitle="ativos com status regular"
+                  title="Score operacional médio"
+                  value={operationalAverage}
+                  subtitle="qualidade operacional consolidada"
                 />
                 <StatPanel
-                  title="Lotes"
-                  value={totalLots}
-                  subtitle="unidades operacionais em acompanhamento"
+                  title="Score continuidade"
+                  value={continuityAverage}
+                  subtitle="consistência e integridade histórica"
                 />
               </div>
             </div>
@@ -462,8 +466,7 @@ export default async function PainelPage() {
             <div>
               <h2 className="ag-section-title">Radar executivo</h2>
               <p className="ag-section-subtitle">
-                Sinais rápidos para orientar a leitura dos sócios sobre saúde
-                operacional, rastreabilidade e qualidade da base.
+                Sinais rápidos para orientar leitura de confiança, risco e maturidade da base.
               </p>
             </div>
 
@@ -471,24 +474,15 @@ export default async function PainelPage() {
           </div>
 
           <div className="mt-8 grid gap-4">
-            <ExecutiveSignal
-              label="Cobertura de rastreabilidade"
-              value={traceabilityIndex}
-              color="green"
-              description="grau de consolidação entre base, lotes, certificações e histórico"
-            />
-            <ExecutiveSignal
-              label="Pressão sanitária"
-              value={operationalPressure}
-              color="amber"
-              description="quanto da base exige leitura sanitária ativa no momento"
-            />
-            <ExecutiveSignal
-              label="Maturidade operacional"
-              value={coverageIndex}
-              color="blue"
-              description="nível de integração entre ativos principais da plataforma"
-            />
+            {boardSignals.map((signal) => (
+              <ExecutiveSignal
+                key={signal.label}
+                label={signal.label}
+                value={signal.value}
+                color={signal.tone}
+                description={signal.description}
+              />
+            ))}
           </div>
         </div>
       </section>
@@ -497,104 +491,63 @@ export default async function PainelPage() {
         <div className="ag-card p-8">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h2 className="ag-section-title">Camadas do rebanho</h2>
+              <h2 className="ag-section-title">Market intelligence</h2>
               <p className="ag-section-subtitle">
-                Leitura por categoria para reforçar a escalabilidade visual da plataforma.
+                Visão dos ativos mais fortes no market com leitura comercial imediata.
               </p>
             </div>
 
-            <Link href="/animais" className="ag-button-secondary">
-              Abrir base
+            <Link href="/market" className="ag-button-secondary">
+              Abrir market
             </Link>
-          </div>
-
-          <div className="mt-8 grid gap-3 sm:grid-cols-2">
-            {animalModules.map((item) => (
-              <div
-                key={item.title}
-                className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5 transition hover:border-[rgba(93,156,68,0.24)] hover:bg-[var(--primary-soft)]"
-              >
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-2xl shadow-[var(--shadow-soft)]">
-                  {item.icon}
-                </div>
-                <p className="mt-4 text-base font-semibold tracking-[-0.02em] text-[var(--text-primary)]">
-                  {item.title}
-                </p>
-                <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-                  {item.description}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="ag-card p-8">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h2 className="ag-section-title">Destaques para apresentação</h2>
-              <p className="ag-section-subtitle">
-                Argumentos visuais e estratégicos para mostrar aos sócios o potencial
-                de produto da Agraas.
-              </p>
-            </div>
-
-            <span className="ag-badge ag-badge-green">Pitch ready</span>
           </div>
 
           <div className="mt-8 grid gap-4">
-            <HighlightCard
-              title="Camada premium de software"
-              description="A plataforma já tem cara de produto real, com navegação, linguagem visual e leitura executiva consistentes."
-            />
-            <HighlightCard
-              title="Base preparada para expansão"
-              description="A estrutura atual já permite crescer para analytics avançado, filtros inteligentes, dashboards por fazenda e visão por animal."
-            />
-            <HighlightCard
-              title="Pronto para demo controlada"
-              description="Com deploy seguro em ambiente online, seus sócios podem acompanhar a evolução em tempo real sem risco à operação."
-            />
-          </div>
-        </div>
-      </section>
+            {marketRows.length === 0 ? (
+              <div className="rounded-3xl bg-[var(--surface-soft)] p-6 text-sm text-[var(--text-muted)]">
+                Nenhum ativo disponível no market.
+              </div>
+            ) : (
+              marketRows.slice(0, 4).map((animal) => (
+                <Link
+                  key={animal.animal_id}
+                  href={`/animais/${animal.animal_id}`}
+                  className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5 transition hover:border-[rgba(93,156,68,0.24)] hover:bg-[var(--primary-soft)]"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-base font-semibold tracking-[-0.02em] text-[var(--text-primary)]">
+                        {animal.internal_code ?? animal.animal_id}
+                      </p>
+                      <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
+                        {animal.property_name ?? "Propriedade não informada"}
+                      </p>
+                    </div>
 
-      <section className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-        <div className="ag-card p-8">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h2 className="ag-section-title">Operações prioritárias</h2>
-              <p className="ag-section-subtitle">
-                Os fluxos principais da plataforma, organizados para acelerar a operação.
-              </p>
-            </div>
-
-            <Link href="/operacoes" className="ag-button-secondary">
-              Hub completo
-            </Link>
-          </div>
-
-          <div className="mt-8 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {quickActions.map((action) => (
-              <Link
-                key={action.label}
-                href={action.href}
-                className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] px-5 py-5 transition hover:border-[rgba(93,156,68,0.24)] hover:bg-[var(--primary-soft)]"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-xl shadow-[var(--shadow-soft)]">
-                    {action.icon}
+                    <div className="text-right">
+                      <p className="text-xs uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                        Score
+                      </p>
+                      <p className="mt-2 text-2xl font-semibold text-[var(--primary-hover)]">
+                        {animal.total_score ?? "-"}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-[var(--text-primary)]">
-                      {action.label}
-                    </p>
-                    <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[var(--text-muted)]">
-                      ação rápida
-                    </p>
+
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <span className="ag-badge ag-badge-green">
+                      Peso: {animal.last_weight ?? "-"} kg
+                    </span>
+                    <span className="ag-badge ag-badge-dark">
+                      {formatStatus(animal.status)}
+                    </span>
+                    <span className="ag-badge ag-badge-dark">
+                      Certificações: {Array.isArray(animal.certifications) ? animal.certifications.length : 0}
+                    </span>
                   </div>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              ))
+            )}
           </div>
         </div>
 
@@ -603,7 +556,7 @@ export default async function PainelPage() {
             <div>
               <h2 className="ag-section-title">Últimos eventos</h2>
               <p className="ag-section-subtitle">
-                Leitura rápida da trilha operacional registrada.
+                Leitura rápida da trilha operacional registrada na base.
               </p>
             </div>
 
@@ -625,8 +578,8 @@ export default async function PainelPage() {
                 >
                   <div className="flex items-center justify-between gap-4">
                     <span className="ag-badge ag-badge-green">
-                      {getEventIcon(event.event_type)}{" "}
-                      {formatEventType(event.event_type)}
+                      {getEventIcon(event.event_type ?? "")}{" "}
+                      {formatEventType(event.event_type ?? "")}
                     </span>
 
                     <span className="text-sm text-[var(--text-muted)]">
@@ -743,27 +696,39 @@ function ExecutiveSignal({
   );
 }
 
-function HighlightCard({
-  title,
-  description,
+function KpiCard({
+  label,
+  value,
+  icon,
+  subtitle,
 }: {
-  title: string;
-  description: string;
+  label: string;
+  value: string | number;
+  icon: string;
+  subtitle: string;
 }) {
   return (
-    <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5">
-      <p className="text-base font-semibold tracking-[-0.02em] text-[var(--text-primary)]">
-        {title}
-      </p>
+    <div className="ag-card p-6">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--primary-soft)] text-xl shadow-[var(--shadow-soft)]">
+          {icon}
+        </div>
+        <span className="text-xs uppercase tracking-[0.14em] text-[var(--text-muted)]">
+          Live
+        </span>
+      </div>
+
+      <p className="mt-5 ag-kpi-label">{label}</p>
+      <p className="mt-3 ag-kpi-value">{value}</p>
       <p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">
-        {description}
+        {subtitle}
       </p>
     </div>
   );
 }
 
 function buildSeries(values: number[]) {
-  const labels = ["Animais", "Carência", "Cert.", "Lotes", "Abates"];
+  const labels = ["Animais", "Carência", "Certif.", "Fazendas", "Chancelados"];
   const max = Math.max(...values, 1);
 
   return values.map((value, index) => ({
@@ -773,25 +738,58 @@ function buildSeries(values: number[]) {
   }));
 }
 
-function getToneBadgeClass(tone: string) {
+function formatStatus(value: string | null) {
+  if (!value) return "-";
+
   const map: Record<string, string> = {
-    green:
-      "flex h-12 w-12 items-center justify-center rounded-2xl bg-[rgba(93,156,68,0.12)]",
-    amber:
-      "flex h-12 w-12 items-center justify-center rounded-2xl bg-[rgba(217,163,67,0.14)]",
-    blue:
-      "flex h-12 w-12 items-center justify-center rounded-2xl bg-[rgba(74,144,226,0.14)]",
-    purple:
-      "flex h-12 w-12 items-center justify-center rounded-2xl bg-[rgba(122,102,204,0.14)]",
-    dark:
-      "flex h-12 w-12 items-center justify-center rounded-2xl bg-[rgba(31,41,55,0.10)]",
+    active: "Ativo",
+    inactive: "Inativo",
+    pending: "Pendente",
+    blocked: "Bloqueado",
+    archived: "Arquivado",
+    sold: "Vendido",
+    slaughtered: "Abatido",
+    ACTIVE: "Ativo",
   };
 
-  return map[tone] ?? map.green;
+  return map[value] ?? map[value.toLowerCase()] ?? value;
+}
+
+function formatEventType(value: string) {
+  const map: Record<string, string> = {
+    BIRTH: "Nascimento",
+    RFID_LINKED: "RFID vinculado",
+    WEIGHT_RECORDED: "Pesagem registrada",
+    HEALTH_APPLICATION: "Aplicação sanitária",
+    LOT_ENTRY: "Entrada em lote",
+    OWNERSHIP_TRANSFER: "Transferência",
+    SALE: "Venda",
+    SLAUGHTER: "Abate",
+    CERTIFICATION: "Certificação",
+    birth: "Nascimento",
+    rfid_assigned: "Identificação vinculada",
+    health_application: "Aplicação registrada",
+    weight_recorded: "Pesagem registrada",
+    sale: "Venda registrada",
+    ownership_transfer: "Transferência de propriedade",
+    lot_entry: "Entrada em lote",
+    slaughter: "Abate registrado",
+  };
+
+  return map[value] ?? value.replaceAll("_", " ");
 }
 
 function getEventIcon(value: string) {
   const map: Record<string, string> = {
+    BIRTH: "🐣",
+    RFID_LINKED: "🏷️",
+    WEIGHT_RECORDED: "⚖️",
+    HEALTH_APPLICATION: "💉",
+    LOT_ENTRY: "📦",
+    OWNERSHIP_TRANSFER: "🔁",
+    SALE: "💰",
+    SLAUGHTER: "📋",
+    CERTIFICATION: "✅",
     birth: "🐣",
     rfid_assigned: "🏷️",
     health_application: "💉",
@@ -803,25 +801,4 @@ function getEventIcon(value: string) {
   };
 
   return map[value] ?? "•";
-}
-
-function formatLabel(value: string) {
-  return value
-    .replaceAll("_", " ")
-    .replace(/\b\w/g, (char) => char.toUpperCase());
-}
-
-function formatEventType(value: string) {
-  const map: Record<string, string> = {
-    birth: "Nascimento",
-    rfid_assigned: "Identificação vinculada",
-    health_application: "Aplicação registrada",
-    weight_recorded: "Pesagem registrada",
-    sale: "Venda registrada",
-    ownership_transfer: "Transferência de propriedade",
-    lot_entry: "Entrada em lote",
-    slaughter: "Abate registrado",
-  };
-
-  return map[value] ?? formatLabel(value);
 }

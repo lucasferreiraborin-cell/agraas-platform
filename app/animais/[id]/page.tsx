@@ -244,7 +244,7 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
         </div>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-4">
+      <section className="grid gap-4 xl:grid-cols-4)">
         <ScoreCard label="Sanitário" value={score.sanitary_score} />
         <ScoreCard label="Operacional" value={score.operational_score} />
         <ScoreCard label="Continuidade" value={score.continuity_score} />
@@ -261,14 +261,8 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
                 label="Código do animal"
                 value={identity.internal_code ?? "-"}
               />
-              <InfoItem
-                label="Sexo"
-                value={formatSex(identity.sex ?? null)}
-              />
-              <InfoItem
-                label="Raça"
-                value={identity.breed ?? "-"}
-              />
+              <InfoItem label="Sexo" value={formatSex(identity.sex ?? null)} />
+              <InfoItem label="Raça" value={identity.breed ?? "-"} />
               <InfoItem
                 label="Nascimento"
                 value={formatDate(identity.birth_date ?? null)}
