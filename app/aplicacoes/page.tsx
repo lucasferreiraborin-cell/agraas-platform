@@ -1,249 +1,322 @@
-"use client";
-
-import { Suspense, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { useSearchParams } from "next/navigation";
+import { revalidatePath } from "next/cache";
 
-type Animal = {
+type AnimalRow = {
   id: string;
   internal_code: string | null;
 };
 
-type Product = {
+type ProductRow = {
   id: string;
-  name?: string | null;
-  product_name?: string | null;
+  name: string | null;
 };
 
-type StockBatch = {
+type BatchRow = {
   id: string;
-  batch_number?: string | null;
-  lot_code?: string | null;
+  product_id: string;
+  batch_number: string | null;
+  expiration_date: string | null;
+  quantity: number | null;
 };
 
-export default function AplicacoesPage() {
-  return (
-    <Suspense fallback={<AplicacoesLoading />}>
-      <NovaAplicacaoPage />
-    </Suspense>
-  );
-}
+async function registerApplication(formData: FormData) {
+  "use server";
 
-function AplicacoesLoading() {
-  return (
-    <main className="min-h-screen bg-[#F5F7F4] text-[#1F2A1F]">
-      <div className="mx-auto max-w-3xl px-6 py-8">
-        <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-black/5">
-          <p className="text-sm text-[#5F6B5F]">Carregando aplicação...</p>
-        </section>
-      </div>
-    </main>
-  );
-}
+  const animalId = String(formData.get("animal_id") ?? "").trim();
+  const productId = String(formData.get("product_id") ?? "").trim();
+  const batchId = String(formData.get("batch_id") ?? "").trim();
+  const doseRaw = String(formData.get("dose") ?? "").trim();
+  const applicationDate = String(formData.get("application_date") ?? "").trim();
 
-function NovaAplicacaoPage() {
-  const searchParams = useSearchParams();
-  const presetAnimalId = searchParams.get("animalId") ?? "";
-
-  const [animals, setAnimals] = useState<Animal[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [batches, setBatches] = useState<StockBatch[]>([]);
-
-  const [animalId, setAnimalId] = useState("");
-  const [productId, setProductId] = useState("");
-  const [batchId, setBatchId] = useState("");
-  const [dose, setDose] = useState("");
-  const [applicationDate, setApplicationDate] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
-
-  useEffect(() => {
-    async function loadData() {
-      const [animalsRes, productsRes, batchesRes] = await Promise.all([
-        supabase
-          .from("animals")
-          .select("id, internal_code")
-          .order("created_at", { ascending: false }),
-
-        supabase
-          .from("products")
-          .select("id, name, product_name")
-          .order("created_at", { ascending: false }),
-
-        supabase
-          .from("stock_batches")
-          .select("id, batch_number, lot_code")
-          .order("created_at", { ascending: false }),
-      ]);
-
-      if (!animalsRes.error && animalsRes.data) {
-        setAnimals(animalsRes.data);
-      }
-
-      if (!productsRes.error && productsRes.data) {
-        setProducts(productsRes.data);
-      }
-
-      if (!batchesRes.error && batchesRes.data) {
-        setBatches(batchesRes.data);
-      }
-    }
-
-    loadData();
-  }, []);
-
-  useEffect(() => {
-    if (presetAnimalId) {
-      setAnimalId(presetAnimalId);
-    }
-  }, [presetAnimalId]);
-
-  const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
-
-  useEffect(() => {
-    if (!applicationDate) {
-      setApplicationDate(today);
-    }
-  }, [applicationDate, today]);
-
-  async function registrarAplicacao(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setLoading(true);
-    setMessage("");
-
-    const payload = {
-      animal_id: animalId || null,
-      product_id: productId || null,
-      batch_id: batchId || null,
-      dose: dose ? Number(dose) : null,
-      application_date: applicationDate || null,
-    };
-
-    const { error } = await supabase.from("applications").insert(payload);
-
-    if (error) {
-      setMessage(`Erro ao registrar aplicação: ${error.message}`);
-      setLoading(false);
-      return;
-    }
-
-    setMessage("Aplicação registrada com sucesso.");
-    setProductId("");
-    setBatchId("");
-    setDose("");
-    setApplicationDate(today);
-    setLoading(false);
+  if (!animalId || !productId || !batchId || !doseRaw || !applicationDate) {
+    throw new Error("Preencha todos os campos antes de registrar a aplicação.");
   }
 
-  return (
-    <main className="min-h-screen bg-[#F5F7F4] text-[#1F2A1F]">
-      <div className="mx-auto max-w-3xl px-6 py-8">
-        <header className="mb-8">
-          <h1 className="text-3xl font-semibold tracking-tight">
-            Registrar aplicação
-          </h1>
-          <p className="mt-2 text-sm text-[#5F6B5F]">
-            Registre uma aplicação sanitária para um animal da base.
-          </p>
-        </header>
+  const dose = Number(doseRaw);
 
-        <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-black/5">
-          <form onSubmit={registrarAplicacao} className="space-y-5">
-            <div>
-              <label className="mb-2 block text-sm font-medium">Animal</label>
+  if (Number.isNaN(dose) || dose <= 0) {
+    throw new Error("A dose informada é inválida.");
+  }
+
+  const { error } = await supabase.from("applications").insert({
+    id: crypto.randomUUID(),
+    animal_id: animalId,
+    product_id: productId,
+    batch_id: batchId,
+    dose,
+    application_date: applicationDate,
+  });
+
+  if (error) {
+    throw new Error(`Erro ao registrar aplicação: ${error.message}`);
+  }
+
+  revalidatePath("/aplicacoes");
+  revalidatePath("/animais");
+  revalidatePath(`/animais/${animalId}`);
+  revalidatePath("/");
+}
+
+export default async function AplicacoesPage() {
+  const hoje = new Date().toISOString().slice(0, 10);
+
+  const [{ data: animalsData }, { data: productsData }, { data: batchesData }] =
+    await Promise.all([
+      supabase
+        .from("animals")
+        .select("id, internal_code")
+        .order("internal_code"),
+      supabase
+        .from("products")
+        .select("id, name")
+        .order("name"),
+      supabase
+        .from("stock_batches")
+        .select("id, product_id, batch_number, expiration_date, quantity")
+        .order("batch_number"),
+    ]);
+
+  const animals = (animalsData as AnimalRow[] | null) ?? [];
+  const products = (productsData as ProductRow[] | null) ?? [];
+  const batches = (batchesData as BatchRow[] | null) ?? [];
+
+  return (
+    <main className="space-y-8">
+      <section className="ag-card-strong overflow-hidden">
+        <div className="grid gap-0 xl:grid-cols-[1.02fr_0.98fr]">
+          <div className="relative p-8 lg:p-10">
+            <div className="pointer-events-none absolute right-0 top-0 h-48 w-48 rounded-full bg-[radial-gradient(circle,rgba(122,168,76,0.18)_0%,rgba(122,168,76,0)_70%)]" />
+
+            <div className="ag-badge ag-badge-green">Operação sanitária</div>
+
+            <h1 className="mt-5 text-4xl font-semibold tracking-[-0.06em] text-[var(--text-primary)] lg:text-6xl">
+              Registrar aplicação
+            </h1>
+
+            <p className="mt-5 max-w-3xl text-[1.02rem] leading-8 text-[var(--text-secondary)]">
+              Registre aplicações sanitárias com vínculo ao animal, produto e lote
+              de insumo. Cada lançamento reforça a rastreabilidade e atualiza o
+              passaporte vivo da Agraas.
+            </p>
+
+            <div className="mt-10 grid gap-4 md:grid-cols-3">
+              <HeroMetric
+                label="Animais disponíveis"
+                value={animals.length}
+                subtitle="ativos aptos para vínculo"
+              />
+              <HeroMetric
+                label="Produtos"
+                value={products.length}
+                subtitle="insumos cadastrados"
+              />
+              <HeroMetric
+                label="Lotes"
+                value={batches.length}
+                subtitle="estoque rastreável disponível"
+              />
+            </div>
+          </div>
+
+          <div className="border-t border-[var(--border)] bg-[linear-gradient(180deg,#eef6ea_0%,#f5f7f4_100%)] p-8 lg:p-10 xl:border-l xl:border-t-0">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                  Checklist da operação
+                </p>
+                <h2 className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
+                  Estrutura da aplicação
+                </h2>
+              </div>
+
+              <span className="ag-badge ag-badge-dark">Live form</span>
+            </div>
+
+            <div className="mt-8 grid gap-4">
+              <ChecklistCard
+                title="Vínculo com animal"
+                description="Cada aplicação precisa estar associada a um animal específico."
+              />
+              <ChecklistCard
+                title="Produto sanitário"
+                description="Selecione o insumo correto para garantir consistência da base."
+              />
+              <ChecklistCard
+                title="Lote rastreável"
+                description="O lote é o elo entre estoque, compliance e histórico sanitário."
+              />
+              <ChecklistCard
+                title="Impacto automático"
+                description="Após registrar, o passaporte do animal é recalculado pela engine."
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="ag-card p-8">
+        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <h2 className="ag-section-title">Formulário de aplicação</h2>
+            <p className="ag-section-subtitle">
+              Preencha os campos abaixo para registrar uma aplicação sanitária
+              vinculada ao animal e ao lote correspondente.
+            </p>
+          </div>
+
+          <span className="ag-badge ag-badge-green">Rastreabilidade ativa</span>
+        </div>
+
+        <form action={registerApplication} className="mt-8 grid gap-6">
+          <div className="grid gap-6 md:grid-cols-2">
+            <FieldBlock label="Animal">
               <select
-                value={animalId}
-                onChange={(e) => setAnimalId(e.target.value)}
-                className="w-full rounded-lg border border-black/10 bg-white px-4 py-3 outline-none focus:border-[#4A7C3A]"
+                name="animal_id"
                 required
+                className="ag-input"
+                defaultValue=""
               >
-                <option value="">Selecione um animal</option>
+                <option value="" disabled>
+                  Selecione um animal
+                </option>
                 {animals.map((animal) => (
                   <option key={animal.id} value={animal.id}>
                     {animal.internal_code ?? animal.id}
                   </option>
                 ))}
               </select>
-            </div>
+            </FieldBlock>
 
-            <div>
-              <label className="mb-2 block text-sm font-medium">Produto</label>
+            <FieldBlock label="Produto">
               <select
-                value={productId}
-                onChange={(e) => setProductId(e.target.value)}
-                className="w-full rounded-lg border border-black/10 bg-white px-4 py-3 outline-none focus:border-[#4A7C3A]"
+                name="product_id"
                 required
+                className="ag-input"
+                defaultValue=""
               >
-                <option value="">Selecione um produto</option>
+                <option value="" disabled>
+                  Selecione um produto
+                </option>
                 {products.map((product) => (
                   <option key={product.id} value={product.id}>
-                    {product.name ?? product.product_name ?? product.id}
+                    {product.name ?? product.id}
                   </option>
                 ))}
               </select>
-            </div>
+            </FieldBlock>
 
-            <div>
-              <label className="mb-2 block text-sm font-medium">
-                Lote de insumo
-              </label>
+            <FieldBlock label="Lote de insumo">
               <select
-                value={batchId}
-                onChange={(e) => setBatchId(e.target.value)}
-                className="w-full rounded-lg border border-black/10 bg-white px-4 py-3 outline-none focus:border-[#4A7C3A]"
+                name="batch_id"
                 required
+                className="ag-input"
+                defaultValue=""
               >
-                <option value="">Selecione um lote</option>
+                <option value="" disabled>
+                  Selecione um lote
+                </option>
                 {batches.map((batch) => (
                   <option key={batch.id} value={batch.id}>
-                    {batch.batch_number ?? batch.lot_code ?? batch.id}
+                    {batch.batch_number ?? batch.id}
+                    {batch.quantity !== null && batch.quantity !== undefined
+                      ? ` • qtd ${batch.quantity}`
+                      : ""}
+                    {batch.expiration_date
+                      ? ` • vence ${new Date(batch.expiration_date).toLocaleDateString("pt-BR")}`
+                      : ""}
                   </option>
                 ))}
               </select>
-            </div>
+            </FieldBlock>
 
-            <div>
-              <label className="mb-2 block text-sm font-medium">Dose</label>
+            <FieldBlock label="Dose">
               <input
+                name="dose"
                 type="number"
                 step="0.01"
-                value={dose}
-                onChange={(e) => setDose(e.target.value)}
+                min="0.01"
+                required
                 placeholder="Ex.: 10"
-                className="w-full rounded-lg border border-black/10 bg-white px-4 py-3 outline-none focus:border-[#4A7C3A]"
-                required
+                className="ag-input"
               />
-            </div>
+            </FieldBlock>
 
-            <div>
-              <label className="mb-2 block text-sm font-medium">
-                Data da aplicação
-              </label>
+            <FieldBlock label="Data da aplicação">
               <input
+                name="application_date"
                 type="date"
-                value={applicationDate}
-                onChange={(e) => setApplicationDate(e.target.value)}
-                className="w-full rounded-lg border border-black/10 bg-white px-4 py-3 outline-none focus:border-[#4A7C3A]"
                 required
+                defaultValue={hoje}
+                className="ag-input"
               />
-            </div>
+            </FieldBlock>
+          </div>
 
-            {message ? (
-              <div className="rounded-lg bg-[#F5F7F4] px-4 py-3 text-sm text-[#1F2A1F]">
-                {message}
-              </div>
-            ) : null}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="rounded-lg bg-[#4A7C3A] px-5 py-3 text-sm font-medium text-white hover:bg-[#3B6B2E] disabled:opacity-60"
-            >
-              {loading ? "Registrando..." : "Registrar aplicação"}
+          <div className="pt-2">
+            <button type="submit" className="ag-button-primary">
+              Registrar aplicação
             </button>
-          </form>
-        </section>
-      </div>
+          </div>
+        </form>
+      </section>
     </main>
+  );
+}
+
+function HeroMetric({
+  label,
+  value,
+  subtitle,
+}: {
+  label: string;
+  value: string | number;
+  subtitle: string;
+}) {
+  return (
+    <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5">
+      <p className="text-sm text-[var(--text-muted)]">{label}</p>
+      <p className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-[var(--text-primary)]">
+        {value}
+      </p>
+      <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
+        {subtitle}
+      </p>
+    </div>
+  );
+}
+
+function ChecklistCard({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="rounded-3xl border border-[var(--border)] bg-white p-5 shadow-[var(--shadow-soft)]">
+      <p className="text-base font-semibold tracking-[-0.02em] text-[var(--text-primary)]">
+        {title}
+      </p>
+      <p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">
+        {description}
+      </p>
+    </div>
+  );
+}
+
+function FieldBlock({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-3 block text-sm font-medium text-[var(--text-primary)]">
+        {label}
+      </span>
+      {children}
+    </label>
   );
 }
