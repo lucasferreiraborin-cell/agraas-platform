@@ -14,11 +14,13 @@ type AnimalRow = {
   internal_code: string | null;
 };
 
-export default function PesagensPage() {
+export default function MovimentacoesPage() {
   const [animals, setAnimals] = useState<AnimalRow[]>([]);
   const [animalId, setAnimalId] = useState("");
-  const [weight, setWeight] = useState("");
-  const [weighingDate, setWeighingDate] = useState(todayInputValue());
+  const [movementType, setMovementType] = useState("");
+  const [originRef, setOriginRef] = useState("");
+  const [destinationRef, setDestinationRef] = useState("");
+  const [movementDate, setMovementDate] = useState(todayInputValue());
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -43,42 +45,39 @@ export default function PesagensPage() {
     loadAnimals();
   }, []);
 
-  async function createWeight() {
-    if (!animalId || !weight || !weighingDate) {
+  async function createMovement() {
+    if (!animalId || !movementType || !movementDate) {
       alert("Preencha os campos obrigatórios.");
-      return;
-    }
-
-    const numericWeight = Number(weight);
-
-    if (Number.isNaN(numericWeight) || numericWeight <= 0) {
-      alert("Informe um peso válido.");
       return;
     }
 
     setSaving(true);
 
-    const { error } = await supabase.from("weights").insert([
+    const { error } = await supabase.from("animal_movements").insert([
       {
         animal_id: animalId,
-        weight: numericWeight,
-        weighing_date: weighingDate,
+        movement_type: movementType,
+        origin_ref: originRef || null,
+        destination_ref: destinationRef || null,
+        movement_date: movementDate,
         notes: notes || null,
       },
     ]);
 
     if (error) {
-      console.error("Erro ao registrar pesagem:", error);
-      alert("Erro ao registrar pesagem.");
+      console.error("Erro ao registrar movimentação:", error);
+      alert("Erro ao registrar movimentação.");
       setSaving(false);
       return;
     }
 
-    alert("Pesagem registrada com sucesso.");
+    alert("Movimentação registrada com sucesso.");
 
     setAnimalId("");
-    setWeight("");
-    setWeighingDate(todayInputValue());
+    setMovementType("");
+    setOriginRef("");
+    setDestinationRef("");
+    setMovementDate(todayInputValue());
     setNotes("");
     setSaving(false);
   }
@@ -88,19 +87,19 @@ export default function PesagensPage() {
       <section className="ag-card-strong overflow-hidden">
         <div className="grid gap-0 xl:grid-cols-[1.05fr_0.95fr]">
           <div className="relative p-8 lg:p-10">
-            <div className="ag-badge ag-badge-green">Pesagem animal</div>
+            <div className="ag-badge ag-badge-green">Movimentação animal</div>
 
             <h1 className="mt-5 text-4xl font-semibold tracking-[-0.06em] text-[var(--text-primary)] lg:text-6xl">
-              Registro de pesagens
+              Registro operacional de movimentações
             </h1>
 
             <p className="mt-5 max-w-3xl text-[1.02rem] leading-8 text-[var(--text-secondary)]">
-              Registre o peso dos animais para acompanhar evolução, desempenho
-              e integrar a informação ao passaporte do rebanho.
+              Registre entradas, transferências, vendas, abates e demais
+              movimentações para manter a rastreabilidade completa do animal.
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/pesagens/historico" className="ag-button-secondary">
+              <Link href="/movimentacoes/historico" className="ag-button-secondary">
                 Ver histórico
               </Link>
 
@@ -115,22 +114,22 @@ export default function PesagensPage() {
               <MetricCard
                 label="Animais"
                 value={animals.length}
-                subtitle="ativos disponíveis para pesagem"
+                subtitle="ativos disponíveis para registro"
               />
               <MetricCard
                 label="Timeline"
                 value="ativa"
-                subtitle="pesagens entram no passaporte"
+                subtitle="movimentações entram no passaporte"
+              />
+              <MetricCard
+                label="Rastreabilidade"
+                value="100%"
+                subtitle="movimento integrado à trilha do animal"
               />
               <MetricCard
                 label="Módulo"
-                value="produtivo"
-                subtitle="base para performance do rebanho"
-              />
-              <MetricCard
-                label="Peso"
-                value="track"
-                subtitle="evolução histórica do animal"
+                value="operacional"
+                subtitle="base para gestão pecuária"
               />
             </div>
           </div>
@@ -140,14 +139,14 @@ export default function PesagensPage() {
       <section className="ag-card p-8">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
-            <h2 className="ag-section-title">Nova pesagem</h2>
+            <h2 className="ag-section-title">Nova movimentação</h2>
             <p className="ag-section-subtitle">
-              Preencha os dados abaixo para registrar o peso do animal.
+              Preencha os dados abaixo para registrar uma movimentação do animal.
             </p>
           </div>
 
           <div className="ag-badge ag-badge-dark">
-            Fluxo produtivo
+            Fluxo operacional
           </div>
         </div>
 
@@ -175,25 +174,54 @@ export default function PesagensPage() {
 
             <label>
               <div className="mb-2 text-sm font-medium text-[var(--text-primary)]">
-                Peso (kg)
+                Tipo de movimentação
+              </div>
+              <select
+                value={movementType}
+                onChange={(e) => setMovementType(e.target.value)}
+                className="w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-[var(--text-primary)]"
+              >
+                <option value="">Selecione o tipo</option>
+                <option value="lot_entry">Entrada em lote</option>
+                <option value="ownership_transfer">Transferência</option>
+                <option value="sale">Venda</option>
+                <option value="slaughter">Abate</option>
+                <option value="birth">Nascimento</option>
+              </select>
+            </label>
+
+            <label>
+              <div className="mb-2 text-sm font-medium text-[var(--text-primary)]">
+                Origem
               </div>
               <input
-                type="number"
-                value={weight}
-                onChange={(e) => setWeight(e.target.value)}
-                placeholder="Ex.: 420"
+                value={originRef}
+                onChange={(e) => setOriginRef(e.target.value)}
+                placeholder="Ex.: Lote Recria A"
                 className="w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-[var(--text-primary)]"
               />
             </label>
 
             <label>
               <div className="mb-2 text-sm font-medium text-[var(--text-primary)]">
-                Data da pesagem
+                Destino
+              </div>
+              <input
+                value={destinationRef}
+                onChange={(e) => setDestinationRef(e.target.value)}
+                placeholder="Ex.: Lote Engorda B"
+                className="w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-[var(--text-primary)]"
+              />
+            </label>
+
+            <label>
+              <div className="mb-2 text-sm font-medium text-[var(--text-primary)]">
+                Data
               </div>
               <input
                 type="date"
-                value={weighingDate}
-                onChange={(e) => setWeighingDate(e.target.value)}
+                value={movementDate}
+                onChange={(e) => setMovementDate(e.target.value)}
                 className="w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-[var(--text-primary)]"
               />
             </label>
@@ -212,11 +240,11 @@ export default function PesagensPage() {
             </label>
 
             <button
-              onClick={createWeight}
+              onClick={createMovement}
               disabled={saving}
               className="ag-button-primary mt-2 disabled:opacity-70"
             >
-              {saving ? "Salvando..." : "Registrar pesagem"}
+              {saving ? "Salvando..." : "Registrar movimentação"}
             </button>
           </div>
         )}

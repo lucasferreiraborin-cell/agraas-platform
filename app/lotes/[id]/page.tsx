@@ -116,16 +116,6 @@ export default async function LoteDetalhePage({ params }: PageProps) {
               {lot.description ?? "Sem descrição cadastrada para este lote."}
             </p>
 
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link href={`/lotes/${lot.id}/adicionar`} className="ag-button-primary">
-                Adicionar animal
-              </Link>
-
-              <Link href="/animais" className="ag-button-secondary">
-                Ver animais
-              </Link>
-            </div>
-
             <div className="mt-10 grid gap-4 md:grid-cols-3">
               <MetricCard
                 label="Fase"
