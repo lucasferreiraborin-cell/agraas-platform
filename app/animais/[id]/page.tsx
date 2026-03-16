@@ -35,6 +35,14 @@ type EventRow = {
   notes: string | null;
 };
 
+type WeightRow = {
+  id: string;
+  animal_id: string;
+  weight: number;
+  weighing_date: string | null;
+  notes: string | null;
+};
+
 type SanitaryHistoryRow = {
   id: string;
   product_name: string;
@@ -45,7 +53,7 @@ type SanitaryHistoryRow = {
 
 type TimelineRow = {
   id: string;
-  type: "application" | "event";
+  type: "application" | "event" | "weight";
   title: string;
   description: string;
   date: string | null;
@@ -61,6 +69,7 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
     { data: productsData, error: productsError },
     { data: batchesData, error: batchesError },
     { data: eventsData, error: eventsError },
+    { data: weightsData, error: weightsError },
   ] = await Promise.all([
     supabase
       .from("agraas_master_passport_cache")
@@ -83,6 +92,12 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
       .select("animal_id, event_type, event_timestamp, notes")
       .eq("animal_id", id)
       .order("event_timestamp", { ascending: false }),
+
+    supabase
+      .from("weights")
+      .select("id, animal_id, weight, weighing_date, notes")
+      .eq("animal_id", id)
+      .order("weighing_date", { ascending: false }),
   ]);
 
   if (error || !data) {
@@ -117,32 +132,19 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
   const products = (productsData ?? []) as ProductRow[];
   const batches = (batchesData ?? []) as BatchRow[];
   const events = (eventsData ?? []) as EventRow[];
+  const weights = (weightsData ?? []) as WeightRow[];
 
-  if (applicationsError) {
-    console.error("Erro ao buscar aplicações do animal:", applicationsError);
-  }
-
-  if (productsError) {
-    console.error("Erro ao buscar produtos:", productsError);
-  }
-
-  if (batchesError) {
-    console.error("Erro ao buscar lotes:", batchesError);
-  }
-
-  if (eventsError) {
-    console.error("Erro ao buscar eventos do animal:", eventsError);
-  }
+  if (applicationsError) console.error("Erro ao buscar aplicações:", applicationsError);
+  if (productsError) console.error("Erro ao buscar produtos:", productsError);
+  if (batchesError) console.error("Erro ao buscar lotes:", batchesError);
+  if (eventsError) console.error("Erro ao buscar eventos:", eventsError);
+  if (weightsError) console.error("Erro ao buscar pesagens:", weightsError);
 
   const productMap = new Map<string, string>();
-  for (const product of products) {
-    productMap.set(product.id, product.name);
-  }
+  products.forEach((product) => productMap.set(product.id, product.name));
 
   const batchMap = new Map<string, string>();
-  for (const batch of batches) {
-    batchMap.set(batch.id, batch.batch_number);
-  }
+  batches.forEach((batch) => batchMap.set(batch.id, batch.batch_number));
 
   const sanitaryHistory: SanitaryHistoryRow[] = applications.map((application) => ({
     id: application.id,
@@ -156,11 +158,22 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
     application_date: application.application_date ?? application.created_at ?? null,
   }));
 
+  const latestWeight = weights[0] ?? null;
+  const previousWeight = weights[1] ?? null;
+  const weightDelta =
+    latestWeight && previousWeight
+      ? Number(latestWeight.weight ?? 0) - Number(previousWeight.weight ?? 0)
+      : null;
+
   const timelineApplications: TimelineRow[] = applications.map((application) => ({
     id: `application-${application.id}`,
     type: "application",
     title: "Aplicação sanitária",
-    description: `${application.product_id ? productMap.get(application.product_id) ?? "Produto" : "Produto"} • lote ${
+    description: `${
+      application.product_id
+        ? productMap.get(application.product_id) ?? "Produto"
+        : "Produto"
+    } • lote ${
       application.batch_id ? batchMap.get(application.batch_id) ?? "-" : "-"
     } • dose ${application.dose ?? "-"}`,
     date: application.application_date ?? application.created_at ?? null,
@@ -176,11 +189,22 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
     badge: `${getEventIcon(event.event_type ?? "")} ${formatEventType(event.event_type ?? "")}`,
   }));
 
-  const timeline = [...timelineApplications, ...timelineEvents].sort((a, b) => {
-    const aTime = a.date ? new Date(a.date).getTime() : 0;
-    const bTime = b.date ? new Date(b.date).getTime() : 0;
-    return bTime - aTime;
-  });
+  const timelineWeights: TimelineRow[] = weights.map((weight) => ({
+    id: `weight-${weight.id}`,
+    type: "weight",
+    title: "Pesagem registrada",
+    description: `${weight.weight} kg${weight.notes ? ` • ${weight.notes}` : ""}`,
+    date: weight.weighing_date ?? null,
+    badge: "⚖️ Pesagem",
+  }));
+
+  const timeline = [...timelineApplications, ...timelineEvents, ...timelineWeights].sort(
+    (a, b) => {
+      const aTime = a.date ? new Date(a.date).getTime() : 0;
+      const bTime = b.date ? new Date(b.date).getTime() : 0;
+      return bTime - aTime;
+    }
+  );
 
   const scorePercent = Math.max(
     6,
@@ -270,8 +294,8 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
               />
 
               <SnapshotCard
-                label="Peso"
-                value={sanitary.last_weight ? `${sanitary.last_weight} kg` : "-"}
+                label="Último peso"
+                value={latestWeight ? `${latestWeight.weight} kg` : "-"}
               />
 
               <SnapshotCard
@@ -288,6 +312,28 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
         <ScoreCard label="Operacional" value={score.operational_score} />
         <ScoreCard label="Continuidade" value={score.continuity_score} />
         <ScoreCard label="Total" value={score.total_score} />
+      </section>
+
+      <section className="grid gap-4 xl:grid-cols-3">
+        <MetricPanel
+          title="Última pesagem"
+          value={latestWeight ? `${latestWeight.weight} kg` : "-"}
+          subtitle={latestWeight ? `Data: ${formatDate(latestWeight.weighing_date)}` : "Sem pesagem registrada"}
+        />
+        <MetricPanel
+          title="Pesagem anterior"
+          value={previousWeight ? `${previousWeight.weight} kg` : "-"}
+          subtitle={previousWeight ? `Data: ${formatDate(previousWeight.weighing_date)}` : "Sem registro anterior"}
+        />
+        <MetricPanel
+          title="Evolução"
+          value={
+            weightDelta === null
+              ? "-"
+              : `${weightDelta >= 0 ? "+" : ""}${weightDelta.toFixed(1)} kg`
+          }
+          subtitle="diferença entre as duas últimas pesagens"
+        />
       </section>
 
       <section className="ag-card p-8">
@@ -343,7 +389,7 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
           <div>
             <h2 className="ag-section-title">Timeline operacional</h2>
             <p className="ag-section-subtitle">
-              Linha do tempo consolidada com eventos e aplicações deste animal.
+              Linha do tempo consolidada com eventos, aplicações e pesagens deste animal.
             </p>
           </div>
 
@@ -393,17 +439,11 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
 
         <div className="mt-6 grid gap-4 md:grid-cols-2">
           <InfoItem label="Frigorífico" value={chain.slaughterhouse_name ?? "-"} />
-
-          <InfoItem
-            label="Data de abate"
-            value={formatDate(chain.slaughter_date)}
-          />
-
+          <InfoItem label="Data de abate" value={formatDate(chain.slaughter_date)} />
           <InfoItem
             label="Peso de carcaça"
             value={chain.carcass_weight ? `${chain.carcass_weight} kg` : "-"}
           />
-
           <InfoItem
             label="Classificação"
             value={chain.carcass_classification ?? "-"}
@@ -456,6 +496,28 @@ function ScoreCard({
   );
 }
 
+function MetricPanel({
+  title,
+  value,
+  subtitle,
+}: {
+  title: string;
+  value: string;
+  subtitle: string;
+}) {
+  return (
+    <div className="ag-card p-6">
+      <p className="text-sm text-[var(--text-muted)]">{title}</p>
+      <p className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-[var(--text-primary)]">
+        {value}
+      </p>
+      <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
+        {subtitle}
+      </p>
+    </div>
+  );
+}
+
 function InfoItem({ label, value }: { label: string; value: string }) {
   return (
     <div>
@@ -478,12 +540,7 @@ function formatDateTime(value: string | null | undefined) {
 function getAnimalAvatar(sex: string | null) {
   const value = (sex ?? "").toLowerCase();
   if (value === "male" || value === "macho") return "🐂";
-  if (
-    value === "female" ||
-    value === "fêmea" ||
-    value === "femea"
-  )
-    return "🐄";
+  if (value === "female" || value === "fêmea" || value === "femea") return "🐄";
   return "🐾";
 }
 

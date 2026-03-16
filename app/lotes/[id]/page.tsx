@@ -30,6 +30,12 @@ type AnimalRow = {
   internal_code: string | null;
 };
 
+type WeightRow = {
+  animal_id: string;
+  weight: number;
+  weighing_date: string | null;
+};
+
 export default async function LoteDetalhePage({ params }: PageProps) {
   const { id } = await params;
 
@@ -37,6 +43,7 @@ export default async function LoteDetalhePage({ params }: PageProps) {
     { data: lotData, error: lotError },
     { data: assignmentsData, error: assignmentsError },
     { data: animalsData, error: animalsError },
+    { data: weightsData, error: weightsError },
   ] = await Promise.all([
     supabase
       .from("lots")
@@ -53,6 +60,11 @@ export default async function LoteDetalhePage({ params }: PageProps) {
     supabase
       .from("animals")
       .select("id, internal_code"),
+
+    supabase
+      .from("weights")
+      .select("animal_id, weight, weighing_date")
+      .order("weighing_date", { ascending: false }),
   ]);
 
   if (lotError || !lotData) {
@@ -74,25 +86,44 @@ export default async function LoteDetalhePage({ params }: PageProps) {
     );
   }
 
-  if (assignmentsError) {
-    console.error("Erro ao buscar vínculos do lote:", assignmentsError);
-  }
-
-  if (animalsError) {
-    console.error("Erro ao buscar animais:", animalsError);
-  }
+  if (assignmentsError) console.error("Erro ao buscar vínculos do lote:", assignmentsError);
+  if (animalsError) console.error("Erro ao buscar animais:", animalsError);
+  if (weightsError) console.error("Erro ao buscar pesos:", weightsError);
 
   const lot = lotData as LotRow;
   const assignments = (assignmentsData ?? []) as AssignmentRow[];
   const animals = (animalsData ?? []) as AnimalRow[];
+  const weights = (weightsData ?? []) as WeightRow[];
 
   const animalMap = new Map<string, string>();
-  for (const animal of animals) {
-    animalMap.set(animal.id, animal.internal_code ?? animal.id);
+  animals.forEach((animal) => animalMap.set(animal.id, animal.internal_code ?? animal.id));
+
+  const latestWeightByAnimal = new Map<string, WeightRow>();
+  for (const row of weights) {
+    if (!latestWeightByAnimal.has(row.animal_id)) {
+      latestWeightByAnimal.set(row.animal_id, row);
+    }
   }
 
   const activeAnimals = assignments.filter((item) => !item.exit_date);
   const inactiveAnimals = assignments.filter((item) => !!item.exit_date);
+
+  const activeWeights = activeAnimals
+    .map((item) => latestWeightByAnimal.get(item.animal_id))
+    .filter(Boolean) as WeightRow[];
+
+  const averageWeight =
+    activeWeights.length > 0
+      ? activeWeights.reduce((acc, item) => acc + Number(item.weight ?? 0), 0) / activeWeights.length
+      : 0;
+
+  const lastWeighingDate =
+    activeWeights.length > 0
+      ? activeWeights
+          .map((item) => item.weighing_date)
+          .filter(Boolean)
+          .sort((a, b) => new Date(b!).getTime() - new Date(a!).getTime())[0]
+      : null;
 
   return (
     <main className="space-y-8">
@@ -116,6 +147,16 @@ export default async function LoteDetalhePage({ params }: PageProps) {
               {lot.description ?? "Sem descrição cadastrada para este lote."}
             </p>
 
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link href={`/lotes/${lot.id}/adicionar`} className="ag-button-primary">
+                Adicionar animal
+              </Link>
+
+              <Link href="/pesagens" className="ag-button-secondary">
+                Registrar pesagem
+              </Link>
+            </div>
+
             <div className="mt-10 grid gap-4 md:grid-cols-3">
               <MetricCard
                 label="Fase"
@@ -138,6 +179,16 @@ export default async function LoteDetalhePage({ params }: PageProps) {
           <div className="border-t border-[var(--border)] bg-[linear-gradient(180deg,#eef6ea_0%,#f5f7f4_100%)] p-8 lg:p-10 xl:border-l xl:border-t-0">
             <div className="grid gap-4 sm:grid-cols-2">
               <MetricCard
+                label="Peso médio"
+                value={averageWeight > 0 ? `${averageWeight.toFixed(1)} kg` : "-"}
+                subtitle="média dos últimos pesos do lote"
+              />
+              <MetricCard
+                label="Última pesagem"
+                value={formatDate(lastWeighingDate)}
+                subtitle="pesagem mais recente no lote"
+              />
+              <MetricCard
                 label="Entradas"
                 value={assignments.length}
                 subtitle="registros totais de alocação"
@@ -146,16 +197,6 @@ export default async function LoteDetalhePage({ params }: PageProps) {
                 label="Saídas"
                 value={inactiveAnimals.length}
                 subtitle="animais já retirados do lote"
-              />
-              <MetricCard
-                label="Criado em"
-                value={formatDate(lot.created_at)}
-                subtitle="data de criação do lote"
-              />
-              <MetricCard
-                label="Tipo"
-                value="Operacional"
-                subtitle="grupo de manejo animal"
               />
             </div>
           </div>
@@ -189,20 +230,25 @@ export default async function LoteDetalhePage({ params }: PageProps) {
                   <th>Entrada</th>
                   <th>Saída</th>
                   <th>Status</th>
+                  <th>Último peso</th>
                   <th>Observações</th>
                 </tr>
               </thead>
 
               <tbody>
-                {assignments.map((item) => (
-                  <tr key={item.id}>
-                    <td>{animalMap.get(item.animal_id) ?? item.animal_id}</td>
-                    <td>{formatDate(item.entry_date)}</td>
-                    <td>{formatDate(item.exit_date)}</td>
-                    <td>{item.exit_date ? "Inativo" : "Ativo"}</td>
-                    <td>{item.notes ?? "-"}</td>
-                  </tr>
-                ))}
+                {assignments.map((item) => {
+                  const weight = latestWeightByAnimal.get(item.animal_id);
+                  return (
+                    <tr key={item.id}>
+                      <td>{animalMap.get(item.animal_id) ?? item.animal_id}</td>
+                      <td>{formatDate(item.entry_date)}</td>
+                      <td>{formatDate(item.exit_date)}</td>
+                      <td>{item.exit_date ? "Inativo" : "Ativo"}</td>
+                      <td>{weight ? `${weight.weight} kg` : "-"}</td>
+                      <td>{item.notes ?? "-"}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           )}
