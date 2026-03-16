@@ -1,234 +1,68 @@
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 
-type PassportCacheRow = {
-  animal_id: string;
-  identity_json: {
-    internal_code?: string | null;
-    sex?: string | null;
-    breed?: string | null;
-    status?: string | null;
-  } | null;
-  score_json: {
-    sanitary_score?: number | null;
-    operational_score?: number | null;
-    continuity_score?: number | null;
-    total_score?: number | null;
-  } | null;
-  health_json: {
-    applications?: number | null;
-    active_withdrawal?: number | null;
-    last_weight?: number | null;
-  } | null;
-  certifications_json:
-    | {
-        certification_code?: string | null;
-        certification_name?: string | null;
-        status?: string | null;
-        issued_at?: string | null;
-      }[]
-    | null;
-  ownership_json: {
-    current_property_id?: string | null;
-    status?: string | null;
-  } | null;
-  last_generated_at?: string | null;
+type Batch = {
+  id: string;
+  batch_number: string;
+  quantity: number;
+  expiration_date: string | null;
+  product_id: string;
 };
 
-type MarketRow = {
-  animal_id: string;
-  internal_code: string | null;
-  property_name: string | null;
-  last_weight: number | null;
-  total_score: number | null;
-  status: string | null;
-  certifications:
-    | {
-        code: string;
-        name: string;
-      }[]
-    | null;
+type Product = {
+  id: string;
+  name: string;
 };
 
-type EventRow = {
+type Application = {
+  id: string;
   animal_id: string;
-  event_type: string | null;
-  event_timestamp: string | null;
-  notes: string | null;
+  product_id: string;
+  application_date: string | null;
 };
 
-export default async function PainelPage() {
-  const hoje = new Date().toISOString().slice(0, 10);
-
+export default async function HomePage() {
   const [
-    { data: passportsData, error: passportsError },
-    { data: applicationsCountData, count: applicationsCount },
-    { data: certificationsCountData, count: certificationsCount },
-    { data: propertiesCountData, count: propertiesCount },
-    { data: marketData },
-    { data: eventsData },
+    { data: batches },
+    { data: products },
+    { data: applications },
   ] = await Promise.all([
-    supabase
-      .from("agraas_master_passport_cache")
-      .select("*"),
+    supabase.from("stock_batches").select("*"),
+    supabase.from("products").select("id,name"),
     supabase
       .from("applications")
-      .select("*", { count: "exact", head: true })
-      .gte("withdrawal_end_date", hoje),
-    supabase
-      .from("animal_certifications")
-      .select("*", { count: "exact", head: true })
-      .in("status", ["ACTIVE", "active"]),
-    supabase
-      .from("properties")
-      .select("*", { count: "exact", head: true }),
-    supabase
-      .from("agraas_market_animals")
       .select("*")
-      .order("total_score", { ascending: false })
-      .limit(6),
-    supabase
-      .from("animal_events")
-      .select("animal_id, event_type, event_timestamp, notes")
-      .order("event_timestamp", { ascending: false })
-      .limit(8),
+      .order("application_date", { ascending: false })
+      .limit(5),
   ]);
 
-  const passports =
-    (passportsData as PassportCacheRow[] | null) ?? [];
-  const marketRows = (marketData as MarketRow[] | null) ?? [];
-  const recentEvents = (eventsData as EventRow[] | null) ?? [];
+  const productMap = new Map<string, string>();
+  products?.forEach((p) => productMap.set(p.id, p.name));
 
-  const totalAnimals = passports.length;
-  const totalApplications = applicationsCount ?? 0;
-  const totalCertifications = certificationsCount ?? 0;
-  const totalProperties = propertiesCount ?? 0;
+  const today = new Date();
 
-  const totalScoreAverage =
-    totalAnimals > 0
-      ? Math.round(
-          passports.reduce(
-            (acc, item) => acc + Number(item.score_json?.total_score ?? 0),
-            0
-          ) / totalAnimals
-        )
-      : 0;
+  const lowStock = (batches ?? []).filter((b) => Number(b.quantity) <= 5);
 
-  const sanitaryAverage =
-    totalAnimals > 0
-      ? Math.round(
-          passports.reduce(
-            (acc, item) => acc + Number(item.score_json?.sanitary_score ?? 0),
-            0
-          ) / totalAnimals
-        )
-      : 0;
+  const expired = (batches ?? []).filter((b) => {
+    if (!b.expiration_date) return false;
 
-  const operationalAverage =
-    totalAnimals > 0
-      ? Math.round(
-          passports.reduce(
-            (acc, item) => acc + Number(item.score_json?.operational_score ?? 0),
-            0
-          ) / totalAnimals
-        )
-      : 0;
+    const exp = new Date(b.expiration_date);
+    return exp < today;
+  });
 
-  const continuityAverage =
-    totalAnimals > 0
-      ? Math.round(
-          passports.reduce(
-            (acc, item) => acc + Number(item.score_json?.continuity_score ?? 0),
-            0
-          ) / totalAnimals
-        )
-      : 0;
+  const expiring = (batches ?? []).filter((b) => {
+    if (!b.expiration_date) return false;
 
-  const totalCertifiedAnimals = passports.filter(
-    (item) =>
-      Array.isArray(item.certifications_json) &&
-      item.certifications_json.length > 0
-  ).length;
+    const exp = new Date(b.expiration_date);
+    const diff = (exp.getTime() - today.getTime()) / (1000 * 3600 * 24);
 
-  const animalsWithWithdrawal = passports.filter(
-    (item) => Number(item.health_json?.active_withdrawal ?? 0) > 0
-  ).length;
+    return diff >= 0 && diff <= 30;
+  });
 
-  const activeAnimals = passports.filter((item) => {
-    const status = (
-      item.ownership_json?.status ??
-      item.identity_json?.status ??
-      ""
-    ).toLowerCase();
-    return status === "active";
-  }).length;
-
-  const topAnimals = passports
-    .map((item) => ({
-      animal_id: item.animal_id,
-      internal_code: item.identity_json?.internal_code ?? item.animal_id,
-      total_score: Number(item.score_json?.total_score ?? 0),
-      sanitary_score: Number(item.score_json?.sanitary_score ?? 0),
-      operational_score: Number(item.score_json?.operational_score ?? 0),
-      continuity_score: Number(item.score_json?.continuity_score ?? 0),
-      status:
-        item.ownership_json?.status ??
-        item.identity_json?.status ??
-        "-",
-      certifications_count: Array.isArray(item.certifications_json)
-        ? item.certifications_json.length
-        : 0,
-      last_weight: item.health_json?.last_weight ?? null,
-    }))
-    .sort((a, b) => b.total_score - a.total_score)
-    .slice(0, 5);
-
-  const heroHighlights = [
-    {
-      label: "Animais monitorados",
-      value: totalAnimals,
-      description: "ativos no passaporte vivo da Agraas",
-    },
-    {
-      label: "Score médio",
-      value: `${totalScoreAverage}`,
-      description: "qualidade consolidada do rebanho",
-    },
-    {
-      label: "Certificados",
-      value: totalCertifiedAnimals,
-      description: "ativos com chancela formal na base",
-    },
+  const criticalLots = [
+    ...expired,
+    ...expiring.filter((b) => !expired.some((e) => e.id === b.id)),
   ];
-
-  const boardSignals = [
-    {
-      label: "Cobertura de rastreabilidade",
-      value: totalAnimals > 0 ? Math.round((activeAnimals / totalAnimals) * 100) : 0,
-      description: "participação de animais ativos na base monitorada",
-      tone: "green" as const,
-    },
-    {
-      label: "Pressão sanitária",
-      value: totalAnimals > 0 ? Math.round((animalsWithWithdrawal / totalAnimals) * 100) : 0,
-      description: "parcela do rebanho com carência sanitária ativa",
-      tone: "amber" as const,
-    },
-    {
-      label: "Cobertura de certificação",
-      value: totalAnimals > 0 ? Math.round((totalCertifiedAnimals / totalAnimals) * 100) : 0,
-      description: "presença de certificações na base monitorada",
-      tone: "blue" as const,
-    },
-  ];
-
-  const chartSeries = buildSeries([
-    totalAnimals,
-    totalApplications,
-    totalCertifications,
-    totalProperties,
-    totalCertifiedAnimals,
-  ]);
 
   return (
     <main className="space-y-8">
@@ -237,41 +71,43 @@ export default async function PainelPage() {
           <div className="relative p-8 lg:p-10">
             <div className="pointer-events-none absolute right-0 top-0 h-48 w-48 rounded-full bg-[radial-gradient(circle,rgba(122,168,76,0.20)_0%,rgba(122,168,76,0.00)_70%)]" />
 
-            <div className="ag-badge ag-badge-green">Painel executivo</div>
+            <div className="ag-badge ag-badge-green">Painel sanitário</div>
 
             <h1 className="mt-5 max-w-4xl text-4xl font-semibold leading-[1.02] tracking-[-0.065em] text-[var(--text-primary)] lg:text-6xl">
-              A inteligência operacional da Agraas transforma rastreabilidade em valor.
+              A inteligência sanitária da Agraas transforma operação em decisão.
             </h1>
 
             <p className="mt-5 max-w-3xl text-[1.05rem] leading-8 text-[var(--text-secondary)]">
-              Score, certificações, histórico auditável e leitura comercial do animal
-              em uma única camada de software pronta para board, operação e mercado.
+              Estoque crítico, lotes vencendo, aplicações recentes e links
+              rápidos para o módulo sanitário em uma leitura executiva pronta
+              para operação e apresentação.
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/animais" className="ag-button-primary">
-                Explorar animais
+              <Link href="/estoque/dashboard" className="ag-button-primary">
+                Abrir dashboard sanitário
               </Link>
-              <Link href="/market" className="ag-button-secondary">
-                Abrir market
+              <Link href="/aplicacoes" className="ag-button-secondary">
+                Nova aplicação
               </Link>
             </div>
 
             <div className="mt-10 grid gap-4 md:grid-cols-3">
-              {heroHighlights.map((item) => (
-                <div
-                  key={item.label}
-                  className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5"
-                >
-                  <p className="text-sm text-[var(--text-muted)]">{item.label}</p>
-                  <p className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-[var(--text-primary)]">
-                    {item.value}
-                  </p>
-                  <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-                    {item.description}
-                  </p>
-                </div>
-              ))}
+              <HeroMetric
+                label="Estoque crítico"
+                value={lowStock.length}
+                subtitle="lotes com quantidade baixa"
+              />
+              <HeroMetric
+                label="Lotes vencendo"
+                value={expiring.length}
+                subtitle="vencimento em até 30 dias"
+              />
+              <HeroMetric
+                label="Lotes vencidos"
+                value={expired.length}
+                subtitle="itens que exigem ação imediata"
+              />
             </div>
           </div>
 
@@ -279,85 +115,69 @@ export default async function PainelPage() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                  Radar da plataforma
+                  Radar da operação
                 </p>
                 <h2 className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
-                  Top ativos do rebanho
+                  Lotes críticos
                 </h2>
               </div>
 
-              <Link href="/scores" className="ag-button-secondary">
-                Ver ranking
+              <Link href="/estoque" className="ag-button-secondary">
+                Ver estoque
               </Link>
             </div>
 
-            <div className="mt-6 grid gap-4 md:grid-cols-3">
-              <MetricPill label="Médio total" value={totalScoreAverage} suffix="pts" />
-              <MetricPill label="Sanitário" value={sanitaryAverage} suffix="pts" />
-              <MetricPill label="Operacional" value={operationalAverage} suffix="pts" />
-            </div>
-
             <div className="mt-8 space-y-4">
-              {passportsError ? (
-                <div className="rounded-3xl bg-white p-5 text-sm text-[var(--danger)] shadow-[var(--shadow-soft)]">
-                  Erro ao carregar a base executiva.
-                </div>
-              ) : topAnimals.length === 0 ? (
+              {criticalLots.length === 0 ? (
                 <div className="rounded-3xl bg-white p-5 text-sm text-[var(--text-muted)] shadow-[var(--shadow-soft)]">
-                  Nenhum animal encontrado.
+                  Nenhum lote crítico encontrado.
                 </div>
               ) : (
-                topAnimals.map((animal, index) => {
-                  const scorePercent = Math.max(
-                    6,
-                    Math.round(Math.min(100, animal.total_score))
-                  );
+                criticalLots.slice(0, 5).map((b) => {
+                  const isExpired =
+                    b.expiration_date && new Date(b.expiration_date) < today;
 
                   return (
-                    <Link
-                      key={animal.animal_id}
-                      href={`/animais/${animal.animal_id}`}
-                      className="block rounded-3xl border border-[var(--border)] bg-white p-5 shadow-[var(--shadow-soft)] transition hover:border-[rgba(93,156,68,0.25)] hover:shadow-[var(--shadow-card)]"
+                    <div
+                      key={b.id}
+                      className="rounded-3xl border border-[var(--border)] bg-white p-5 shadow-[var(--shadow-soft)]"
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div>
-                          <p className="text-xs uppercase tracking-[0.16em] text-[var(--text-muted)]">
-                            Top {index + 1}
-                          </p>
-                          <p className="mt-2 text-lg font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
-                            {animal.internal_code}
+                          <p className="text-lg font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
+                            {productMap.get(b.product_id) ?? "-"}
                           </p>
                           <p className="mt-1 text-sm text-[var(--text-muted)]">
-                            {formatStatus(animal.status)}
+                            Lote {b.batch_number}
                           </p>
                         </div>
 
-                        <div className="text-right">
-                          <p className="text-xs uppercase tracking-[0.14em] text-[var(--text-muted)]">
-                            Score
-                          </p>
-                          <p className="mt-2 text-2xl font-semibold tracking-[-0.05em] text-[var(--primary-hover)]">
-                            {animal.total_score}
-                          </p>
-                        </div>
+                        <span
+                          className={
+                            isExpired
+                              ? "ag-badge ag-badge-dark"
+                              : "ag-badge ag-badge-green"
+                          }
+                        >
+                          {isExpired ? "Vencido" : "Vence em breve"}
+                        </span>
                       </div>
 
-                      <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-[rgba(93,156,68,0.10)]">
-                        <div
-                          className="h-full rounded-full bg-[linear-gradient(90deg,#8dbc5f_0%,#5d9c44_100%)]"
-                          style={{ width: `${scorePercent}%` }}
+                      <div className="mt-4 grid grid-cols-2 gap-3">
+                        <MiniInfo
+                          label="Validade"
+                          value={
+                            b.expiration_date
+                              ? new Date(b.expiration_date).toLocaleDateString("pt-BR")
+                              : "-"
+                          }
+                        />
+                        <MiniInfo
+                          label="Quantidade"
+                          value={String(b.quantity)}
                         />
                       </div>
-
-                      <div className="mt-4 flex flex-wrap gap-2">
-                        <span className="ag-badge ag-badge-green">
-                          Certificações: {animal.certifications_count}
-                        </span>
-                        <span className="ag-badge ag-badge-dark">
-                          Peso: {animal.last_weight ?? "-"} kg
-                        </span>
-                      </div>
-                    </Link>
+                    </div>
                   );
                 })
               )}
@@ -366,238 +186,122 @@ export default async function PainelPage() {
         </div>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-5">
+      <section className="grid gap-4 xl:grid-cols-4">
         <KpiCard
-          label="Animais ativos"
-          value={activeAnimals}
-          icon="🐂"
-          subtitle="base animal com status operacional ativo"
+          label="Estoque crítico"
+          value={lowStock.length}
+          icon="📦"
+          subtitle="lotes com estoque ≤ 5 unidades"
         />
         <KpiCard
-          label="Em carência"
-          value={totalApplications}
+          label="Vencendo"
+          value={expiring.length}
+          icon="⏳"
+          subtitle="lotes com validade próxima"
+        />
+        <KpiCard
+          label="Vencidos"
+          value={expired.length}
+          icon="🚨"
+          subtitle="lotes fora da validade"
+        />
+        <KpiCard
+          label="Aplicações recentes"
+          value={applications?.length ?? 0}
           icon="💉"
-          subtitle="aplicações com janela sanitária ativa"
-        />
-        <KpiCard
-          label="Certificações"
-          value={totalCertifications}
-          icon="✅"
-          subtitle="chancelas registradas no ambiente"
-        />
-        <KpiCard
-          label="Propriedades"
-          value={totalProperties}
-          icon="📍"
-          subtitle="unidades operacionais mapeadas"
-        />
-        <KpiCard
-          label="Score médio"
-          value={totalScoreAverage}
-          icon="📈"
-          subtitle="confiança média consolidada da base"
+          subtitle="últimos registros sanitários"
         />
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
+      <section className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
         <div className="ag-card p-8">
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex items-center justify-between gap-4">
             <div>
-              <h2 className="ag-section-title">Leitura visual da operação</h2>
+              <h2 className="ag-section-title">Lotes com estoque crítico</h2>
               <p className="ag-section-subtitle">
-                Resumo executivo dos blocos principais da plataforma para leitura rápida de board.
+                Itens que precisam de reposição ou maior atenção operacional.
               </p>
             </div>
 
-            <span className="ag-badge ag-badge-green">Resumo visual</span>
-          </div>
-
-          <div className="mt-8 overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5">
-            <div className="grid gap-5 md:grid-cols-[1.1fr_0.9fr]">
-              <div>
-                <div className="flex h-60 items-end gap-3">
-                  {chartSeries.map((item) => (
-                    <div
-                      key={item.label}
-                      className="flex flex-1 flex-col items-center gap-3"
-                    >
-                      <div className="flex w-full items-end justify-center rounded-2xl bg-[rgba(93,156,68,0.08)] px-2">
-                        <div
-                          className="w-full rounded-t-2xl bg-[linear-gradient(180deg,#8dbc5f_0%,#5d9c44_100%)]"
-                          style={{ height: `${item.height}px` }}
-                        />
-                      </div>
-                      <div className="text-center">
-                        <p className="text-sm font-semibold text-[var(--text-primary)]">
-                          {item.value}
-                        </p>
-                        <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[var(--text-muted)]">
-                          {item.label}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid gap-4">
-                <StatPanel
-                  title="Score sanitário médio"
-                  value={sanitaryAverage}
-                  subtitle="média da confiança sanitária da base"
-                />
-                <StatPanel
-                  title="Score operacional médio"
-                  value={operationalAverage}
-                  subtitle="qualidade operacional consolidada"
-                />
-                <StatPanel
-                  title="Score continuidade"
-                  value={continuityAverage}
-                  subtitle="consistência e integridade histórica"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="ag-card p-8">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h2 className="ag-section-title">Radar executivo</h2>
-              <p className="ag-section-subtitle">
-                Sinais rápidos para orientar leitura de confiança, risco e maturidade da base.
-              </p>
-            </div>
-
-            <span className="ag-badge ag-badge-dark">Board view</span>
-          </div>
-
-          <div className="mt-8 grid gap-4">
-            {boardSignals.map((signal) => (
-              <ExecutiveSignal
-                key={signal.label}
-                label={signal.label}
-                value={signal.value}
-                color={signal.tone}
-                description={signal.description}
-              />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="grid gap-6 xl:grid-cols-[1.02fr_0.98fr]">
-        <div className="ag-card p-8">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h2 className="ag-section-title">Market intelligence</h2>
-              <p className="ag-section-subtitle">
-                Visão dos ativos mais fortes no market com leitura comercial imediata.
-              </p>
-            </div>
-
-            <Link href="/market" className="ag-button-secondary">
-              Abrir market
+            <Link href="/estoque" className="ag-button-secondary">
+              Ver estoque
             </Link>
           </div>
 
-          <div className="mt-8 grid gap-4">
-            {marketRows.length === 0 ? (
-              <div className="rounded-3xl bg-[var(--surface-soft)] p-6 text-sm text-[var(--text-muted)]">
-                Nenhum ativo disponível no market.
-              </div>
+          <div className="mt-6 overflow-x-auto">
+            {lowStock.length === 0 ? (
+              <p className="text-sm text-[var(--text-muted)]">
+                Nenhum lote com estoque baixo.
+              </p>
             ) : (
-              marketRows.slice(0, 4).map((animal) => (
-                <Link
-                  key={animal.animal_id}
-                  href={`/animais/${animal.animal_id}`}
-                  className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5 transition hover:border-[rgba(93,156,68,0.24)] hover:bg-[var(--primary-soft)]"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-base font-semibold tracking-[-0.02em] text-[var(--text-primary)]">
-                        {animal.internal_code ?? animal.animal_id}
-                      </p>
-                      <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-                        {animal.property_name ?? "Propriedade não informada"}
-                      </p>
-                    </div>
+              <table className="ag-table">
+                <thead>
+                  <tr>
+                    <th>Produto</th>
+                    <th>Lote</th>
+                    <th>Quantidade</th>
+                  </tr>
+                </thead>
 
-                    <div className="text-right">
-                      <p className="text-xs uppercase tracking-[0.12em] text-[var(--text-muted)]">
-                        Score
-                      </p>
-                      <p className="mt-2 text-2xl font-semibold text-[var(--primary-hover)]">
-                        {animal.total_score ?? "-"}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <span className="ag-badge ag-badge-green">
-                      Peso: {animal.last_weight ?? "-"} kg
-                    </span>
-                    <span className="ag-badge ag-badge-dark">
-                      {formatStatus(animal.status)}
-                    </span>
-                    <span className="ag-badge ag-badge-dark">
-                      Certificações: {Array.isArray(animal.certifications) ? animal.certifications.length : 0}
-                    </span>
-                  </div>
-                </Link>
-              ))
+                <tbody>
+                  {lowStock.map((b) => (
+                    <tr key={b.id}>
+                      <td>{productMap.get(b.product_id) ?? "-"}</td>
+                      <td>{b.batch_number}</td>
+                      <td>{b.quantity}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             )}
           </div>
         </div>
 
         <div className="ag-card p-8">
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex items-center justify-between gap-4">
             <div>
-              <h2 className="ag-section-title">Últimos eventos</h2>
+              <h2 className="ag-section-title">Últimas aplicações</h2>
               <p className="ag-section-subtitle">
-                Leitura rápida da trilha operacional registrada na base.
+                Registro recente da operação sanitária na plataforma.
               </p>
             </div>
 
-            <Link href="/historico" className="ag-button-secondary">
+            <Link href="/aplicacoes/historico" className="ag-button-secondary">
               Ver histórico
             </Link>
           </div>
 
-          <div className="mt-8 space-y-4">
-            {recentEvents.length === 0 ? (
-              <div className="rounded-3xl bg-[var(--surface-soft)] p-6 text-sm text-[var(--text-muted)]">
-                Nenhum evento encontrado.
-              </div>
+          <div className="mt-6 overflow-x-auto">
+            {(applications ?? []).length === 0 ? (
+              <p className="text-sm text-[var(--text-muted)]">
+                Nenhuma aplicação registrada.
+              </p>
             ) : (
-              recentEvents.map((event, index) => (
-                <div
-                  key={`${event.animal_id}-${event.event_timestamp}-${index}`}
-                  className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5"
-                >
-                  <div className="flex items-center justify-between gap-4">
-                    <span className="ag-badge ag-badge-green">
-                      {getEventIcon(event.event_type ?? "")}{" "}
-                      {formatEventType(event.event_type ?? "")}
-                    </span>
+              <table className="ag-table">
+                <thead>
+                  <tr>
+                    <th>Animal</th>
+                    <th>Produto</th>
+                    <th>Data</th>
+                  </tr>
+                </thead>
 
-                    <span className="text-sm text-[var(--text-muted)]">
-                      {event.event_timestamp
-                        ? new Date(event.event_timestamp).toLocaleString("pt-BR")
-                        : "-"}
-                    </span>
-                  </div>
-
-                  <p className="mt-4 text-sm font-medium text-[var(--text-primary)]">
-                    Animal: {event.animal_id}
-                  </p>
-
-                  <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-                    {event.notes ?? "Sem observações detalhadas registradas."}
-                  </p>
-                </div>
-              ))
+                <tbody>
+                  {applications?.map((a) => (
+                    <tr key={a.id}>
+                      <td>{a.animal_id}</td>
+                      <td>{productMap.get(a.product_id) ?? "-"}</td>
+                      <td>
+                        {a.application_date
+                          ? new Date(a.application_date).toLocaleDateString(
+                              "pt-BR"
+                            )
+                          : "-"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             )}
           </div>
         </div>
@@ -606,41 +310,19 @@ export default async function PainelPage() {
   );
 }
 
-function MetricPill({
+function HeroMetric({
   label,
-  value,
-  suffix,
-}: {
-  label: string;
-  value: string | number;
-  suffix?: string;
-}) {
-  return (
-    <div className="rounded-3xl border border-[var(--border)] bg-white px-5 py-4 shadow-[var(--shadow-soft)]">
-      <p className="text-xs uppercase tracking-[0.14em] text-[var(--text-muted)]">
-        {label}
-      </p>
-      <p className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
-        {value}
-        {suffix ? ` ${suffix}` : ""}
-      </p>
-    </div>
-  );
-}
-
-function StatPanel({
-  title,
   value,
   subtitle,
 }: {
-  title: string;
+  label: string;
   value: string | number;
   subtitle: string;
 }) {
   return (
-    <div className="rounded-3xl border border-[var(--border)] bg-white p-5 shadow-[var(--shadow-soft)]">
-      <p className="text-sm text-[var(--text-muted)]">{title}</p>
-      <p className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
+    <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5">
+      <p className="text-sm text-[var(--text-muted)]">{label}</p>
+      <p className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-[var(--text-primary)]">
         {value}
       </p>
       <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
@@ -650,48 +332,21 @@ function StatPanel({
   );
 }
 
-function ExecutiveSignal({
+function MiniInfo({
   label,
   value,
-  color,
-  description,
 }: {
   label: string;
-  value: number;
-  color: "green" | "amber" | "blue";
-  description: string;
+  value: string;
 }) {
-  const colorMap: Record<"green" | "amber" | "blue", string> = {
-    green:
-      "bg-[linear-gradient(90deg,#8dbc5f_0%,#5d9c44_100%)] text-[var(--text-primary)]",
-    amber:
-      "bg-[linear-gradient(90deg,#e6c26d_0%,#d9a343_100%)] text-[var(--text-primary)]",
-    blue:
-      "bg-[linear-gradient(90deg,#8ab7f2_0%,#4a90e2_100%)] text-white",
-  };
-
   return (
-    <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-sm font-medium text-[var(--text-primary)]">{label}</p>
-          <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-            {description}
-          </p>
-        </div>
-        <div className="rounded-2xl bg-white px-4 py-3 shadow-[var(--shadow-soft)]">
-          <p className="text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
-            {value}%
-          </p>
-        </div>
-      </div>
-
-      <div className="mt-4 h-2.5 w-full overflow-hidden rounded-full bg-white">
-        <div
-          className={`h-full rounded-full ${colorMap[color]}`}
-          style={{ width: `${Math.max(4, Math.min(value, 100))}%` }}
-        />
-      </div>
+    <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] p-3">
+      <p className="text-xs uppercase tracking-[0.12em] text-[var(--text-muted)]">
+        {label}
+      </p>
+      <p className="mt-2 text-sm font-medium text-[var(--text-primary)]">
+        {value}
+      </p>
     </div>
   );
 }
@@ -725,80 +380,4 @@ function KpiCard({
       </p>
     </div>
   );
-}
-
-function buildSeries(values: number[]) {
-  const labels = ["Animais", "Carência", "Certif.", "Fazendas", "Chancelados"];
-  const max = Math.max(...values, 1);
-
-  return values.map((value, index) => ({
-    label: labels[index],
-    value,
-    height: Math.max(24, Math.round((value / max) * 180)),
-  }));
-}
-
-function formatStatus(value: string | null) {
-  if (!value) return "-";
-
-  const map: Record<string, string> = {
-    active: "Ativo",
-    inactive: "Inativo",
-    pending: "Pendente",
-    blocked: "Bloqueado",
-    archived: "Arquivado",
-    sold: "Vendido",
-    slaughtered: "Abatido",
-    ACTIVE: "Ativo",
-  };
-
-  return map[value] ?? map[value.toLowerCase()] ?? value;
-}
-
-function formatEventType(value: string) {
-  const map: Record<string, string> = {
-    BIRTH: "Nascimento",
-    RFID_LINKED: "RFID vinculado",
-    WEIGHT_RECORDED: "Pesagem registrada",
-    HEALTH_APPLICATION: "Aplicação sanitária",
-    LOT_ENTRY: "Entrada em lote",
-    OWNERSHIP_TRANSFER: "Transferência",
-    SALE: "Venda",
-    SLAUGHTER: "Abate",
-    CERTIFICATION: "Certificação",
-    birth: "Nascimento",
-    rfid_assigned: "Identificação vinculada",
-    health_application: "Aplicação registrada",
-    weight_recorded: "Pesagem registrada",
-    sale: "Venda registrada",
-    ownership_transfer: "Transferência de propriedade",
-    lot_entry: "Entrada em lote",
-    slaughter: "Abate registrado",
-  };
-
-  return map[value] ?? value.replaceAll("_", " ");
-}
-
-function getEventIcon(value: string) {
-  const map: Record<string, string> = {
-    BIRTH: "🐣",
-    RFID_LINKED: "🏷️",
-    WEIGHT_RECORDED: "⚖️",
-    HEALTH_APPLICATION: "💉",
-    LOT_ENTRY: "📦",
-    OWNERSHIP_TRANSFER: "🔁",
-    SALE: "💰",
-    SLAUGHTER: "📋",
-    CERTIFICATION: "✅",
-    birth: "🐣",
-    rfid_assigned: "🏷️",
-    health_application: "💉",
-    weight_recorded: "⚖️",
-    sale: "💰",
-    ownership_transfer: "🔁",
-    lot_entry: "📦",
-    slaughter: "📋",
-  };
-
-  return map[value] ?? "•";
 }

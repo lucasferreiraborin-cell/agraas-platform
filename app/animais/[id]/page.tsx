@@ -7,83 +7,83 @@ type PageProps = {
   }>;
 };
 
-type PassportCacheRow = {
+type ApplicationRow = {
+  id: string;
   animal_id: string;
-  identity_json: {
-    internal_code?: string | null;
-    sex?: string | null;
-    breed?: string | null;
-    status?: string | null;
-    birth_date?: string | null;
-    current_property_id?: string | null;
-  } | null;
-  timeline_json:
-    | {
-        event_type?: string | null;
-        event_timestamp?: string | null;
-        notes?: string | null;
-        performed_by?: string | null;
-        related_entity_type?: string | null;
-        related_entity_id?: string | null;
-        payload?: Record<string, unknown> | null;
-      }[]
-    | null;
-  health_json: {
-    applications?: number | null;
-    active_withdrawal?: number | null;
-    last_weight?: number | null;
-  } | null;
-  score_json: {
-    sanitary_score?: number | null;
-    operational_score?: number | null;
-    continuity_score?: number | null;
-    total_score?: number | null;
-    score_status?: string | null;
-  } | null;
-  certifications_json:
-    | {
-        certification_code?: string | null;
-        certification_name?: string | null;
-        status?: string | null;
-        issued_at?: string | null;
-      }[]
-    | null;
-  ownership_json: {
-    current_property_id?: string | null;
-    status?: string | null;
-  } | null;
-  last_generated_at?: string | null;
+  product_id: string | null;
+  batch_id: string | null;
+  dose: number | null;
+  application_date: string | null;
+  created_at: string | null;
 };
 
-type PropertyRow = {
+type ProductRow = {
   id: string;
-  name: string | null;
+  name: string;
+};
+
+type BatchRow = {
+  id: string;
+  batch_number: string;
 };
 
 type EventRow = {
+  id?: string;
+  animal_id: string;
   event_type: string | null;
   event_timestamp: string | null;
   notes: string | null;
 };
 
-export default async function AnimalPassaportePage({ params }: PageProps) {
-  const resolvedParams = await params;
-  const id = resolvedParams.id;
+type SanitaryHistoryRow = {
+  id: string;
+  product_name: string;
+  batch_number: string;
+  dose: number | null;
+  application_date: string | null;
+};
 
-  const [{ data, error }, { data: propertiesData }, { data: eventsData }] =
-    await Promise.all([
-      supabase
-        .from("agraas_master_passport_cache")
-        .select("*")
-        .eq("animal_id", id)
-        .maybeSingle(),
-      supabase.from("properties").select("id, name"),
-      supabase
-        .from("animal_events")
-        .select("event_type, event_timestamp, notes")
-        .eq("animal_id", id)
-        .order("event_timestamp", { ascending: false }),
-    ]);
+type TimelineRow = {
+  id: string;
+  type: "application" | "event";
+  title: string;
+  description: string;
+  date: string | null;
+  badge: string;
+};
+
+export default async function AnimalPassaportePage({ params }: PageProps) {
+  const { id } = await params;
+
+  const [
+    { data, error },
+    { data: applicationsData, error: applicationsError },
+    { data: productsData, error: productsError },
+    { data: batchesData, error: batchesError },
+    { data: eventsData, error: eventsError },
+  ] = await Promise.all([
+    supabase
+      .from("agraas_master_passport_cache")
+      .select("*")
+      .eq("animal_id", id)
+      .single(),
+
+    supabase
+      .from("applications")
+      .select("id, animal_id, product_id, batch_id, dose, application_date, created_at")
+      .eq("animal_id", id)
+      .order("application_date", { ascending: false }),
+
+    supabase.from("products").select("id, name"),
+
+    supabase.from("stock_batches").select("id, batch_number"),
+
+    supabase
+      .from("animal_events")
+      .select("animal_id, event_type, event_timestamp, notes")
+      .eq("animal_id", id)
+      .order("event_timestamp", { ascending: false }),
+  ]);
 
   if (error || !data) {
     return (
@@ -99,48 +99,93 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
           <h1 className="text-3xl font-semibold text-[var(--text-primary)]">
             Passaporte não encontrado
           </h1>
-
-          <div className="mt-4 space-y-2 text-sm text-[var(--text-secondary)]">
-            <p>
-              <strong>animal_id:</strong> {id}
-            </p>
-            <p>
-              <strong>erro:</strong>{" "}
-              {error ? JSON.stringify(error) : "nenhum erro retornado"}
-            </p>
-            <p>
-              <strong>registro encontrado:</strong> {data ? "sim" : "não"}
-            </p>
-          </div>
+          <p className="mt-3 text-[var(--text-secondary)]">
+            Não foi possível localizar o passaporte digital deste animal.
+          </p>
         </div>
       </main>
     );
   }
 
-  const passport = data as PassportCacheRow;
-  const identity = passport.identity_json ?? {};
-  const score = passport.score_json ?? {};
-  const health = passport.health_json ?? {};
-  const ownership = passport.ownership_json ?? {};
-  const certifications = passport.certifications_json ?? [];
-  const timeline = ((eventsData as EventRow[] | null) ?? []).length
-    ? ((eventsData as EventRow[] | null) ?? [])
-    : ((passport.timeline_json as EventRow[] | null) ?? []);
+  const identity = data.identity_json ?? {};
+  const score = data.score_json ?? {};
+  const trace = data.traceability_json ?? {};
+  const sanitary = data.sanitary_json ?? {};
+  const chain = data.chain_json ?? {};
 
-  const properties = (propertiesData as PropertyRow[] | null) ?? [];
+  const applications = (applicationsData ?? []) as ApplicationRow[];
+  const products = (productsData ?? []) as ProductRow[];
+  const batches = (batchesData ?? []) as BatchRow[];
+  const events = (eventsData ?? []) as EventRow[];
 
-  const propertyMap = new Map<string, string>();
-  properties.forEach((property) => {
-    propertyMap.set(property.id, property.name ?? "Propriedade sem nome");
+  if (applicationsError) {
+    console.error("Erro ao buscar aplicações do animal:", applicationsError);
+  }
+
+  if (productsError) {
+    console.error("Erro ao buscar produtos:", productsError);
+  }
+
+  if (batchesError) {
+    console.error("Erro ao buscar lotes:", batchesError);
+  }
+
+  if (eventsError) {
+    console.error("Erro ao buscar eventos do animal:", eventsError);
+  }
+
+  const productMap = new Map<string, string>();
+  for (const product of products) {
+    productMap.set(product.id, product.name);
+  }
+
+  const batchMap = new Map<string, string>();
+  for (const batch of batches) {
+    batchMap.set(batch.id, batch.batch_number);
+  }
+
+  const sanitaryHistory: SanitaryHistoryRow[] = applications.map((application) => ({
+    id: application.id,
+    product_name: application.product_id
+      ? productMap.get(application.product_id) ?? "Produto"
+      : "Produto",
+    batch_number: application.batch_id
+      ? batchMap.get(application.batch_id) ?? "-"
+      : "-",
+    dose: application.dose ?? null,
+    application_date: application.application_date ?? application.created_at ?? null,
+  }));
+
+  const timelineApplications: TimelineRow[] = applications.map((application) => ({
+    id: `application-${application.id}`,
+    type: "application",
+    title: "Aplicação sanitária",
+    description: `${application.product_id ? productMap.get(application.product_id) ?? "Produto" : "Produto"} • lote ${
+      application.batch_id ? batchMap.get(application.batch_id) ?? "-" : "-"
+    } • dose ${application.dose ?? "-"}`,
+    date: application.application_date ?? application.created_at ?? null,
+    badge: "💉 Aplicação",
+  }));
+
+  const timelineEvents: TimelineRow[] = events.map((event, index) => ({
+    id: `event-${index}-${event.event_timestamp ?? "sem-data"}`,
+    type: "event",
+    title: formatEventType(event.event_type ?? ""),
+    description: event.notes ?? "Sem observações registradas.",
+    date: event.event_timestamp ?? null,
+    badge: `${getEventIcon(event.event_type ?? "")} ${formatEventType(event.event_type ?? "")}`,
+  }));
+
+  const timeline = [...timelineApplications, ...timelineEvents].sort((a, b) => {
+    const aTime = a.date ? new Date(a.date).getTime() : 0;
+    const bTime = b.date ? new Date(b.date).getTime() : 0;
+    return bTime - aTime;
   });
 
-  const currentPropertyName =
-    propertyMap.get(
-      ownership.current_property_id ?? identity.current_property_id ?? ""
-    ) ?? "-";
-
-  const totalScore = Number(score.total_score ?? 0);
-  const scorePercent = Math.max(6, Math.min(100, Math.round(totalScore)));
+  const scorePercent = Math.max(
+    6,
+    Math.min(100, Math.round(Number(score.total_score ?? 0)))
+  );
 
   return (
     <main className="space-y-8">
@@ -152,227 +197,217 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
       </Link>
 
       <section className="ag-card-strong overflow-hidden">
-        <div className="grid gap-0 xl:grid-cols-[1.05fr_0.95fr]">
-          <div className="relative p-8 lg:p-10">
-            <div className="pointer-events-none absolute right-0 top-0 h-56 w-56 rounded-full bg-[radial-gradient(circle,rgba(93,156,68,0.18)_0%,rgba(93,156,68,0)_72%)]" />
-
+        <div className="grid xl:grid-cols-[1.05fr_0.95fr]">
+          <div className="p-8 lg:p-10">
             <div className="ag-badge ag-badge-green">Passaporte Agraas</div>
 
             <div className="mt-6 flex items-center gap-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-[var(--primary-soft)] text-3xl shadow-[var(--shadow-soft)]">
-                {getAnimalAvatar(identity.sex ?? null)}
+              <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-[var(--primary-soft)] text-3xl">
+                {getAnimalAvatar(identity.sex)}
               </div>
 
               <div>
-                <h1 className="text-4xl font-semibold tracking-[-0.06em] text-[var(--text-primary)] lg:text-5xl">
-                  {identity.internal_code ?? passport.animal_id}
+                <h1 className="text-4xl font-semibold text-[var(--text-primary)]">
+                  {identity.internal_code ?? data.animal_id}
                 </h1>
 
-                <p className="mt-3 max-w-3xl text-[1.02rem] leading-8 text-[var(--text-secondary)]">
-                  Passaporte digital consolidado com score, histórico operacional,
-                  sinais de confiança e leitura estruturada da trajetória do animal.
+                <p className="mt-2 text-[var(--text-secondary)]">
+                  Passaporte digital consolidado do animal.
                 </p>
               </div>
             </div>
 
-            <div className="mt-8 grid gap-4 md:grid-cols-3">
+            <div className="mt-10 grid gap-4 md:grid-cols-3">
               <HeroMiniCard
                 label="Sexo"
-                value={formatSex(identity.sex ?? null)}
+                value={formatSex(identity.sex)}
                 subtitle="classificação biológica"
               />
+
               <HeroMiniCard
                 label="Raça"
                 value={identity.breed ?? "-"}
                 subtitle="identificação zootécnica"
               />
+
               <HeroMiniCard
                 label="Status"
-                value={formatStatus(
-                  (ownership.status ?? identity.status ?? null) as string | null
-                )}
+                value={formatStatus(identity.status)}
                 subtitle="condição operacional"
               />
             </div>
           </div>
 
-          <div className="border-t border-[var(--border)] bg-[linear-gradient(180deg,#eef6ea_0%,#f5f7f4_100%)] p-8 lg:p-10 xl:border-l xl:border-t-0">
+          <div className="border-l border-[var(--border)] bg-[var(--surface-soft)] p-8 lg:p-10">
             <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
               Trust score
             </p>
 
-            <div className="mt-6 rounded-3xl border border-[var(--border)] bg-white p-6 shadow-[var(--shadow-soft)]">
+            <div className="mt-6 rounded-3xl border bg-white p-6 shadow">
               <p className="text-sm text-[var(--text-muted)]">Score total</p>
 
-              <p className="mt-2 text-5xl font-semibold tracking-[-0.06em] text-[var(--primary-hover)]">
+              <p className="mt-2 text-5xl font-semibold text-[var(--primary-hover)]">
                 {score.total_score ?? "-"}
               </p>
 
-              <div className="mt-5 h-3 w-full overflow-hidden rounded-full bg-[rgba(93,156,68,0.10)]">
+              <div className="mt-5 h-3 w-full rounded-full bg-[rgba(93,156,68,0.10)]">
                 <div
                   className="h-full rounded-full bg-[linear-gradient(90deg,#8dbc5f,#5d9c44)]"
                   style={{ width: `${scorePercent}%` }}
                 />
               </div>
-
-              <p className="mt-4 text-sm leading-6 text-[var(--text-secondary)]">
-                Leitura consolidada de confiança do animal dentro da lógica Agraas,
-                combinando histórico, estrutura operacional e consistência da base.
-              </p>
             </div>
 
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              <SnapshotCard label="Propriedade" value={currentPropertyName} />
               <SnapshotCard
-                label="Peso atual"
-                value={
-                  health.last_weight !== null && health.last_weight !== undefined
-                    ? `${health.last_weight} kg`
-                    : "-"
-                }
+                label="Propriedade"
+                value={trace.current_property_name ?? "-"}
               />
+
               <SnapshotCard
-                label="Aplicações"
-                value={String(health.applications ?? 0)}
+                label="Lote atual"
+                value={trace.current_lot_code ?? "-"}
               />
+
               <SnapshotCard
-                label="Em carência"
-                value={String(health.active_withdrawal ?? 0)}
+                label="Peso"
+                value={sanitary.last_weight ? `${sanitary.last_weight} kg` : "-"}
+              />
+
+              <SnapshotCard
+                label="Carência até"
+                value={formatDate(sanitary.withdrawal_end_date)}
               />
             </div>
           </div>
         </div>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-4)">
+      <section className="grid gap-4 xl:grid-cols-4">
         <ScoreCard label="Sanitário" value={score.sanitary_score} />
         <ScoreCard label="Operacional" value={score.operational_score} />
         <ScoreCard label="Continuidade" value={score.continuity_score} />
         <ScoreCard label="Total" value={score.total_score} />
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[0.94fr_1.06fr]">
-        <div className="space-y-6">
-          <div className="ag-card p-8">
-            <h2 className="ag-section-title">Identificação</h2>
-
-            <div className="mt-6 grid gap-5 sm:grid-cols-2">
-              <InfoItem
-                label="Código do animal"
-                value={identity.internal_code ?? "-"}
-              />
-              <InfoItem label="Sexo" value={formatSex(identity.sex ?? null)} />
-              <InfoItem label="Raça" value={identity.breed ?? "-"} />
-              <InfoItem
-                label="Nascimento"
-                value={formatDate(identity.birth_date ?? null)}
-              />
-              <InfoItem
-                label="Status"
-                value={formatStatus(
-                  (ownership.status ?? identity.status ?? null) as string | null
-                )}
-              />
-              <InfoItem
-                label="Propriedade atual"
-                value={currentPropertyName}
-              />
-            </div>
+      <section className="ag-card p-8">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="ag-section-title">Histórico sanitário</h2>
+            <p className="ag-section-subtitle">
+              Aplicações registradas para este animal com vínculo de produto,
+              lote e dose utilizada.
+            </p>
           </div>
 
-          <div className="ag-card p-8">
-            <h2 className="ag-section-title">Certificações ativas</h2>
-
-            <div className="mt-6 flex flex-wrap gap-3">
-              {Array.isArray(certifications) && certifications.length > 0 ? (
-                certifications.map((item, index) => (
-                  <span
-                    key={`${item.certification_code ?? "cert"}-${index}`}
-                    className="ag-badge ag-badge-green"
-                  >
-                    {item.certification_name ??
-                      item.certification_code ??
-                      "Certificação"}
-                  </span>
-                ))
-              ) : (
-                <p className="text-sm text-[var(--text-muted)]">
-                  Nenhuma certificação ativa registrada.
-                </p>
-              )}
-            </div>
-          </div>
-
-          <div className="ag-card p-8">
-            <h2 className="ag-section-title">Resumo da saúde operacional</h2>
-
-            <div className="mt-6 grid gap-5 sm:grid-cols-2">
-              <InfoItem
-                label="Total de aplicações"
-                value={String(health.applications ?? 0)}
-              />
-              <InfoItem
-                label="Com carência ativa"
-                value={String(health.active_withdrawal ?? 0)}
-              />
-              <InfoItem
-                label="Último peso"
-                value={
-                  health.last_weight !== null && health.last_weight !== undefined
-                    ? `${health.last_weight} kg`
-                    : "-"
-                }
-              />
-              <InfoItem
-                label="Última atualização"
-                value={formatDateTime(passport.last_generated_at ?? null)}
-              />
-            </div>
-          </div>
+          <Link href="/aplicacoes" className="ag-button-secondary">
+            Nova aplicação
+          </Link>
         </div>
 
-        <div className="ag-card p-8">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h2 className="ag-section-title">Timeline auditável</h2>
-              <p className="ag-section-subtitle">
-                Sequência cronológica de eventos do animal para leitura executiva e
-                demonstração de rastreabilidade.
-              </p>
+        <div className="mt-8">
+          {sanitaryHistory.length === 0 ? (
+            <div className="rounded-3xl bg-[var(--surface-soft)] p-6 text-sm text-[var(--text-muted)]">
+              Nenhuma aplicação sanitária registrada para este animal.
             </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="ag-table">
+                <thead>
+                  <tr>
+                    <th>Data</th>
+                    <th>Produto</th>
+                    <th>Lote</th>
+                    <th>Dose</th>
+                  </tr>
+                </thead>
 
-            <span className="ag-badge ag-badge-green">Histórico vivo</span>
+                <tbody>
+                  {sanitaryHistory.map((item) => (
+                    <tr key={item.id}>
+                      <td>{formatDate(item.application_date)}</td>
+                      <td>{item.product_name}</td>
+                      <td>{item.batch_number}</td>
+                      <td>{item.dose ?? "-"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </section>
+
+      <section className="ag-card p-8">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="ag-section-title">Timeline operacional</h2>
+            <p className="ag-section-subtitle">
+              Linha do tempo consolidada com eventos e aplicações deste animal.
+            </p>
           </div>
 
-          {Array.isArray(timeline) && timeline.length > 0 ? (
-            <div className="mt-8 space-y-5">
-              {timeline.map((event, index) => (
+          <span className="ag-badge ag-badge-dark">
+            {timeline.length} registros
+          </span>
+        </div>
+
+        <div className="mt-8">
+          {timeline.length === 0 ? (
+            <div className="rounded-3xl bg-[var(--surface-soft)] p-6 text-sm text-[var(--text-muted)]">
+              Nenhum evento encontrado para este animal.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {timeline.map((item) => (
                 <div
-                  key={`${event.event_type ?? "event"}-${event.event_timestamp ?? index}-${index}`}
-                  className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-6"
+                  key={item.id}
+                  className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5"
                 >
-                  <div className="mb-4 flex items-center justify-between gap-4">
+                  <div className="flex items-center justify-between gap-4">
                     <span className="ag-badge ag-badge-green">
-                      {getEventIcon(event.event_type ?? "")}{" "}
-                      {formatEventType(event.event_type ?? "")}
+                      {item.badge}
                     </span>
 
                     <span className="text-sm text-[var(--text-muted)]">
-                      {formatDateTime(event.event_timestamp ?? null)}
+                      {formatDateTime(item.date)}
                     </span>
                   </div>
 
-                  <p className="text-sm leading-7 text-[var(--text-secondary)]">
-                    {event.notes ?? "Sem observações registradas para este evento."}
+                  <p className="mt-4 text-base font-semibold text-[var(--text-primary)]">
+                    {item.title}
+                  </p>
+
+                  <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
+                    {item.description}
                   </p>
                 </div>
               ))}
             </div>
-          ) : (
-            <div className="mt-6 rounded-3xl bg-[var(--surface-soft)] p-6 text-sm text-[var(--text-muted)]">
-              Nenhum evento encontrado para este animal.
-            </div>
           )}
+        </div>
+      </section>
+
+      <section className="ag-card p-8">
+        <h2 className="ag-section-title">Cadeia produtiva</h2>
+
+        <div className="mt-6 grid gap-4 md:grid-cols-2">
+          <InfoItem label="Frigorífico" value={chain.slaughterhouse_name ?? "-"} />
+
+          <InfoItem
+            label="Data de abate"
+            value={formatDate(chain.slaughter_date)}
+          />
+
+          <InfoItem
+            label="Peso de carcaça"
+            value={chain.carcass_weight ? `${chain.carcass_weight} kg` : "-"}
+          />
+
+          <InfoItem
+            label="Classificação"
+            value={chain.carcass_classification ?? "-"}
+          />
         </div>
       </section>
     </main>
@@ -389,31 +424,19 @@ function HeroMiniCard({
   subtitle: string;
 }) {
   return (
-    <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5">
+    <div className="rounded-3xl border p-5">
       <p className="text-sm text-[var(--text-muted)]">{label}</p>
-      <p className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
-        {value}
-      </p>
-      <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-        {subtitle}
-      </p>
+      <p className="mt-3 text-2xl font-semibold">{value}</p>
+      <p className="mt-2 text-sm text-[var(--text-secondary)]">{subtitle}</p>
     </div>
   );
 }
 
-function SnapshotCard({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
+function SnapshotCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-3xl border border-[var(--border)] bg-white p-5 shadow-[var(--shadow-soft)]">
+    <div className="rounded-3xl border bg-white p-5 shadow">
       <p className="text-sm text-[var(--text-muted)]">{label}</p>
-      <p className="mt-3 text-lg font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
-        {value}
-      </p>
+      <p className="mt-3 text-lg font-semibold">{value}</p>
     </div>
   );
 }
@@ -423,7 +446,7 @@ function ScoreCard({
   value,
 }: {
   label: string;
-  value?: number | null;
+  value: number | null | undefined;
 }) {
   return (
     <div className="ag-card p-6">
@@ -437,19 +460,17 @@ function InfoItem({ label, value }: { label: string; value: string }) {
   return (
     <div>
       <p className="text-sm text-[var(--text-muted)]">{label}</p>
-      <p className="mt-2 text-base font-medium text-[var(--text-primary)]">
-        {value}
-      </p>
+      <p className="mt-2 text-base font-medium">{value}</p>
     </div>
   );
 }
 
-function formatDate(value: string | null) {
+function formatDate(value: string | null | undefined) {
   if (!value) return "-";
   return new Date(value).toLocaleDateString("pt-BR");
 }
 
-function formatDateTime(value: string | null) {
+function formatDateTime(value: string | null | undefined) {
   if (!value) return "-";
   return new Date(value).toLocaleString("pt-BR");
 }
@@ -457,7 +478,12 @@ function formatDateTime(value: string | null) {
 function getAnimalAvatar(sex: string | null) {
   const value = (sex ?? "").toLowerCase();
   if (value === "male" || value === "macho") return "🐂";
-  if (value === "female" || value === "fêmea" || value === "femea") return "🐄";
+  if (
+    value === "female" ||
+    value === "fêmea" ||
+    value === "femea"
+  )
+    return "🐄";
   return "🐾";
 }
 
@@ -475,6 +501,8 @@ function formatSex(value: string | null) {
 }
 
 function formatStatus(value: string | null) {
+  if (!value) return "-";
+
   const map: Record<string, string> = {
     active: "Ativo",
     inactive: "Inativo",
@@ -485,7 +513,6 @@ function formatStatus(value: string | null) {
     slaughtered: "Abatido",
   };
 
-  if (!value) return "-";
   return map[value.toLowerCase()] ?? value;
 }
 
@@ -500,6 +527,14 @@ function formatEventType(value: string) {
     SALE: "Venda",
     SLAUGHTER: "Abate",
     CERTIFICATION: "Certificação",
+    birth: "Nascimento",
+    rfid_assigned: "Identificação vinculada",
+    health_application: "Aplicação registrada",
+    weight_recorded: "Pesagem registrada",
+    sale: "Venda registrada",
+    ownership_transfer: "Transferência de propriedade",
+    lot_entry: "Entrada em lote",
+    slaughter: "Abate registrado",
   };
 
   return map[value] ?? value.replaceAll("_", " ");
@@ -516,6 +551,14 @@ function getEventIcon(value: string) {
     SALE: "💰",
     SLAUGHTER: "📋",
     CERTIFICATION: "✅",
+    birth: "🐣",
+    rfid_assigned: "🏷️",
+    health_application: "💉",
+    weight_recorded: "⚖️",
+    sale: "💰",
+    ownership_transfer: "🔁",
+    lot_entry: "📦",
+    slaughter: "📋",
   };
 
   return map[value] ?? "•";

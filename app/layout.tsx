@@ -7,7 +7,14 @@ const menuItems = [
   { href: "/market", label: "Market", icon: "◈" },
   { href: "/operacoes", label: "Operações", icon: "◎" },
   { href: "/propriedades", label: "Propriedades", icon: "▣" },
+
+  { href: "/estoque", label: "Estoque", icon: "◫" },
+  { href: "/estoque/dashboard", label: "Dashboard Sanitário", icon: "◨" },
+  { href: "/estoque/historico", label: "Histórico Estoque", icon: "◭" },
+
   { href: "/aplicacoes", label: "Aplicações", icon: "✚" },
+  { href: "/aplicacoes/historico", label: "Histórico Aplicações", icon: "◷" },
+
   { href: "/pesagens", label: "Pesagens", icon: "◔" },
   { href: "/vendas", label: "Vendas", icon: "⇄" },
   { href: "/lotes", label: "Lotes", icon: "▤" },

@@ -1,5 +1,13 @@
-import { supabase } from "@/lib/supabase";
-import { revalidatePath } from "next/cache";
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
+);
 
 type AnimalRow = {
   id: string;
@@ -8,146 +16,226 @@ type AnimalRow = {
 
 type ProductRow = {
   id: string;
-  name: string | null;
+  name: string;
 };
 
 type BatchRow = {
   id: string;
   product_id: string;
-  batch_number: string | null;
-  expiration_date: string | null;
-  quantity: number | null;
+  batch_number: string;
+  expiration_date: string;
+  quantity: number;
 };
 
-async function registerApplication(formData: FormData) {
-  "use server";
+export default function AplicacoesPage() {
+  const [animals, setAnimals] = useState<AnimalRow[]>([]);
+  const [products, setProducts] = useState<ProductRow[]>([]);
+  const [batches, setBatches] = useState<BatchRow[]>([]);
 
-  const animalId = String(formData.get("animal_id") ?? "").trim();
-  const productId = String(formData.get("product_id") ?? "").trim();
-  const batchId = String(formData.get("batch_id") ?? "").trim();
-  const doseRaw = String(formData.get("dose") ?? "").trim();
-  const applicationDate = String(formData.get("application_date") ?? "").trim();
+  const [animalId, setAnimalId] = useState("");
+  const [productId, setProductId] = useState("");
+  const [batchId, setBatchId] = useState("");
+  const [dose, setDose] = useState("");
+  const [applicationDate, setApplicationDate] = useState(todayInputValue());
 
-  if (!animalId || !productId || !batchId || !doseRaw || !applicationDate) {
-    throw new Error("Preencha todos os campos antes de registrar a aplicação.");
-  }
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  const dose = Number(doseRaw);
+  useEffect(() => {
+    async function loadBase() {
+      setLoading(true);
 
-  if (Number.isNaN(dose) || dose <= 0) {
-    throw new Error("A dose informada é inválida.");
-  }
-
-  const { error } = await supabase.from("applications").insert({
-    id: crypto.randomUUID(),
-    animal_id: animalId,
-    product_id: productId,
-    batch_id: batchId,
-    dose,
-    application_date: applicationDate,
-  });
-
-  if (error) {
-    throw new Error(`Erro ao registrar aplicação: ${error.message}`);
-  }
-
-  revalidatePath("/aplicacoes");
-  revalidatePath("/animais");
-  revalidatePath(`/animais/${animalId}`);
-  revalidatePath("/");
-}
-
-export default async function AplicacoesPage() {
-  const hoje = new Date().toISOString().slice(0, 10);
-
-  const [{ data: animalsData }, { data: productsData }, { data: batchesData }] =
-    await Promise.all([
-      supabase
+      const { data: animalsData, error: animalsError } = await supabase
         .from("animals")
         .select("id, internal_code")
-        .order("internal_code"),
-      supabase
+        .order("internal_code", { ascending: true });
+
+      if (animalsError) {
+        console.error("Erro ao buscar animais:", animalsError);
+      }
+
+      const { data: productsData, error: productsError } = await supabase
         .from("products")
         .select("id, name")
-        .order("name"),
-      supabase
+        .order("name", { ascending: true });
+
+      if (productsError) {
+        console.error("Erro ao buscar produtos:", productsError);
+      }
+
+      const { data: batchesData, error: batchesError } = await supabase
         .from("stock_batches")
         .select("id, product_id, batch_number, expiration_date, quantity")
-        .order("batch_number"),
-    ]);
+        .gt("quantity", 0)
+        .order("expiration_date", { ascending: true });
 
-  const animals = (animalsData as AnimalRow[] | null) ?? [];
-  const products = (productsData as ProductRow[] | null) ?? [];
-  const batches = (batchesData as BatchRow[] | null) ?? [];
+      if (batchesError) {
+        console.error("Erro ao buscar lotes:", batchesError);
+      }
+
+      setAnimals((animalsData ?? []) as AnimalRow[]);
+      setProducts((productsData ?? []) as ProductRow[]);
+      setBatches((batchesData ?? []) as BatchRow[]);
+      setLoading(false);
+    }
+
+    loadBase();
+  }, []);
+
+  const filteredBatches = useMemo(() => {
+    if (!productId) return [];
+
+    return batches
+      .filter((batch) => batch.product_id === productId && Number(batch.quantity) > 0)
+      .sort((a, b) => {
+        const aDate = new Date(a.expiration_date).getTime();
+        const bDate = new Date(b.expiration_date).getTime();
+        return aDate - bDate;
+      });
+  }, [batches, productId]);
+
+  const selectedBatch = useMemo(() => {
+    return filteredBatches.find((batch) => batch.id === batchId) ?? null;
+  }, [filteredBatches, batchId]);
+
+  useEffect(() => {
+    if (!productId) {
+      setBatchId("");
+      return;
+    }
+
+    if (filteredBatches.length > 0) {
+      setBatchId(filteredBatches[0].id);
+    } else {
+      setBatchId("");
+    }
+  }, [productId, filteredBatches]);
+
+  async function refreshBatches() {
+    const { data: batchesData, error: batchesError } = await supabase
+      .from("stock_batches")
+      .select("id, product_id, batch_number, expiration_date, quantity")
+      .gt("quantity", 0)
+      .order("expiration_date", { ascending: true });
+
+    if (batchesError) {
+      console.error("Erro ao atualizar lotes:", batchesError);
+      return;
+    }
+
+    setBatches((batchesData ?? []) as BatchRow[]);
+  }
+
+  async function registerApplication() {
+    if (!animalId || !productId || !batchId || !dose || !applicationDate) {
+      alert("Preencha todos os campos.");
+      return;
+    }
+
+    const numericDose = Number(dose);
+
+    if (Number.isNaN(numericDose) || numericDose <= 0) {
+      alert("Informe uma dose válida.");
+      return;
+    }
+
+    if (!selectedBatch) {
+      alert("Selecione um lote válido.");
+      return;
+    }
+
+    if (Number(selectedBatch.quantity) < numericDose) {
+      alert("Quantidade insuficiente no lote selecionado.");
+      return;
+    }
+
+    setSaving(true);
+
+    const { error: applicationError } = await supabase
+      .from("applications")
+      .insert([
+        {
+          animal_id: animalId,
+          product_id: productId,
+          batch_id: batchId,
+          dose: numericDose,
+          application_date: applicationDate,
+        },
+      ]);
+
+    if (applicationError) {
+      console.error(
+        "Erro ao registrar aplicação:",
+        JSON.stringify(applicationError)
+      );
+      alert("Erro ao registrar aplicação.");
+      setSaving(false);
+      return;
+    }
+
+    alert("Aplicação registrada com baixa automática no estoque.");
+
+    setAnimalId("");
+    setProductId("");
+    setBatchId("");
+    setDose("");
+    setApplicationDate(todayInputValue());
+
+    await refreshBatches();
+
+    setSaving(false);
+  }
 
   return (
     <main className="space-y-8">
       <section className="ag-card-strong overflow-hidden">
-        <div className="grid gap-0 xl:grid-cols-[1.02fr_0.98fr]">
+        <div className="grid gap-0 xl:grid-cols-[1.05fr_0.95fr]">
           <div className="relative p-8 lg:p-10">
             <div className="pointer-events-none absolute right-0 top-0 h-48 w-48 rounded-full bg-[radial-gradient(circle,rgba(122,168,76,0.18)_0%,rgba(122,168,76,0)_70%)]" />
 
-            <div className="ag-badge ag-badge-green">Operação sanitária</div>
+            <div className="ag-badge ag-badge-green">Aplicação sanitária</div>
 
             <h1 className="mt-5 text-4xl font-semibold tracking-[-0.06em] text-[var(--text-primary)] lg:text-6xl">
-              Registrar aplicação
+              Registro operacional de aplicações
             </h1>
 
             <p className="mt-5 max-w-3xl text-[1.02rem] leading-8 text-[var(--text-secondary)]">
-              Registre aplicações sanitárias com vínculo ao animal, produto e lote
-              de insumo. Cada lançamento reforça a rastreabilidade e atualiza o
-              passaporte vivo da Agraas.
+              Registre aplicações sanitárias com seleção automática por FEFO,
+              baixa de estoque e rastreabilidade por animal, produto e lote.
             </p>
 
-            <div className="mt-10 grid gap-4 md:grid-cols-3">
-              <HeroMetric
-                label="Animais disponíveis"
-                value={animals.length}
-                subtitle="ativos aptos para vínculo"
-              />
-              <HeroMetric
-                label="Produtos"
-                value={products.length}
-                subtitle="insumos cadastrados"
-              />
-              <HeroMetric
-                label="Lotes"
-                value={batches.length}
-                subtitle="estoque rastreável disponível"
-              />
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link href="/aplicacoes/historico" className="ag-button-secondary">
+                Ver histórico de aplicações
+              </Link>
+
+              <Link href="/estoque" className="ag-button-secondary">
+                Ir para estoque
+              </Link>
             </div>
           </div>
 
           <div className="border-t border-[var(--border)] bg-[linear-gradient(180deg,#eef6ea_0%,#f5f7f4_100%)] p-8 lg:p-10 xl:border-l xl:border-t-0">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                  Checklist da operação
-                </p>
-                <h2 className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
-                  Estrutura da aplicação
-                </h2>
-              </div>
-
-              <span className="ag-badge ag-badge-dark">Live form</span>
-            </div>
-
-            <div className="mt-8 grid gap-4">
-              <ChecklistCard
-                title="Vínculo com animal"
-                description="Cada aplicação precisa estar associada a um animal específico."
+            <div className="grid gap-4 sm:grid-cols-2">
+              <MetricCard
+                label="Animais disponíveis"
+                value={animals.length}
+                subtitle="ativos para aplicação"
               />
-              <ChecklistCard
-                title="Produto sanitário"
-                description="Selecione o insumo correto para garantir consistência da base."
+              <MetricCard
+                label="Produtos"
+                value={products.length}
+                subtitle="itens sanitários cadastrados"
               />
-              <ChecklistCard
-                title="Lote rastreável"
-                description="O lote é o elo entre estoque, compliance e histórico sanitário."
+              <MetricCard
+                label="Lotes disponíveis"
+                value={batches.length}
+                subtitle="estoque com saldo positivo"
               />
-              <ChecklistCard
-                title="Impacto automático"
-                description="Após registrar, o passaporte do animal é recalculado pela engine."
+              <MetricCard
+                label="FEFO"
+                value="ativo"
+                subtitle="lote mais próximo do vencimento"
               />
             </div>
           </div>
@@ -157,113 +245,138 @@ export default async function AplicacoesPage() {
       <section className="ag-card p-8">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
-            <h2 className="ag-section-title">Formulário de aplicação</h2>
+            <h2 className="ag-section-title">Nova aplicação</h2>
             <p className="ag-section-subtitle">
-              Preencha os campos abaixo para registrar uma aplicação sanitária
-              vinculada ao animal e ao lote correspondente.
+              Preencha os campos abaixo para registrar uma aplicação sanitária.
             </p>
           </div>
 
-          <span className="ag-badge ag-badge-green">Rastreabilidade ativa</span>
+          <div className="ag-badge ag-badge-dark">
+            Fluxo com baixa automática
+          </div>
         </div>
 
-        <form action={registerApplication} className="mt-8 grid gap-6">
-          <div className="grid gap-6 md:grid-cols-2">
-            <FieldBlock label="Animal">
+        {loading && <p className="mt-8">Carregando...</p>}
+
+        {!loading && (
+          <div className="mt-8 grid gap-5">
+            <label>
+              <div className="mb-2 text-sm font-medium text-[var(--text-primary)]">
+                Animal
+              </div>
               <select
-                name="animal_id"
-                required
-                className="ag-input"
-                defaultValue=""
+                value={animalId}
+                onChange={(e) => setAnimalId(e.target.value)}
+                className="w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-[var(--text-primary)]"
               >
-                <option value="" disabled>
-                  Selecione um animal
-                </option>
+                <option value="">Selecione um animal</option>
                 {animals.map((animal) => (
                   <option key={animal.id} value={animal.id}>
                     {animal.internal_code ?? animal.id}
                   </option>
                 ))}
               </select>
-            </FieldBlock>
+            </label>
 
-            <FieldBlock label="Produto">
+            <label>
+              <div className="mb-2 text-sm font-medium text-[var(--text-primary)]">
+                Produto
+              </div>
               <select
-                name="product_id"
-                required
-                className="ag-input"
-                defaultValue=""
+                value={productId}
+                onChange={(e) => setProductId(e.target.value)}
+                className="w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-[var(--text-primary)]"
               >
-                <option value="" disabled>
-                  Selecione um produto
-                </option>
+                <option value="">Selecione um produto</option>
                 {products.map((product) => (
                   <option key={product.id} value={product.id}>
-                    {product.name ?? product.id}
+                    {product.name}
                   </option>
                 ))}
               </select>
-            </FieldBlock>
+            </label>
 
-            <FieldBlock label="Lote de insumo">
+            <label>
+              <div className="mb-2 text-sm font-medium text-[var(--text-primary)]">
+                Lote
+              </div>
               <select
-                name="batch_id"
-                required
-                className="ag-input"
-                defaultValue=""
+                value={batchId}
+                onChange={(e) => setBatchId(e.target.value)}
+                disabled={!productId || filteredBatches.length === 0}
+                className="w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-[var(--text-primary)] disabled:opacity-60"
               >
-                <option value="" disabled>
-                  Selecione um lote
+                <option value="">
+                  {!productId
+                    ? "Selecione um produto antes"
+                    : filteredBatches.length === 0
+                    ? "Sem lotes disponíveis para este produto"
+                    : "Selecione um lote"}
                 </option>
-                {batches.map((batch) => (
+
+                {filteredBatches.map((batch) => (
                   <option key={batch.id} value={batch.id}>
-                    {batch.batch_number ?? batch.id}
-                    {batch.quantity !== null && batch.quantity !== undefined
-                      ? ` • qtd ${batch.quantity}`
-                      : ""}
-                    {batch.expiration_date
-                      ? ` • vence ${new Date(batch.expiration_date).toLocaleDateString("pt-BR")}`
-                      : ""}
+                    {batch.batch_number} | saldo {batch.quantity} | validade{" "}
+                    {batch.expiration_date}
                   </option>
                 ))}
               </select>
-            </FieldBlock>
+            </label>
 
-            <FieldBlock label="Dose">
+            {productId && filteredBatches.length > 0 && selectedBatch && (
+              <div className="rounded-2xl border border-[rgba(93,156,68,0.20)] bg-[var(--primary-soft)] px-4 py-4 text-sm leading-6 text-[var(--primary-hover)]">
+                <strong>Lote FEFO selecionado automaticamente:</strong>{" "}
+                {selectedBatch.batch_number} — validade{" "}
+                {selectedBatch.expiration_date} — saldo {selectedBatch.quantity}
+              </div>
+            )}
+
+            {productId && filteredBatches.length === 0 && (
+              <div className="rounded-2xl border border-[rgba(214,69,69,0.18)] bg-[rgba(214,69,69,0.08)] px-4 py-4 text-sm leading-6 text-[var(--danger)]">
+                Não há lote disponível com saldo para este produto.
+              </div>
+            )}
+
+            <label>
+              <div className="mb-2 text-sm font-medium text-[var(--text-primary)]">
+                Dose
+              </div>
               <input
-                name="dose"
                 type="number"
-                step="0.01"
-                min="0.01"
-                required
                 placeholder="Ex.: 10"
-                className="ag-input"
+                value={dose}
+                onChange={(e) => setDose(e.target.value)}
+                className="w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-[var(--text-primary)]"
               />
-            </FieldBlock>
+            </label>
 
-            <FieldBlock label="Data da aplicação">
+            <label>
+              <div className="mb-2 text-sm font-medium text-[var(--text-primary)]">
+                Data da aplicação
+              </div>
               <input
-                name="application_date"
                 type="date"
-                required
-                defaultValue={hoje}
-                className="ag-input"
+                value={applicationDate}
+                onChange={(e) => setApplicationDate(e.target.value)}
+                className="w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-[var(--text-primary)]"
               />
-            </FieldBlock>
-          </div>
+            </label>
 
-          <div className="pt-2">
-            <button type="submit" className="ag-button-primary">
-              Registrar aplicação
+            <button
+              onClick={registerApplication}
+              disabled={saving}
+              className="ag-button-primary mt-2 disabled:opacity-70"
+            >
+              {saving ? "Salvando..." : "Registrar aplicação"}
             </button>
           </div>
-        </form>
+        )}
       </section>
     </main>
   );
 }
 
-function HeroMetric({
+function MetricCard({
   label,
   value,
   subtitle,
@@ -273,7 +386,7 @@ function HeroMetric({
   subtitle: string;
 }) {
   return (
-    <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5">
+    <div className="rounded-3xl border border-[var(--border)] bg-white p-5 shadow-[var(--shadow-soft)]">
       <p className="text-sm text-[var(--text-muted)]">{label}</p>
       <p className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-[var(--text-primary)]">
         {value}
@@ -285,38 +398,10 @@ function HeroMetric({
   );
 }
 
-function ChecklistCard({
-  title,
-  description,
-}: {
-  title: string;
-  description: string;
-}) {
-  return (
-    <div className="rounded-3xl border border-[var(--border)] bg-white p-5 shadow-[var(--shadow-soft)]">
-      <p className="text-base font-semibold tracking-[-0.02em] text-[var(--text-primary)]">
-        {title}
-      </p>
-      <p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">
-        {description}
-      </p>
-    </div>
-  );
-}
-
-function FieldBlock({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className="block">
-      <span className="mb-3 block text-sm font-medium text-[var(--text-primary)]">
-        {label}
-      </span>
-      {children}
-    </label>
-  );
+function todayInputValue() {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
