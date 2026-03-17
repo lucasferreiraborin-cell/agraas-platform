@@ -3,6 +3,7 @@ import Link from "next/link";
 
 const menuItems = [
   { href: "/", label: "Painel", icon: "◉" },
+  { href: "/dashboard", label: "Dashboard Executivo", icon: "✳" },
   { href: "/animais", label: "Animais", icon: "◌" },
   { href: "/market", label: "Market", icon: "◈" },
   { href: "/operacoes", label: "Operações", icon: "◎" },
