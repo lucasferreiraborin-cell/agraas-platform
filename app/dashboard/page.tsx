@@ -55,13 +55,9 @@ export default async function DashboardPage() {
       .select("id, animal_id, weight, weighing_date")
       .order("weighing_date", { ascending: false }),
 
-    supabase
-      .from("applications")
-      .select("animal_id"),
+    supabase.from("applications").select("animal_id"),
 
-    supabase
-      .from("farm_events")
-      .select("animal_id"),
+    supabase.from("farm_events").select("animal_id"),
   ]);
 
   if (animalsError) console.error("Erro ao buscar animais:", animalsError);
@@ -100,8 +96,11 @@ export default async function DashboardPage() {
 
   const dashboardRows: DashboardAnimalRow[] = animals.map((animal) => {
     const animalWeights = weightsByAnimal.get(animal.id) ?? [];
-    const currentWeight = animalWeights.length > 0 ? Number(animalWeights[0].weight) : null;
-    const previousWeight = animalWeights.length > 1 ? Number(animalWeights[1].weight) : null;
+    const currentWeight =
+      animalWeights.length > 0 ? Number(animalWeights[0].weight) : null;
+    const previousWeight =
+      animalWeights.length > 1 ? Number(animalWeights[1].weight) : null;
+
     const delta =
       currentWeight !== null && previousWeight !== null
         ? currentWeight - previousWeight
@@ -138,7 +137,8 @@ export default async function DashboardPage() {
     return {
       animal_id: animal.id,
       internal_code: animal.internal_code ?? animal.id,
-      agraas_id: animal.agraas_id ?? `AGR-${animal.id.substring(0, 8).toUpperCase()}`,
+      agraas_id:
+        animal.agraas_id ?? `AGR-${animal.id.substring(0, 8).toUpperCase()}`,
       breed: animal.breed ?? "-",
       status: animal.status ?? "-",
       current_weight: currentWeight,
@@ -170,10 +170,10 @@ export default async function DashboardPage() {
   ).length;
 
   const alertsCount = dashboardRows.filter(
-    (item) =>
-      item.delta !== null &&
-      item.delta < 0
+    (item) => item.delta !== null && item.delta < 0
   ).length;
+
+  const agraasIdCount = dashboardRows.filter((item) => Boolean(item.agraas_id)).length;
 
   const topScoreAnimals = [...dashboardRows]
     .sort((a, b) => b.score - a.score)
@@ -184,12 +184,35 @@ export default async function DashboardPage() {
     .sort((a, b) => Number(b.delta) - Number(a.delta))
     .slice(0, 5);
 
+  const platformCards = [
+    {
+      title: "Identidade digital",
+      subtitle:
+        "Agraas ID estrutura a base animal e cria uma camada única de referência para o rebanho.",
+    },
+    {
+      title: "Leitura produtiva",
+      subtitle:
+        "Peso, evolução, idade e score consolidam a visão executiva da operação pecuária.",
+    },
+    {
+      title: "Confiança operacional",
+      subtitle:
+        "Sanidade, continuidade e eventos estruturam uma base pronta para rastreabilidade e certificação.",
+    },
+    {
+      title: "Infraestrutura de dados",
+      subtitle:
+        "A Agraas organiza a cadeia pecuária em uma lógica de dados, identidade e inteligência.",
+    },
+  ];
+
   return (
     <main className="space-y-8">
       <section className="ag-card-strong overflow-hidden">
         <div className="grid gap-0 xl:grid-cols-[1.08fr_0.92fr]">
           <div className="relative p-8 lg:p-10">
-            <div className="ag-badge ag-badge-green">Executive dashboard</div>
+            <div className="ag-badge ag-badge-green">Dashboard executivo</div>
 
             <h1 className="mt-5 max-w-4xl text-4xl font-semibold leading-[1.02] tracking-[-0.065em] text-[var(--text-primary)] lg:text-6xl">
               Inteligência executiva do rebanho
@@ -197,12 +220,16 @@ export default async function DashboardPage() {
 
             <p className="mt-5 max-w-3xl text-[1.05rem] leading-8 text-[var(--text-secondary)]">
               Visualize a base animal sob a ótica de identidade digital,
-              produtividade, evolução de peso e confiança operacional.
+              produtividade, evolução de peso e confiança operacional em uma
+              camada única de dados da cadeia pecuária.
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href="/animais" className="ag-button-primary">
                 Abrir animais
+              </Link>
+              <Link href="/scores" className="ag-button-secondary">
+                Ver scores
               </Link>
               <Link href="/produtivo" className="ag-button-secondary">
                 Dashboard produtivo
@@ -218,6 +245,11 @@ export default async function DashboardPage() {
                 subtitle="ativos estruturados na base"
               />
               <MetricCard
+                label="Agraas IDs"
+                value={agraasIdCount}
+                subtitle="identidades digitais emitidas"
+              />
+              <MetricCard
                 label="Score médio"
                 value={averageScore > 0 ? averageScore.toFixed(1) : "-"}
                 subtitle="média consolidada da operação"
@@ -227,17 +259,28 @@ export default async function DashboardPage() {
                 value={averageWeight > 0 ? `${averageWeight.toFixed(1)} kg` : "-"}
                 subtitle="última pesagem disponível"
               />
-              <MetricCard
-                label="Alertas"
-                value={alertsCount}
-                subtitle="animais com queda entre pesagens"
-              />
             </div>
           </div>
         </div>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-4">
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {platformCards.map((item) => (
+          <div
+            key={item.title}
+            className="rounded-3xl border border-[var(--border)] bg-white p-6 shadow-[var(--shadow-soft)]"
+          >
+            <p className="text-lg font-semibold text-[var(--text-primary)]">
+              {item.title}
+            </p>
+            <p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">
+              {item.subtitle}
+            </p>
+          </div>
+        ))}
+      </section>
+
+      <section className="grid gap-4 xl:grid-cols-5">
         <KpiCard
           label="Base monitorada"
           value={totalAnimals}
@@ -251,6 +294,12 @@ export default async function DashboardPage() {
           subtitle="nível médio de confiança da base"
         />
         <KpiCard
+          label="Peso médio"
+          value={averageWeight > 0 ? `${averageWeight.toFixed(1)} kg` : "-"}
+          icon="⚖️"
+          subtitle="média da última pesagem"
+        />
+        <KpiCard
           label="Evolução positiva"
           value={positiveDeltaCount}
           icon="📊"
@@ -260,8 +309,43 @@ export default async function DashboardPage() {
           label="Alertas produtivos"
           value={alertsCount}
           icon="⚠️"
-          subtitle="queda detectada entre últimas leituras"
+          subtitle="queda detectada entre leituras"
         />
+      </section>
+
+      <section className="ag-card p-8">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="ag-section-title">Como ler este dashboard</h2>
+            <p className="ag-section-subtitle">
+              A Agraas transforma dados operacionais em uma visão executiva simples para gestão e tomada de decisão.
+            </p>
+          </div>
+          <span className="ag-badge ag-badge-green">Data layer</span>
+        </div>
+
+        <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <FlowCard
+            number="1"
+            title="Identidade"
+            description="Cada animal recebe uma identidade digital única via Agraas ID."
+          />
+          <FlowCard
+            number="2"
+            title="Registro"
+            description="Pesagens, aplicações e eventos alimentam continuamente a base."
+          />
+          <FlowCard
+            number="3"
+            title="Leitura"
+            description="A plataforma calcula score, evolução e sinais de consistência operacional."
+          />
+          <FlowCard
+            number="4"
+            title="Decisão"
+            description="A gestão passa a operar com inteligência sobre o rebanho e a cadeia."
+          />
+        </div>
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
@@ -476,6 +560,30 @@ function KpiCard({
       <p className="mt-3 ag-kpi-value">{value}</p>
       <p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">
         {subtitle}
+      </p>
+    </div>
+  );
+}
+
+function FlowCard({
+  number,
+  title,
+  description,
+}: {
+  number: string;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5">
+      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-sm font-semibold shadow-[var(--shadow-soft)]">
+        {number}
+      </div>
+      <p className="mt-4 text-base font-semibold text-[var(--text-primary)]">
+        {title}
+      </p>
+      <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
+        {description}
       </p>
     </div>
   );
