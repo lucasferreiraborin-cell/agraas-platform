@@ -22,7 +22,7 @@ const menuItems = [
   { href: "/custos/historico", label: "Histórico Custos", icon: "◫" },
   { href: "/relatorios", label: "Relatórios", icon: "☷" },
   { href: "/alertas", label: "Alertas", icon: "!" },
-  { href: "/vendas", label: "Vendas", icon: "↔" },
+  { href: "/vendas", label: "Vendas", icon: "↔️" },
   { href: "/lotes", label: "Lotes", icon: "▤" },
   { href: "/abates", label: "Abates", icon: "◆" },
   { href: "/scores", label: "Scores", icon: "✦" },
@@ -35,6 +35,14 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const environmentLabel =
+    process.env.NODE_ENV === "production" ? "Agraas MVP" : "Ambiente local";
+
+  const phaseLabel =
+    process.env.NODE_ENV === "production"
+      ? "Fase 1 entregue"
+      : "Fase 1 em consolidação final";
+
   return (
     <html lang="pt-BR">
       <body>
@@ -72,7 +80,7 @@ export default function RootLayout({
                         Ambiente ativo
                       </p>
                       <p className="mt-1 text-xs text-white/55">
-                        Fase 1 em consolidação final
+                        {phaseLabel}
                       </p>
                     </div>
                     <span className="inline-flex h-3 w-3 rounded-full bg-emerald-300 shadow-[0_0_18px_rgba(110,231,183,0.85)]" />
@@ -101,8 +109,8 @@ export default function RootLayout({
                     Visão
                   </p>
                   <p className="mt-3 text-sm leading-6 text-white/82">
-                    Rastreabilidade, performance produtiva e inteligência
-                    operacional para a cadeia pecuária.
+                    Rastreabilidade, performance produtiva, identidade digital
+                    animal e inteligência operacional para a cadeia pecuária.
                   </p>
 
                   <div className="mt-5 grid grid-cols-2 gap-3">
@@ -120,7 +128,7 @@ export default function RootLayout({
                         Fase
                       </p>
                       <p className="mt-2 text-sm font-medium text-white">
-                        MVP Fase 1
+                        Fase 1 entregue
                       </p>
                     </div>
                   </div>
@@ -136,16 +144,16 @@ export default function RootLayout({
                       Agraas Intelligence Layer
                     </p>
                     <h2 className="mt-1 truncate text-lg font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
-                      Gestão premium de rastreabilidade pecuária
+                      Infraestrutura digital da cadeia pecuária
                     </h2>
                   </div>
 
                   <div className="hidden items-center gap-3 md:flex">
                     <div className="rounded-full border border-[var(--border)] bg-white px-4 py-2 text-sm text-[var(--text-secondary)] shadow-[var(--shadow-soft)]">
-                      Ambiente local
+                      {environmentLabel}
                     </div>
                     <div className="rounded-full bg-[var(--primary)] px-4 py-2 text-sm font-medium text-white shadow-[var(--shadow-green)]">
-                      Agraas MVP
+                      Fase 1 entregue
                     </div>
                   </div>
                 </div>

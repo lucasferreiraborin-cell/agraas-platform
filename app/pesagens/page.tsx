@@ -12,6 +12,7 @@ const supabase = createClient(
 type AnimalRow = {
   id: string;
   internal_code: string | null;
+  agraas_id: string | null;
 };
 
 export default function PesagensPage() {
@@ -22,22 +23,34 @@ export default function PesagensPage() {
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadAnimals() {
       setLoading(true);
+      setLoadError(null);
 
-      const { data, error } = await supabase
-        .from("animals")
-        .select("id, internal_code")
-        .order("internal_code", { ascending: true });
+      try {
+        const { data, error } = await supabase
+          .from("animals")
+          .select("id, internal_code, agraas_id")
+          .order("internal_code", { ascending: true });
 
-      if (error) {
-        console.error("Erro ao buscar animais:", error);
+        if (error) {
+          console.error("Erro ao buscar animais:", error);
+          setLoadError("Não foi possível carregar os animais.");
+          setAnimals([]);
+          return;
+        }
+
+        setAnimals((data ?? []) as AnimalRow[]);
+      } catch (err) {
+        console.error("Falha inesperada ao buscar animais:", err);
+        setLoadError("Erro inesperado ao carregar os animais.");
+        setAnimals([]);
+      } finally {
+        setLoading(false);
       }
-
-      setAnimals((data ?? []) as AnimalRow[]);
-      setLoading(false);
     }
 
     loadAnimals();
@@ -58,43 +71,48 @@ export default function PesagensPage() {
 
     setSaving(true);
 
-    const { error: weightError } = await supabase.from("weights").insert([
-      {
-        animal_id: animalId,
-        weight: numericWeight,
-        weighing_date: weighingDate,
-        notes: notes || null,
-      },
-    ]);
+    try {
+      const { error: weightError } = await supabase.from("weights").insert([
+        {
+          animal_id: animalId,
+          weight: numericWeight,
+          weighing_date: weighingDate,
+          notes: notes || null,
+        },
+      ]);
 
-    if (weightError) {
-      console.error("Erro detalhado ao registrar pesagem:", weightError);
-      alert(`Erro ao registrar pesagem: ${JSON.stringify(weightError)}`);
+      if (weightError) {
+        console.error("Erro detalhado ao registrar pesagem:", weightError);
+        alert(`Erro ao registrar pesagem: ${JSON.stringify(weightError)}`);
+        return;
+      }
+
+      const { error: eventError } = await supabase.from("farm_events").insert([
+        {
+          animal_id: animalId,
+          type: "weighing",
+          description: `Pesagem registrada: ${numericWeight} kg`,
+          event_date: weighingDate,
+        },
+      ]);
+
+      if (eventError) {
+        console.error("Erro ao registrar evento da pesagem:", eventError);
+        alert(`Pesagem salva, mas o evento falhou: ${JSON.stringify(eventError)}`);
+      } else {
+        alert("Pesagem registrada com sucesso.");
+      }
+
+      setAnimalId("");
+      setWeight("");
+      setWeighingDate(todayInputValue());
+      setNotes("");
+    } catch (err) {
+      console.error("Erro inesperado ao registrar pesagem:", err);
+      alert("Erro inesperado ao registrar a pesagem.");
+    } finally {
       setSaving(false);
-      return;
     }
-
-    const { error: eventError } = await supabase.from("farm_events").insert([
-      {
-        animal_id: animalId,
-        type: "weighing",
-        description: `Pesagem registrada: ${numericWeight} kg`,
-        event_date: weighingDate,
-      },
-    ]);
-
-    if (eventError) {
-      console.error("Erro ao registrar evento da pesagem:", eventError);
-      alert(`Pesagem salva, mas evento falhou: ${JSON.stringify(eventError)}`);
-    } else {
-      alert("Pesagem registrada com sucesso.");
-    }
-
-    setAnimalId("");
-    setWeight("");
-    setWeighingDate(todayInputValue());
-    setNotes("");
-    setSaving(false);
   }
 
   return (
@@ -160,19 +178,28 @@ export default function PesagensPage() {
             </p>
           </div>
 
-          <div className="ag-badge ag-badge-dark">
-            Fluxo produtivo
-          </div>
+          <div className="ag-badge ag-badge-dark">Fluxo produtivo</div>
         </div>
 
-        {loading && <p className="mt-8">Carregando...</p>}
+        {loading && (
+          <div className="mt-8 rounded-3xl bg-[var(--surface-soft)] p-6 text-sm text-[var(--text-muted)]">
+            Carregando base animal...
+          </div>
+        )}
 
-        {!loading && (
+        {!loading && loadError && (
+          <div className="mt-8 rounded-3xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">
+            {loadError}
+          </div>
+        )}
+
+        {!loading && !loadError && (
           <div className="mt-8 grid gap-5">
             <label>
               <div className="mb-2 text-sm font-medium text-[var(--text-primary)]">
                 Animal
               </div>
+
               <select
                 value={animalId}
                 onChange={(e) => setAnimalId(e.target.value)}
@@ -182,6 +209,7 @@ export default function PesagensPage() {
                 {animals.map((animal) => (
                   <option key={animal.id} value={animal.id}>
                     {animal.internal_code ?? animal.id}
+                    {animal.agraas_id ? ` • ${animal.agraas_id}` : ""}
                   </option>
                 ))}
               </select>

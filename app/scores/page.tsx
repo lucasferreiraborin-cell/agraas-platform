@@ -12,16 +12,53 @@ type ScoreRow = {
   breed: string | null;
 };
 
-export default async function ScoresPage() {
-  const { data, error } = await supabase
-    .from("agraas_master_passport")
-    .select(
-      "animal_id, internal_code, total_score, current_property_name, active_certifications, animal_status, sex, breed"
-    )
-    .order("total_score", { ascending: false })
-    .limit(50);
+type AnimalBaseRow = {
+  id: string;
+  agraas_id: string | null;
+  birth_date: string | null;
+};
 
-  const rows: ScoreRow[] = (data as ScoreRow[] | null) ?? [];
+type DisplayScoreRow = ScoreRow & {
+  agraas_id: string | null;
+  birth_date: string | null;
+};
+
+export default async function ScoresPage() {
+  const [
+    { data: scoreData, error: scoreError },
+    { data: animalBaseData, error: animalBaseError },
+  ] = await Promise.all([
+    supabase
+      .from("agraas_master_passport")
+      .select(
+        "animal_id, internal_code, total_score, current_property_name, active_certifications, animal_status, sex, breed"
+      )
+      .order("total_score", { ascending: false })
+      .limit(50),
+
+    supabase
+      .from("animals")
+      .select("id, agraas_id, birth_date"),
+  ]);
+
+  const rawRows: ScoreRow[] = (scoreData as ScoreRow[] | null) ?? [];
+  const animalBaseRows: AnimalBaseRow[] =
+    (animalBaseData as AnimalBaseRow[] | null) ?? [];
+
+  const animalBaseMap = new Map<string, AnimalBaseRow>();
+  for (const animal of animalBaseRows) {
+    animalBaseMap.set(animal.id, animal);
+  }
+
+  const rows: DisplayScoreRow[] = rawRows.map((item) => {
+    const base = animalBaseMap.get(item.animal_id);
+
+    return {
+      ...item,
+      agraas_id: base?.agraas_id ?? null,
+      birth_date: base?.birth_date ?? null,
+    };
+  });
 
   const validScores = rows.filter(
     (item) => typeof item.total_score === "number"
@@ -52,6 +89,10 @@ export default async function ScoresPage() {
     (item) => (item.animal_status ?? "").toLowerCase() === "active"
   ).length;
 
+  const agraasIdCount = rows.filter((item) => Boolean(item.agraas_id)).length;
+
+  const birthDateCount = rows.filter((item) => Boolean(item.birth_date)).length;
+
   return (
     <main className="space-y-8">
       <section className="ag-card-strong overflow-hidden">
@@ -66,9 +107,9 @@ export default async function ScoresPage() {
             </h1>
 
             <p className="mt-5 max-w-3xl text-[1.02rem] leading-8 text-[var(--text-secondary)]">
-              A leitura de score transforma a base animal em uma camada de
-              inteligência real para tomada de decisão, priorização operacional e
-              construção de confiança dentro da cadeia pecuária.
+              O score Agraas transforma a base animal em uma camada de
+              inteligência real para priorização operacional, leitura comparativa
+              e construção de confiança dentro da cadeia pecuária.
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
@@ -80,7 +121,7 @@ export default async function ScoresPage() {
               </Link>
             </div>
 
-            <div className="mt-10 grid gap-4 md:grid-cols-3">
+            <div className="mt-10 grid gap-4 md:grid-cols-4">
               <HeroMetric
                 label="Score médio"
                 value={averageScore}
@@ -90,6 +131,11 @@ export default async function ScoresPage() {
                 label="Melhor score"
                 value={topScore}
                 subtitle="maior nível de confiança"
+              />
+              <HeroMetric
+                label="Agraas IDs"
+                value={agraasIdCount}
+                subtitle="identidades digitais emitidas"
               />
               <HeroMetric
                 label="Animais avaliados"
@@ -116,11 +162,8 @@ export default async function ScoresPage() {
             <div className="mt-8 grid gap-4 sm:grid-cols-2">
               <SnapshotCard label="Ativos" value={String(activeCount)} />
               <SnapshotCard label="Certificados" value={String(certifiedCount)} />
-              <SnapshotCard
-                label="Com score"
-                value={String(validScores.length)}
-              />
-              <SnapshotCard label="Top score" value={String(topScore)} />
+              <SnapshotCard label="Com score" value={String(validScores.length)} />
+              <SnapshotCard label="Nascimento estruturado" value={String(birthDateCount)} />
             </div>
 
             <div className="mt-6 rounded-3xl border border-[var(--border)] bg-white p-5 shadow-[var(--shadow-soft)]">
@@ -129,15 +172,15 @@ export default async function ScoresPage() {
               </p>
               <p className="mt-3 text-base leading-7 text-[var(--text-secondary)]">
                 A Agraas não é apenas cadastro. Ela organiza confiança,
-                priorização e leitura comparativa da base em um formato visual
-                pronto para operação, governança e apresentação institucional.
+                identidade digital e leitura comparativa da base em um formato
+                visual pronto para operação, governança e apresentação institucional.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-4">
+      <section className="grid gap-4 xl:grid-cols-5">
         <KpiCard
           label="Base ranqueada"
           value={rows.length}
@@ -161,6 +204,12 @@ export default async function ScoresPage() {
           value={activeCount}
           icon="🐂"
           subtitle="status operacional vigente"
+        />
+        <KpiCard
+          label="Agraas IDs"
+          value={agraasIdCount}
+          icon="🪪"
+          subtitle="identidade digital emitida"
         />
       </section>
 
@@ -205,13 +254,15 @@ export default async function ScoresPage() {
                   <div className="flex h-14 w-14 items-center justify-center rounded-3xl bg-white text-2xl shadow-[var(--shadow-soft)]">
                     {getPodiumIcon(index)}
                   </div>
-                  <span className="ag-badge ag-badge-green">
-                    #{index + 1}
-                  </span>
+                  <span className="ag-badge ag-badge-green">#{index + 1}</span>
                 </div>
 
                 <p className="mt-5 text-xl font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
                   {item.internal_code ?? item.animal_id}
+                </p>
+
+                <p className="mt-2 text-sm text-[var(--text-muted)]">
+                  {item.agraas_id ?? "Agraas ID não emitido"}
                 </p>
 
                 <p className="mt-2 text-sm text-[var(--text-muted)]">
@@ -249,8 +300,8 @@ export default async function ScoresPage() {
           <div>
             <h2 className="ag-section-title">Ranking completo</h2>
             <p className="ag-section-subtitle">
-              Visualização premium da confiança animal com score, status,
-              propriedade e acesso ao passaporte individual.
+              Visualização premium da confiança animal com score, identidade digital,
+              status, propriedade e acesso ao passaporte individual.
             </p>
           </div>
 
@@ -258,7 +309,7 @@ export default async function ScoresPage() {
         </div>
 
         <div className="mt-8">
-          {error ? (
+          {scoreError || animalBaseError ? (
             <p className="text-sm text-[var(--danger)]">
               Erro ao carregar ranking.
             </p>
@@ -313,7 +364,7 @@ export default async function ScoresPage() {
                               {item.internal_code ?? item.animal_id}
                             </p>
                             <p className="mt-1 text-sm text-[var(--text-muted)]">
-                              {item.animal_id.slice(0, 8)}...
+                              {item.agraas_id ?? "Agraas ID não emitido"}
                             </p>
                           </div>
                         </td>
@@ -480,6 +531,8 @@ function formatStatus(value: string | null) {
     pending: "Pendente",
     blocked: "Bloqueado",
     archived: "Arquivado",
+    sold: "Vendido",
+    slaughtered: "Abatido",
   };
 
   return map[value.toLowerCase()] ?? value;

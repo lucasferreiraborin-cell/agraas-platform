@@ -14,37 +14,65 @@ type PassportCacheRow = {
   } | null;
 };
 
+type AnimalBaseRow = {
+  id: string;
+  agraas_id: string | null;
+  birth_date: string | null;
+};
+
 type AnimalRow = {
   animal_id: string;
   internal_code: string | null;
+  agraas_id: string | null;
   sex: string | null;
   breed: string | null;
   animal_status: string | null;
   total_score: number | null;
+  birth_date: string | null;
 };
 
 export default async function AnimaisPage() {
-  const { data, error } = await supabase
-    .from("agraas_master_passport_cache")
-    .select("animal_id, identity_json, score_json");
+  const [
+    { data: passportData, error: passportError },
+    { data: animalsBaseData, error: animalsBaseError },
+  ] = await Promise.all([
+    supabase
+      .from("agraas_master_passport_cache")
+      .select("animal_id, identity_json, score_json"),
 
-  const rawRows: PassportCacheRow[] = (data as PassportCacheRow[] | null) ?? [];
+    supabase
+      .from("animals")
+      .select("id, agraas_id, birth_date"),
+  ]);
 
-  const rows: AnimalRow[] = rawRows.map((item) => ({
-    animal_id: item.animal_id,
-    internal_code: item.identity_json?.internal_code ?? null,
-    sex: item.identity_json?.sex ?? null,
-    breed: item.identity_json?.breed ?? null,
-    animal_status: item.identity_json?.status ?? null,
-    total_score: item.score_json?.total_score ?? null,
-  }));
+  const rawRows: PassportCacheRow[] = (passportData as PassportCacheRow[] | null) ?? [];
+  const animalsBase: AnimalBaseRow[] = (animalsBaseData as AnimalBaseRow[] | null) ?? [];
+
+  const animalBaseMap = new Map<string, AnimalBaseRow>();
+  for (const animal of animalsBase) {
+    animalBaseMap.set(animal.id, animal);
+  }
+
+  const rows: AnimalRow[] = rawRows.map((item) => {
+    const base = animalBaseMap.get(item.animal_id);
+
+    return {
+      animal_id: item.animal_id,
+      internal_code: item.identity_json?.internal_code ?? null,
+      agraas_id: base?.agraas_id ?? null,
+      sex: item.identity_json?.sex ?? null,
+      breed: item.identity_json?.breed ?? null,
+      animal_status: item.identity_json?.status ?? null,
+      total_score: item.score_json?.total_score ?? null,
+      birth_date: base?.birth_date ?? null,
+    };
+  });
 
   const averageScore =
     rows.length > 0
       ? Math.round(
-          rows.reduce((acc, animal) => {
-            return acc + Number(animal.total_score ?? 0);
-          }, 0) / rows.length
+          rows.reduce((acc, animal) => acc + Number(animal.total_score ?? 0), 0) /
+            rows.length
         )
       : 0;
 
@@ -52,28 +80,26 @@ export default async function AnimaisPage() {
     (animal) => (animal.animal_status ?? "").toLowerCase() === "active"
   ).length;
 
-  const femaleCount = rows.filter(
-    (animal) => {
-      const value = (animal.sex ?? "").toLowerCase();
-      return value === "female" || value === "fêmea" || value === "femea";
-    }
-  ).length;
+  const femaleCount = rows.filter((animal) => {
+    const value = (animal.sex ?? "").toLowerCase();
+    return value === "female" || value === "fêmea" || value === "femea";
+  }).length;
 
-  const maleCount = rows.filter(
-    (animal) => {
-      const value = (animal.sex ?? "").toLowerCase();
-      return value === "male" || value === "macho";
-    }
-  ).length;
+  const maleCount = rows.filter((animal) => {
+    const value = (animal.sex ?? "").toLowerCase();
+    return value === "male" || value === "macho";
+  }).length;
 
-  const breedsCount = new Set(
-    rows.map((animal) => animal.breed).filter(Boolean)
-  ).size;
+  const breedsCount = new Set(rows.map((animal) => animal.breed).filter(Boolean)).size;
 
   const topScore =
     rows.length > 0
       ? Math.max(...rows.map((animal) => Number(animal.total_score ?? 0)))
       : 0;
+
+  const agraasIdCount = rows.filter((animal) => Boolean(animal.agraas_id)).length;
+
+  const birthDateCount = rows.filter((animal) => Boolean(animal.birth_date)).length;
 
   return (
     <main className="space-y-8">
@@ -89,9 +115,9 @@ export default async function AnimaisPage() {
             </h1>
 
             <p className="mt-5 max-w-3xl text-[1.02rem] leading-8 text-[var(--text-secondary)]">
-              Consulte os animais registrados, acompanhe a qualidade da base e
-              navegue para passaportes com score, cadeia produtiva e histórico
-              auditável em uma interface pronta para apresentação.
+              Consulte os animais registrados, acompanhe score, identidade digital
+              e rastreabilidade da base e navegue para passaportes individuais
+              com histórico auditável e leitura produtiva.
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
@@ -104,7 +130,7 @@ export default async function AnimaisPage() {
               </Link>
             </div>
 
-            <div className="mt-10 grid gap-4 md:grid-cols-3">
+            <div className="mt-10 grid gap-4 md:grid-cols-4">
               <HeroMetric
                 label="Animais registrados"
                 value={rows.length}
@@ -114,6 +140,11 @@ export default async function AnimaisPage() {
                 label="Score médio"
                 value={averageScore}
                 subtitle="qualidade média do rebanho"
+              />
+              <HeroMetric
+                label="Agraas IDs"
+                value={agraasIdCount}
+                subtitle="identidades digitais emitidas"
               />
               <HeroMetric
                 label="Raças mapeadas"
@@ -150,15 +181,35 @@ export default async function AnimaisPage() {
               </p>
               <p className="mt-3 text-base leading-7 text-[var(--text-secondary)]">
                 Esta página mostra a base animal com leitura rápida de status,
-                score e rastreabilidade, servindo como porta de entrada para o
-                passaporte individual de cada ativo da operação.
+                score, identidade digital e rastreabilidade, servindo como porta
+                de entrada para o passaporte individual de cada ativo.
               </p>
+
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-2xl bg-[var(--surface-soft)] p-4">
+                  <p className="text-xs uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                    Identidade digital
+                  </p>
+                  <p className="mt-2 text-lg font-semibold text-[var(--text-primary)]">
+                    {agraasIdCount}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl bg-[var(--surface-soft)] p-4">
+                  <p className="text-xs uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                    Nascimento estruturado
+                  </p>
+                  <p className="mt-2 text-lg font-semibold text-[var(--text-primary)]">
+                    {birthDateCount}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-4">
+      <section className="grid gap-4 xl:grid-cols-5">
         <KpiCard
           label="Base total"
           value={rows.length}
@@ -178,6 +229,12 @@ export default async function AnimaisPage() {
           subtitle="status operacional vigente"
         />
         <KpiCard
+          label="Agraas IDs"
+          value={agraasIdCount}
+          icon="🪪"
+          subtitle="identidade digital emitida"
+        />
+        <KpiCard
           label="Raças"
           value={breedsCount}
           icon="🧬"
@@ -191,7 +248,7 @@ export default async function AnimaisPage() {
             <h2 className="ag-section-title">Animais registrados</h2>
             <p className="ag-section-subtitle">
               Visão operacional da base pecuária com leitura premium de score,
-              status e navegação para o passaporte individual.
+              identidade digital e navegação para o passaporte individual.
             </p>
           </div>
 
@@ -199,7 +256,7 @@ export default async function AnimaisPage() {
         </div>
 
         <div className="mt-8">
-          {error ? (
+          {passportError || animalsBaseError ? (
             <p className="text-sm text-[var(--danger)]">
               Erro ao carregar animais.
             </p>
@@ -246,7 +303,7 @@ export default async function AnimaisPage() {
                                 {animal.internal_code ?? animal.animal_id}
                               </p>
                               <p className="mt-1 text-sm text-[var(--text-muted)]">
-                                ID: {animal.animal_id.slice(0, 8)}...
+                                {animal.agraas_id ?? "Agraas ID não emitido"}
                               </p>
                             </div>
                           </div>
