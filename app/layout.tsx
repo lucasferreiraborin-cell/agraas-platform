@@ -7,20 +7,25 @@ const menuItems = [
   { href: "/market", label: "Market", icon: "◈" },
   { href: "/operacoes", label: "Operações", icon: "◎" },
   { href: "/propriedades", label: "Propriedades", icon: "▣" },
-
-  { href: "/estoque", label: "Estoque", icon: "◫" },
-  { href: "/estoque/dashboard", label: "Dashboard Sanitário", icon: "◨" },
-  { href: "/estoque/historico", label: "Histórico Estoque", icon: "◭" },
-
+  { href: "/estoque", label: "Estoque", icon: "▥" },
+  { href: "/estoque/dashboard", label: "Dashboard Sanitário", icon: "▤" },
+  { href: "/estoque/historico", label: "Histórico Estoque", icon: "△" },
   { href: "/aplicacoes", label: "Aplicações", icon: "✚" },
-  { href: "/aplicacoes/historico", label: "Histórico Aplicações", icon: "◷" },
-
-  { href: "/pesagens", label: "Pesagens", icon: "◔" },
-  { href: "/vendas", label: "Vendas", icon: "⇄" },
+  { href: "/aplicacoes/historico", label: "Histórico Aplicações", icon: "◔" },
+  { href: "/pesagens", label: "Pesagens", icon: "⚖" },
+  { href: "/pesagens/historico", label: "Histórico Pesagens", icon: "◴" },
+  { href: "/eventos", label: "Eventos", icon: "☰" },
+  { href: "/produtivo", label: "Dashboard Produtivo", icon: "▲" },
+  { href: "/movimentacoes", label: "Movimentações", icon: "⇄" },
+  { href: "/movimentacoes/historico", label: "Histórico Movimentações", icon: "↺" },
+  { href: "/custos", label: "Custos", icon: "$" },
+  { href: "/custos/historico", label: "Histórico Custos", icon: "◫" },
+  { href: "/relatorios", label: "Relatórios", icon: "☷" },
+  { href: "/alertas", label: "Alertas", icon: "!" },
+  { href: "/vendas", label: "Vendas", icon: "↔" },
   { href: "/lotes", label: "Lotes", icon: "▤" },
-  { href: "/abates", label: "Abates", icon: "◈" },
-  { href: "/scores", label: "Scores", icon: "▲" },
-  { href: "/selos", label: "Selos", icon: "✦" },
+  { href: "/abates", label: "Abates", icon: "◆" },
+  { href: "/scores", label: "Scores", icon: "✦" },
   { href: "/certificacoes", label: "Certificações", icon: "✓" },
   { href: "/historico", label: "Histórico", icon: "◷" },
 ];
@@ -67,7 +72,7 @@ export default function RootLayout({
                         Ambiente ativo
                       </p>
                       <p className="mt-1 text-xs text-white/55">
-                        Visual premium em evolução
+                        Fase 1 em consolidação final
                       </p>
                     </div>
                     <span className="inline-flex h-3 w-3 rounded-full bg-emerald-300 shadow-[0_0_18px_rgba(110,231,183,0.85)]" />
@@ -75,7 +80,7 @@ export default function RootLayout({
                 </div>
               </div>
 
-              <nav className="flex-1 space-y-1 px-5 py-6">
+              <nav className="flex-1 space-y-1 overflow-y-auto px-5 py-6">
                 {menuItems.map((item) => (
                   <Link
                     key={item.href}
@@ -96,8 +101,8 @@ export default function RootLayout({
                     Visão
                   </p>
                   <p className="mt-3 text-sm leading-6 text-white/82">
-                    Rastreabilidade, confiança e inteligência operacional para a
-                    cadeia pecuária.
+                    Rastreabilidade, performance produtiva e inteligência
+                    operacional para a cadeia pecuária.
                   </p>
 
                   <div className="mt-5 grid grid-cols-2 gap-3">
@@ -115,7 +120,7 @@ export default function RootLayout({
                         Fase
                       </p>
                       <p className="mt-2 text-sm font-medium text-white">
-                        MVP Premium
+                        MVP Fase 1
                       </p>
                     </div>
                   </div>

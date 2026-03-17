@@ -58,7 +58,7 @@ export default function PesagensPage() {
 
     setSaving(true);
 
-    const { error } = await supabase.from("weights").insert([
+    const { error: weightError } = await supabase.from("weights").insert([
       {
         animal_id: animalId,
         weight: numericWeight,
@@ -67,14 +67,28 @@ export default function PesagensPage() {
       },
     ]);
 
-    if (error) {
-      console.error("Erro ao registrar pesagem:", error);
-      alert("Erro ao registrar pesagem.");
+    if (weightError) {
+      console.error("Erro detalhado ao registrar pesagem:", weightError);
+      alert(`Erro ao registrar pesagem: ${JSON.stringify(weightError)}`);
       setSaving(false);
       return;
     }
 
-    alert("Pesagem registrada com sucesso.");
+    const { error: eventError } = await supabase.from("farm_events").insert([
+      {
+        animal_id: animalId,
+        type: "weighing",
+        description: `Pesagem registrada: ${numericWeight} kg`,
+        event_date: weighingDate,
+      },
+    ]);
+
+    if (eventError) {
+      console.error("Erro ao registrar evento da pesagem:", eventError);
+      alert(`Pesagem salva, mas evento falhou: ${JSON.stringify(eventError)}`);
+    } else {
+      alert("Pesagem registrada com sucesso.");
+    }
 
     setAnimalId("");
     setWeight("");

@@ -1,12 +1,12 @@
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 
-type WeightRow = {
+type FarmEventRow = {
   id: string;
-  animal_id: string;
-  weight: number;
-  weighing_date: string | null;
-  notes: string | null;
+  animal_id: string | null;
+  type: string;
+  description: string | null;
+  event_date: string | null;
   created_at: string | null;
 };
 
@@ -18,35 +18,36 @@ type AnimalRow = {
 type DisplayRow = {
   id: string;
   animal_code: string;
-  weight: number;
-  weighing_date: string | null;
-  notes: string;
+  type: string;
+  description: string;
+  event_date: string | null;
 };
 
-export default async function PesagensHistoricoPage() {
+export default async function EventosPage() {
   const [
-    { data: weightsData, error: weightsError },
+    { data: eventsData, error: eventsError },
     { data: animalsData, error: animalsError },
   ] = await Promise.all([
     supabase
-      .from("weights")
-      .select("id, animal_id, weight, weighing_date, notes, created_at")
-      .order("weighing_date", { ascending: false }),
+      .from("farm_events")
+      .select("id, animal_id, type, description, event_date, created_at")
+      .order("event_date", { ascending: false })
+      .order("created_at", { ascending: false }),
 
     supabase
       .from("animals")
       .select("id, internal_code"),
   ]);
 
-  if (weightsError) {
-    console.error("Erro ao buscar pesagens:", weightsError);
+  if (eventsError) {
+    console.error("Erro ao buscar eventos:", eventsError);
   }
 
   if (animalsError) {
     console.error("Erro ao buscar animais:", animalsError);
   }
 
-  const weights = (weightsData ?? []) as WeightRow[];
+  const events = (eventsData ?? []) as FarmEventRow[];
   const animals = (animalsData ?? []) as AnimalRow[];
 
   const animalMap = new Map<string, string>();
@@ -54,20 +55,15 @@ export default async function PesagensHistoricoPage() {
     animalMap.set(animal.id, animal.internal_code ?? animal.id);
   }
 
-  const rows: DisplayRow[] = weights.map((item) => ({
-    id: item.id,
-    animal_code: animalMap.get(item.animal_id) ?? item.animal_id,
-    weight: Number(item.weight ?? 0),
-    weighing_date: item.weighing_date ?? item.created_at ?? null,
-    notes: item.notes ?? "-",
+  const rows: DisplayRow[] = events.map((event) => ({
+    id: event.id,
+    animal_code: event.animal_id
+      ? animalMap.get(event.animal_id) ?? event.animal_id
+      : "-",
+    type: event.type,
+    description: event.description ?? "-",
+    event_date: event.event_date ?? event.created_at ?? null,
   }));
-
-  const totalWeights = rows.length;
-  const animalsWeighed = new Set(rows.map((row) => row.animal_code)).size;
-  const averageWeight =
-    rows.length > 0
-      ? rows.reduce((acc, row) => acc + Number(row.weight ?? 0), 0) / rows.length
-      : 0;
 
   return (
     <main className="space-y-8">
@@ -76,44 +72,52 @@ export default async function PesagensHistoricoPage() {
           <div className="relative p-8 lg:p-10">
             <div className="pointer-events-none absolute right-0 top-0 h-48 w-48 rounded-full bg-[radial-gradient(circle,rgba(122,168,76,0.18)_0%,rgba(122,168,76,0)_70%)]" />
 
-            <div className="ag-badge ag-badge-green">Histórico produtivo</div>
+            <div className="ag-badge ag-badge-green">Timeline da fazenda</div>
 
             <h1 className="mt-5 text-4xl font-semibold tracking-[-0.06em] text-[var(--text-primary)] lg:text-6xl">
-              Pesagens registradas
+              Eventos operacionais
             </h1>
 
             <p className="mt-5 max-w-3xl text-[1.02rem] leading-8 text-[var(--text-secondary)]">
-              Histórico consolidado das pesagens do rebanho para leitura
-              produtiva e acompanhamento da evolução animal.
+              Histórico consolidado dos principais eventos da operação
+              registrados na Agraas.
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/pesagens" className="ag-button-primary">
+              <Link href="/pesagens" className="ag-button-secondary">
                 Nova pesagem
               </Link>
 
-              <Link href="/animais" className="ag-button-secondary">
-                Ver animais
+              <Link href="/aplicacoes" className="ag-button-secondary">
+                Nova aplicação
               </Link>
             </div>
           </div>
 
           <div className="border-t border-[var(--border)] bg-[linear-gradient(180deg,#eef6ea_0%,#f5f7f4_100%)] p-8 lg:p-10 xl:border-l xl:border-t-0">
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2">
               <MetricCard
-                label="Pesagens"
-                value={totalWeights}
-                subtitle="registros produtivos"
+                label="Eventos"
+                value={rows.length}
+                subtitle="trilha operacional registrada"
               />
               <MetricCard
                 label="Animais"
-                value={animalsWeighed}
-                subtitle="com pelo menos uma pesagem"
+                value={
+                  new Set(rows.map((row) => row.animal_code)).size -
+                  (rows.some((row) => row.animal_code === "-") ? 1 : 0)
+                }
+                subtitle="com eventos vinculados"
               />
               <MetricCard
-                label="Peso médio"
-                value={averageWeight > 0 ? `${averageWeight.toFixed(1)} kg` : "-"}
-                subtitle="média dos registros"
+                label="Módulo"
+                value="timeline"
+                subtitle="camada de rastreabilidade"
+              />
+              <MetricCard
+                label="Status"
+                value="ativo"
+                subtitle="event logging funcionando"
               />
             </div>
           </div>
@@ -125,28 +129,28 @@ export default async function PesagensHistoricoPage() {
           <div>
             <h2 className="ag-section-title">Tabela consolidada</h2>
             <p className="ag-section-subtitle">
-              Relação completa das pesagens registradas no sistema.
+              Linha do tempo dos eventos registrados no sistema.
             </p>
           </div>
 
           <div className="ag-badge ag-badge-dark">
-            {rows.length} registros
+            {rows.length} eventos
           </div>
         </div>
 
         <div className="mt-8 overflow-x-auto">
           {rows.length === 0 ? (
             <div className="rounded-3xl bg-[var(--surface-soft)] p-6 text-sm text-[var(--text-muted)]">
-              Nenhuma pesagem encontrada.
+              Nenhum evento encontrado.
             </div>
           ) : (
             <table className="ag-table">
               <thead>
                 <tr>
                   <th>Animal</th>
-                  <th>Peso</th>
+                  <th>Evento</th>
+                  <th>Descrição</th>
                   <th>Data</th>
-                  <th>Observações</th>
                 </tr>
               </thead>
 
@@ -154,9 +158,9 @@ export default async function PesagensHistoricoPage() {
                 {rows.map((row) => (
                   <tr key={row.id}>
                     <td>{row.animal_code}</td>
-                    <td>{`${row.weight} kg`}</td>
-                    <td>{formatDate(row.weighing_date)}</td>
-                    <td>{row.notes}</td>
+                    <td>{formatEventType(row.type)}</td>
+                    <td>{row.description}</td>
+                    <td>{formatDate(row.event_date)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -173,7 +177,7 @@ function MetricCard({
   value,
   subtitle,
 }: {
-  label: string;
+  label: string | number;
   value: string | number;
   subtitle: string;
 }) {
@@ -193,4 +197,19 @@ function MetricCard({
 function formatDate(value: string | null | undefined) {
   if (!value) return "-";
   return new Date(value).toLocaleDateString("pt-BR");
+}
+
+function formatEventType(value: string) {
+  const map: Record<string, string> = {
+    birth: "Nascimento",
+    weighing: "Pesagem",
+    application: "Aplicação sanitária",
+    lot_entry: "Entrada em lote",
+    lot_exit: "Saída de lote",
+    sale: "Venda",
+    slaughter: "Abate",
+    death: "Óbito",
+  };
+
+  return map[value] ?? value;
 }
