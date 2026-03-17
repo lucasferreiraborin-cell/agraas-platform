@@ -60,11 +60,11 @@ type EventRow = {
 type AnimalRow = {
   id: string;
   internal_code: string | null;
+  agraas_id?: string | null;
+  birth_date?: string | null;
 };
 
 export default async function PainelPage() {
-  const hoje = new Date().toISOString().slice(0, 10);
-
   const [
     { data: passportsData, error: passportsError },
     { count: applicationsCount },
@@ -74,9 +74,7 @@ export default async function PainelPage() {
     { data: eventsData },
     { data: animalsData },
   ] = await Promise.all([
-    supabase
-      .from("agraas_master_passport_cache")
-      .select("*"),
+    supabase.from("agraas_master_passport_cache").select("*"),
 
     supabase
       .from("applications")
@@ -105,7 +103,7 @@ export default async function PainelPage() {
 
     supabase
       .from("animals")
-      .select("id, internal_code"),
+      .select("id, internal_code, agraas_id, birth_date"),
   ]);
 
   const passports = (passportsData as PassportCacheRow[] | null) ?? [];
@@ -122,6 +120,9 @@ export default async function PainelPage() {
   const totalApplications = applicationsCount ?? 0;
   const totalCertifications = certificationsCount ?? 0;
   const totalProperties = propertiesCount ?? 0;
+
+  const animalsWithAgraasId = animals.filter((animal) => Boolean(animal.agraas_id)).length;
+  const animalsWithBirthDate = animals.filter((animal) => Boolean(animal.birth_date)).length;
 
   const totalScoreAverage =
     totalAnimals > 0
@@ -214,9 +215,9 @@ export default async function PainelPage() {
       description: "qualidade consolidada do rebanho",
     },
     {
-      label: "Certificados",
-      value: totalCertifiedAnimals,
-      description: "ativos com chancela formal na base",
+      label: "Agraas IDs",
+      value: animalsWithAgraasId,
+      description: "identidades digitais já emitidas",
     },
   ];
 
@@ -228,16 +229,16 @@ export default async function PainelPage() {
       tone: "green" as const,
     },
     {
-      label: "Pressão sanitária",
-      value: totalAnimals > 0 ? Math.round((animalsWithWithdrawal / totalAnimals) * 100) : 0,
-      description: "parcela do rebanho com carência sanitária ativa",
-      tone: "amber" as const,
+      label: "Cobertura de identidade",
+      value: animals.length > 0 ? Math.round((animalsWithAgraasId / animals.length) * 100) : 0,
+      description: "animais com Agraas ID emitido",
+      tone: "blue" as const,
     },
     {
-      label: "Cobertura de certificação",
-      value: totalAnimals > 0 ? Math.round((totalCertifiedAnimals / totalAnimals) * 100) : 0,
-      description: "presença de certificações na base monitorada",
-      tone: "blue" as const,
+      label: "Cobertura de nascimento",
+      value: animals.length > 0 ? Math.round((animalsWithBirthDate / animals.length) * 100) : 0,
+      description: "animais com data de nascimento estruturada",
+      tone: "amber" as const,
     },
   ];
 
@@ -259,12 +260,13 @@ export default async function PainelPage() {
             <div className="ag-badge ag-badge-green">Painel executivo</div>
 
             <h1 className="mt-5 max-w-4xl text-4xl font-semibold leading-[1.02] tracking-[-0.065em] text-[var(--text-primary)] lg:text-6xl">
-              A inteligência operacional da Agraas transforma rastreabilidade em valor.
+              A Agraas já opera como ERP pecuário e evolui para infraestrutura de dados da cadeia.
             </h1>
 
             <p className="mt-5 max-w-3xl text-[1.05rem] leading-8 text-[var(--text-secondary)]">
-              Score, certificações, histórico auditável e leitura produtiva do animal
-              em uma única camada de software pronta para board, operação e mercado.
+              Identidade digital do animal, score, certificações, histórico auditável e
+              leitura produtiva em uma camada única de software pronta para operação,
+              board, rastreabilidade e expansão da cadeia pecuária.
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
@@ -273,6 +275,9 @@ export default async function PainelPage() {
               </Link>
               <Link href="/produtivo" className="ag-button-secondary">
                 Dashboard produtivo
+              </Link>
+              <Link href="/eventos" className="ag-button-secondary">
+                Timeline da cadeia
               </Link>
             </div>
 
@@ -385,12 +390,18 @@ export default async function PainelPage() {
         </div>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-5">
+      <section className="grid gap-4 xl:grid-cols-6">
         <KpiCard
           label="Animais ativos"
           value={activeAnimals}
           icon="🐂"
           subtitle="base animal com status operacional ativo"
+        />
+        <KpiCard
+          label="Agraas IDs"
+          value={animalsWithAgraasId}
+          icon="🪪"
+          subtitle="identidade digital emitida"
         />
         <KpiCard
           label="Aplicações"
@@ -506,6 +517,94 @@ export default async function PainelPage() {
         </div>
       </section>
 
+      <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
+        <div className="ag-card p-8">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="ag-section-title">Infraestrutura da cadeia</h2>
+              <p className="ag-section-subtitle">
+                A Agraas conecta operação, identidade animal, score, histórico e rastreabilidade.
+              </p>
+            </div>
+
+            <span className="ag-badge ag-badge-dark">Core thesis</span>
+          </div>
+
+          <div className="mt-8 grid gap-4 md:grid-cols-2">
+            <FrameworkCard
+              title="ERP Pecuário"
+              subtitle="cadastro, pesagens, aplicações, custos, movimentações e lotes"
+            />
+            <FrameworkCard
+              title="Identidade Animal"
+              subtitle="Agraas ID como camada de identidade digital do rebanho"
+            />
+            <FrameworkCard
+              title="Passaporte Digital"
+              subtitle="timeline, sanitário, peso, cadeia produtiva e score consolidado"
+            />
+            <FrameworkCard
+              title="Inteligência da Cadeia"
+              subtitle="base para certificação, rastreabilidade e leitura de mercado"
+            />
+          </div>
+        </div>
+
+        <div className="ag-card p-8">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="ag-section-title">Últimos eventos</h2>
+              <p className="ag-section-subtitle">
+                Leitura rápida da trilha operacional registrada na base.
+              </p>
+            </div>
+
+            <Link href="/eventos" className="ag-button-secondary">
+              Ver timeline
+            </Link>
+          </div>
+
+          <div className="mt-8 space-y-4">
+            {recentEvents.length === 0 ? (
+              <div className="rounded-3xl bg-[var(--surface-soft)] p-6 text-sm text-[var(--text-muted)]">
+                Nenhum evento encontrado.
+              </div>
+            ) : (
+              recentEvents.map((event, index) => (
+                <div
+                  key={`${event.animal_id}-${event.event_date}-${index}`}
+                  className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5"
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="ag-badge ag-badge-green">
+                      {getEventIcon(event.type ?? "")}{" "}
+                      {formatEventType(event.type ?? "")}
+                    </span>
+
+                    <span className="text-sm text-[var(--text-muted)]">
+                      {event.event_date
+                        ? new Date(event.event_date).toLocaleString("pt-BR")
+                        : "-"}
+                    </span>
+                  </div>
+
+                  <p className="mt-4 text-sm font-medium text-[var(--text-primary)]">
+                    Animal:{" "}
+                    {event.animal_id
+                      ? animalMap.get(event.animal_id) ?? event.animal_id
+                      : "-"}
+                  </p>
+
+                  <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
+                    {event.description ?? "Sem observações detalhadas registradas."}
+                  </p>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </section>
+
       <section className="grid gap-6 xl:grid-cols-[1.02fr_0.98fr]">
         <div className="ag-card p-8">
           <div className="flex items-start justify-between gap-4">
@@ -573,54 +672,40 @@ export default async function PainelPage() {
         <div className="ag-card p-8">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h2 className="ag-section-title">Últimos eventos</h2>
+              <h2 className="ag-section-title">Atalhos para demo</h2>
               <p className="ag-section-subtitle">
-                Leitura rápida da trilha operacional registrada na base.
+                Fluxo recomendado para apresentação da plataforma aos sócios.
               </p>
             </div>
 
-            <Link href="/eventos" className="ag-button-secondary">
-              Ver timeline
-            </Link>
+            <span className="ag-badge ag-badge-green">Demo flow</span>
           </div>
 
-          <div className="mt-8 space-y-4">
-            {recentEvents.length === 0 ? (
-              <div className="rounded-3xl bg-[var(--surface-soft)] p-6 text-sm text-[var(--text-muted)]">
-                Nenhum evento encontrado.
-              </div>
-            ) : (
-              recentEvents.map((event, index) => (
-                <div
-                  key={`${event.animal_id}-${event.event_date}-${index}`}
-                  className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5"
-                >
-                  <div className="flex items-center justify-between gap-4">
-                    <span className="ag-badge ag-badge-green">
-                      {getEventIcon(event.type ?? "")}{" "}
-                      {formatEventType(event.type ?? "")}
-                    </span>
-
-                    <span className="text-sm text-[var(--text-muted)]">
-                      {event.event_date
-                        ? new Date(event.event_date).toLocaleString("pt-BR")
-                        : "-"}
-                    </span>
-                  </div>
-
-                  <p className="mt-4 text-sm font-medium text-[var(--text-primary)]">
-                    Animal:{" "}
-                    {event.animal_id
-                      ? animalMap.get(event.animal_id) ?? event.animal_id
-                      : "-"}
-                  </p>
-
-                  <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-                    {event.description ?? "Sem observações detalhadas registradas."}
-                  </p>
-                </div>
-              ))
-            )}
+          <div className="mt-8 grid gap-4">
+            <DemoStep
+              number="1"
+              title="Animais"
+              description="mostre a base animal com Agraas ID e o posicionamento de identidade digital."
+              href="/animais"
+            />
+            <DemoStep
+              number="2"
+              title="Passaporte"
+              description="abra um animal e mostre score, timeline, sanitário, pesagens e cadeia produtiva."
+              href="/animais"
+            />
+            <DemoStep
+              number="3"
+              title="Dashboard produtivo"
+              description="mostre ranking por score, evolução de peso e inteligência produtiva."
+              href="/produtivo"
+            />
+            <DemoStep
+              number="4"
+              title="Timeline da cadeia"
+              description="mostre os últimos eventos e a lógica de rastreabilidade operacional."
+              href="/eventos"
+            />
           </div>
         </div>
       </section>
@@ -746,6 +831,54 @@ function KpiCard({
         {subtitle}
       </p>
     </div>
+  );
+}
+
+function FrameworkCard({
+  title,
+  subtitle,
+}: {
+  title: string;
+  subtitle: string;
+}) {
+  return (
+    <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5">
+      <p className="text-base font-semibold text-[var(--text-primary)]">{title}</p>
+      <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
+        {subtitle}
+      </p>
+    </div>
+  );
+}
+
+function DemoStep({
+  number,
+  title,
+  description,
+  href,
+}: {
+  number: string;
+  title: string;
+  description: string;
+  href: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5 transition hover:border-[rgba(93,156,68,0.24)] hover:bg-[var(--primary-soft)]"
+    >
+      <div className="flex items-start gap-4">
+        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-sm font-semibold shadow-[var(--shadow-soft)]">
+          {number}
+        </div>
+        <div>
+          <p className="text-base font-semibold text-[var(--text-primary)]">{title}</p>
+          <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
+            {description}
+          </p>
+        </div>
+      </div>
+    </Link>
   );
 }
 

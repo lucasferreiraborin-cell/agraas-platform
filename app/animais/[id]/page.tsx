@@ -7,6 +7,28 @@ type PageProps = {
   }>;
 };
 
+type AnimalRow = {
+  id: string;
+  internal_code: string | null;
+  agraas_id: string | null;
+  birth_date: string | null;
+  sex: string | null;
+  breed: string | null;
+  current_property_id: string | null;
+  status: string | null;
+  category: string | null;
+  blood_type: string | null;
+  sire_animal_id: string | null;
+  dam_animal_id: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+};
+
+type PropertyRow = {
+  id: string;
+  name: string | null;
+};
+
 type ApplicationRow = {
   id: string;
   animal_id: string;
@@ -75,7 +97,9 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
   const { id } = await params;
 
   const [
-    { data, error },
+    { data: passportData, error: passportError },
+    { data: animalData, error: animalError },
+    { data: propertiesData },
     { data: applicationsData },
     { data: productsData },
     { data: batchesData },
@@ -91,12 +115,21 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
       .single(),
 
     supabase
+      .from("animals")
+      .select("*")
+      .eq("id", id)
+      .single(),
+
+    supabase.from("properties").select("id, name"),
+
+    supabase
       .from("applications")
       .select("id, animal_id, product_id, batch_id, dose, application_date, created_at")
       .eq("animal_id", id)
       .order("application_date", { ascending: false }),
 
     supabase.from("products").select("id, name"),
+
     supabase.from("stock_batches").select("id, batch_number"),
 
     supabase
@@ -124,7 +157,7 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
       .order("movement_date", { ascending: false }),
   ]);
 
-  if (error || !data) {
+  if (animalError || !animalData) {
     return (
       <main className="space-y-8">
         <Link
@@ -136,21 +169,29 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
 
         <div className="ag-card-strong p-8">
           <h1 className="text-3xl font-semibold text-[var(--text-primary)]">
-            Passaporte não encontrado
+            Animal não encontrado
           </h1>
           <p className="mt-3 text-[var(--text-secondary)]">
-            Não foi possível localizar o passaporte digital deste animal.
+            Não foi possível localizar este animal na base da Agraas.
           </p>
         </div>
       </main>
     );
   }
 
-  const identity = data.identity_json ?? {};
-  const score = data.score_json ?? {};
-  const trace = data.traceability_json ?? {};
-  const sanitary = data.sanitary_json ?? {};
-  const chain = data.chain_json ?? {};
+  if (passportError) {
+    console.error("Erro ao buscar passaporte consolidado:", passportError);
+  }
+
+  const passport = passportData ?? null;
+  const animal = animalData as AnimalRow;
+  const properties = (propertiesData ?? []) as PropertyRow[];
+
+  const identity = passport?.identity_json ?? {};
+  const score = passport?.score_json ?? {};
+  const trace = passport?.traceability_json ?? {};
+  const sanitary = passport?.sanitary_json ?? {};
+  const chain = passport?.chain_json ?? {};
 
   const applications = (applicationsData ?? []) as ApplicationRow[];
   const products = (productsData ?? []) as ProductRow[];
@@ -170,6 +211,11 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
     batchMap.set(batch.id, batch.batch_number);
   }
 
+  const propertyMap = new Map<string, string>();
+  for (const property of properties) {
+    propertyMap.set(property.id, property.name ?? property.id);
+  }
+
   const sanitaryHistory: SanitaryHistoryRow[] = applications.map((application) => ({
     id: application.id,
     product_name: application.product_id
@@ -184,17 +230,25 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
 
   const latestWeight = weights.length > 0 ? Number(weights[0].weight) : null;
   const previousWeight = weights.length > 1 ? Number(weights[1].weight) : null;
+
   const weightVariation =
     latestWeight !== null && previousWeight !== null
       ? latestWeight - previousWeight
       : null;
 
+  const birthDate = animal.birth_date ?? null;
+  const ageMonths = birthDate ? calculateAgeInMonths(birthDate) : null;
+
   const timelineApplications: TimelineRow[] = applications.map((application) => ({
     id: `application-${application.id}`,
     title: "Aplicação sanitária",
-    description: `${application.product_id ? productMap.get(application.product_id) ?? "Produto" : "Produto"} • lote ${
-      application.batch_id ? batchMap.get(application.batch_id) ?? "-" : "-"
-    } • dose ${application.dose ?? "-"}`,
+    description: `${
+      application.product_id
+        ? productMap.get(application.product_id) ?? "Produto"
+        : "Produto"
+    } • lote ${application.batch_id ? batchMap.get(application.batch_id) ?? "-" : "-"} • dose ${
+      application.dose ?? "-"
+    }`,
     date: application.application_date ?? application.created_at ?? null,
     badge: "💉 Aplicação",
   }));
@@ -222,7 +276,9 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
     title: formatEventType(event.event_type ?? event.type ?? ""),
     description: event.notes ?? event.description ?? "Evento registrado.",
     date: event.event_date ?? event.event_timestamp ?? null,
-    badge: `${getEventIcon(event.event_type ?? event.type ?? "")} ${formatEventType(event.event_type ?? event.type ?? "")}`,
+    badge: `${getEventIcon(event.event_type ?? event.type ?? "")} ${formatEventType(
+      event.event_type ?? event.type ?? ""
+    )}`,
   }));
 
   const timelineFarmEvents: TimelineRow[] = farmEvents.map((event, index) => ({
@@ -230,7 +286,9 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
     title: formatEventType(event.type ?? event.event_type ?? ""),
     description: event.description ?? event.notes ?? "Evento operacional registrado.",
     date: event.event_date ?? event.event_timestamp ?? null,
-    badge: `${getEventIcon(event.type ?? event.event_type ?? "")} ${formatEventType(event.type ?? event.event_type ?? "")}`,
+    badge: `${getEventIcon(event.type ?? event.event_type ?? "")} ${formatEventType(
+      event.type ?? event.event_type ?? ""
+    )}`,
   }));
 
   const timeline = [
@@ -256,9 +314,55 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
         )
     );
 
+  const displayInternalCode =
+    identity.internal_code ?? animal.internal_code ?? animal.id;
+
+  const displaySex = identity.sex ?? animal.sex ?? null;
+  const displayBreed = identity.breed ?? animal.breed ?? "-";
+  const displayStatus = identity.status ?? animal.status ?? "-";
+
+  const displayProperty =
+    trace.current_property_name ??
+    (animal.current_property_id
+      ? propertyMap.get(animal.current_property_id) ?? animal.current_property_id
+      : "-");
+
+  const displayLot = trace.current_lot_code ?? "-";
+
+  const calculatedSanitaryScore =
+    score.sanitary_score ?? calculateSanitaryScore(applications.length);
+
+  const calculatedOperationalScore =
+    score.operational_score ??
+    calculateOperationalScore(movements.length, animalEvents.length + farmEvents.length);
+
+  const calculatedContinuityScore =
+    score.continuity_score ??
+    calculateContinuityScore(
+      weights.length,
+      Boolean(birthDate),
+      Boolean(animal.agraas_id)
+    );
+
+  const calculatedAgraasScore =
+    Number(score.total_score ?? 0) > 0
+      ? Number(score.total_score)
+      : calculateAgraasScore({
+          lastWeight: latestWeight,
+          applicationsCount: applications.length,
+          eventsCount: animalEvents.length + farmEvents.length,
+          weightsCount: weights.length,
+          ageMonths,
+          hasBloodType: Boolean(animal.blood_type),
+          hasGenealogy: Boolean(animal.sire_animal_id || animal.dam_animal_id),
+          sanitaryScore: Number(calculatedSanitaryScore ?? 0),
+          operationalScore: Number(calculatedOperationalScore ?? 0),
+          continuityScore: Number(calculatedContinuityScore ?? 0),
+        });
+
   const scorePercent = Math.max(
     6,
-    Math.min(100, Math.round(Number(score.total_score ?? 0)))
+    Math.min(100, Math.round(Number(calculatedAgraasScore ?? 0)))
   );
 
   return (
@@ -277,37 +381,92 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
 
             <div className="mt-6 flex items-center gap-4">
               <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-[var(--primary-soft)] text-3xl">
-                {getAnimalAvatar(identity.sex)}
+                {getAnimalAvatar(displaySex)}
               </div>
 
               <div>
                 <h1 className="text-4xl font-semibold text-[var(--text-primary)]">
-                  {identity.internal_code ?? data.animal_id}
+                  {displayInternalCode}
                 </h1>
 
                 <p className="mt-2 text-[var(--text-secondary)]">
                   Passaporte digital consolidado do animal.
                 </p>
+
+                <p className="mt-3 text-sm text-[var(--text-muted)]">
+                  Agraas ID:{" "}
+                  <span className="font-semibold text-[var(--text-primary)]">
+                    {animal.agraas_id ?? "-"}
+                  </span>
+                </p>
               </div>
             </div>
 
+            <div className="mt-6 grid gap-4 md:grid-cols-2">
+              <HighlightIdentityCard
+                label="Agraas ID"
+                value={animal.agraas_id ?? "-"}
+                subtitle="identidade digital única do animal"
+              />
+
+              <HighlightIdentityCard
+                label="Nascimento"
+                value={formatDate(birthDate)}
+                subtitle={
+                  ageMonths !== null
+                    ? `${ageMonths} meses de idade`
+                    : "idade não disponível"
+                }
+              />
+            </div>
+
             <div className="mt-10 grid gap-4 md:grid-cols-3">
-              <HeroMiniCard label="Sexo" value={formatSex(identity.sex)} subtitle="classificação biológica" />
-              <HeroMiniCard label="Raça" value={identity.breed ?? "-"} subtitle="identificação zootécnica" />
-              <HeroMiniCard label="Status" value={formatStatus(identity.status)} subtitle="condição operacional" />
+              <HeroMiniCard
+                label="Sexo"
+                value={formatSex(displaySex)}
+                subtitle="classificação biológica"
+              />
+              <HeroMiniCard
+                label="Raça"
+                value={displayBreed}
+                subtitle="identificação zootécnica"
+              />
+              <HeroMiniCard
+                label="Status"
+                value={formatStatus(displayStatus)}
+                subtitle="condição operacional"
+              />
+            </div>
+
+            <div className="mt-4 grid gap-4 md:grid-cols-3">
+              <HeroMiniCard
+                label="Categoria"
+                value={animal.category ?? "-"}
+                subtitle="classificação produtiva"
+              />
+              <HeroMiniCard
+                label="Tipo sanguíneo"
+                value={animal.blood_type ?? "-"}
+                subtitle="referência genética"
+              />
+              <HeroMiniCard
+                label="Genealogia"
+                value={animal.sire_animal_id || animal.dam_animal_id ? "Mapeada" : "-"}
+                subtitle="pai e mãe vinculados"
+              />
             </div>
           </div>
 
           <div className="border-l border-[var(--border)] bg-[var(--surface-soft)] p-8 lg:p-10">
             <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-              Trust score
+              Agraas score
             </p>
 
             <div className="mt-6 rounded-3xl border bg-white p-6 shadow">
-              <p className="text-sm text-[var(--text-muted)]">Score total</p>
+              <p className="text-sm text-[var(--text-muted)]">Score consolidado</p>
 
               <p className="mt-2 text-5xl font-semibold text-[var(--primary-hover)]">
-                {score.total_score ?? "-"}
+                {calculatedAgraasScore}
               </p>
 
               <div className="mt-5 h-3 w-full rounded-full bg-[rgba(93,156,68,0.10)]">
@@ -316,11 +475,17 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
                   style={{ width: `${scorePercent}%` }}
                 />
               </div>
+
+              <p className="mt-4 text-sm text-[var(--text-secondary)]">
+                {Number(score.total_score ?? 0) > 0
+                  ? "Score proveniente do passaporte consolidado"
+                  : "Score calculado dinamicamente a partir de peso, histórico e integridade cadastral"}
+              </p>
             </div>
 
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              <SnapshotCard label="Propriedade" value={trace.current_property_name ?? "-"} />
-              <SnapshotCard label="Lote atual" value={trace.current_lot_code ?? "-"} />
+              <SnapshotCard label="Propriedade" value={displayProperty} />
+              <SnapshotCard label="Lote atual" value={displayLot} />
               <SnapshotCard label="Último peso" value={latestWeight ? `${latestWeight} kg` : "-"} />
               <SnapshotCard label="Carência até" value={formatDate(sanitary.withdrawal_end_date)} />
             </div>
@@ -329,13 +494,13 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
       </section>
 
       <section className="grid gap-4 xl:grid-cols-4">
-        <ScoreCard label="Sanitário" value={score.sanitary_score} />
-        <ScoreCard label="Operacional" value={score.operational_score} />
-        <ScoreCard label="Continuidade" value={score.continuity_score} />
-        <ScoreCard label="Total" value={score.total_score} />
+        <ScoreCard label="Sanitário" value={calculatedSanitaryScore} />
+        <ScoreCard label="Operacional" value={calculatedOperationalScore} />
+        <ScoreCard label="Continuidade" value={calculatedContinuityScore} />
+        <ScoreCard label="Total" value={calculatedAgraasScore} />
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-3">
+      <section className="grid gap-4 xl:grid-cols-4">
         <StatPanel
           title="Último peso"
           value={latestWeight ? `${latestWeight} kg` : "-"}
@@ -354,6 +519,11 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
               : `${weightVariation > 0 ? "+" : ""}${weightVariation} kg`
           }
           subtitle="diferença entre as duas últimas pesagens"
+        />
+        <StatPanel
+          title="Idade"
+          value={ageMonths !== null ? `${ageMonths} meses` : "-"}
+          subtitle="idade estimada pela data de nascimento"
         />
       </section>
 
@@ -458,11 +628,37 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
         <div className="mt-6 grid gap-4 md:grid-cols-2">
           <InfoItem label="Frigorífico" value={chain.slaughterhouse_name ?? "-"} />
           <InfoItem label="Data de abate" value={formatDate(chain.slaughter_date)} />
-          <InfoItem label="Peso de carcaça" value={chain.carcass_weight ? `${chain.carcass_weight} kg` : "-"} />
-          <InfoItem label="Classificação" value={chain.carcass_classification ?? "-"} />
+          <InfoItem
+            label="Peso de carcaça"
+            value={chain.carcass_weight ? `${chain.carcass_weight} kg` : "-"}
+          />
+          <InfoItem
+            label="Classificação"
+            value={chain.carcass_classification ?? "-"}
+          />
         </div>
       </section>
     </main>
+  );
+}
+
+function HighlightIdentityCard({
+  label,
+  value,
+  subtitle,
+}: {
+  label: string;
+  value: string;
+  subtitle: string;
+}) {
+  return (
+    <div className="rounded-3xl border border-[var(--border)] bg-white p-5 shadow-[var(--shadow-soft)]">
+      <p className="text-sm text-[var(--text-muted)]">{label}</p>
+      <p className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
+        {value}
+      </p>
+      <p className="mt-2 text-sm text-[var(--text-secondary)]">{subtitle}</p>
+    </div>
   );
 }
 
@@ -536,6 +732,87 @@ function InfoItem({ label, value }: { label: string; value: string }) {
       <p className="text-sm text-[var(--text-muted)]">{label}</p>
       <p className="mt-2 text-base font-medium">{value}</p>
     </div>
+  );
+}
+
+function calculateAgeInMonths(birthDate: string) {
+  const birth = new Date(birthDate);
+  const now = new Date();
+
+  let months =
+    (now.getFullYear() - birth.getFullYear()) * 12 +
+    (now.getMonth() - birth.getMonth());
+
+  if (now.getDate() < birth.getDate()) {
+    months -= 1;
+  }
+
+  return Math.max(0, months);
+}
+
+function calculateSanitaryScore(applicationsCount: number) {
+  return Math.min(100, 50 + applicationsCount * 8);
+}
+
+function calculateOperationalScore(movementsCount: number, eventsCount: number) {
+  return Math.min(100, 45 + movementsCount * 6 + eventsCount * 2);
+}
+
+function calculateContinuityScore(
+  weightsCount: number,
+  hasBirthDate: boolean,
+  hasAgraasId: boolean
+) {
+  let scoreValue = 40;
+  scoreValue += Math.min(30, weightsCount * 8);
+  if (hasBirthDate) scoreValue += 15;
+  if (hasAgraasId) scoreValue += 15;
+  return Math.min(100, scoreValue);
+}
+
+function calculateAgraasScore({
+  lastWeight,
+  applicationsCount,
+  eventsCount,
+  weightsCount,
+  ageMonths,
+  hasBloodType,
+  hasGenealogy,
+  sanitaryScore,
+  operationalScore,
+  continuityScore,
+}: {
+  lastWeight: number | null;
+  applicationsCount: number;
+  eventsCount: number;
+  weightsCount: number;
+  ageMonths: number | null;
+  hasBloodType: boolean;
+  hasGenealogy: boolean;
+  sanitaryScore: number;
+  operationalScore: number;
+  continuityScore: number;
+}) {
+  const productive =
+    lastWeight && lastWeight > 0
+      ? Math.min(100, 35 + Math.round(lastWeight / 10))
+      : 35;
+
+  const ageFactor =
+    ageMonths !== null ? Math.min(100, 40 + Math.round(ageMonths / 2)) : 50;
+
+  const traceabilityBonus = (hasBloodType ? 3 : 0) + (hasGenealogy ? 4 : 0);
+
+  return Math.min(
+    100,
+    Math.round(
+      productive * 0.28 +
+        sanitaryScore * 0.24 +
+        operationalScore * 0.18 +
+        continuityScore * 0.20 +
+        ageFactor * 0.10 +
+        traceabilityBonus
+    )
   );
 }
 
