@@ -1,29 +1,119 @@
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 
+type CertificationRow = {
+  id: string;
+  animal_id: string;
+  certification_code: string | null;
+  certification_name: string | null;
+  issued_at: string | null;
+  status: string | null;
+};
+
+type AnimalRow = {
+  id: string;
+  internal_code: string | null;
+  agraas_id: string | null;
+};
+
 type PassportRow = {
   animal_id: string;
-  internal_code: string | null;
   current_property_name: string | null;
   total_score: number | null;
   current_withdrawal_end_date: string | null;
   active_seals: string[] | null;
-  active_certifications: string[] | null;
+};
+
+type ConsolidatedRow = {
+  animal_id: string;
+  internal_code: string;
+  agraas_id: string;
+  current_property_name: string | null;
+  total_score: number | null;
+  current_withdrawal_end_date: string | null;
+  active_seals: string[];
+  certifications: string[];
 };
 
 export default async function CertificacoesPage() {
-  const { data, error } = await supabase
-    .from("agraas_master_passport")
-    .select(
-      "animal_id, internal_code, current_property_name, total_score, current_withdrawal_end_date, active_seals, active_certifications"
-    );
+  const [
+    { data: certificationsData, error: certificationsError },
+    { data: animalsData, error: animalsError },
+    { data: passportData, error: passportError },
+  ] = await Promise.all([
+    supabase
+      .from("animal_certifications")
+      .select(
+        "id, animal_id, certification_code, certification_name, issued_at, status"
+      )
+      .order("issued_at", { ascending: false }),
 
-  const rows: PassportRow[] =
-    data?.filter(
-      (item) =>
-        Array.isArray(item.active_certifications) &&
-        item.active_certifications.length > 0
-    ) ?? [];
+    supabase.from("animals").select("id, internal_code, agraas_id"),
+
+    supabase
+      .from("agraas_master_passport")
+      .select(
+        "animal_id, current_property_name, total_score, current_withdrawal_end_date, active_seals"
+      ),
+  ]);
+
+  const certifications = (certificationsData ?? []) as CertificationRow[];
+  const animals = (animalsData ?? []) as AnimalRow[];
+  const passports = (passportData ?? []) as PassportRow[];
+
+  const filteredCertifications = certifications.filter((item) => {
+    const status = (item.status ?? "").toLowerCase();
+    return status === "active" || status === "ativo" || status === "";
+  });
+
+  const animalMap = new Map<string, AnimalRow>();
+  for (const animal of animals) {
+    animalMap.set(animal.id, animal);
+  }
+
+  const passportMap = new Map<string, PassportRow>();
+  for (const passport of passports) {
+    passportMap.set(passport.animal_id, passport);
+  }
+
+  const grouped = new Map<string, ConsolidatedRow>();
+
+  for (const cert of filteredCertifications) {
+    const animal = animalMap.get(cert.animal_id);
+    const passport = passportMap.get(cert.animal_id);
+
+    const existing = grouped.get(cert.animal_id);
+
+    const certificationLabel =
+      cert.certification_name ??
+      cert.certification_code ??
+      "Certificação";
+
+    if (existing) {
+      if (!existing.certifications.includes(certificationLabel)) {
+        existing.certifications.push(certificationLabel);
+      }
+      continue;
+    }
+
+    grouped.set(cert.animal_id, {
+      animal_id: cert.animal_id,
+      internal_code: animal?.internal_code ?? cert.animal_id,
+      agraas_id:
+        animal?.agraas_id ??
+        `AGR-${cert.animal_id.slice(0, 8).toUpperCase()}`,
+      current_property_name: passport?.current_property_name ?? null,
+      total_score: passport?.total_score ?? null,
+      current_withdrawal_end_date:
+        passport?.current_withdrawal_end_date ?? null,
+      active_seals: passport?.active_seals ?? [],
+      certifications: [certificationLabel],
+    });
+  }
+
+  const rows = [...grouped.values()].sort(
+    (a, b) => Number(b.total_score ?? 0) - Number(a.total_score ?? 0)
+  );
 
   const totalCertified = rows.length;
 
@@ -46,7 +136,7 @@ export default async function CertificacoesPage() {
 
   const topCertifications = new Map<string, number>();
   for (const row of rows) {
-    for (const cert of row.active_certifications ?? []) {
+    for (const cert of row.certifications) {
       topCertifications.set(cert, (topCertifications.get(cert) ?? 0) + 1);
     }
   }
@@ -55,6 +145,8 @@ export default async function CertificacoesPage() {
     .map(([name, count]) => ({ name, count }))
     .sort((a, b) => b.count - a.count)
     .slice(0, 4);
+
+  const hasError = certificationsError || animalsError || passportError;
 
   return (
     <main className="space-y-8">
@@ -157,7 +249,7 @@ export default async function CertificacoesPage() {
         </div>
 
         <div className="mt-8">
-          {error ? (
+          {hasError ? (
             <p className="text-sm text-[var(--danger)]">
               Erro ao carregar certificações.
             </p>
@@ -171,6 +263,7 @@ export default async function CertificacoesPage() {
                 <thead>
                   <tr>
                     <th>Animal</th>
+                    <th>Agraas ID</th>
                     <th>Propriedade</th>
                     <th>Score</th>
                     <th>Selos</th>
@@ -181,85 +274,81 @@ export default async function CertificacoesPage() {
                 </thead>
 
                 <tbody>
-                  {rows
-                    .sort(
-                      (a, b) => Number(b.total_score ?? 0) - Number(a.total_score ?? 0)
-                    )
-                    .map((row) => (
-                      <tr key={row.animal_id}>
-                        <td>
-                          <div>
-                            <p className="font-semibold text-[var(--text-primary)]">
-                              {row.internal_code ?? row.animal_id}
-                            </p>
-                            <p className="mt-1 text-sm text-[var(--text-muted)]">
-                              Ativo certificado
-                            </p>
+                  {rows.map((row) => (
+                    <tr key={row.animal_id}>
+                      <td>
+                        <div>
+                          <p className="font-semibold text-[var(--text-primary)]">
+                            {row.internal_code}
+                          </p>
+                          <p className="mt-1 text-sm text-[var(--text-muted)]">
+                            Ativo certificado
+                          </p>
+                        </div>
+                      </td>
+
+                      <td>{row.agraas_id}</td>
+
+                      <td>{row.current_property_name ?? "-"}</td>
+
+                      <td>
+                        <span className="font-semibold text-[var(--primary-hover)]">
+                          {row.total_score ?? "-"}
+                        </span>
+                      </td>
+
+                      <td>
+                        {row.active_seals.length > 0 ? (
+                          <div className="flex flex-wrap gap-2">
+                            {row.active_seals.slice(0, 2).map((seal) => (
+                              <span
+                                key={seal}
+                                className="ag-badge ag-badge-green"
+                              >
+                                {formatLabel(seal)}
+                              </span>
+                            ))}
                           </div>
-                        </td>
+                        ) : (
+                          "-"
+                        )}
+                      </td>
 
-                        <td>{row.current_property_name ?? "-"}</td>
+                      <td>
+                        {row.certifications.length > 0 ? (
+                          <div className="flex flex-wrap gap-2">
+                            {row.certifications.slice(0, 3).map((cert) => (
+                              <span
+                                key={cert}
+                                className="ag-badge ag-badge-dark"
+                              >
+                                {formatLabel(cert)}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          "-"
+                        )}
+                      </td>
 
-                        <td>
-                          <span className="font-semibold text-[var(--primary-hover)]">
-                            {row.total_score ?? "-"}
-                          </span>
-                        </td>
+                      <td>
+                        {row.current_withdrawal_end_date
+                          ? new Date(
+                              row.current_withdrawal_end_date
+                            ).toLocaleDateString("pt-BR")
+                          : "-"}
+                      </td>
 
-                        <td>
-                          {row.active_seals?.length ? (
-                            <div className="flex flex-wrap gap-2">
-                              {row.active_seals.slice(0, 2).map((seal) => (
-                                <span
-                                  key={seal}
-                                  className="ag-badge ag-badge-green"
-                                >
-                                  {formatLabel(seal)}
-                                </span>
-                              ))}
-                            </div>
-                          ) : (
-                            "-"
-                          )}
-                        </td>
-
-                        <td>
-                          {row.active_certifications?.length ? (
-                            <div className="flex flex-wrap gap-2">
-                              {row.active_certifications
-                                .slice(0, 2)
-                                .map((certification) => (
-                                  <span
-                                    key={certification}
-                                    className="ag-badge ag-badge-dark"
-                                  >
-                                    {formatLabel(certification)}
-                                  </span>
-                                ))}
-                            </div>
-                          ) : (
-                            "-"
-                          )}
-                        </td>
-
-                        <td>
-                          {row.current_withdrawal_end_date
-                            ? new Date(
-                                row.current_withdrawal_end_date
-                              ).toLocaleDateString("pt-BR")
-                            : "-"}
-                        </td>
-
-                        <td>
-                          <Link
-                            href={`/animais/${row.animal_id}`}
-                            className="inline-flex items-center rounded-2xl border border-[rgba(93,156,68,0.24)] px-4 py-2 text-sm font-medium text-[var(--primary-hover)] transition hover:bg-[var(--primary-soft)]"
-                          >
-                            Ver passaporte
-                          </Link>
-                        </td>
-                      </tr>
-                    ))}
+                      <td>
+                        <Link
+                          href={`/animais/${row.animal_id}`}
+                          className="inline-flex items-center rounded-2xl border border-[rgba(93,156,68,0.24)] px-4 py-2 text-sm font-medium text-[var(--primary-hover)] transition hover:bg-[var(--primary-soft)]"
+                        >
+                          Ver passaporte
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
