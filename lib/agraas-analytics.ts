@@ -1,38 +1,105 @@
-export type PassportRow = {
-  animal_id: string
-  internal_code: string | null
-  total_score: number | null
-  current_property_name: string | null
-  active_certifications: string[] | null
+export type ScoreInput = {
+  lastWeight: number | null;
+  ageMonths: number | null;
+  sanitaryScore: number;
+  operationalScore: number;
+  continuityScore: number;
+};
+
+export function calculateAgeInMonths(birthDate: string | null | undefined) {
+  if (!birthDate) return null;
+
+  const birth = new Date(birthDate);
+  const now = new Date();
+
+  let months =
+    (now.getFullYear() - birth.getFullYear()) * 12 +
+    (now.getMonth() - birth.getMonth());
+
+  if (now.getDate() < birth.getDate()) {
+    months -= 1;
+  }
+
+  return Math.max(0, months);
 }
 
-export function buildAnalytics(rows: PassportRow[]) {
-  const totalAnimals = rows.length
+export function calculateAgraasScore({
+  lastWeight,
+  ageMonths,
+  sanitaryScore,
+  operationalScore,
+  continuityScore,
+}: ScoreInput) {
+  const productive =
+    lastWeight && lastWeight > 0
+      ? Math.min(100, 35 + Math.round(lastWeight / 10))
+      : 35;
 
-  const avgScore =
-    rows.reduce((sum, r) => sum + (r.total_score ?? 0), 0) /
-    (rows.length || 1)
+  const ageFactor =
+    ageMonths !== null && ageMonths !== undefined
+      ? Math.min(100, 40 + Math.round(ageMonths / 2))
+      : 50;
 
-  const certified = rows.filter(
-    (r) => r.active_certifications && r.active_certifications.length > 0
-  ).length
+  return Math.min(
+    100,
+    Math.round(
+      productive * 0.3 +
+        sanitaryScore * 0.24 +
+        operationalScore * 0.18 +
+        continuityScore * 0.18 +
+        ageFactor * 0.1
+    )
+  );
+}
 
-  const properties = new Set(
-    rows.map((r) => r.current_property_name).filter(Boolean)
-  ).size
-
-  const topAnimals = [...rows]
-    .sort((a, b) => (b.total_score ?? 0) - (a.total_score ?? 0))
-    .slice(0, 5)
-
-  const riskAnimals = rows.filter((r) => (r.total_score ?? 0) < 60)
-
-  return {
-    totalAnimals,
-    avgScore: Math.round(avgScore),
-    certified,
-    properties,
-    topAnimals,
-    riskAnimals,
+export function calculateDailyGain(
+  currentWeight: number | null,
+  previousWeight: number | null,
+  currentDate: string | null | undefined,
+  previousDate: string | null | undefined
+) {
+  if (
+    currentWeight === null ||
+    previousWeight === null ||
+    !currentDate ||
+    !previousDate
+  ) {
+    return null;
   }
+
+  const current = new Date(currentDate).getTime();
+  const previous = new Date(previousDate).getTime();
+
+  const diffDays = Math.round((current - previous) / (1000 * 60 * 60 * 24));
+
+  if (diffDays <= 0) return null;
+
+  return Number(((currentWeight - previousWeight) / diffDays).toFixed(3));
+}
+
+export function getProductiveRiskLabel(
+  delta: number | null,
+  gmd: number | null
+) {
+  if (delta === null && gmd === null) return "Sem base";
+  if (delta !== null && delta < 0) return "Risco";
+  if (gmd !== null && gmd < 0.2) return "Atenção";
+  if (gmd !== null && gmd >= 0.8) return "Destaque";
+  return "Estável";
+}
+
+export function getRiskBadgeClass(label: string) {
+  if (label === "Risco") {
+    return "inline-flex rounded-full bg-[rgba(214,69,69,0.12)] px-3 py-1.5 text-xs font-semibold text-[var(--danger)]";
+  }
+
+  if (label === "Atenção") {
+    return "inline-flex rounded-full bg-[rgba(217,163,67,0.14)] px-3 py-1.5 text-xs font-semibold text-[var(--warning)]";
+  }
+
+  if (label === "Destaque") {
+    return "inline-flex rounded-full bg-[var(--primary-soft)] px-3 py-1.5 text-xs font-semibold text-[var(--primary-hover)]";
+  }
+
+  return "inline-flex rounded-full bg-[rgba(31,41,55,0.08)] px-3 py-1.5 text-xs font-semibold text-[var(--text-secondary)]";
 }
