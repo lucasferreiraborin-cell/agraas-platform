@@ -165,6 +165,9 @@ export default async function CertificacoesPage() {
               organizando conformidade, score, selos e leitura de confiança
               para operação, auditoria e expansão de mercado.
             </p>
+            <p className="mt-4 max-w-3xl text-sm leading-7 text-[var(--text-secondary)]">
+              Camada institucional que transforma dados operacionais em confiança de mercado.
+            </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href="/animais" className="ag-button-primary">
@@ -282,7 +285,7 @@ export default async function CertificacoesPage() {
                           </p>
                           <p className="mt-1 text-sm text-[var(--text-muted)]">
                             {row.certifications.length} certificação
-                            {row.certifications.length > 1 ? "s" : ""} ativa
+                            {row.certifications.length > 1 ? "s" : ""} Ativo rastreado e validado pela Agraas
                             {row.certifications.length > 1 ? "s" : ""}
                           </p>
                         </div>

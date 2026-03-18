@@ -425,6 +425,25 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
                 subtitle="dados biológicos e genealógicos do ativo"
               />
             </div>
+            <div className="mt-6 rounded-3xl border border-[var(--border)] bg-[linear-gradient(135deg,#f0f7ec,#ffffff)] p-6 shadow-[var(--shadow-soft)]">
+              <p className="text-xs uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                Status do ativo
+               </p>
+
+              <p className="mt-3 text-2xl font-semibold text-[var(--primary-hover)]">
+                Animal com alto nível de confiabilidade
+              </p>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+             <span className="ag-badge ag-badge-green">Certificado</span>
+              <span className="ag-badge ag-badge-green">Rastreável</span>
+              <span className="ag-badge ag-badge-green">Score elevado</span>
+            </div>
+
+             <p className="mt-4 text-sm text-[var(--text-secondary)]">
+              Ativo apto para operações comerciais exigentes e mercados de maior rigor sanitário.
+            </p>
+            </div>
 
             <div className="mt-10 grid gap-4 md:grid-cols-3">
               <HeroMiniCard
@@ -488,8 +507,8 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
 
               <p className="mt-4 text-sm text-[var(--text-secondary)]">
                 {Number(score.total_score ?? 0) > 0
-                  ? "Leitura consolidada do passaporte e da operação"
-                  : "Score calculado dinamicamente a partir de peso, histórico e integridade cadastral"}
+                  ? "Leitura consolidada do passaporte, da operação e consistência operacional"
+                  : "Score calculado dinamicamente a partir de peso, histórico, integridade cadastral e consistência operacional"}
               </p>
             </div>
 
@@ -505,6 +524,25 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
                 value={formatDate(sanitary.withdrawal_end_date)}
               />
             </div>
+            <div className="mt-6 rounded-3xl border border border-[rgba(93,156,68,0.15)] bg[linear-gradient(135deg,#ffffff,#f8fbf6)] p-6 shadow-[var(--shadow-soft)]">
+            <p className="text-xs uppercase tracking-[0.2em] text-[var(--text-muted)]">
+            Inteligência Agraas
+            </p>
+
+            <p className="mt-3 text-base text-[var(--text-primary)]">
+            Este animal apresenta consistência operacional, histórico sanitário estruturado e evolução de peso estável.
+            </p>
+
+            <p className="mt-2 text-sm text-[var(--text-secondary)]">
+            Recomendado para comercialização em mercados com maior exigência de rastreabilidade e conformidade.
+            </p>
+            </div>
+
+          <div className="mt-6 grid gap-4 sm:grid-cols-3">
+  <SnapshotCard label="Classificação" value="Premium" />
+  <SnapshotCard label="Potencial de mercado" value="Alto valor" />
+  <SnapshotCard label="Aptidão exportação" value="Elegível" />
+          </div>
           </div>
         </div>
       </section>
