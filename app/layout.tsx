@@ -4,6 +4,7 @@ import Link from "next/link";
 const menuItems = [
   { href: "/", label: "Painel", icon: "◉" },
   { href: "/dashboard", label: "Dashboard Executivo", icon: "✳" },
+  { href: "/inteligencia", label: "Inteligência", icon: "✺" },
   { href: "/animais", label: "Animais", icon: "◌" },
   { href: "/market", label: "Market", icon: "◈" },
   { href: "/operacoes", label: "Operações", icon: "◎" },
@@ -18,7 +19,11 @@ const menuItems = [
   { href: "/eventos", label: "Eventos", icon: "☰" },
   { href: "/produtivo", label: "Dashboard Produtivo", icon: "▲" },
   { href: "/movimentacoes", label: "Movimentações", icon: "⇄" },
-  { href: "/movimentacoes/historico", label: "Histórico Movimentações", icon: "↺" },
+  {
+    href: "/movimentacoes/historico",
+    label: "Histórico Movimentações",
+    icon: "↺",
+  },
   { href: "/custos", label: "Custos", icon: "$" },
   { href: "/custos/historico", label: "Histórico Custos", icon: "◫" },
   { href: "/relatorios", label: "Relatórios", icon: "☷" },
