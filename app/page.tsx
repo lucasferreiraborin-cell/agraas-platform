@@ -121,8 +121,12 @@ export default async function PainelPage() {
   const totalCertifications = certificationsCount ?? 0;
   const totalProperties = propertiesCount ?? 0;
 
-  const animalsWithAgraasId = animals.filter((animal) => Boolean(animal.agraas_id)).length;
-  const animalsWithBirthDate = animals.filter((animal) => Boolean(animal.birth_date)).length;
+  const animalsWithAgraasId = animals.filter((animal) =>
+    Boolean(animal.agraas_id)
+  ).length;
+  const animalsWithBirthDate = animals.filter((animal) =>
+    Boolean(animal.birth_date)
+  ).length;
 
   const totalScoreAverage =
     totalAnimals > 0
@@ -170,16 +174,13 @@ export default async function PainelPage() {
       item.certifications_json.length > 0
   ).length;
 
-  const animalsWithWithdrawal = passports.filter(
-    (item) => Number(item.health_json?.active_withdrawal ?? 0) > 0
-  ).length;
-
   const activeAnimals = passports.filter((item) => {
     const status = (
       item.ownership_json?.status ??
       item.identity_json?.status ??
       ""
     ).toLowerCase();
+
     return status === "active";
   }).length;
 
@@ -224,19 +225,26 @@ export default async function PainelPage() {
   const boardSignals = [
     {
       label: "Cobertura de rastreabilidade",
-      value: totalAnimals > 0 ? Math.round((activeAnimals / totalAnimals) * 100) : 0,
+      value:
+        totalAnimals > 0 ? Math.round((activeAnimals / totalAnimals) * 100) : 0,
       description: "participação de animais ativos na base monitorada",
       tone: "green" as const,
     },
     {
       label: "Cobertura de identidade",
-      value: animals.length > 0 ? Math.round((animalsWithAgraasId / animals.length) * 100) : 0,
+      value:
+        animals.length > 0
+          ? Math.round((animalsWithAgraasId / animals.length) * 100)
+          : 0,
       description: "animais com Agraas ID emitido",
       tone: "blue" as const,
     },
     {
       label: "Cobertura de nascimento",
-      value: animals.length > 0 ? Math.round((animalsWithBirthDate / animals.length) * 100) : 0,
+      value:
+        animals.length > 0
+          ? Math.round((animalsWithBirthDate / animals.length) * 100)
+          : 0,
       description: "animais com data de nascimento estruturada",
       tone: "amber" as const,
     },
@@ -260,24 +268,25 @@ export default async function PainelPage() {
             <div className="ag-badge ag-badge-green">Painel executivo</div>
 
             <h1 className="mt-5 max-w-4xl text-4xl font-semibold leading-[1.02] tracking-[-0.065em] text-[var(--text-primary)] lg:text-6xl">
-              A Agraas já opera como ERP pecuário e evolui para infraestrutura de dados da cadeia.
+              A infraestrutura digital da cadeia pecuária começa na identidade do animal.
             </h1>
 
             <p className="mt-5 max-w-3xl text-[1.05rem] leading-8 text-[var(--text-secondary)]">
-              Identidade digital do animal, score, certificações, histórico auditável e
-              leitura produtiva em uma camada única de software pronta para operação,
-              board, rastreabilidade e expansão da cadeia pecuária.
+              A Agraas conecta identidade digital, score, certificações,
+              histórico auditável, cadeia produtiva e leitura operacional em
+              uma camada única de software pronta para gestão, rastreabilidade,
+              mercado e expansão institucional.
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href="/animais" className="ag-button-primary">
                 Explorar animais
               </Link>
-              <Link href="/produtivo" className="ag-button-secondary">
-                Dashboard produtivo
+              <Link href="/inteligencia" className="ag-button-secondary">
+                Inteligência da base
               </Link>
-              <Link href="/eventos" className="ag-button-secondary">
-                Timeline da cadeia
+              <Link href="/cadeia" className="ag-button-secondary">
+                Ver cadeia
               </Link>
             </div>
 
@@ -316,9 +325,21 @@ export default async function PainelPage() {
             </div>
 
             <div className="mt-6 grid gap-4 md:grid-cols-3">
-              <MetricPill label="Médio total" value={totalScoreAverage} suffix="pts" />
-              <MetricPill label="Sanitário" value={sanitaryAverage} suffix="pts" />
-              <MetricPill label="Operacional" value={operationalAverage} suffix="pts" />
+              <MetricPill
+                label="Médio total"
+                value={totalScoreAverage}
+                suffix="pts"
+              />
+              <MetricPill
+                label="Sanitário"
+                value={sanitaryAverage}
+                suffix="pts"
+              />
+              <MetricPill
+                label="Operacional"
+                value={operationalAverage}
+                suffix="pts"
+              />
             </div>
 
             <div className="mt-8 space-y-4">
@@ -379,6 +400,9 @@ export default async function PainelPage() {
                         </span>
                         <span className="ag-badge ag-badge-dark">
                           Peso: {animal.last_weight ?? "-"} kg
+                        </span>
+                        <span className="ag-badge ag-badge-dark">
+                          Ativo rastreado
                         </span>
                       </div>
                     </Link>
@@ -660,7 +684,10 @@ export default async function PainelPage() {
                       {formatStatus(animal.status)}
                     </span>
                     <span className="ag-badge ag-badge-dark">
-                      Certificações: {Array.isArray(animal.certifications) ? animal.certifications.length : 0}
+                      Certificações:{" "}
+                      {Array.isArray(animal.certifications)
+                        ? animal.certifications.length
+                        : 0}
                     </span>
                   </div>
                 </Link>
@@ -696,15 +723,15 @@ export default async function PainelPage() {
             />
             <DemoStep
               number="3"
-              title="Dashboard produtivo"
-              description="mostre ranking por score, evolução de peso e inteligência produtiva."
-              href="/produtivo"
+              title="Inteligência"
+              description="mostre a leitura da base, evolução, GMD, risco produtivo e ranking de confiança."
+              href="/inteligencia"
             />
             <DemoStep
               number="4"
-              title="Timeline da cadeia"
-              description="mostre os últimos eventos e a lógica de rastreabilidade operacional."
-              href="/eventos"
+              title="Cadeia"
+              description="mostre a conexão entre animal, propriedade, lote, destino e rastreabilidade."
+              href="/cadeia"
             />
           </div>
         </div>
