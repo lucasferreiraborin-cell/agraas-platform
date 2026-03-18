@@ -114,17 +114,15 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
       .eq("animal_id", id)
       .single(),
 
-    supabase
-      .from("animals")
-      .select("*")
-      .eq("id", id)
-      .single(),
+    supabase.from("animals").select("*").eq("id", id).single(),
 
     supabase.from("properties").select("id, name"),
 
     supabase
       .from("applications")
-      .select("id, animal_id, product_id, batch_id, dose, application_date, created_at")
+      .select(
+        "id, animal_id, product_id, batch_id, dose, application_date, created_at"
+      )
       .eq("animal_id", id)
       .order("application_date", { ascending: false }),
 
@@ -152,7 +150,9 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
 
     supabase
       .from("animal_movements")
-      .select("id, animal_id, movement_type, origin_ref, destination_ref, movement_date, notes")
+      .select(
+        "id, animal_id, movement_type, origin_ref, destination_ref, movement_date, notes"
+      )
       .eq("animal_id", id)
       .order("movement_date", { ascending: false }),
   ]);
@@ -375,7 +375,7 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
       </Link>
 
       <section className="ag-card-strong overflow-hidden">
-        <div className="grid xl:grid-cols-[1.05fr_0.95fr]">
+        <div className="grid xl:grid-cols-[1.08fr_0.92fr]">
           <div className="p-8 lg:p-10">
             <div className="ag-badge ag-badge-green">Passaporte Agraas</div>
 
@@ -390,25 +390,21 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
                 </h1>
 
                 <p className="mt-2 text-[var(--text-secondary)]">
-                  Passaporte digital consolidado do animal.
+                  Ativo pecuário rastreado com identidade digital, score e histórico auditável.
                 </p>
 
-                <p className="mt-3 text-sm text-[var(--text-muted)]">
-                  Agraas ID:{" "}
-                  <span className="font-semibold text-[var(--text-primary)]">
+                <div className="mt-4 inline-flex items-center gap-2 rounded-2xl border border-[rgba(93,156,68,0.18)] bg-[var(--primary-soft)] px-4 py-2">
+                  <span className="text-xs uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                    Agraas ID
+                  </span>
+                  <span className="text-sm font-semibold text-[var(--text-primary)]">
                     {animal.agraas_id ?? "-"}
                   </span>
-                </p>
+                </div>
               </div>
             </div>
 
             <div className="mt-6 grid gap-4 md:grid-cols-2">
-              <HighlightIdentityCard
-                label="Agraas ID"
-                value={animal.agraas_id ?? "-"}
-                subtitle="identidade digital única do animal"
-              />
-
               <HighlightIdentityCard
                 label="Nascimento"
                 value={formatDate(birthDate)}
@@ -417,6 +413,16 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
                     ? `${ageMonths} meses de idade`
                     : "idade não disponível"
                 }
+              />
+
+              <HighlightIdentityCard
+                label="Integridade cadastral"
+                value={
+                  animal.blood_type || animal.sire_animal_id || animal.dam_animal_id
+                    ? "Expandida"
+                    : "Base"
+                }
+                subtitle="dados biológicos e genealógicos do ativo"
               />
             </div>
 
@@ -451,7 +457,9 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
               />
               <HeroMiniCard
                 label="Genealogia"
-                value={animal.sire_animal_id || animal.dam_animal_id ? "Mapeada" : "-"}
+                value={
+                  animal.sire_animal_id || animal.dam_animal_id ? "Mapeada" : "-"
+                }
                 subtitle="pai e mãe vinculados"
               />
             </div>
@@ -463,7 +471,9 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
             </p>
 
             <div className="mt-6 rounded-3xl border bg-white p-6 shadow">
-              <p className="text-sm text-[var(--text-muted)]">Score consolidado</p>
+              <p className="text-sm text-[var(--text-muted)]">
+                Score consolidado
+              </p>
 
               <p className="mt-2 text-5xl font-semibold text-[var(--primary-hover)]">
                 {calculatedAgraasScore}
@@ -478,7 +488,7 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
 
               <p className="mt-4 text-sm text-[var(--text-secondary)]">
                 {Number(score.total_score ?? 0) > 0
-                  ? "Score proveniente do passaporte consolidado"
+                  ? "Leitura consolidada do passaporte e da operação"
                   : "Score calculado dinamicamente a partir de peso, histórico e integridade cadastral"}
               </p>
             </div>
@@ -486,8 +496,14 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               <SnapshotCard label="Propriedade" value={displayProperty} />
               <SnapshotCard label="Lote atual" value={displayLot} />
-              <SnapshotCard label="Último peso" value={latestWeight ? `${latestWeight} kg` : "-"} />
-              <SnapshotCard label="Carência até" value={formatDate(sanitary.withdrawal_end_date)} />
+              <SnapshotCard
+                label="Último peso"
+                value={latestWeight ? `${latestWeight} kg` : "-"}
+              />
+              <SnapshotCard
+                label="Carência até"
+                value={formatDate(sanitary.withdrawal_end_date)}
+              />
             </div>
           </div>
         </div>
@@ -599,7 +615,7 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
               {timeline.map((item) => (
                 <div
                   key={item.id}
-                  className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5"
+                  className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5 transition hover:border-[rgba(93,156,68,0.20)]"
                 >
                   <div className="flex items-center justify-between gap-4">
                     <span className="ag-badge ag-badge-green">{item.badge}</span>
@@ -623,7 +639,16 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
       </section>
 
       <section className="ag-card p-8">
-        <h2 className="ag-section-title">Cadeia produtiva</h2>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="ag-section-title">Cadeia produtiva</h2>
+            <p className="ag-section-subtitle">
+              Leitura institucional do destino e dos desdobramentos produtivos do ativo.
+            </p>
+          </div>
+
+          <span className="ag-badge ag-badge-green">Traceability layer</span>
+        </div>
 
         <div className="mt-6 grid gap-4 md:grid-cols-2">
           <InfoItem label="Frigorífico" value={chain.slaughterhouse_name ?? "-"} />
@@ -672,9 +697,11 @@ function HeroMiniCard({
   subtitle: string;
 }) {
   return (
-    <div className="rounded-3xl border p-5">
+    <div className="rounded-3xl border border-[var(--border)] bg-white p-5 shadow-[var(--shadow-soft)]">
       <p className="text-sm text-[var(--text-muted)]">{label}</p>
-      <p className="mt-3 text-2xl font-semibold">{value}</p>
+      <p className="mt-3 text-2xl font-semibold text-[var(--text-primary)]">
+        {value}
+      </p>
       <p className="mt-2 text-sm text-[var(--text-secondary)]">{subtitle}</p>
     </div>
   );
@@ -684,7 +711,9 @@ function SnapshotCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-3xl border bg-white p-5 shadow">
       <p className="text-sm text-[var(--text-muted)]">{label}</p>
-      <p className="mt-3 text-lg font-semibold">{value}</p>
+      <p className="mt-3 text-lg font-semibold text-[var(--text-primary)]">
+        {value}
+      </p>
     </div>
   );
 }
@@ -728,9 +757,11 @@ function StatPanel({
 
 function InfoItem({ label, value }: { label: string; value: string }) {
   return (
-    <div>
+    <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5">
       <p className="text-sm text-[var(--text-muted)]">{label}</p>
-      <p className="mt-2 text-base font-medium">{value}</p>
+      <p className="mt-2 text-base font-medium text-[var(--text-primary)]">
+        {value}
+      </p>
     </div>
   );
 }
@@ -809,8 +840,8 @@ function calculateAgraasScore({
       productive * 0.28 +
         sanitaryScore * 0.24 +
         operationalScore * 0.18 +
-        continuityScore * 0.20 +
-        ageFactor * 0.10 +
+        continuityScore * 0.2 +
+        ageFactor * 0.1 +
         traceabilityBonus
     )
   );
