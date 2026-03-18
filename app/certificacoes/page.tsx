@@ -81,7 +81,6 @@ export default async function CertificacoesPage() {
   for (const cert of filteredCertifications) {
     const animal = animalMap.get(cert.animal_id);
     const passport = passportMap.get(cert.animal_id);
-
     const existing = grouped.get(cert.animal_id);
 
     const certificationLabel =
@@ -282,7 +281,9 @@ export default async function CertificacoesPage() {
                             {row.internal_code}
                           </p>
                           <p className="mt-1 text-sm text-[var(--text-muted)]">
-                            Ativo certificado
+                            {row.certifications.length} certificação
+                            {row.certifications.length > 1 ? "s" : ""} ativa
+                            {row.certifications.length > 1 ? "s" : ""}
                           </p>
                         </div>
                       </td>
@@ -320,7 +321,7 @@ export default async function CertificacoesPage() {
                             {row.certifications.slice(0, 3).map((cert) => (
                               <span
                                 key={cert}
-                                className="ag-badge ag-badge-dark"
+                                className="ag-badge ag-badge-green"
                               >
                                 {formatLabel(cert)}
                               </span>
