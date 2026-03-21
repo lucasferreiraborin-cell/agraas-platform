@@ -16,13 +16,13 @@ CREATE INDEX IF NOT EXISTS idx_events_event_date ON events (event_date DESC NULL
 CREATE INDEX IF NOT EXISTS idx_events_source     ON events (source);
 
 -- Migra registros de animal_events
--- Campos: animal_id, event_type, event_timestamp, event_date, notes, created_at
+-- Campos: animal_id, event_type, event_timestamp, notes, created_at
 INSERT INTO events (animal_id, source, event_type, event_date, notes, created_at)
 SELECT
   animal_id,
   'animal',
   event_type,
-  COALESCE(event_date::timestamptz, event_timestamp),
+  event_timestamp,
   notes,
   COALESCE(created_at, now())
 FROM animal_events
