@@ -4,8 +4,8 @@ import Link from "next/link";
 type FarmEventRow = {
   id: string;
   animal_id: string | null;
-  type: string;
-  description: string | null;
+  event_type: string | null;
+  notes: string | null;
   event_date: string | null;
   created_at: string | null;
 };
@@ -18,8 +18,8 @@ type AnimalRow = {
 type DisplayRow = {
   id: string;
   animal_code: string;
-  type: string;
-  description: string;
+  event_type: string;
+  notes: string;
   event_date: string | null;
 };
 
@@ -29,8 +29,8 @@ export default async function EventosPage() {
     { data: animalsData, error: animalsError },
   ] = await Promise.all([
     supabase
-      .from("farm_events")
-      .select("id, animal_id, type, description, event_date, created_at")
+      .from("events")
+      .select("id, animal_id, event_type, notes, event_date, created_at")
       .order("event_date", { ascending: false })
       .order("created_at", { ascending: false }),
 
@@ -60,8 +60,8 @@ export default async function EventosPage() {
     animal_code: event.animal_id
       ? animalMap.get(event.animal_id) ?? event.animal_id
       : "-",
-    type: event.type,
-    description: event.description ?? "-",
+    event_type: event.event_type ?? "-",
+    notes: event.notes ?? "-",
     event_date: event.event_date ?? event.created_at ?? null,
   }));
 
@@ -158,8 +158,8 @@ export default async function EventosPage() {
                 {rows.map((row) => (
                   <tr key={row.id}>
                     <td>{row.animal_code}</td>
-                    <td>{formatEventType(row.type)}</td>
-                    <td>{row.description}</td>
+                    <td>{formatEventType(row.event_type)}</td>
+                    <td>{row.notes}</td>
                     <td>{formatDate(row.event_date)}</td>
                   </tr>
                 ))}

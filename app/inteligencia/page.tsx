@@ -79,7 +79,7 @@ export default async function InteligenciaPage() {
 
     supabase.from("applications").select("animal_id"),
 
-    supabase.from("farm_events").select("animal_id"),
+    supabase.from("events").select("animal_id"),
 
     supabase
       .from("agraas_master_passport_cache")

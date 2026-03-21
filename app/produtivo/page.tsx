@@ -98,7 +98,7 @@ export default async function ProdutivoPage() {
       .select("animal_id"),
 
     supabase
-      .from("farm_events")
+      .from("events")
       .select("animal_id"),
   ]);
 

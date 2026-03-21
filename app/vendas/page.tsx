@@ -92,10 +92,11 @@ function RegistrarVendaPage() {
     setLoading(true);
     setMessage("");
 
-    const { error: eventError } = await supabase.from("animal_events").insert({
+    const { error: eventError } = await supabase.from("events").insert({
       animal_id: animalId || null,
+      source: "animal",
       event_type: "ownership_transfer",
-      event_timestamp: saleDate || null,
+      event_date: saleDate || null,
       notes: `Transferido para propriedade ${propertyId}`,
     });
 

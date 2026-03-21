@@ -87,11 +87,12 @@ export default function PesagensPage() {
         return;
       }
 
-      const { error: eventError } = await supabase.from("farm_events").insert([
+      const { error: eventError } = await supabase.from("events").insert([
         {
           animal_id: animalId,
-          type: "weighing",
-          description: `Pesagem registrada: ${numericWeight} kg`,
+          source: "farm",
+          event_type: "weighing",
+          notes: `Pesagem registrada: ${numericWeight} kg`,
           event_date: weighingDate,
         },
       ]);

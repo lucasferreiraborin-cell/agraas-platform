@@ -57,7 +57,7 @@ export default async function DashboardPage() {
 
     supabase.from("applications").select("animal_id"),
 
-    supabase.from("farm_events").select("animal_id"),
+    supabase.from("events").select("animal_id"),
   ]);
 
   if (animalsError) console.error("Erro ao buscar animais:", animalsError);

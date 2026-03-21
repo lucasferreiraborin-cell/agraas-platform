@@ -2,17 +2,18 @@ import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 
 type EventRow = {
+  id: string;
   animal_id: string;
-  event_type: string;
-  event_timestamp: string | null;
+  event_type: string | null;
+  event_date: string | null;
   notes: string | null;
 };
 
 export default async function HistoricoPage() {
   const { data, error } = await supabase
-    .from("animal_events")
-    .select("animal_id, event_type, event_timestamp, notes")
-    .order("event_timestamp", { ascending: false })
+    .from("events")
+    .select("id, animal_id, event_type, event_date, notes")
+    .order("event_date", { ascending: false })
     .limit(100);
 
   const rows: EventRow[] = data ?? [];
@@ -40,16 +41,16 @@ export default async function HistoricoPage() {
             <div className="space-y-3">
               {rows.map((row, index) => (
                 <div
-                  key={`${row.animal_id}-${row.event_timestamp}-${index}`}
+                  key={`${row.animal_id}-${row.event_date}-${index}`}
                   className="rounded-lg bg-[#FDFDFD] p-4 ring-1 ring-black/5"
                 >
                   <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                     <p className="font-medium">
-                      {formatEventType(row.event_type)}
+                      {formatEventType(row.event_type ?? "")}
                     </p>
                     <p className="text-sm text-[#5F6B5F]">
-                      {row.event_timestamp
-                        ? new Date(row.event_timestamp).toLocaleString("pt-BR")
+                      {row.event_date
+                        ? new Date(row.event_date).toLocaleString("pt-BR")
                         : "-"}
                     </p>
                   </div>

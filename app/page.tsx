@@ -52,8 +52,8 @@ type MarketRow = {
 
 type EventRow = {
   animal_id: string | null;
-  type: string | null;
-  description: string | null;
+  event_type: string | null;
+  notes: string | null;
   event_date: string | null;
 };
 
@@ -96,8 +96,8 @@ export default async function PainelPage() {
       .limit(6),
 
     supabase
-      .from("farm_events")
-      .select("animal_id, type, description, event_date")
+      .from("events")
+      .select("animal_id, event_type, notes, event_date")
       .order("event_date", { ascending: false })
       .limit(8),
 
@@ -601,8 +601,8 @@ export default async function PainelPage() {
                 >
                   <div className="flex items-center justify-between gap-4">
                     <span className="ag-badge ag-badge-green">
-                      {getEventIcon(event.type ?? "")}{" "}
-                      {formatEventType(event.type ?? "")}
+                      {getEventIcon(event.event_type ?? "")}{" "}
+                      {formatEventType(event.event_type ?? "")}
                     </span>
 
                     <span className="text-sm text-[var(--text-muted)]">
@@ -620,7 +620,7 @@ export default async function PainelPage() {
                   </p>
 
                   <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-                    {event.description ?? "Sem observações detalhadas registradas."}
+                    {event.notes ?? "Sem observações detalhadas registradas."}
                   </p>
                 </div>
               ))
