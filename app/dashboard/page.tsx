@@ -151,6 +151,34 @@ export default async function DashboardPage() {
 
   const totalAnimals = dashboardRows.length;
 
+  // Tela de boas-vindas para usuários sem dados ainda
+  if (totalAnimals === 0) {
+    return (
+      <main className="space-y-8">
+        <div className="ag-card-strong overflow-hidden">
+          <div className="flex flex-col items-center px-8 py-16 text-center">
+            <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-[var(--primary-soft)] text-4xl shadow-[var(--shadow-soft)]">
+              🏡
+            </div>
+            <div className="ag-badge ag-badge-green mt-8">Bem-vindo à Agraas</div>
+            <h2 className="mt-5 text-3xl font-semibold tracking-[-0.04em] text-[var(--text-primary)] lg:text-4xl">
+              Sua operação começa aqui
+            </h2>
+            <p className="mt-5 max-w-lg text-base leading-8 text-[var(--text-secondary)]">
+              Cadastre sua primeira fazenda para ativar o dashboard com animais,
+              scores, pesagens e rastreabilidade completa da sua operação.
+            </p>
+            <div className="mt-8">
+              <Link href="/propriedades/novo" className="ag-button-primary">
+                Cadastrar minha primeira fazenda
+              </Link>
+            </div>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   const averageScore =
     totalAnimals > 0
       ? dashboardRows.reduce((acc, item) => acc + item.score, 0) / totalAnimals

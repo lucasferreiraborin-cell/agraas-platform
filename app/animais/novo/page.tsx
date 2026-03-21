@@ -2,20 +2,25 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-type ClientRow = {
-  id: string;
-  name: string;
-};
-
-type PropertyRow = {
-  id: string;
-  name: string | null;
-};
+type ClientRow = { id: string; name: string };
+type PropertyRow = { id: string; name: string | null };
 
 export default function NovoAnimalPage() {
-  const [clientId, setClientId] = useState("");
+  const router = useRouter();
+
+  // Dados do usuário logado
+  const [myClientId, setMyClientId] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  // Para admin: seletor de cliente
+  const [clients, setClients] = useState<ClientRow[]>([]);
+  const [selectedClientId, setSelectedClientId] = useState("");
+
+  // Formulário
   const [internalCode, setInternalCode] = useState("");
   const [birthDate, setBirthDate] = useState("");
   const [sex, setSex] = useState("");
@@ -23,61 +28,74 @@ export default function NovoAnimalPage() {
   const [propertyId, setPropertyId] = useState("");
   const [status, setStatus] = useState("active");
 
-  const [clients, setClients] = useState<ClientRow[]>([]);
   const [properties, setProperties] = useState<PropertyRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
-  // Carrega clientes uma vez
+  // Ao montar: detecta client_id e role do usuário logado
   useEffect(() => {
-    async function loadClients() {
-      const { data } = await supabase
+    async function detectUser() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setAuthLoading(false); return; }
+
+      const { data: clientData } = await supabase
         .from("clients")
-        .select("id, name")
-        .order("name", { ascending: true });
+        .select("id, role")
+        .eq("auth_user_id", user.id)
+        .single();
 
-      if (data) setClients(data as ClientRow[]);
-    }
-
-    loadClients();
-  }, []);
-
-  // Recarrega propriedades quando o cliente muda
-  useEffect(() => {
-    async function loadProperties() {
-      let query = supabase
-        .from("properties")
-        .select("id, name")
-        .order("name", { ascending: true });
-
-      if (clientId) {
-        query = query.eq("client_id", clientId) as typeof query;
+      if (clientData?.role === "admin") {
+        setIsAdmin(true);
+        const { data: allClients } = await supabase
+          .from("clients")
+          .select("id, name")
+          .order("name");
+        setClients((allClients as ClientRow[]) ?? []);
+      } else {
+        setMyClientId(clientData?.id ?? null);
       }
 
-      const { data } = await query;
-      if (data) setProperties(data as PropertyRow[]);
-      setPropertyId(""); // reset ao trocar de cliente
+      setAuthLoading(false);
     }
+    detectUser();
+  }, []);
 
+  // O client_id efetivo: para cliente normal = myClientId; para admin = selectedClientId
+  const effectiveClientId = isAdmin ? selectedClientId : myClientId;
+
+  // Carrega propriedades quando o client efetivo muda
+  useEffect(() => {
+    async function loadProperties() {
+      if (!effectiveClientId) {
+        setProperties([]);
+        return;
+      }
+      const { data } = await supabase
+        .from("properties")
+        .select("id, name")
+        .eq("client_id", effectiveClientId)
+        .order("name");
+      setProperties((data as PropertyRow[]) ?? []);
+      setPropertyId("");
+    }
     loadProperties();
-  }, [clientId]);
+  }, [effectiveClientId]);
 
   async function criarAnimal(e: React.FormEvent) {
     e.preventDefault();
+    if (!effectiveClientId) return;
     setLoading(true);
     setMessage("");
 
-    const payload = {
+    const { error } = await supabase.from("animals").insert({
       internal_code: internalCode || null,
       birth_date: birthDate || null,
       sex: sex || null,
       breed: breed || null,
       current_property_id: propertyId || null,
       status: status || null,
-      client_id: clientId || null,
-    };
-
-    const { error } = await supabase.from("animals").insert(payload);
+      client_id: effectiveClientId,
+    });
 
     if (error) {
       setMessage(`Erro ao criar animal: ${error.message}`);
@@ -85,33 +103,30 @@ export default function NovoAnimalPage() {
       return;
     }
 
-    setMessage("Animal criado com sucesso.");
-    setInternalCode("");
-    setBirthDate("");
-    setSex("");
-    setBreed("");
-    setPropertyId("");
-    setStatus("active");
-    // mantém clientId para facilitar cadastro em série
-    setLoading(false);
+    router.push("/animais");
+  }
+
+  if (authLoading) {
+    return (
+      <main className="min-h-screen bg-[#F5F7F4]">
+        <div className="mx-auto max-w-3xl px-6 py-8 text-sm text-[#5F6B5F]">
+          Carregando...
+        </div>
+      </main>
+    );
   }
 
   return (
     <main className="min-h-screen bg-[#F5F7F4] text-[#1F2A1F]">
       <div className="mx-auto max-w-3xl px-6 py-8">
         <div className="mb-6">
-          <Link
-            href="/animais"
-            className="text-sm text-[#4A7C3A] hover:underline"
-          >
+          <Link href="/animais" className="text-sm text-[#4A7C3A] hover:underline">
             ← Voltar para Animais
           </Link>
         </div>
 
         <header className="mb-8">
-          <h1 className="text-3xl font-semibold tracking-tight">
-            Novo animal
-          </h1>
+          <h1 className="text-3xl font-semibold tracking-tight">Novo animal</h1>
           <p className="mt-2 text-sm text-[#5F6B5F]">
             Registre um novo animal na base da Agraas.
           </p>
@@ -120,31 +135,27 @@ export default function NovoAnimalPage() {
         <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-black/5">
           <form onSubmit={criarAnimal} className="space-y-5">
 
-            {/* Cliente */}
-            <div>
-              <label className="mb-2 block text-sm font-medium">
-                Cliente
-              </label>
-              <select
-                value={clientId}
-                onChange={(e) => setClientId(e.target.value)}
-                className="w-full rounded-lg border border-black/10 bg-white px-4 py-3 outline-none focus:border-[#4A7C3A]"
-                required
-              >
-                <option value="">Selecione um cliente</option>
-                {clients.map((client) => (
-                  <option key={client.id} value={client.id}>
-                    {client.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {/* Seletor de cliente — apenas para admin */}
+            {isAdmin && (
+              <div>
+                <label className="mb-2 block text-sm font-medium">Cliente</label>
+                <select
+                  value={selectedClientId}
+                  onChange={(e) => setSelectedClientId(e.target.value)}
+                  className="w-full rounded-lg border border-black/10 bg-white px-4 py-3 outline-none focus:border-[#4A7C3A]"
+                  required
+                >
+                  <option value="">Selecione um cliente</option>
+                  {clients.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             {/* Código interno */}
             <div>
-              <label className="mb-2 block text-sm font-medium">
-                Código interno
-              </label>
+              <label className="mb-2 block text-sm font-medium">Código interno</label>
               <input
                 type="text"
                 value={internalCode}
@@ -157,9 +168,7 @@ export default function NovoAnimalPage() {
 
             {/* Data de nascimento */}
             <div>
-              <label className="mb-2 block text-sm font-medium">
-                Data de nascimento
-              </label>
+              <label className="mb-2 block text-sm font-medium">Data de nascimento</label>
               <input
                 type="date"
                 value={birthDate}
@@ -199,25 +208,25 @@ export default function NovoAnimalPage() {
 
             {/* Propriedade */}
             <div>
-              <label className="mb-2 block text-sm font-medium">
-                Propriedade atual
-              </label>
+              <label className="mb-2 block text-sm font-medium">Propriedade atual</label>
               <select
                 value={propertyId}
                 onChange={(e) => setPropertyId(e.target.value)}
                 className="w-full rounded-lg border border-black/10 bg-white px-4 py-3 outline-none focus:border-[#4A7C3A]"
                 required
-                disabled={!clientId}
+                disabled={!effectiveClientId}
               >
                 <option value="">
-                  {clientId
-                    ? "Selecione uma propriedade"
-                    : "Selecione um cliente primeiro"}
+                  {effectiveClientId
+                    ? properties.length === 0
+                      ? "Nenhuma propriedade cadastrada"
+                      : "Selecione uma propriedade"
+                    : isAdmin
+                    ? "Selecione um cliente primeiro"
+                    : "Carregando propriedades..."}
                 </option>
-                {properties.map((property) => (
-                  <option key={property.id} value={property.id}>
-                    {property.name ?? property.id}
-                  </option>
+                {properties.map((p) => (
+                  <option key={p.id} value={p.id}>{p.name ?? p.id}</option>
                 ))}
               </select>
             </div>
@@ -236,15 +245,15 @@ export default function NovoAnimalPage() {
               </select>
             </div>
 
-            {message ? (
+            {message && (
               <div className="rounded-lg bg-[#F5F7F4] px-4 py-3 text-sm text-[#1F2A1F]">
                 {message}
               </div>
-            ) : null}
+            )}
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !effectiveClientId}
               className="rounded-lg bg-[#4A7C3A] px-6 py-3 text-sm font-medium text-white hover:bg-[#3B6B2E] disabled:opacity-60"
             >
               {loading ? "Criando..." : "Criar animal"}

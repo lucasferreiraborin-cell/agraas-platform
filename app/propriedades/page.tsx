@@ -328,9 +328,7 @@ export default function PropriedadesPage() {
           Carregando propriedades...
         </div>
       ) : filteredProperties.length === 0 ? (
-        <div className="ag-card p-8 text-sm text-[var(--text-muted)]">
-          Nenhuma propriedade encontrada para este cliente.
-        </div>
+        <WelcomeEmpty />
       ) : (
         <>
           <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
@@ -747,6 +745,35 @@ export default function PropriedadesPage() {
         </>
       )}
     </main>
+  );
+}
+
+function WelcomeEmpty() {
+  return (
+    <div className="ag-card-strong overflow-hidden">
+      <div className="flex flex-col items-center px-8 py-16 text-center">
+        <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-[var(--primary-soft)] text-4xl shadow-[var(--shadow-soft)]">
+          🏡
+        </div>
+
+        <div className="ag-badge ag-badge-green mt-8">Bem-vindo à Agraas</div>
+
+        <h2 className="mt-5 text-3xl font-semibold tracking-[-0.04em] text-[var(--text-primary)] lg:text-4xl">
+          Cadastre sua primeira fazenda
+        </h2>
+
+        <p className="mt-5 max-w-lg text-base leading-8 text-[var(--text-secondary)]">
+          Sua operação começa aqui. Cadastre uma propriedade para ativar o
+          rastreamento de animais, lotes, eventos e passaportes digitais.
+        </p>
+
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
+          <Link href="/propriedades/novo" className="ag-button-primary">
+            Cadastrar minha primeira fazenda
+          </Link>
+        </div>
+      </div>
+    </div>
   );
 }
 

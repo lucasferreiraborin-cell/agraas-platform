@@ -335,10 +335,7 @@ export default function AnimaisPage() {
               Erro ao carregar animais.
             </p>
           ) : rows.length === 0 ? (
-            <div className="rounded-3xl bg-[var(--surface-soft)] p-6 text-sm text-[var(--text-muted)]">
-              Nenhum animal encontrado
-              {selectedClientId ? " para este cliente" : ""}.
-            </div>
+            <WelcomeEmpty />
           ) : (
             <div className="overflow-x-auto">
               <table className="ag-table">
@@ -444,6 +441,36 @@ export default function AnimaisPage() {
         </div>
       </section>
     </main>
+  );
+}
+
+function WelcomeEmpty() {
+  return (
+    <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-10 text-center">
+      <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-[var(--primary-soft)] text-3xl shadow-[var(--shadow-soft)] mx-auto">
+        🐂
+      </div>
+
+      <div className="ag-badge ag-badge-green mt-6 inline-flex">Bem-vindo à Agraas</div>
+
+      <h3 className="mt-4 text-2xl font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
+        Nenhum animal cadastrado ainda
+      </h3>
+
+      <p className="mt-3 text-base leading-7 text-[var(--text-secondary)] max-w-md mx-auto">
+        Comece cadastrando uma propriedade e depois registre seus animais para
+        ativar passaportes, scores e rastreabilidade completa.
+      </p>
+
+      <div className="mt-6 flex flex-wrap justify-center gap-3">
+        <Link href="/propriedades/novo" className="ag-button-primary">
+          Cadastrar minha primeira fazenda
+        </Link>
+        <Link href="/animais/novo" className="ag-button-secondary">
+          Cadastrar animal
+        </Link>
+      </div>
+    </div>
   );
 }
 
