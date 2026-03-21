@@ -1,5 +1,7 @@
 import "./globals.css";
 import Link from "next/link";
+import LogoutButton from "./components/LogoutButton";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 const menuItems = [
   { href: "/", label: "Painel", icon: "◉" },
@@ -37,11 +39,14 @@ const menuItems = [
   { href: "/historico", label: "Histórico", icon: "◷" },
 ];
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
   const environmentLabel =
     process.env.NODE_ENV === "production" ? "Agraas MVP" : "Ambiente local";
 
@@ -159,9 +164,12 @@ export default function RootLayout({
                     <div className="rounded-full border border-[var(--border)] bg-white px-4 py-2 text-sm text-[var(--text-secondary)] shadow-[var(--shadow-soft)]">
                       {environmentLabel}
                     </div>
-                    <div className="rounded-full bg-[var(--primary)] px-4 py-2 text-sm font-medium text-white shadow-[var(--shadow-green)]">
-                      Fase 1 entregue
-                    </div>
+                    {user && (
+                      <div className="rounded-full border border-[var(--border)] bg-white px-4 py-2 text-sm text-[var(--text-secondary)] shadow-[var(--shadow-soft)]">
+                        {user.email}
+                      </div>
+                    )}
+                    <LogoutButton />
                   </div>
                 </div>
               </header>
