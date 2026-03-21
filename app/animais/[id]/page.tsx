@@ -50,13 +50,12 @@ type BatchRow = {
 };
 
 type EventRow = {
+  id: string;
   animal_id: string | null;
-  event_type?: string | null;
-  type?: string | null;
-  event_timestamp?: string | null;
-  event_date?: string | null;
-  notes?: string | null;
-  description?: string | null;
+  source: string;
+  event_type: string | null;
+  event_date: string | null;
+  notes: string | null;
 };
 
 type WeightRow = {
@@ -103,8 +102,7 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
     { data: applicationsData },
     { data: productsData },
     { data: batchesData },
-    { data: animalEventsData },
-    { data: farmEventsData },
+    { data: eventsData },
     { data: weightsData },
     { data: movementsData },
   ] = await Promise.all([
@@ -131,14 +129,8 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
     supabase.from("stock_batches").select("id, batch_number"),
 
     supabase
-      .from("animal_events")
-      .select("*")
-      .eq("animal_id", id)
-      .order("created_at", { ascending: false }),
-
-    supabase
-      .from("farm_events")
-      .select("*")
+      .from("events")
+      .select("id, animal_id, source, event_type, event_date, notes")
       .eq("animal_id", id)
       .order("event_date", { ascending: false }),
 
@@ -196,8 +188,7 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
   const applications = (applicationsData ?? []) as ApplicationRow[];
   const products = (productsData ?? []) as ProductRow[];
   const batches = (batchesData ?? []) as BatchRow[];
-  const animalEvents = (animalEventsData ?? []) as EventRow[];
-  const farmEvents = (farmEventsData ?? []) as EventRow[];
+  const events = (eventsData ?? []) as EventRow[];
   const weights = (weightsData ?? []) as WeightRow[];
   const movements = (movementsData ?? []) as MovementRow[];
 
@@ -271,32 +262,19 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
     badge: "🔁 Movimento",
   }));
 
-  const timelineAnimalEvents: TimelineRow[] = animalEvents.map((event, index) => ({
-    id: `animal-event-${index}-${event.event_date ?? event.event_timestamp ?? "sem-data"}`,
-    title: formatEventType(event.event_type ?? event.type ?? ""),
-    description: event.notes ?? event.description ?? "Evento registrado.",
-    date: event.event_date ?? event.event_timestamp ?? null,
-    badge: `${getEventIcon(event.event_type ?? event.type ?? "")} ${formatEventType(
-      event.event_type ?? event.type ?? ""
-    )}`,
-  }));
-
-  const timelineFarmEvents: TimelineRow[] = farmEvents.map((event, index) => ({
-    id: `farm-event-${index}-${event.event_date ?? event.event_timestamp ?? "sem-data"}`,
-    title: formatEventType(event.type ?? event.event_type ?? ""),
-    description: event.description ?? event.notes ?? "Evento operacional registrado.",
-    date: event.event_date ?? event.event_timestamp ?? null,
-    badge: `${getEventIcon(event.type ?? event.event_type ?? "")} ${formatEventType(
-      event.type ?? event.event_type ?? ""
-    )}`,
+  const timelineEvents: TimelineRow[] = events.map((event) => ({
+    id: `event-${event.id}-${event.event_date ?? "sem-data"}`,
+    title: formatEventType(event.event_type ?? ""),
+    description: event.notes ?? (event.source === "farm" ? "Evento operacional registrado." : "Evento registrado."),
+    date: event.event_date ?? null,
+    badge: `${getEventIcon(event.event_type ?? "")} ${formatEventType(event.event_type ?? "")}`,
   }));
 
   const timeline = [
     ...timelineApplications,
     ...timelineWeights,
     ...timelineMovements,
-    ...timelineAnimalEvents,
-    ...timelineFarmEvents,
+    ...timelineEvents,
   ]
     .sort((a, b) => {
       const aTime = a.date ? new Date(a.date).getTime() : 0;
@@ -334,7 +312,7 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
 
   const calculatedOperationalScore =
     score.operational_score ??
-    calculateOperationalScore(movements.length, animalEvents.length + farmEvents.length);
+    calculateOperationalScore(movements.length, events.length);
 
   const calculatedContinuityScore =
     score.continuity_score ??
@@ -350,7 +328,7 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
       : calculateAgraasScore({
           lastWeight: latestWeight,
           applicationsCount: applications.length,
-          eventsCount: animalEvents.length + farmEvents.length,
+          eventsCount: events.length,
           weightsCount: weights.length,
           ageMonths,
           hasBloodType: Boolean(animal.blood_type),
