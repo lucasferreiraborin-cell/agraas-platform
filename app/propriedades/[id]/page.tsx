@@ -93,6 +93,13 @@ export default async function PropriedadeDetailPage({ params }: PageProps) {
   const animals = (animalsData as AnimalRow[] | null) ?? [];
   const animalIds = animals.map((a) => a.id);
 
+  // Lotes vinculados a esta propriedade
+  const { data: lotsData } = await supabase
+    .from("lots")
+    .select("id")
+    .eq("property_id", id);
+  const lotsCount = lotsData?.length ?? 0;
+
   // Score do passaporte por animal (evita query .in() vazia)
   const passports: PassportRow[] =
     animalIds.length > 0
@@ -228,7 +235,7 @@ export default async function PropriedadeDetailPage({ params }: PageProps) {
               />
               <SnapshotCard
                 label="Lotes"
-                value="—"
+                value={String(lotsCount)}
               />
               <SnapshotCard
                 label="Raças"

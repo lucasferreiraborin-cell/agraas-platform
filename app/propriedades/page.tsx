@@ -34,7 +34,7 @@ export default function PropriedadesPage() {
 
   useEffect(() => {
     async function load() {
-      const [{ data: clientsData }, { data: propertiesData }, { data: animalsData }] =
+      const [{ data: clientsData }, { data: propertiesData }, { data: animalsData }, { data: lotsData }] =
         await Promise.all([
           supabase.from("clients").select("id, name").order("name"),
           supabase
@@ -44,15 +44,27 @@ export default function PropriedadesPage() {
             )
             .order("name"),
           supabase.from("animals").select("id, current_property_id"),
+          supabase.from("lots").select("id, property_id"),
         ]);
 
       // Computa animals_count real por propriedade
-      const countByProperty = new Map<string, number>();
+      const animalsByProperty = new Map<string, number>();
       for (const animal of animalsData ?? []) {
         if (animal.current_property_id) {
-          countByProperty.set(
+          animalsByProperty.set(
             animal.current_property_id,
-            (countByProperty.get(animal.current_property_id) ?? 0) + 1
+            (animalsByProperty.get(animal.current_property_id) ?? 0) + 1
+          );
+        }
+      }
+
+      // Computa lots_count real por propriedade
+      const lotsByProperty = new Map<string, number>();
+      for (const lot of lotsData ?? []) {
+        if (lot.property_id) {
+          lotsByProperty.set(
+            lot.property_id,
+            (lotsByProperty.get(lot.property_id) ?? 0) + 1
           );
         }
       }
@@ -60,8 +72,8 @@ export default function PropriedadesPage() {
       const propertiesWithCounts = ((propertiesData as PropertyRow[] | null) ?? []).map(
         (p) => ({
           ...p,
-          animals_count: countByProperty.get(p.id) ?? 0,
-          lots_count: 0, // lots não têm property_id no schema atual
+          animals_count: animalsByProperty.get(p.id) ?? 0,
+          lots_count: lotsByProperty.get(p.id) ?? 0,
         })
       );
 
