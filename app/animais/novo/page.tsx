@@ -4,12 +4,18 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 
-type Property = {
+type ClientRow = {
+  id: string;
+  name: string;
+};
+
+type PropertyRow = {
   id: string;
   name: string | null;
 };
 
 export default function NovoAnimalPage() {
+  const [clientId, setClientId] = useState("");
   const [internalCode, setInternalCode] = useState("");
   const [birthDate, setBirthDate] = useState("");
   const [sex, setSex] = useState("");
@@ -17,22 +23,44 @@ export default function NovoAnimalPage() {
   const [propertyId, setPropertyId] = useState("");
   const [status, setStatus] = useState("active");
 
-  const [properties, setProperties] = useState<Property[]>([]);
+  const [clients, setClients] = useState<ClientRow[]>([]);
+  const [properties, setProperties] = useState<PropertyRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
+  // Carrega clientes uma vez
+  useEffect(() => {
+    async function loadClients() {
+      const { data } = await supabase
+        .from("clients")
+        .select("id, name")
+        .order("name", { ascending: true });
+
+      if (data) setClients(data as ClientRow[]);
+    }
+
+    loadClients();
+  }, []);
+
+  // Recarrega propriedades quando o cliente muda
   useEffect(() => {
     async function loadProperties() {
-      const { data, error } = await supabase
+      let query = supabase
         .from("properties")
         .select("id, name")
         .order("name", { ascending: true });
 
-      if (!error && data) setProperties(data);
+      if (clientId) {
+        query = query.eq("client_id", clientId) as typeof query;
+      }
+
+      const { data } = await query;
+      if (data) setProperties(data as PropertyRow[]);
+      setPropertyId(""); // reset ao trocar de cliente
     }
 
     loadProperties();
-  }, []);
+  }, [clientId]);
 
   async function criarAnimal(e: React.FormEvent) {
     e.preventDefault();
@@ -46,6 +74,7 @@ export default function NovoAnimalPage() {
       breed: breed || null,
       current_property_id: propertyId || null,
       status: status || null,
+      client_id: clientId || null,
     };
 
     const { error } = await supabase.from("animals").insert(payload);
@@ -63,6 +92,7 @@ export default function NovoAnimalPage() {
     setBreed("");
     setPropertyId("");
     setStatus("active");
+    // mantém clientId para facilitar cadastro em série
     setLoading(false);
   }
 
@@ -70,13 +100,18 @@ export default function NovoAnimalPage() {
     <main className="min-h-screen bg-[#F5F7F4] text-[#1F2A1F]">
       <div className="mx-auto max-w-3xl px-6 py-8">
         <div className="mb-6">
-          <Link href="/animais" className="text-sm text-[#4A7C3A] hover:underline">
+          <Link
+            href="/animais"
+            className="text-sm text-[#4A7C3A] hover:underline"
+          >
             ← Voltar para Animais
           </Link>
         </div>
 
         <header className="mb-8">
-          <h1 className="text-3xl font-semibold tracking-tight">Novo animal</h1>
+          <h1 className="text-3xl font-semibold tracking-tight">
+            Novo animal
+          </h1>
           <p className="mt-2 text-sm text-[#5F6B5F]">
             Registre um novo animal na base da Agraas.
           </p>
@@ -84,8 +119,32 @@ export default function NovoAnimalPage() {
 
         <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-black/5">
           <form onSubmit={criarAnimal} className="space-y-5">
+
+            {/* Cliente */}
             <div>
-              <label className="mb-2 block text-sm font-medium">Código interno</label>
+              <label className="mb-2 block text-sm font-medium">
+                Cliente
+              </label>
+              <select
+                value={clientId}
+                onChange={(e) => setClientId(e.target.value)}
+                className="w-full rounded-lg border border-black/10 bg-white px-4 py-3 outline-none focus:border-[#4A7C3A]"
+                required
+              >
+                <option value="">Selecione um cliente</option>
+                {clients.map((client) => (
+                  <option key={client.id} value={client.id}>
+                    {client.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Código interno */}
+            <div>
+              <label className="mb-2 block text-sm font-medium">
+                Código interno
+              </label>
               <input
                 type="text"
                 value={internalCode}
@@ -96,8 +155,11 @@ export default function NovoAnimalPage() {
               />
             </div>
 
+            {/* Data de nascimento */}
             <div>
-              <label className="mb-2 block text-sm font-medium">Data de nascimento</label>
+              <label className="mb-2 block text-sm font-medium">
+                Data de nascimento
+              </label>
               <input
                 type="date"
                 value={birthDate}
@@ -107,6 +169,7 @@ export default function NovoAnimalPage() {
               />
             </div>
 
+            {/* Sexo */}
             <div>
               <label className="mb-2 block text-sm font-medium">Sexo</label>
               <select
@@ -118,11 +181,10 @@ export default function NovoAnimalPage() {
                 <option value="">Selecione</option>
                 <option value="Male">Macho</option>
                 <option value="Female">Fêmea</option>
-                <option value="Macho">Macho</option>
-                <option value="Fêmea">Fêmea</option>
               </select>
             </div>
 
+            {/* Raça */}
             <div>
               <label className="mb-2 block text-sm font-medium">Raça</label>
               <input
@@ -135,15 +197,23 @@ export default function NovoAnimalPage() {
               />
             </div>
 
+            {/* Propriedade */}
             <div>
-              <label className="mb-2 block text-sm font-medium">Propriedade atual</label>
+              <label className="mb-2 block text-sm font-medium">
+                Propriedade atual
+              </label>
               <select
                 value={propertyId}
                 onChange={(e) => setPropertyId(e.target.value)}
                 className="w-full rounded-lg border border-black/10 bg-white px-4 py-3 outline-none focus:border-[#4A7C3A]"
                 required
+                disabled={!clientId}
               >
-                <option value="">Selecione uma propriedade</option>
+                <option value="">
+                  {clientId
+                    ? "Selecione uma propriedade"
+                    : "Selecione um cliente primeiro"}
+                </option>
                 {properties.map((property) => (
                   <option key={property.id} value={property.id}>
                     {property.name ?? property.id}
@@ -152,6 +222,7 @@ export default function NovoAnimalPage() {
               </select>
             </div>
 
+            {/* Status */}
             <div>
               <label className="mb-2 block text-sm font-medium">Status</label>
               <select
