@@ -4,6 +4,8 @@ export type ScoreInput = {
   sanitaryScore: number;
   operationalScore: number;
   continuityScore: number;
+  hasBloodType?: boolean;
+  hasGenealogy?: boolean;
 };
 
 export function calculateAgeInMonths(birthDate: string | null | undefined) {
@@ -29,6 +31,8 @@ export function calculateAgraasScore({
   sanitaryScore,
   operationalScore,
   continuityScore,
+  hasBloodType = false,
+  hasGenealogy = false,
 }: ScoreInput) {
   const productive =
     lastWeight && lastWeight > 0
@@ -40,16 +44,43 @@ export function calculateAgraasScore({
       ? Math.min(100, 40 + Math.round(ageMonths / 2))
       : 50;
 
+  const traceabilityBonus = (hasBloodType ? 3 : 0) + (hasGenealogy ? 4 : 0);
+
   return Math.min(
     100,
     Math.round(
-      productive * 0.3 +
+      productive * 0.28 +
         sanitaryScore * 0.24 +
         operationalScore * 0.18 +
-        continuityScore * 0.18 +
-        ageFactor * 0.1
+        continuityScore * 0.2 +
+        ageFactor * 0.1 +
+        traceabilityBonus
     )
   );
+}
+
+export function getPassportConfidenceText(score: number): string {
+  if (score >= 80) return "Animal com alto nível de rastreabilidade e confiabilidade operacional";
+  if (score >= 60) return "Animal com nível moderado de rastreabilidade e histórico em consolidação";
+  return "Animal com rastreabilidade em desenvolvimento — enriqueça os dados para elevar o score";
+}
+
+export function getPassportClassification(score: number): string {
+  if (score >= 80) return "Premium";
+  if (score >= 60) return "Standard";
+  return "Em desenvolvimento";
+}
+
+export function getMarketPotential(score: number): string {
+  if (score >= 80) return "Alto valor";
+  if (score >= 60) return "Valor moderado";
+  return "Em formação";
+}
+
+export function getExportEligibility(score: number): string {
+  if (score >= 80) return "Elegível para exportação";
+  if (score >= 60) return "Verificar requisitos";
+  return "Não elegível";
 }
 
 export function calculateDailyGain(

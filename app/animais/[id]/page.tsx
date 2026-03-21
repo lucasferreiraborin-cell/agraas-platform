@@ -1,5 +1,12 @@
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
+import {
+  calculateAgraasScore,
+  getPassportConfidenceText,
+  getPassportClassification,
+  getMarketPotential,
+  getExportEligibility,
+} from "@/lib/agraas-analytics";
 
 type PageProps = {
   params: Promise<{
@@ -327,9 +334,6 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
       ? Number(score.total_score)
       : calculateAgraasScore({
           lastWeight: latestWeight,
-          applicationsCount: applications.length,
-          eventsCount: events.length,
-          weightsCount: weights.length,
           ageMonths,
           hasBloodType: Boolean(animal.blood_type),
           hasGenealogy: Boolean(animal.sire_animal_id || animal.dam_animal_id),
@@ -409,7 +413,7 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
                </p>
 
               <p className="mt-3 text-2xl font-semibold text-[var(--primary-hover)]">
-                Animal com alto nível de confiabilidade
+                {getPassportConfidenceText(calculatedAgraasScore)}
               </p>
 
             <div className="mt-4 flex flex-wrap gap-2">
@@ -517,9 +521,9 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
             </div>
 
           <div className="mt-6 grid gap-4 sm:grid-cols-3">
-  <SnapshotCard label="Classificação" value="Premium" />
-  <SnapshotCard label="Potencial de mercado" value="Alto valor" />
-  <SnapshotCard label="Aptidão exportação" value="Elegível" />
+  <SnapshotCard label="Classificação" value={getPassportClassification(calculatedAgraasScore)} />
+  <SnapshotCard label="Potencial de mercado" value={getMarketPotential(calculatedAgraasScore)} />
+  <SnapshotCard label="Aptidão exportação" value={getExportEligibility(calculatedAgraasScore)} />
           </div>
           </div>
         </div>
@@ -815,52 +819,6 @@ function calculateContinuityScore(
   if (hasBirthDate) scoreValue += 15;
   if (hasAgraasId) scoreValue += 15;
   return Math.min(100, scoreValue);
-}
-
-function calculateAgraasScore({
-  lastWeight,
-  applicationsCount,
-  eventsCount,
-  weightsCount,
-  ageMonths,
-  hasBloodType,
-  hasGenealogy,
-  sanitaryScore,
-  operationalScore,
-  continuityScore,
-}: {
-  lastWeight: number | null;
-  applicationsCount: number;
-  eventsCount: number;
-  weightsCount: number;
-  ageMonths: number | null;
-  hasBloodType: boolean;
-  hasGenealogy: boolean;
-  sanitaryScore: number;
-  operationalScore: number;
-  continuityScore: number;
-}) {
-  const productive =
-    lastWeight && lastWeight > 0
-      ? Math.min(100, 35 + Math.round(lastWeight / 10))
-      : 35;
-
-  const ageFactor =
-    ageMonths !== null ? Math.min(100, 40 + Math.round(ageMonths / 2)) : 50;
-
-  const traceabilityBonus = (hasBloodType ? 3 : 0) + (hasGenealogy ? 4 : 0);
-
-  return Math.min(
-    100,
-    Math.round(
-      productive * 0.28 +
-        sanitaryScore * 0.24 +
-        operationalScore * 0.18 +
-        continuityScore * 0.2 +
-        ageFactor * 0.1 +
-        traceabilityBonus
-    )
-  );
 }
 
 function formatDate(value: string | null | undefined) {
