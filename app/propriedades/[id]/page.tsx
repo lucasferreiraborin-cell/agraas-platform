@@ -228,7 +228,7 @@ export default async function PropriedadeDetailPage({ params }: PageProps) {
               />
               <SnapshotCard
                 label="Lotes"
-                value={String(property.lots_count ?? 0)}
+                value="—"
               />
               <SnapshotCard
                 label="Raças"

@@ -34,19 +34,39 @@ export default function PropriedadesPage() {
 
   useEffect(() => {
     async function load() {
-      const [{ data: clientsData }, { data: propertiesData }] =
+      const [{ data: clientsData }, { data: propertiesData }, { data: animalsData }] =
         await Promise.all([
           supabase.from("clients").select("id, name").order("name"),
           supabase
             .from("properties")
             .select(
-              "id, name, code, region, state, animals_count, lots_count, status, profile, x, y, client_id"
+              "id, name, code, region, state, status, profile, x, y, client_id"
             )
             .order("name"),
+          supabase.from("animals").select("id, current_property_id"),
         ]);
 
+      // Computa animals_count real por propriedade
+      const countByProperty = new Map<string, number>();
+      for (const animal of animalsData ?? []) {
+        if (animal.current_property_id) {
+          countByProperty.set(
+            animal.current_property_id,
+            (countByProperty.get(animal.current_property_id) ?? 0) + 1
+          );
+        }
+      }
+
+      const propertiesWithCounts = ((propertiesData as PropertyRow[] | null) ?? []).map(
+        (p) => ({
+          ...p,
+          animals_count: countByProperty.get(p.id) ?? 0,
+          lots_count: 0, // lots não têm property_id no schema atual
+        })
+      );
+
       setClients((clientsData as ClientRow[] | null) ?? []);
-      setProperties((propertiesData as PropertyRow[] | null) ?? []);
+      setProperties(propertiesWithCounts);
       setLoading(false);
     }
 
