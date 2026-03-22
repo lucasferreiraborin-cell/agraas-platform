@@ -4,9 +4,10 @@ import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 
-type EventType = "weight" | "application" | "observation";
+type EventType = "weight" | "application" | "movement" | "observation";
 
 const UNITS = ["mL", "g", "comprimido", "UI", "dose"];
+const MOVEMENT_TYPES = ["Transferência", "Venda", "Empréstimo", "Retorno", "Outro"];
 
 export default function EventModal({ animalId }: { animalId: string }) {
   const router = useRouter();
@@ -28,6 +29,13 @@ export default function EventModal({ animalId }: { animalId: string }) {
   const [operatorName, setOperatorName] = useState("");
   const [carenciaDias, setCarenciaDias] = useState("");
 
+  // Campos movimentação
+  const [movementType, setMovementType] = useState("Transferência");
+  const [originRef, setOriginRef] = useState("");
+  const [destinationRef, setDestinationRef] = useState("");
+  const [movementDate, setMovementDate] = useState(new Date().toISOString().slice(0, 10));
+  const [movementNotes, setMovementNotes] = useState("");
+
   // Campos observação
   const [eventType, setEventType] = useState("");
   const [eventDate, setEventDate] = useState(new Date().toISOString().slice(0, 10));
@@ -37,6 +45,8 @@ export default function EventModal({ animalId }: { animalId: string }) {
     setWeight(""); setWeightDate(new Date().toISOString().slice(0, 10)); setWeightNotes("");
     setProductName(""); setDose(""); setUnit("mL"); setAppDate(new Date().toISOString().slice(0, 10));
     setOperatorName(""); setCarenciaDias("");
+    setMovementType("Transferência"); setOriginRef(""); setDestinationRef("");
+    setMovementDate(new Date().toISOString().slice(0, 10)); setMovementNotes("");
     setEventType(""); setEventDate(new Date().toISOString().slice(0, 10)); setEventNotes("");
     setError(""); setType("weight");
   }
@@ -90,6 +100,25 @@ export default function EventModal({ animalId }: { animalId: string }) {
         notes: `Aplicação: ${productName}${dose ? ` — ${dose} ${unit}` : ""}${withdrawalDate ? ` · Carência até ${new Date(withdrawalDate).toLocaleDateString("pt-BR")}` : ""}`,
       });
 
+    } else if (type === "movement") {
+      if (!destinationRef) { setError("Informe o destino."); setLoading(false); return; }
+      const { error: mErr } = await supabase.from("animal_movements").insert({
+        animal_id: animalId,
+        movement_type: movementType,
+        origin_ref: originRef || null,
+        destination_ref: destinationRef,
+        movement_date: movementDate || null,
+        notes: movementNotes || null,
+      });
+      if (mErr) { setError(mErr.message); setLoading(false); return; }
+      await supabase.from("events").insert({
+        animal_id: animalId,
+        source: "animal",
+        event_type: "movement",
+        event_date: movementDate || null,
+        notes: `${movementType}: ${originRef ? `${originRef} → ` : ""}${destinationRef}${movementNotes ? ` — ${movementNotes}` : ""}`,
+      });
+
     } else {
       const { error: eErr } = await supabase.from("events").insert({
         animal_id: animalId,
@@ -110,6 +139,7 @@ export default function EventModal({ animalId }: { animalId: string }) {
   const tabs: { key: EventType; label: string }[] = [
     { key: "weight", label: "⚖ Pesagem" },
     { key: "application", label: "💉 Aplicação" },
+    { key: "movement", label: "🚛 Movimentação" },
     { key: "observation", label: "📋 Observação" },
   ];
 
@@ -210,6 +240,36 @@ export default function EventModal({ animalId }: { animalId: string }) {
                       </span>
                     </div>
                   )}
+                </>
+              )}
+
+              {type === "movement" && (
+                <>
+                  <label className="block">
+                    <span className="mb-1.5 block text-sm font-medium">Tipo de movimentação</span>
+                    <select value={movementType} onChange={e => setMovementType(e.target.value)} className={inputClass} autoFocus>
+                      {MOVEMENT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                  </label>
+                  <label className="block">
+                    <span className="mb-1.5 block text-sm font-medium">Origem</span>
+                    <input type="text" value={originRef} onChange={e => setOriginRef(e.target.value)}
+                      className={inputClass} placeholder="Ex.: Fazenda Santa Helena" />
+                  </label>
+                  <label className="block">
+                    <span className="mb-1.5 block text-sm font-medium">Destino *</span>
+                    <input type="text" value={destinationRef} onChange={e => setDestinationRef(e.target.value)}
+                      className={inputClass} placeholder="Ex.: Fazenda Rio Verde" />
+                  </label>
+                  <label className="block">
+                    <span className="mb-1.5 block text-sm font-medium">Data</span>
+                    <input type="date" value={movementDate} onChange={e => setMovementDate(e.target.value)} className={inputClass} />
+                  </label>
+                  <label className="block">
+                    <span className="mb-1.5 block text-sm font-medium">Observações</span>
+                    <input type="text" value={movementNotes} onChange={e => setMovementNotes(e.target.value)}
+                      className={inputClass} placeholder="Ex.: Venda para frigorífico..." />
+                  </label>
                 </>
               )}
 
