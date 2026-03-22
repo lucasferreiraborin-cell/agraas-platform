@@ -2,6 +2,9 @@
 -- Lucas (admin) — operação premium GO + MS
 -- Pedro (client) — operação básica MG
 
+-- Coluna withdrawal_date que faltou na migration 014
+ALTER TABLE applications ADD COLUMN IF NOT EXISTS withdrawal_date date;
+
 -- Stubs para compatibilidade com shadow DB da Supabase CLI
 -- (migration 002 faz SELECT FROM animal_events que não existe em schema limpo)
 CREATE TABLE IF NOT EXISTS animal_events (
