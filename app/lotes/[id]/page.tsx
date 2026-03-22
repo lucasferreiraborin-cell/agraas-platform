@@ -27,6 +27,7 @@ type SearchAnimal = { id: string; internal_code: string | null; nickname: string
 type WeightRow = { animal_id: string; weight: number; weighing_date: string | null };
 type ApplicationRow = { animal_id: string; withdrawal_date: string | null; product_name: string | null };
 type CertRow = { animal_id: string; certification_name: string; status: string; expires_at: string | null };
+type PassportCacheRow = { animal_id: string; score_json: Record<string, unknown> | null };
 
 export default function LoteDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -35,6 +36,7 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
   const [weights, setWeights] = useState<WeightRow[]>([]);
   const [applications, setApplications] = useState<ApplicationRow[]>([]);
   const [certifications, setCertifications] = useState<CertRow[]>([]);
+  const [passportScores, setPassportScores] = useState<PassportCacheRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchAnimal[]>([]);
@@ -60,12 +62,14 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
     // Carrega aplicações e certificações depois de ter os animalIds
     const animalIds = animalList.map(a => a.id);
     if (animalIds.length > 0) {
-      const [{ data: appData }, { data: certData }] = await Promise.all([
+      const [{ data: appData }, { data: certData }, { data: cacheData }] = await Promise.all([
         supabase.from("applications").select("animal_id, withdrawal_date, product_name").in("animal_id", animalIds),
         supabase.from("animal_certifications").select("animal_id, certification_name, status, expires_at").in("animal_id", animalIds),
+        supabase.from("agraas_master_passport_cache").select("animal_id, score_json").in("animal_id", animalIds),
       ]);
       setApplications((appData as ApplicationRow[]) ?? []);
       setCertifications((certData as CertRow[]) ?? []);
+      setPassportScores((cacheData as PassportCacheRow[]) ?? []);
     }
     setLoading(false);
   }
@@ -139,6 +143,16 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
     return map;
   }, [certifications]);
 
+  // Scores do cache — fonte de verdade para a demo PIF
+  const scoreByAnimal = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const p of passportScores) {
+      const overall = (p.score_json as any)?.overall;
+      if (overall != null) map.set(p.animal_id, Number(overall));
+    }
+    return map;
+  }, [passportScores]);
+
   const stats = useMemo(() => {
     let totalGmd = 0; let gmdCount = 0;
     let totalScore = 0; let atMeta = 0;
@@ -152,7 +166,7 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
       if (gmd !== null) { totalGmd += gmd; gmdCount++; }
       if (lot?.target_weight && last && last >= lot.target_weight) atMeta++;
       if (last) avgWeights.push(last);
-      const score = calculateAgraasScore({
+      const score = scoreByAnimal.get(animal.id) ?? calculateAgraasScore({
         lastWeight: last, ageMonths: calculateAgeInMonths(animal.birth_date),
         sanitaryScore: 60, operationalScore: 60, continuityScore: 60,
         hasBloodType: Boolean(animal.blood_type),
@@ -171,7 +185,7 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
       previsaoSaida = d.toLocaleDateString("pt-BR");
     }
     return { avgGmd, avgScore, atMeta, previsaoSaida };
-  }, [animals, weightByAnimal, lot]);
+  }, [animals, weightByAnimal, lot, scoreByAnimal]);
 
   // Aptidão por animal para lotes de exportação
   const exportAptidao = useMemo(() => {
@@ -180,7 +194,7 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
     return animals.map(animal => {
       const aw = weightByAnimal.get(animal.id) ?? [];
       const last = aw[0] ? Number(aw[0].weight) : null;
-      const score = calculateAgraasScore({
+      const score = scoreByAnimal.get(animal.id) ?? calculateAgraasScore({
         lastWeight: last, ageMonths: calculateAgeInMonths(animal.birth_date),
         sanitaryScore: 60, operationalScore: 60, continuityScore: 60,
         hasBloodType: Boolean(animal.blood_type),
@@ -202,7 +216,7 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
 
       return { animal, score, last, carencias, certs, certsFaltando, pendencias, status };
     });
-  }, [isExportLot, animals, weightByAnimal, activeCarenciasByAnimal, certsByAnimal, lot]);
+  }, [isExportLot, animals, weightByAnimal, activeCarenciasByAnimal, certsByAnimal, lot, scoreByAnimal]);
 
   const exportStats = useMemo(() => {
     if (!exportAptidao) return null;
@@ -349,7 +363,7 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
                       <p className="font-semibold text-[var(--text-primary)]">
                         {animal.nickname ?? animal.internal_code ?? animal.id.slice(0, 8)}
                       </p>
-                      <span className="text-xs text-[var(--text-muted)]">{animal.breed ?? "—"} · {animal.sex === "Male" ? "Macho" : animal.sex === "Female" ? "Fêmea" : "—"}</span>
+                      <span className="text-xs text-[var(--text-muted)]">{animal.breed ?? "—"} · {sexLabel(animal.sex)}</span>
                       <span className="text-xs font-medium text-[var(--text-secondary)]">Score {score}</span>
                       {last && <span className="text-xs text-[var(--text-muted)]">{last} kg</span>}
                       {certs.length > 0 && certs.map(c => (
@@ -425,7 +439,7 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
               <table className="ag-table">
                 <thead>
                   <tr>
-                    <th>Animal</th><th>Sexo</th><th>Raça</th>
+                    <th>Animal</th><th>Score</th><th>Sexo</th><th>Raça</th>
                     {isExportLot && <th>Aptidão</th>}
                     <th>Passaporte</th><th>Remover</th>
                   </tr>
@@ -437,7 +451,8 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
                     return (
                       <tr key={a.id}>
                         <td className="font-medium text-[var(--text-primary)]">{a.nickname ?? a.internal_code ?? a.id.slice(0, 8)}</td>
-                        <td>{a.sex === "Male" ? "Macho" : a.sex === "Female" ? "Fêmea" : "—"}</td>
+                        <td className="font-semibold text-[var(--primary-hover)]">{scoreByAnimal.get(a.id) ?? "—"}</td>
+                        <td>{sexLabel(a.sex)}</td>
                         <td>{a.breed ?? "—"}</td>
                         {isExportLot && cfg && (
                           <td>
@@ -473,6 +488,13 @@ function KPI({ label, value, sub }: { label: string; value: string | number; sub
       <p className="mt-2 text-xs text-[var(--text-secondary)]">{sub}</p>
     </div>
   );
+}
+
+function sexLabel(sex: string | null): string {
+  if (!sex) return "—";
+  if (sex === "Male" || sex === "M") return "Macho";
+  if (sex === "Female" || sex === "F") return "Fêmea";
+  return sex;
 }
 
 function ExportKPI({ label, value, sub, green, amber, red }: { label: string; value: string | number; sub: string; green?: boolean; amber?: boolean; red?: boolean }) {
