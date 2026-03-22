@@ -10,6 +10,7 @@ const menuItems = [
   { href: "/cadeia", label: "Cadeia", icon: "⛓" },
   { href: "/animais", label: "Animais", icon: "◌" },
   { href: "/market", label: "Market", icon: "◈" },
+  { href: "/exportacao", label: "Exportação", icon: "✈" },
   { href: "/operacoes", label: "Operações", icon: "◎" },
   { href: "/propriedades", label: "Propriedades", icon: "▣" },
   { href: "/estoque", label: "Estoque", icon: "▥" },
@@ -52,16 +53,24 @@ export default function SidebarNav() {
             key={item.href}
             href={item.href}
             className={`group flex items-center gap-3 rounded-2xl px-5 py-3.5 text-[15px] font-medium transition duration-200 ${
-              active
+              item.href === "/exportacao"
+                ? active
+                  ? "bg-emerald-500/20 text-emerald-300 ring-1 ring-emerald-500/20"
+                  : "text-emerald-400/80 hover:bg-emerald-500/12 hover:text-emerald-300"
+                : active
                 ? "bg-white/18 text-white"
                 : "text-white/82 hover:bg-white/12 hover:text-white"
             }`}
           >
             <span
-              className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border text-sm text-white/90 transition duration-200 ${
-                active
-                  ? "border-white/20 bg-white/20 ring-1 ring-white/16"
-                  : "border-white/8 bg-white/8 ring-1 ring-white/6 group-hover:bg-white/14 group-hover:ring-white/12"
+              className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border text-sm transition duration-200 ${
+                item.href === "/exportacao"
+                  ? active
+                    ? "border-emerald-500/40 bg-emerald-500/20 text-emerald-300 ring-1 ring-emerald-500/20"
+                    : "border-emerald-500/20 bg-emerald-500/10 text-emerald-400 group-hover:bg-emerald-500/18"
+                  : active
+                  ? "border-white/20 bg-white/20 ring-1 ring-white/16 text-white/90"
+                  : "border-white/8 bg-white/8 ring-1 ring-white/6 text-white/90 group-hover:bg-white/14 group-hover:ring-white/12"
               }`}
             >
               {item.icon}
