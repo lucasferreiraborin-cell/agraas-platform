@@ -130,6 +130,13 @@ export default function EventModal({ animalId }: { animalId: string }) {
       if (eErr) { setError(eErr.message); setLoading(false); return; }
     }
 
+    // Recalcula score no cache para refletir na lista /animais
+    fetch("/api/recalculate-score", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ animalId }),
+    }).catch(() => {/* silencioso — não bloqueia o fluxo */});
+
     setLoading(false);
     setOpen(false);
     reset();
