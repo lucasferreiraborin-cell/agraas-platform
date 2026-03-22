@@ -182,30 +182,8 @@ BEGIN
     (a_graca,     388, today - 12, NULL),
     (a_pingo,     120, today - 21, NULL);
 
-  -- ============================================================
-  -- APLICAÇÕES SANITÁRIAS
-  -- ============================================================
-  -- carência encerrada = withdrawal_date no passado → sem bloqueio de exportação
-
-  INSERT INTO applications (animal_id, product_name, dose, unit, operator_name, application_date, withdrawal_date) VALUES
-    -- Vacina Aftosa (sem carência) — rebanho Lucas
-    (a_imperador, 'Vacina Aftosa Bivalente', 2.0, 'mL', 'Dr. Marcos Veterinário', today - 66, NULL),
-    (a_estrela,   'Vacina Aftosa Bivalente', 2.0, 'mL', 'Dr. Marcos Veterinário', today - 66, NULL),
-    (a_relampago, 'Vacina Aftosa Bivalente', 2.0, 'mL', 'Dr. Marcos Veterinário', today - 66, NULL),
-    (a_aurora,    'Vacina Aftosa Bivalente', 2.0, 'mL', 'Dr. Marcos Veterinário', today - 66, NULL),
-    (a_trovao,    'Vacina Aftosa Bivalente', 2.0, 'mL', 'Dr. Marcos Veterinário', today - 66, NULL),
-    (a_atlantico, 'Vacina Aftosa Bivalente', 2.0, 'mL', 'Dr. Marcos Veterinário', today - 66, NULL),
-    (a_serena,    'Vacina Aftosa Bivalente', 2.0, 'mL', 'Dr. Marcos Veterinário', today - 66, NULL),
-    -- Ivermectina 1% — carência 21 dias, já encerrada
-    (a_imperador, 'Ivermectina 1%', 5.0, 'mL', 'Dr. Marcos Veterinário', today - 49, today - 28),
-    (a_estrela,   'Ivermectina 1%', 4.5, 'mL', 'Dr. Marcos Veterinário', today - 49, today - 28),
-    (a_atlantico, 'Ivermectina 1%', 5.5, 'mL', 'Dr. Marcos Veterinário', today - 35, today - 14),
-    -- Clostan — carência 30 dias, já encerrada
-    (a_atlantico, 'Clostan 10%', 3.0, 'mL', 'Dr. Marcos Veterinário', today - 55, today - 25),
-    (a_aurora,    'Clostan 10%', 3.0, 'mL', 'Dra. Ana Veterinária',   today - 61, today - 31),
-    (a_trovao,    'Ivermectina 1%', 4.0, 'mL', 'Dr. Marcos Veterinário', today - 71, today - 50),
-    -- Pedro
-    (a_forte,     'Vacina Aftosa Bivalente', 2.0, 'mL', 'Dr. Silva Veterinário', today - 45, NULL);
+  -- Aplicações sanitárias omitidas do seed: trigger da tabela applications
+  -- valida batch_id no estoque. Adicionar via interface após o seed.
 
   -- ============================================================
   -- CERTIFICAÇÕES
