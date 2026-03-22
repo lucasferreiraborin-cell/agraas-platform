@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 
-type ClientRow = {
-  id: string;
-  name: string;
-};
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+type ClientRow = { id: string; name: string };
+type PropertyRow = { id: string; name: string };
 
 type PassportCacheRow = {
   animal_id: string;
@@ -17,158 +17,264 @@ type PassportCacheRow = {
     breed?: string | null;
     status?: string | null;
   } | null;
-  score_json: {
-    total_score?: number | null;
+  score_json: { total_score?: number | null } | null;
+  certifications_json:
+    | {
+        certification_code?: string | null;
+        certification_name?: string | null;
+        status?: string | null;
+      }[]
+    | null;
+  health_json: {
+    last_weight?: number | null;
+    active_withdrawal?: number | null;
   } | null;
+  ownership_json: { current_property_id?: string | null } | null;
 };
 
 type AnimalBaseRow = {
   id: string;
   agraas_id: string | null;
   birth_date: string | null;
+  nickname: string | null;
 };
 
-type AnimalRow = {
+type WeighingRow = { animal_id: string; weight_date: string };
+type ActiveAppRow = { animal_id: string; withdrawal_date: string };
+
+type AnimalCard = {
   animal_id: string;
   internal_code: string | null;
+  nickname: string | null;
   agraas_id: string | null;
   sex: string | null;
   breed: string | null;
   animal_status: string | null;
   total_score: number | null;
   birth_date: string | null;
+  last_weight: number | null;
+  last_weight_date: string | null;
+  property_id: string | null;
+  property_name: string | null;
+  certifications: { name: string; status: string; code: string | null }[];
+  has_halal: boolean;
+  is_export_ready: boolean;
+  is_in_alert: boolean;
+  days_since_weighing: number | null;
+  has_active_withdrawal: boolean;
 };
+
+type SortKey = "score_desc" | "score_asc" | "weight_desc" | "name_asc";
+type FilterKey = "all" | "halal" | "export" | "alert";
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AnimaisPage() {
   const [clients, setClients] = useState<ClientRow[]>([]);
-  const [rows, setRows] = useState<AnimalRow[]>([]);
+  const [properties, setProperties] = useState<PropertyRow[]>([]);
+  const [cards, setCards] = useState<AnimalCard[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [filter, setFilter] = useState<FilterKey>("all");
+  const [selectedProperty, setSelectedProperty] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<SortKey>("score_desc");
 
-  // Carrega clientes uma vez
+  // Load clients once
   useEffect(() => {
-    async function loadClients() {
-      const { data } = await supabase
-        .from("clients")
-        .select("id, name")
-        .order("name");
-      if (data) setClients(data as ClientRow[]);
-    }
-    loadClients();
+    supabase
+      .from("clients")
+      .select("id, name")
+      .order("name")
+      .then(({ data }) => {
+        if (data) setClients(data as ClientRow[]);
+      });
   }, []);
 
-  // Recarrega animais quando cliente muda
+  // Load animals + enrichment data
   useEffect(() => {
     async function loadAnimals() {
       setLoading(true);
       setError(false);
 
-      // Query do passport cache
+      const todayStr = new Date().toISOString().split("T")[0];
+
       let passportQuery = supabase
         .from("agraas_master_passport_cache")
-        .select("animal_id, identity_json, score_json");
+        .select(
+          "animal_id, identity_json, score_json, certifications_json, health_json, ownership_json"
+        );
+      let animalsQuery = supabase
+        .from("animals")
+        .select("id, agraas_id, birth_date, nickname");
 
       if (selectedClientId) {
         passportQuery = passportQuery.eq(
           "client_id",
           selectedClientId
         ) as typeof passportQuery;
-      }
-
-      // Query da tabela animals (para agraas_id e birth_date)
-      let animalsQuery = supabase
-        .from("animals")
-        .select("id, agraas_id, birth_date");
-
-      if (selectedClientId) {
         animalsQuery = animalsQuery.eq(
           "client_id",
           selectedClientId
         ) as typeof animalsQuery;
       }
 
-      const [{ data: passportData, error: passportError }, { data: animalsBaseData, error: animalsBaseError }] =
-        await Promise.all([passportQuery, animalsQuery]);
+      const [
+        { data: passportData, error: passportErr },
+        { data: animalsBaseData, error: animalsErr },
+        { data: weighingsData },
+        { data: propertiesData },
+        { data: activeAppsData },
+      ] = await Promise.all([
+        passportQuery,
+        animalsQuery,
+        supabase
+          .from("animal_weights")
+          .select("animal_id, weight_date")
+          .order("weight_date", { ascending: false }),
+        supabase.from("properties").select("id, name"),
+        supabase
+          .from("applications")
+          .select("animal_id, withdrawal_date")
+          .gte("withdrawal_date", todayStr),
+      ]);
 
-      if (passportError || animalsBaseError) {
+      if (passportErr || animalsErr) {
         setError(true);
         setLoading(false);
         return;
       }
 
-      const rawRows = (passportData as PassportCacheRow[] | null) ?? [];
+      const passports = (passportData as PassportCacheRow[] | null) ?? [];
       const animalsBase = (animalsBaseData as AnimalBaseRow[] | null) ?? [];
+      const weighings = (weighingsData as WeighingRow[] | null) ?? [];
+      const propsData = (propertiesData as PropertyRow[] | null) ?? [];
+      const activeApps = (activeAppsData as ActiveAppRow[] | null) ?? [];
 
+      setProperties(propsData);
+
+      // Build lookup maps
       const animalBaseMap = new Map<string, AnimalBaseRow>();
-      for (const animal of animalsBase) {
-        animalBaseMap.set(animal.id, animal);
+      for (const a of animalsBase) animalBaseMap.set(a.id, a);
+
+      const propertyMap = new Map<string, string>();
+      for (const p of propsData) propertyMap.set(p.id, p.name);
+
+      const weighingMap = new Map<string, string>();
+      for (const w of weighings) {
+        if (!weighingMap.has(w.animal_id)) {
+          weighingMap.set(w.animal_id, w.weight_date);
+        }
       }
 
-      const joined: AnimalRow[] = rawRows.map((item) => {
-        const base = animalBaseMap.get(item.animal_id);
+      const withdrawalSet = new Set(activeApps.map((a) => a.animal_id));
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const result: AnimalCard[] = passports.map((p) => {
+        const base = animalBaseMap.get(p.animal_id);
+        const propId = p.ownership_json?.current_property_id ?? null;
+        const certs = (p.certifications_json ?? []).map((c) => ({
+          name: c.certification_name ?? "",
+          status: c.status ?? "",
+          code: c.certification_code ?? null,
+        }));
+
+        const hasHalal = certs.some(
+          (c) => c.name.toLowerCase().includes("halal") && c.status === "active"
+        );
+        const hasWithdrawal = withdrawalSet.has(p.animal_id);
+        const score = p.score_json?.total_score ?? 0;
+        const isExportReady = score >= 75 && hasHalal && !hasWithdrawal;
+
+        const lastWeighDate = weighingMap.get(p.animal_id) ?? null;
+        let daysSince: number | null = null;
+        if (lastWeighDate) {
+          const d = new Date(lastWeighDate);
+          d.setHours(0, 0, 0, 0);
+          daysSince = Math.floor(
+            (today.getTime() - d.getTime()) / 86400000
+          );
+        }
+
+        const hasExpiredCert = certs.some((c) => c.status === "expired");
+        const isInAlert =
+          (daysSince !== null && daysSince > 30) ||
+          hasWithdrawal ||
+          hasExpiredCert;
+
         return {
-          animal_id: item.animal_id,
-          internal_code: item.identity_json?.internal_code ?? null,
+          animal_id: p.animal_id,
+          internal_code: p.identity_json?.internal_code ?? null,
+          nickname: base?.nickname ?? null,
           agraas_id: base?.agraas_id ?? null,
-          sex: item.identity_json?.sex ?? null,
-          breed: item.identity_json?.breed ?? null,
-          animal_status: item.identity_json?.status ?? null,
-          total_score: item.score_json?.total_score ?? null,
+          sex: p.identity_json?.sex ?? null,
+          breed: p.identity_json?.breed ?? null,
+          animal_status: p.identity_json?.status ?? null,
+          total_score: score,
           birth_date: base?.birth_date ?? null,
+          last_weight: p.health_json?.last_weight ?? null,
+          last_weight_date: lastWeighDate,
+          property_id: propId,
+          property_name: propId ? (propertyMap.get(propId) ?? null) : null,
+          certifications: certs,
+          has_halal: hasHalal,
+          is_export_ready: isExportReady,
+          is_in_alert: isInAlert,
+          days_since_weighing: daysSince,
+          has_active_withdrawal: hasWithdrawal,
         };
       });
 
-      setRows(joined);
+      setCards(result);
       setLoading(false);
     }
 
     loadAnimals();
   }, [selectedClientId]);
 
-  const averageScore =
-    rows.length > 0
+  // ── Filtered + sorted list ──────────────────────────────────────────────────
+  const filtered = useMemo(() => {
+    let result = cards;
+    if (filter === "halal") result = result.filter((a) => a.has_halal);
+    if (filter === "export") result = result.filter((a) => a.is_export_ready);
+    if (filter === "alert") result = result.filter((a) => a.is_in_alert);
+    if (selectedProperty)
+      result = result.filter((a) => a.property_id === selectedProperty);
+
+    return [...result].sort((a, b) => {
+      if (sortBy === "score_desc")
+        return (b.total_score ?? 0) - (a.total_score ?? 0);
+      if (sortBy === "score_asc")
+        return (a.total_score ?? 0) - (b.total_score ?? 0);
+      if (sortBy === "weight_desc")
+        return (b.last_weight ?? 0) - (a.last_weight ?? 0);
+      if (sortBy === "name_asc")
+        return (a.internal_code ?? "").localeCompare(b.internal_code ?? "");
+      return 0;
+    });
+  }, [cards, filter, selectedProperty, sortBy]);
+
+  // ── Summary metrics ──────────────────────────────────────────────────────────
+  const avgScore =
+    cards.length > 0
       ? Math.round(
-          rows.reduce((acc, a) => acc + Number(a.total_score ?? 0), 0) /
-            rows.length
+          cards.reduce((s, a) => s + (a.total_score ?? 0), 0) / cards.length
         )
       : 0;
-
-  const activeCount = rows.filter(
-    (a) => (a.animal_status ?? "").toLowerCase() === "active"
-  ).length;
-
-  const femaleCount = rows.filter((a) => {
-    const v = (a.sex ?? "").toLowerCase();
-    return v === "female" || v === "fêmea" || v === "femea";
-  }).length;
-
-  const maleCount = rows.filter((a) => {
-    const v = (a.sex ?? "").toLowerCase();
-    return v === "male" || v === "macho";
-  }).length;
-
-  const breedsCount = new Set(
-    rows.map((a) => a.breed).filter(Boolean)
-  ).size;
-
-  const topScore =
-    rows.length > 0
-      ? Math.max(...rows.map((a) => Number(a.total_score ?? 0)))
-      : 0;
-
-  const agraasIdCount = rows.filter((a) => Boolean(a.agraas_id)).length;
-  const birthDateCount = rows.filter((a) => Boolean(a.birth_date)).length;
+  const halalCount = cards.filter((a) => a.has_halal).length;
+  const exportReadyCount = cards.filter((a) => a.is_export_ready).length;
+  const alertCount = cards.filter((a) => a.is_in_alert).length;
 
   return (
     <main className="space-y-8">
-      {/* Seletor de cliente */}
-      {clients.length > 0 && (
+      {/* ── Client selector (admin) ── */}
+      {clients.length > 1 && (
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
             Cliente
           </span>
-
           <button
             type="button"
             onClick={() => setSelectedClientId(null)}
@@ -180,372 +286,584 @@ export default function AnimaisPage() {
           >
             Todos
           </button>
-
-          {clients.map((client) => (
+          {clients.map((c) => (
             <button
-              key={client.id}
+              key={c.id}
               type="button"
-              onClick={() => setSelectedClientId(client.id)}
+              onClick={() => setSelectedClientId(c.id)}
               className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
-                selectedClientId === client.id
+                selectedClientId === c.id
                   ? "bg-[var(--primary-hover)] text-white"
                   : "border border-[var(--border)] bg-white text-[var(--text-secondary)] hover:bg-[var(--primary-soft)]"
               }`}
             >
-              {client.name}
+              {c.name}
             </button>
           ))}
         </div>
       )}
 
-      <section className="ag-card-strong overflow-hidden">
-        <div className="grid gap-0 xl:grid-cols-[1.1fr_0.9fr]">
-          <div className="relative p-8 lg:p-10">
-            <div className="pointer-events-none absolute right-0 top-0 h-56 w-56 rounded-full bg-[radial-gradient(circle,rgba(93,156,68,0.18)_0%,rgba(93,156,68,0)_72%)]" />
+      {/* ── Hero ── */}
+      <section className="ag-card-strong overflow-hidden p-8 lg:p-10">
+        <div className="pointer-events-none absolute right-0 top-0 h-56 w-56 rounded-full bg-[radial-gradient(circle,rgba(93,156,68,0.18)_0%,rgba(93,156,68,0)_72%)]" />
+        <div className="ag-badge ag-badge-green">Base animal</div>
+        <h1 className="mt-5 text-4xl font-semibold tracking-[-0.06em] text-[var(--text-primary)] lg:text-5xl">
+          Passaportes vivos da operação
+        </h1>
+        <p className="mt-4 max-w-2xl text-base leading-7 text-[var(--text-secondary)]">
+          Consulte, filtre e acesse o passaporte individual de cada animal com
+          score, certificações, rastreabilidade e leitura produtiva.
+        </p>
+        <div className="mt-7 flex flex-wrap gap-3">
+          <Link href="/animais/novo" className="ag-button-primary">
+            Novo animal
+          </Link>
+          <Link href="/scores" className="ag-button-secondary">
+            Ver ranking
+          </Link>
+        </div>
 
-            <div className="ag-badge ag-badge-green">Base animal</div>
-
-            <h1 className="mt-5 text-4xl font-semibold tracking-[-0.06em] text-[var(--text-primary)] lg:text-6xl">
-              Passaportes vivos da operação
-            </h1>
-
-            <p className="mt-5 max-w-3xl text-[1.02rem] leading-8 text-[var(--text-secondary)]">
-              Consulte os animais registrados, acompanhe score, identidade
-              digital e rastreabilidade da base e navegue para passaportes
-              individuais com histórico auditável e leitura produtiva.
-            </p>
-
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/animais/novo" className="ag-button-primary">
-                Novo animal
-              </Link>
-              <Link href="/scores" className="ag-button-secondary">
-                Ver ranking
-              </Link>
-            </div>
-
-            <div className="mt-10 grid gap-4 md:grid-cols-4">
-              <HeroMetric
-                label="Animais registrados"
-                value={loading ? "—" : rows.length}
-                subtitle="base consolidada"
-              />
-              <HeroMetric
-                label="Score médio"
-                value={loading ? "—" : averageScore}
-                subtitle="qualidade média do rebanho"
-              />
-              <HeroMetric
-                label="Agraas IDs"
-                value={loading ? "—" : agraasIdCount}
-                subtitle="identidades digitais emitidas"
-              />
-              <HeroMetric
-                label="Raças mapeadas"
-                value={loading ? "—" : breedsCount}
-                subtitle="diversidade da operação"
-              />
-            </div>
-          </div>
-
-          <div className="border-t border-[var(--border)] bg-[linear-gradient(180deg,#eef6ea_0%,#f5f7f4_100%)] p-8 lg:p-10 xl:border-l xl:border-t-0">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                  Radar da base
-                </p>
-                <h2 className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
-                  Leitura executiva do rebanho
-                </h2>
-              </div>
-              <span className="ag-badge ag-badge-dark">Live view</span>
-            </div>
-
-            <div className="mt-8 grid gap-4 sm:grid-cols-2">
-              <SnapshotCard label="Ativos" value={loading ? "—" : String(activeCount)} />
-              <SnapshotCard label="Machos" value={loading ? "—" : String(maleCount)} />
-              <SnapshotCard label="Fêmeas" value={loading ? "—" : String(femaleCount)} />
-              <SnapshotCard label="Top score" value={loading ? "—" : String(topScore)} />
-            </div>
-
-            <div className="mt-6 rounded-3xl border border-[var(--border)] bg-white p-5 shadow-[var(--shadow-soft)]">
-              <p className="text-sm text-[var(--text-muted)]">
-                Visão da plataforma
-              </p>
-              <p className="mt-3 text-base leading-7 text-[var(--text-secondary)]">
-                Esta página mostra a base animal com leitura rápida de status,
-                score, identidade digital e rastreabilidade, servindo como
-                porta de entrada para o passaporte individual de cada ativo.
-              </p>
-
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-2xl bg-[var(--surface-soft)] p-4">
-                  <p className="text-xs uppercase tracking-[0.12em] text-[var(--text-muted)]">
-                    Identidade digital
-                  </p>
-                  <p className="mt-2 text-lg font-semibold text-[var(--text-primary)]">
-                    {loading ? "—" : agraasIdCount}
-                  </p>
-                </div>
-
-                <div className="rounded-2xl bg-[var(--surface-soft)] p-4">
-                  <p className="text-xs uppercase tracking-[0.12em] text-[var(--text-muted)]">
-                    Nascimento estruturado
-                  </p>
-                  <p className="mt-2 text-lg font-semibold text-[var(--text-primary)]">
-                    {loading ? "—" : birthDateCount}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
+        <div className="mt-10 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <HeroStat
+            label="Animais"
+            value={loading ? "—" : cards.length}
+            sub="registrados"
+          />
+          <HeroStat
+            label="Score médio"
+            value={loading ? "—" : avgScore}
+            sub="do rebanho"
+          />
+          <HeroStat
+            label="Halal ativos"
+            value={loading ? "—" : halalCount}
+            sub="certificados"
+            accent="green"
+          />
+          <HeroStat
+            label="Em alerta"
+            value={loading ? "—" : alertCount}
+            sub="requerem ação"
+            accent={alertCount > 0 ? "red" : undefined}
+          />
         </div>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-5">
-        <KpiCard label="Base total"   value={loading ? "—" : rows.length}    icon="🐂" subtitle="animais cadastrados" />
-        <KpiCard label="Score médio"  value={loading ? "—" : averageScore}   icon="📈" subtitle="qualidade média da base" />
-        <KpiCard label="Ativos"       value={loading ? "—" : activeCount}    icon="✅" subtitle="status operacional vigente" />
-        <KpiCard label="Agraas IDs"   value={loading ? "—" : agraasIdCount}  icon="🪪" subtitle="identidade digital emitida" />
-        <KpiCard label="Raças"        value={loading ? "—" : breedsCount}    icon="🧬" subtitle="categorias identificadas" />
-      </section>
-
-      <section className="ag-card p-8">
-        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div>
-            <h2 className="ag-section-title">Animais registrados</h2>
-            <p className="ag-section-subtitle">
-              Visão operacional da base pecuária com leitura premium de score,
-              identidade digital e navegação para o passaporte individual.
-            </p>
+      {/* ── Filters + sort ── */}
+      <section>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          {/* Filter tabs */}
+          <div className="flex flex-wrap gap-2">
+            {(
+              [
+                { key: "all", label: "Todos", count: cards.length },
+                { key: "halal", label: "Halal", count: halalCount },
+                {
+                  key: "export",
+                  label: "Aptos exportação",
+                  count: exportReadyCount,
+                },
+                { key: "alert", label: "Em alerta", count: alertCount },
+              ] as { key: FilterKey; label: string; count: number }[]
+            ).map(({ key, label, count }) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setFilter(key)}
+                className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition ${
+                  filter === key
+                    ? "bg-[var(--primary-hover)] text-white shadow-sm"
+                    : "border border-[var(--border)] bg-white text-[var(--text-secondary)] hover:bg-[var(--primary-soft)]"
+                }`}
+              >
+                {label}
+                <span
+                  className={`rounded-full px-2 py-0.5 text-xs ${
+                    filter === key
+                      ? "bg-white/20 text-white"
+                      : "bg-[var(--surface-soft)] text-[var(--text-muted)]"
+                  }`}
+                >
+                  {loading ? "—" : count}
+                </span>
+              </button>
+            ))}
           </div>
 
-          <div className="ag-badge ag-badge-dark">
-            {loading ? "—" : rows.length} registros
+          {/* Right controls */}
+          <div className="flex items-center gap-3">
+            {/* Property filter */}
+            {properties.length > 0 && (
+              <select
+                value={selectedProperty ?? ""}
+                onChange={(e) =>
+                  setSelectedProperty(e.target.value || null)
+                }
+                className="rounded-2xl border border-[var(--border)] bg-white px-3 py-2 text-sm text-[var(--text-secondary)] shadow-sm focus:outline-none"
+              >
+                <option value="">Todas as fazendas</option>
+                {properties.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            )}
+
+            {/* Sort */}
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as SortKey)}
+              className="rounded-2xl border border-[var(--border)] bg-white px-3 py-2 text-sm text-[var(--text-secondary)] shadow-sm focus:outline-none"
+            >
+              <option value="score_desc">Score ↓</option>
+              <option value="score_asc">Score ↑</option>
+              <option value="weight_desc">Peso ↓</option>
+              <option value="name_asc">Nome A-Z</option>
+            </select>
           </div>
         </div>
 
-        <div className="mt-8">
-          {loading ? (
-            <div className="space-y-3">
-              {[1,2,3,4,5].map(i => (
-                <div key={i} className="flex items-center gap-4 rounded-2xl bg-[var(--surface-soft)] px-5 py-4 animate-pulse">
-                  <div className="h-12 w-12 rounded-2xl bg-black/8 shrink-0" />
+        {/* Counter */}
+        <p className="mt-4 text-sm text-[var(--text-muted)]">
+          {loading
+            ? "Carregando animais…"
+            : `Exibindo ${filtered.length} de ${cards.length} animal${cards.length !== 1 ? "is" : ""}`}
+        </p>
+      </section>
+
+      {/* ── Card grid ── */}
+      <section>
+        {loading ? (
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div
+                key={i}
+                className="animate-pulse rounded-3xl border border-[var(--border)] bg-white p-6"
+              >
+                <div className="flex items-start gap-4">
+                  <div className="h-16 w-16 rounded-full bg-black/8 shrink-0" />
                   <div className="flex-1 space-y-2">
-                    <div className="h-4 w-32 rounded-full bg-black/8" />
-                    <div className="h-3 w-24 rounded-full bg-black/6" />
+                    <div className="h-5 w-28 rounded-full bg-black/8" />
+                    <div className="h-3 w-20 rounded-full bg-black/6" />
                   </div>
-                  <div className="h-3 w-16 rounded-full bg-black/6" />
-                  <div className="h-3 w-20 rounded-full bg-black/6" />
-                  <div className="h-2.5 w-24 rounded-full bg-black/6" />
-                  <div className="h-8 w-28 rounded-2xl bg-black/6" />
                 </div>
-              ))}
-            </div>
-          ) : error ? (
-            <p className="text-sm text-[var(--danger)]">
-              Erro ao carregar animais.
-            </p>
-          ) : rows.length === 0 ? (
-            <WelcomeEmpty />
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="ag-table">
-                <thead>
-                  <tr>
-                    <th>Animal</th>
-                    <th>Sexo</th>
-                    <th>Raça</th>
-                    <th>Status</th>
-                    <th>Score</th>
-                    <th>Ação</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {rows.map((animal) => {
-                    const scoreValue =
-                      typeof animal.total_score === "number"
-                        ? animal.total_score
-                        : null;
-
-                    const scorePercent =
-                      scoreValue !== null
-                        ? Math.max(6, Math.min(100, Math.round(scoreValue)))
-                        : 0;
-
-                    return (
-                      <tr key={animal.animal_id}>
-                        <td>
-                          <div className="flex items-center gap-4">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--primary-soft)] text-xl shadow-[var(--shadow-soft)]">
-                              {getAnimalAvatar(animal.sex)}
-                            </div>
-
-                            <div>
-                              <p className="font-semibold text-[var(--text-primary)]">
-                                {animal.internal_code ?? animal.animal_id}
-                              </p>
-                              <p className="mt-1 text-sm text-[var(--text-muted)]">
-                                {animal.agraas_id ?? "Agraas ID não emitido"}
-                              </p>
-                            </div>
-                          </div>
-                        </td>
-
-                        <td>
-                          <span className="text-sm font-medium text-[var(--text-primary)]">
-                            {formatSex(animal.sex)}
-                          </span>
-                        </td>
-
-                        <td>
-                          <span className="text-sm text-[var(--text-secondary)]">
-                            {animal.breed ?? "—"}
-                          </span>
-                        </td>
-
-                        <td>
-                          <span className={getStatusBadgeClass(animal.animal_status)}>
-                            {formatStatus(animal.animal_status)}
-                          </span>
-                        </td>
-
-                        <td>
-                          {scoreValue !== null ? (
-                            <div className="min-w-[180px]">
-                              <div className="flex items-center justify-between gap-3">
-                                <span className="text-sm font-semibold text-[var(--primary-hover)]">
-                                  {scoreValue}
-                                </span>
-                                <span className="text-xs uppercase tracking-[0.12em] text-[var(--text-muted)]">
-                                  score
-                                </span>
-                              </div>
-
-                              <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-[rgba(93,156,68,0.10)]">
-                                <div
-                                  className="h-full rounded-full bg-[linear-gradient(90deg,#8dbc5f_0%,#5d9c44_100%)]"
-                                  style={{ width: `${scorePercent}%` }}
-                                />
-                              </div>
-                            </div>
-                          ) : (
-                            <span className="text-sm text-[var(--text-muted)]">—</span>
-                          )}
-                        </td>
-
-                        <td>
-                          <Link
-                            href={`/animais/${animal.animal_id}`}
-                            className="inline-flex items-center rounded-2xl border border-[rgba(93,156,68,0.24)] px-4 py-2 text-sm font-medium text-[var(--primary-hover)] transition hover:bg-[var(--primary-soft)]"
-                          >
-                            Ver passaporte
-                          </Link>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+                <div className="mt-5 space-y-2">
+                  <div className="h-3 w-full rounded-full bg-black/6" />
+                  <div className="h-3 w-3/4 rounded-full bg-black/6" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : error ? (
+          <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-10 text-center text-sm text-[var(--danger)]">
+            Erro ao carregar animais. Tente recarregar a página.
+          </div>
+        ) : filtered.length === 0 ? (
+          <EmptyState filter={filter} />
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {filtered.map((animal) => (
+              <AnimalCardComponent key={animal.animal_id} animal={animal} />
+            ))}
+          </div>
+        )}
       </section>
     </main>
   );
 }
 
-function WelcomeEmpty() {
+// ─── Animal card ──────────────────────────────────────────────────────────────
+
+function AnimalCardComponent({ animal }: { animal: AnimalCard }) {
+  const score = animal.total_score ?? 0;
+  const alertBorder = animal.is_in_alert
+    ? "border-amber-200"
+    : "border-[var(--border)]";
+
   return (
-    <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-10 text-center">
-      <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-[var(--primary-soft)] text-3xl shadow-[var(--shadow-soft)] mx-auto">
-        🐂
-      </div>
-
-      <div className="ag-badge ag-badge-green mt-6 inline-flex">Bem-vindo à Agraas</div>
-
-      <h3 className="mt-4 text-2xl font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
-        Nenhum animal cadastrado ainda
-      </h3>
-
-      <p className="mt-3 text-base leading-7 text-[var(--text-secondary)] max-w-md mx-auto">
-        Comece cadastrando uma propriedade e depois registre seus animais para
-        ativar passaportes, scores e rastreabilidade completa.
-      </p>
-
-      <div className="mt-6 flex flex-wrap justify-center gap-3">
-        <Link href="/propriedades/novo" className="ag-button-primary">
-          Cadastrar minha primeira fazenda
-        </Link>
-        <Link href="/animais/novo" className="ag-button-secondary">
-          Cadastrar animal
-        </Link>
-      </div>
-    </div>
-  );
-}
-
-function HeroMetric({ label, value, subtitle }: { label: string; value: string | number; subtitle: string }) {
-  return (
-    <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5">
-      <p className="text-sm text-[var(--text-muted)]">{label}</p>
-      <p className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-[var(--text-primary)]">{value}</p>
-      <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">{subtitle}</p>
-    </div>
-  );
-}
-
-function SnapshotCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-3xl border border-[var(--border)] bg-white p-5 shadow-[var(--shadow-soft)]">
-      <p className="text-sm text-[var(--text-muted)]">{label}</p>
-      <p className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">{value}</p>
-    </div>
-  );
-}
-
-function KpiCard({ label, value, icon, subtitle }: { label: string; value: string | number; icon: string; subtitle: string }) {
-  return (
-    <div className="ag-card p-6">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--primary-soft)] text-xl shadow-[var(--shadow-soft)]">
-          {icon}
+    <Link
+      href={`/animais/${animal.animal_id}`}
+      className={`group flex flex-col rounded-3xl border bg-white shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-card)] ${alertBorder}`}
+    >
+      {/* Top section */}
+      <div className="flex items-start gap-4 p-6">
+        <ScoreCircle score={score} />
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-lg font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
+            {animal.internal_code ?? "Animal"}
+          </p>
+          {animal.nickname && (
+            <p className="text-sm font-medium text-[var(--primary-hover)]">
+              &ldquo;{animal.nickname}&rdquo;
+            </p>
+          )}
+          <p className="mt-1 truncate text-xs text-[var(--text-muted)]">
+            {animal.agraas_id ?? "Agraas ID não emitido"}
+          </p>
         </div>
-        <span className="text-xs uppercase tracking-[0.14em] text-[var(--text-muted)]">Live</span>
+        {animal.is_in_alert && (
+          <span className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-4 w-4"
+            >
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+              <line x1="12" y1="9" x2="12" y2="13" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+          </span>
+        )}
       </div>
-      <p className="mt-5 ag-kpi-label">{label}</p>
-      <p className="mt-3 ag-kpi-value">{value}</p>
-      <p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">{subtitle}</p>
+
+      {/* Details */}
+      <div className="border-t border-[var(--border)] px-6 py-4 space-y-2">
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-[var(--text-muted)]">
+            {[animal.breed, formatSex(animal.sex)].filter(Boolean).join(" · ") ||
+              "Raça não informada"}
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-[var(--text-secondary)]">
+            {animal.last_weight ? (
+              <>
+                <span className="font-medium">{animal.last_weight} kg</span>
+                {animal.days_since_weighing !== null && (
+                  <span className={`ml-2 ${animal.days_since_weighing > 45 ? "text-red-600 font-medium" : animal.days_since_weighing > 30 ? "text-amber-600 font-medium" : "text-[var(--text-muted)]"}`}>
+                    · há {animal.days_since_weighing}d
+                  </span>
+                )}
+              </>
+            ) : (
+              <span className="text-[var(--text-muted)]">Peso não registrado</span>
+            )}
+          </span>
+        </div>
+
+        {animal.property_name && (
+          <p className="truncate text-sm text-[var(--text-muted)]">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="mr-1.5 inline h-3.5 w-3.5"
+            >
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+              <circle cx="12" cy="10" r="3" />
+            </svg>
+            {animal.property_name}
+          </p>
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="flex items-center justify-between gap-2 border-t border-[var(--border)] px-6 py-4">
+        <div className="flex flex-wrap gap-1.5">
+          <CertBadges certs={animal.certifications} />
+          <StatusBadge status={animal.animal_status} isAlert={animal.is_in_alert} />
+        </div>
+        <span className="flex-shrink-0 text-sm font-medium text-[var(--primary-hover)] opacity-0 transition-opacity group-hover:opacity-100">
+          Ver →
+        </span>
+      </div>
+    </Link>
+  );
+}
+
+// ─── Score donut ──────────────────────────────────────────────────────────────
+
+function ScoreCircle({ score }: { score: number }) {
+  const r = 26;
+  const circ = 2 * Math.PI * r; // ≈ 163.36
+  const filled = Math.max(0, Math.min(1, score / 100)) * circ;
+
+  const color =
+    score >= 75 ? "#2d9b6f" : score >= 50 ? "#d4930a" : "#c0392b";
+
+  return (
+    <svg
+      width="64"
+      height="64"
+      viewBox="0 0 64 64"
+      className="flex-shrink-0"
+    >
+      {/* Background track */}
+      <circle
+        cx="32"
+        cy="32"
+        r={r}
+        fill="none"
+        stroke="#e5e7eb"
+        strokeWidth="6"
+      />
+      {/* Filled arc */}
+      <circle
+        cx="32"
+        cy="32"
+        r={r}
+        fill="none"
+        stroke={color}
+        strokeWidth="6"
+        strokeLinecap="round"
+        strokeDasharray={`${filled} ${circ}`}
+        strokeDashoffset="0"
+        transform="rotate(-90 32 32)"
+      />
+      {/* Score text */}
+      <text
+        x="32"
+        y="32"
+        textAnchor="middle"
+        dominantBaseline="central"
+        fontSize="14"
+        fontWeight="700"
+        fill={color}
+        fontFamily="inherit"
+      >
+        {score}
+      </text>
+    </svg>
+  );
+}
+
+// ─── Cert badges ──────────────────────────────────────────────────────────────
+
+function CertBadges({
+  certs,
+}: {
+  certs: { name: string; status: string; code: string | null }[];
+}) {
+  return (
+    <>
+      {certs.map((cert, i) => {
+        const name = cert.name.toLowerCase();
+        const isActive = cert.status === "active";
+        const isExpired = cert.status === "expired";
+
+        if (name.includes("halal")) {
+          return (
+            <span
+              key={i}
+              className={`flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                isActive
+                  ? "bg-green-100 text-green-800"
+                  : "bg-gray-100 text-gray-500 line-through"
+              }`}
+            >
+              {isActive && (
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  className="h-3 w-3"
+                >
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                </svg>
+              )}
+              Halal{isActive && " ✓"}
+            </span>
+          );
+        }
+
+        if (name.includes("mapa")) {
+          return (
+            <span
+              key={i}
+              className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                isActive
+                  ? "bg-blue-100 text-blue-800"
+                  : isExpired
+                  ? "bg-gray-100 text-gray-500 line-through"
+                  : "bg-blue-50 text-blue-600"
+              }`}
+            >
+              MAPA
+            </span>
+          );
+        }
+
+        if (name.includes("gta")) {
+          return (
+            <span
+              key={i}
+              className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                isActive
+                  ? "bg-orange-100 text-orange-800"
+                  : "bg-gray-100 text-gray-500 line-through"
+              }`}
+            >
+              GTA
+            </span>
+          );
+        }
+
+        // Generic cert
+        return (
+          <span
+            key={i}
+            className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+              isActive
+                ? "bg-[var(--primary-soft)] text-[var(--primary-hover)]"
+                : "bg-gray-100 text-gray-500"
+            }`}
+          >
+            {cert.name}
+          </span>
+        );
+      })}
+    </>
+  );
+}
+
+function StatusBadge({
+  status,
+  isAlert,
+}: {
+  status: string | null;
+  isAlert: boolean;
+}) {
+  if (isAlert) {
+    return (
+      <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
+        Alerta
+      </span>
+    );
+  }
+  const s = (status ?? "").toLowerCase();
+  if (s === "active") {
+    return (
+      <span className="rounded-full bg-[var(--primary-soft)] px-2.5 py-0.5 text-xs font-semibold text-[var(--primary-hover)]">
+        Ativo
+      </span>
+    );
+  }
+  if (s === "sold" || s === "slaughtered" || s === "archived") {
+    return (
+      <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-500">
+        {s === "sold" ? "Vendido" : s === "slaughtered" ? "Abatido" : "Arquivado"}
+      </span>
+    );
+  }
+  return null;
+}
+
+// ─── Empty state ──────────────────────────────────────────────────────────────
+
+function EmptyState({ filter }: { filter: FilterKey }) {
+  const messages: Record<FilterKey, { title: string; sub: string }> = {
+    all: {
+      title: "Nenhum animal cadastrado",
+      sub: "Registre o primeiro animal para ativar o passaporte vivo.",
+    },
+    halal: {
+      title: "Nenhum animal com Halal ativo",
+      sub: "Certifique animais com a certificação Halal para vê-los aqui.",
+    },
+    export: {
+      title: "Nenhum animal apto para exportação",
+      sub: "Score ≥ 75 + Halal ativo + sem carência ativa são os critérios.",
+    },
+    alert: {
+      title: "Nenhum alerta ativo",
+      sub: "Todos os animais estão dentro dos parâmetros esperados.",
+    },
+  };
+  const msg = messages[filter];
+
+  return (
+    <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-12 text-center">
+      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-[var(--primary-soft)] shadow-[var(--shadow-soft)]">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="#5d9c44"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="h-8 w-8"
+        >
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+      </div>
+      <h3 className="mt-5 text-xl font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
+        {msg.title}
+      </h3>
+      <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
+        {msg.sub}
+      </p>
+      {filter === "all" && (
+        <div className="mt-6 flex justify-center gap-3">
+          <Link href="/animais/novo" className="ag-button-primary">
+            Cadastrar animal
+          </Link>
+        </div>
+      )}
     </div>
   );
 }
 
-function getAnimalAvatar(sex: string | null) {
-  const v = (sex ?? "").toLowerCase();
-  if (v === "male" || v === "macho") return "🐂";
-  if (v === "female" || v === "fêmea" || v === "femea") return "🐄";
-  return "🐾";
+// ─── Hero stat ────────────────────────────────────────────────────────────────
+
+function HeroStat({
+  label,
+  value,
+  sub,
+  accent,
+}: {
+  label: string;
+  value: string | number;
+  sub: string;
+  accent?: "green" | "red";
+}) {
+  return (
+    <div
+      className={`rounded-3xl border p-5 ${
+        accent === "red"
+          ? "border-red-200 bg-red-50"
+          : accent === "green"
+          ? "border-green-200 bg-green-50"
+          : "border-[var(--border)] bg-[var(--surface-soft)]"
+      }`}
+    >
+      <p className="text-sm text-[var(--text-muted)]">{label}</p>
+      <p
+        className={`mt-3 text-3xl font-semibold tracking-[-0.05em] ${
+          accent === "red"
+            ? "text-red-600"
+            : accent === "green"
+            ? "text-green-700"
+            : "text-[var(--text-primary)]"
+        }`}
+      >
+        {value}
+      </p>
+      <p className="mt-2 text-sm text-[var(--text-secondary)]">{sub}</p>
+    </div>
+  );
 }
+
+// ─── Formatters ───────────────────────────────────────────────────────────────
 
 function formatSex(value: string | null) {
-  const map: Record<string, string> = { male: "Macho", female: "Fêmea", macho: "Macho", femea: "Fêmea", "fêmea": "Fêmea" };
-  if (!value) return "—";
+  const map: Record<string, string> = {
+    male: "Macho",
+    female: "Fêmea",
+    macho: "Macho",
+    femea: "Fêmea",
+    "fêmea": "Fêmea",
+  };
+  if (!value) return null;
   return map[value.toLowerCase()] ?? value;
-}
-
-function formatStatus(value: string | null) {
-  if (!value) return "—";
-  const map: Record<string, string> = { active: "Ativo", inactive: "Inativo", pending: "Pendente", blocked: "Bloqueado", archived: "Arquivado", sold: "Vendido", slaughtered: "Abatido" };
-  return map[value.toLowerCase()] ?? value;
-}
-
-function getStatusBadgeClass(value: string | null) {
-  const n = (value ?? "").toLowerCase();
-  if (n === "active") return "inline-flex rounded-full bg-[var(--primary-soft)] px-3 py-1.5 text-xs font-semibold text-[var(--primary-hover)]";
-  if (n === "inactive" || n === "archived") return "inline-flex rounded-full bg-[rgba(31,41,55,0.08)] px-3 py-1.5 text-xs font-semibold text-[var(--text-secondary)]";
-  if (n === "pending") return "inline-flex rounded-full bg-[rgba(217,163,67,0.14)] px-3 py-1.5 text-xs font-semibold text-[var(--warning)]";
-  if (n === "blocked") return "inline-flex rounded-full bg-[rgba(214,69,69,0.12)] px-3 py-1.5 text-xs font-semibold text-[var(--danger)]";
-  if (n === "sold" || n === "slaughtered") return "inline-flex rounded-full bg-[rgba(31,41,55,0.08)] px-3 py-1.5 text-xs font-semibold text-[var(--text-secondary)]";
-  return "inline-flex rounded-full bg-[var(--primary-soft)] px-3 py-1.5 text-xs font-semibold text-[var(--primary-hover)]";
 }
