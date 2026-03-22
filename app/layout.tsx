@@ -2,6 +2,7 @@ import "./globals.css";
 import LogoutButton from "./components/LogoutButton";
 import SidebarNav from "./components/SidebarNav";
 import { ToastContainer } from "./components/Toast";
+import AgroAssistant from "./components/AgroAssistant";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export default async function RootLayout({
@@ -132,6 +133,7 @@ export default async function RootLayout({
                 </div>
               </main>
               <ToastContainer />
+              <AgroAssistant />
             </div>
           </div>
         </div>
