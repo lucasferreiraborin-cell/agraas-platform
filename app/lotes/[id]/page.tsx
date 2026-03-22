@@ -6,6 +6,7 @@ import Link from "next/link";
 import { use } from "react";
 import { calculateAgraasScore, calculateAgeInMonths, calculateDailyGain } from "@/lib/agraas-analytics";
 import ExportConformityReport from "@/app/components/ExportConformityReport";
+import ExportRouteMap from "@/app/components/ExportRouteMap";
 
 const SCORE_MINIMO_EXPORT = 60;
 
@@ -315,6 +316,16 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
             </div>
           </div>
         </section>
+      )}
+
+      {/* Mapa de rota de exportação */}
+      {isExportLot && exportAptidao && exportStats && (
+        <ExportRouteMap
+          lot={lot}
+          exportAptidao={exportAptidao}
+          exportStats={exportStats}
+          totalAnimals={animals.length}
+        />
       )}
 
       {/* Tabela de aptidão — exclusiva para lotes de exportação */}
