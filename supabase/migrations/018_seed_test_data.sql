@@ -2,8 +2,11 @@
 -- Lucas (admin) — operação premium GO + MS
 -- Pedro (client) — operação básica MG
 
--- Coluna withdrawal_date que faltou na migration 014
-ALTER TABLE applications ADD COLUMN IF NOT EXISTS withdrawal_date date;
+-- Colunas que faltaram em migrations anteriores
+ALTER TABLE applications        ADD COLUMN IF NOT EXISTS withdrawal_date date;
+ALTER TABLE animal_certifications ADD COLUMN IF NOT EXISTS issued_at    date;
+ALTER TABLE animal_certifications ADD COLUMN IF NOT EXISTS expires_at   date;
+ALTER TABLE animal_certifications ADD COLUMN IF NOT EXISTS status       text DEFAULT 'active';
 
 -- Stubs para compatibilidade com shadow DB da Supabase CLI
 -- (migration 002 faz SELECT FROM animal_events que não existe em schema limpo)
