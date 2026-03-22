@@ -18,18 +18,6 @@ type PassportCacheRow = {
     status?: string | null;
   } | null;
   score_json: { total_score?: number | null } | null;
-  certifications_json:
-    | {
-        certification_code?: string | null;
-        certification_name?: string | null;
-        status?: string | null;
-      }[]
-    | null;
-  health_json: {
-    last_weight?: number | null;
-    active_withdrawal?: number | null;
-  } | null;
-  ownership_json: { current_property_id?: string | null } | null;
 };
 
 type AnimalBaseRow = {
@@ -37,9 +25,18 @@ type AnimalBaseRow = {
   agraas_id: string | null;
   birth_date: string | null;
   nickname: string | null;
+  current_property_id: string | null;
 };
 
-type WeighingRow = { animal_id: string; weight_date: string };
+type CertRow = {
+  animal_id: string;
+  certification_name: string;
+  status: string;
+  certification_code: string | null;
+};
+
+// BUG 4 fix: table is "weights" with columns weight + weighing_date
+type WeighingRow = { animal_id: string; weight: number; weighing_date: string };
 type ActiveAppRow = { animal_id: string; withdrawal_date: string };
 
 type AnimalCard = {
@@ -101,12 +98,11 @@ export default function AnimaisPage() {
 
       let passportQuery = supabase
         .from("agraas_master_passport_cache")
-        .select(
-          "animal_id, identity_json, score_json, certifications_json, health_json, ownership_json"
-        );
+        .select("animal_id, identity_json, score_json");
+      // BUG 2 fix: include current_property_id; RLS filters to this user's animals only
       let animalsQuery = supabase
         .from("animals")
-        .select("id, agraas_id, birth_date, nickname");
+        .select("id, agraas_id, birth_date, nickname, current_property_id");
 
       if (selectedClientId) {
         passportQuery = passportQuery.eq(
@@ -125,18 +121,24 @@ export default function AnimaisPage() {
         { data: weighingsData },
         { data: propertiesData },
         { data: activeAppsData },
+        // BUG 3 fix: query animal_certifications directly (certifications_json never populated)
+        { data: certsData },
       ] = await Promise.all([
         passportQuery,
         animalsQuery,
+        // BUG 4 fix: correct table "weights" with columns weight + weighing_date
         supabase
-          .from("animal_weights")
-          .select("animal_id, weight_date")
-          .order("weight_date", { ascending: false }),
+          .from("weights")
+          .select("animal_id, weight, weighing_date")
+          .order("weighing_date", { ascending: false }),
         supabase.from("properties").select("id, name"),
         supabase
           .from("applications")
           .select("animal_id, withdrawal_date")
           .gte("withdrawal_date", todayStr),
+        supabase
+          .from("animal_certifications")
+          .select("animal_id, certification_name, status, certification_code"),
       ]);
 
       if (passportErr || animalsErr) {
@@ -150,6 +152,7 @@ export default function AnimaisPage() {
       const weighings = (weighingsData as WeighingRow[] | null) ?? [];
       const propsData = (propertiesData as PropertyRow[] | null) ?? [];
       const activeApps = (activeAppsData as ActiveAppRow[] | null) ?? [];
+      const allCerts = (certsData as CertRow[] | null) ?? [];
 
       setProperties(propsData);
 
@@ -160,11 +163,22 @@ export default function AnimaisPage() {
       const propertyMap = new Map<string, string>();
       for (const p of propsData) propertyMap.set(p.id, p.name);
 
-      const weighingMap = new Map<string, string>();
+      // BUG 4 fix: last weight per animal from "weights" table
+      const lastWeightMap = new Map<string, number>();
+      const lastWeighDateMap = new Map<string, string>();
       for (const w of weighings) {
-        if (!weighingMap.has(w.animal_id)) {
-          weighingMap.set(w.animal_id, w.weight_date);
+        if (!lastWeighDateMap.has(w.animal_id)) {
+          lastWeightMap.set(w.animal_id, w.weight);
+          lastWeighDateMap.set(w.animal_id, w.weighing_date);
         }
+      }
+
+      // BUG 3 fix: build cert map keyed by animal_id
+      const certsByAnimal = new Map<string, { name: string; status: string; code: string | null }[]>();
+      for (const c of allCerts) {
+        const arr = certsByAnimal.get(c.animal_id) ?? [];
+        arr.push({ name: c.certification_name, status: c.status, code: c.certification_code });
+        certsByAnimal.set(c.animal_id, arr);
       }
 
       const withdrawalSet = new Set(activeApps.map((a) => a.animal_id));
@@ -172,60 +186,61 @@ export default function AnimaisPage() {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      const result: AnimalCard[] = passports.map((p) => {
-        const base = animalBaseMap.get(p.animal_id);
-        const propId = p.ownership_json?.current_property_id ?? null;
-        const certs = (p.certifications_json ?? []).map((c) => ({
-          name: c.certification_name ?? "",
-          status: c.status ?? "",
-          code: c.certification_code ?? null,
-        }));
+      // BUG 2 fix: only include animals that belong to this user (RLS-filtered animalBaseMap)
+      const result: AnimalCard[] = passports
+        .filter((p) => animalBaseMap.has(p.animal_id))
+        .map((p) => {
+          const base = animalBaseMap.get(p.animal_id)!;
+          // BUG 2 fix: use animals.current_property_id (ownership_json never populated)
+          const propId = base.current_property_id ?? null;
+          // BUG 3 fix: certs from direct query
+          const certs = certsByAnimal.get(p.animal_id) ?? [];
 
-        const hasHalal = certs.some(
-          (c) => c.name.toLowerCase().includes("halal") && c.status === "active"
-        );
-        const hasWithdrawal = withdrawalSet.has(p.animal_id);
-        const score = p.score_json?.total_score ?? 0;
-        const isExportReady = score >= 75 && hasHalal && !hasWithdrawal;
-
-        const lastWeighDate = weighingMap.get(p.animal_id) ?? null;
-        let daysSince: number | null = null;
-        if (lastWeighDate) {
-          const d = new Date(lastWeighDate);
-          d.setHours(0, 0, 0, 0);
-          daysSince = Math.floor(
-            (today.getTime() - d.getTime()) / 86400000
+          const hasHalal = certs.some(
+            (c) => c.name.toLowerCase().includes("halal") && c.status === "active"
           );
-        }
+          const hasWithdrawal = withdrawalSet.has(p.animal_id);
+          const score = p.score_json?.total_score ?? 0;
+          const isExportReady = score >= 75 && hasHalal && !hasWithdrawal;
 
-        const hasExpiredCert = certs.some((c) => c.status === "expired");
-        const isInAlert =
-          (daysSince !== null && daysSince > 30) ||
-          hasWithdrawal ||
-          hasExpiredCert;
+          // BUG 4 fix: use weighing_date from weights table
+          const lastWeighDate = lastWeighDateMap.get(p.animal_id) ?? null;
+          let daysSince: number | null = null;
+          if (lastWeighDate) {
+            const d = new Date(lastWeighDate);
+            d.setHours(0, 0, 0, 0);
+            daysSince = Math.floor((today.getTime() - d.getTime()) / 86400000);
+          }
 
-        return {
-          animal_id: p.animal_id,
-          internal_code: p.identity_json?.internal_code ?? null,
-          nickname: base?.nickname ?? null,
-          agraas_id: base?.agraas_id ?? null,
-          sex: p.identity_json?.sex ?? null,
-          breed: p.identity_json?.breed ?? null,
-          animal_status: p.identity_json?.status ?? null,
-          total_score: score,
-          birth_date: base?.birth_date ?? null,
-          last_weight: p.health_json?.last_weight ?? null,
-          last_weight_date: lastWeighDate,
-          property_id: propId,
-          property_name: propId ? (propertyMap.get(propId) ?? null) : null,
-          certifications: certs,
-          has_halal: hasHalal,
-          is_export_ready: isExportReady,
-          is_in_alert: isInAlert,
-          days_since_weighing: daysSince,
-          has_active_withdrawal: hasWithdrawal,
-        };
-      });
+          const hasExpiredCert = certs.some((c) => c.status === "expired");
+          const isInAlert =
+            (daysSince !== null && daysSince > 30) ||
+            hasWithdrawal ||
+            hasExpiredCert;
+
+          return {
+            animal_id: p.animal_id,
+            internal_code: p.identity_json?.internal_code ?? null,
+            nickname: base.nickname ?? null,
+            agraas_id: base.agraas_id ?? null,
+            sex: p.identity_json?.sex ?? null,
+            breed: p.identity_json?.breed ?? null,
+            animal_status: p.identity_json?.status ?? null,
+            total_score: score,
+            birth_date: base.birth_date ?? null,
+            // BUG 4 fix: weight from weights table
+            last_weight: lastWeightMap.get(p.animal_id) ?? null,
+            last_weight_date: lastWeighDate,
+            property_id: propId,
+            property_name: propId ? (propertyMap.get(propId) ?? null) : null,
+            certifications: certs,
+            has_halal: hasHalal,
+            is_export_ready: isExportReady,
+            is_in_alert: isInAlert,
+            days_since_weighing: daysSince,
+            has_active_withdrawal: hasWithdrawal,
+          };
+        });
 
       setCards(result);
       setLoading(false);
