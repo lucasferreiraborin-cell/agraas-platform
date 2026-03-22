@@ -96,6 +96,7 @@ type ActiveAppRow = {
 };
 
 type ClientRow = {
+  id: string;
   name: string;
 };
 
@@ -122,10 +123,16 @@ export default async function PainelPage() {
   const { data: clientData } = user
     ? await supabaseServer
         .from("clients")
-        .select("name")
+        .select("id, name")
         .eq("auth_user_id", user.id)
         .single<ClientRow>()
     : { data: null };
+
+  // clientId is used to filter every query explicitly —
+  // some tables (passport cache, properties) have no RLS.
+  // Using a UUID that matches nothing as fallback ensures zero leakage.
+  const clientId =
+    clientData?.id ?? "00000000-0000-0000-0000-000000000000";
 
   // ── Greeting & date ─────────────────────────────────────────────────────────
   const now = new Date();
@@ -163,24 +170,31 @@ export default async function PainelPage() {
     { data: weighingsData },
     { data: activeAppsData },
   ] = await Promise.all([
-    supabaseServer.from("agraas_master_passport_cache").select("*"),
+    // Explicit client_id filter on all tables — some have no RLS
+    supabaseServer
+      .from("agraas_master_passport_cache")
+      .select("*")
+      .eq("client_id", clientId),
 
-    // BUG 3 fix: query animal_certifications directly (certifications_json never populated)
     supabaseServer
       .from("animal_certifications")
       .select("animal_id, certification_name, status")
       .ilike("certification_name", "%Halal%")
-      .eq("status", "active"),
+      .eq("status", "active")
+      .eq("client_id", clientId),
 
     supabaseServer
       .from("animal_certifications")
       .select("animal_id, certification_name, status")
-      .eq("status", "expired"),
+      .eq("status", "expired")
+      .eq("client_id", clientId),
 
     supabaseServer
       .from("properties")
-      .select("id, name, city, state, x, y"),
+      .select("id, name, city, state, x, y")
+      .eq("client_id", clientId),
 
+    // Market view — sem client_id direto; filtrado indiretamente pelo passportCache
     supabaseServer
       .from("agraas_market_animals")
       .select("*")
@@ -190,15 +204,16 @@ export default async function PainelPage() {
     supabaseServer
       .from("events")
       .select("animal_id, event_type, notes, event_date")
+      .eq("client_id", clientId)
       .order("event_date", { ascending: false })
       .limit(6),
 
-    // BUG 2 fix: include current_property_id to build property score map
     supabaseServer
       .from("animals")
-      .select("id, internal_code, agraas_id, birth_date, current_property_id"),
+      .select("id, internal_code, agraas_id, birth_date, current_property_id")
+      .eq("client_id", clientId),
 
-    // BUG 4 fix: table is "weights" with columns weight + weighing_date
+    // weights não tem client_id — fetch all; alerta só usa animal_ids do passport (já filtrado)
     supabaseServer
       .from("weights")
       .select("animal_id, weight, weighing_date")
@@ -207,6 +222,7 @@ export default async function PainelPage() {
     supabaseServer
       .from("applications")
       .select("animal_id, withdrawal_date, product_name")
+      .eq("client_id", clientId)
       .gte("withdrawal_date", todayStr),
   ]);
 

@@ -154,8 +154,6 @@ export default function AnimaisPage() {
       const activeApps = (activeAppsData as ActiveAppRow[] | null) ?? [];
       const allCerts = (certsData as CertRow[] | null) ?? [];
 
-      setProperties(propsData);
-
       // Build lookup maps
       const animalBaseMap = new Map<string, AnimalBaseRow>();
       for (const a of animalsBase) animalBaseMap.set(a.id, a);
@@ -241,6 +239,11 @@ export default function AnimaisPage() {
             has_active_withdrawal: hasWithdrawal,
           };
         });
+
+      // Filter properties to only those used by this user's animals
+      // (properties table may have no RLS — avoids showing other clients' farms in dropdown)
+      const userPropIds = new Set(result.map((a) => a.property_id).filter(Boolean));
+      setProperties(propsData.filter((p) => userPropIds.has(p.id)));
 
       setCards(result);
       setLoading(false);
