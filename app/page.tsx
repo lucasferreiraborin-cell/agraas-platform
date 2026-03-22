@@ -1,5 +1,9 @@
 import { supabase } from "@/lib/supabase";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 import Link from "next/link";
+import BrazilMapSVG from "@/app/components/BrazilMapSVG";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 type PassportCacheRow = {
   animal_id: string;
@@ -64,22 +68,94 @@ type AnimalRow = {
   birth_date?: string | null;
 };
 
+type PropertyRow = {
+  id: string;
+  name: string;
+  city: string | null;
+  state: string | null;
+  x: number | null;
+  y: number | null;
+};
+
+type WeighingRow = {
+  animal_id: string;
+  weight_date: string;
+};
+
+type ActiveAppRow = {
+  animal_id: string;
+  withdrawal_date: string;
+  product_name: string | null;
+};
+
+type ClientRow = {
+  name: string;
+};
+
+// ─── Alert type ───────────────────────────────────────────────────────────────
+
+type Alert = {
+  animal_id: string;
+  code: string;
+  problem: string;
+  days?: number;
+  type: "critical" | "warning" | "withdrawal" | "cert";
+  href: string;
+};
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
 export default async function PainelPage() {
+  // ── User info (server client for auth) ──────────────────────────────────────
+  const supabaseServer = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabaseServer.auth.getUser();
+
+  const { data: clientData } = user
+    ? await supabaseServer
+        .from("clients")
+        .select("name")
+        .eq("auth_user_id", user.id)
+        .single<ClientRow>()
+    : { data: null };
+
+  // ── Greeting & date ─────────────────────────────────────────────────────────
+  const now = new Date();
+  const brazilHour = (now.getUTCHours() - 3 + 24) % 24;
+  const greeting =
+    brazilHour < 12 ? "Bom dia" : brazilHour < 18 ? "Boa tarde" : "Boa noite";
+
+  const rawName =
+    clientData?.name ?? user?.email?.split("@")[0] ?? "usuário";
+  const firstName =
+    rawName.split(" ")[0].charAt(0).toUpperCase() +
+    rawName.split(" ")[0].slice(1).toLowerCase();
+
+  const dateDisplay = now
+    .toLocaleDateString("pt-BR", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      timeZone: "America/Sao_Paulo",
+    })
+    .replace(/^\w/, (c) => c.toUpperCase());
+
+  // ── Data queries ─────────────────────────────────────────────────────────────
+  const todayStr = now.toISOString().split("T")[0];
+
   const [
     { data: passportsData, error: passportsError },
-    { count: applicationsCount },
     { count: certificationsCount },
-    { count: propertiesCount },
+    { data: propertiesData },
     { data: marketData },
     { data: eventsData },
     { data: animalsData },
+    { data: weighingsData },
+    { data: activeAppsData },
   ] = await Promise.all([
     supabase.from("agraas_master_passport_cache").select("*"),
-
-    supabase
-      .from("applications")
-      .select("*", { count: "exact", head: true })
-      .gte("application_date", "2000-01-01"),
 
     supabase
       .from("animal_certifications")
@@ -87,7 +163,7 @@ export default async function PainelPage() {
 
     supabase
       .from("properties")
-      .select("*", { count: "exact", head: true }),
+      .select("id, name, city, state, x, y"),
 
     supabase
       .from("agraas_market_animals")
@@ -99,34 +175,39 @@ export default async function PainelPage() {
       .from("events")
       .select("animal_id, event_type, notes, event_date")
       .order("event_date", { ascending: false })
-      .limit(8),
+      .limit(6),
 
     supabase
       .from("animals")
       .select("id, internal_code, agraas_id, birth_date"),
+
+    supabase
+      .from("animal_weights")
+      .select("animal_id, weight_date")
+      .order("weight_date", { ascending: false }),
+
+    supabase
+      .from("applications")
+      .select("animal_id, withdrawal_date, product_name")
+      .gte("withdrawal_date", todayStr),
   ]);
 
   const passports = (passportsData as PassportCacheRow[] | null) ?? [];
   const marketRows = (marketData as MarketRow[] | null) ?? [];
   const recentEvents = (eventsData as EventRow[] | null) ?? [];
   const animals = (animalsData as AnimalRow[] | null) ?? [];
+  const properties = (propertiesData as PropertyRow[] | null) ?? [];
+  const weighings = (weighingsData as WeighingRow[] | null) ?? [];
+  const activeApps = (activeAppsData as ActiveAppRow[] | null) ?? [];
 
   const animalMap = new Map<string, string>();
   for (const animal of animals) {
     animalMap.set(animal.id, animal.internal_code ?? animal.id);
   }
 
+  // ── Base metrics ─────────────────────────────────────────────────────────────
   const totalAnimals = passports.length;
-  const totalApplications = applicationsCount ?? 0;
-  const totalCertifications = certificationsCount ?? 0;
-  const totalProperties = propertiesCount ?? 0;
-
-  const animalsWithAgraasId = animals.filter((animal) =>
-    Boolean(animal.agraas_id)
-  ).length;
-  const animalsWithBirthDate = animals.filter((animal) =>
-    Boolean(animal.birth_date)
-  ).length;
+  const totalProperties = properties.length;
 
   const totalScoreAverage =
     totalAnimals > 0
@@ -138,52 +219,131 @@ export default async function PainelPage() {
         )
       : 0;
 
-  const sanitaryAverage =
-    totalAnimals > 0
-      ? Math.round(
-          passports.reduce(
-            (acc, item) => acc + Number(item.score_json?.sanitary_score ?? 0),
-            0
-          ) / totalAnimals
-        )
-      : 0;
+  const totalWeightKg = passports.reduce(
+    (sum, p) => sum + (p.health_json?.last_weight ?? 0),
+    0
+  );
+  const totalArrobas = Math.round(totalWeightKg / 15);
+  const estimatedValue = new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    maximumFractionDigits: 0,
+  }).format(totalArrobas * 330);
 
-  const operationalAverage =
-    totalAnimals > 0
-      ? Math.round(
-          passports.reduce(
-            (acc, item) => acc + Number(item.score_json?.operational_score ?? 0),
-            0
-          ) / totalAnimals
-        )
-      : 0;
-
-  const continuityAverage =
-    totalAnimals > 0
-      ? Math.round(
-          passports.reduce(
-            (acc, item) => acc + Number(item.score_json?.continuity_score ?? 0),
-            0
-          ) / totalAnimals
-        )
-      : 0;
-
-  const totalCertifiedAnimals = passports.filter(
-    (item) =>
-      Array.isArray(item.certifications_json) &&
-      item.certifications_json.length > 0
+  // ── Halal & export KPIs ───────────────────────────────────────────────────────
+  const halalCount = passports.filter((p) =>
+    (p.certifications_json ?? []).some(
+      (c) =>
+        c.certification_name?.toLowerCase().includes("halal") &&
+        c.status === "active"
+    )
   ).length;
 
-  const activeAnimals = passports.filter((item) => {
-    const status = (
-      item.ownership_json?.status ??
-      item.identity_json?.status ??
-      ""
-    ).toLowerCase();
+  const withdrawalAnimalIds = new Set(activeApps.map((a) => a.animal_id));
 
-    return status === "active";
+  const exportReadyCount = passports.filter((p) => {
+    const score = p.score_json?.total_score ?? 0;
+    const hasHalal = (p.certifications_json ?? []).some(
+      (c) =>
+        c.certification_name?.toLowerCase().includes("halal") &&
+        c.status === "active"
+    );
+    return score >= 75 && hasHalal && !withdrawalAnimalIds.has(p.animal_id);
   }).length;
 
+  // ── Alert computation ────────────────────────────────────────────────────────
+  const weighingMap = new Map<string, Date>();
+  for (const w of weighings) {
+    const wDate = new Date(w.weight_date);
+    const existing = weighingMap.get(w.animal_id);
+    if (!existing || wDate > existing) {
+      weighingMap.set(w.animal_id, wDate);
+    }
+  }
+
+  const todayDate = new Date(now);
+  todayDate.setHours(0, 0, 0, 0);
+
+  const alerts: Alert[] = [];
+
+  for (const p of passports) {
+    const animalId = p.animal_id;
+    const code = p.identity_json?.internal_code ?? animalId;
+    const href = `/animais/${animalId}`;
+
+    // Weighing alerts
+    const lastWeigh = weighingMap.get(animalId);
+    if (lastWeigh) {
+      const lastWeighDate = new Date(lastWeigh);
+      lastWeighDate.setHours(0, 0, 0, 0);
+      const daysSince = Math.floor(
+        (todayDate.getTime() - lastWeighDate.getTime()) / 86400000
+      );
+      if (daysSince > 45) {
+        alerts.push({
+          animal_id: animalId,
+          code,
+          problem: `Sem pesagem há ${daysSince} dias`,
+          days: daysSince,
+          type: "critical",
+          href,
+        });
+      } else if (daysSince > 30) {
+        alerts.push({
+          animal_id: animalId,
+          code,
+          problem: `Sem pesagem há ${daysSince} dias`,
+          days: daysSince,
+          type: "warning",
+          href,
+        });
+      }
+    }
+
+    // Expired cert alerts
+    const expiredCerts = (p.certifications_json ?? []).filter(
+      (c) => c.status === "expired"
+    );
+    if (expiredCerts.length > 0) {
+      const certNames = expiredCerts
+        .map((c) => c.certification_name ?? "desconhecida")
+        .join(", ");
+      alerts.push({
+        animal_id: animalId,
+        code,
+        problem: `Certificação vencida: ${certNames}`,
+        type: "cert",
+        href,
+      });
+    }
+  }
+
+  // Withdrawal alerts
+  const processedWithdrawal = new Set<string>();
+  for (const app of activeApps) {
+    if (processedWithdrawal.has(app.animal_id)) continue;
+    processedWithdrawal.add(app.animal_id);
+    const p = passports.find((pp) => pp.animal_id === app.animal_id);
+    const code = p?.identity_json?.internal_code ?? app.animal_id;
+    const href = `/animais/${app.animal_id}`;
+    const withdrawalDate = new Date(app.withdrawal_date);
+    withdrawalDate.setHours(0, 0, 0, 0);
+    const daysRemaining = Math.ceil(
+      (withdrawalDate.getTime() - todayDate.getTime()) / 86400000
+    );
+    alerts.push({
+      animal_id: app.animal_id,
+      code,
+      problem: `Carência ativa: ${daysRemaining} dia${daysRemaining !== 1 ? "s" : ""} restante${daysRemaining !== 1 ? "s" : ""}`,
+      days: daysRemaining,
+      type: "withdrawal",
+      href,
+    });
+  }
+
+  const totalActiveAlerts = alerts.length;
+
+  // ── Top animals ──────────────────────────────────────────────────────────────
   const topAnimals = passports
     .map((item) => ({
       animal_id: item.animal_id,
@@ -192,640 +352,506 @@ export default async function PainelPage() {
       sanitary_score: Number(item.score_json?.sanitary_score ?? 0),
       operational_score: Number(item.score_json?.operational_score ?? 0),
       continuity_score: Number(item.score_json?.continuity_score ?? 0),
-      status:
-        item.ownership_json?.status ??
-        item.identity_json?.status ??
-        "-",
+      status: item.ownership_json?.status ?? item.identity_json?.status ?? "-",
       certifications_count: Array.isArray(item.certifications_json)
         ? item.certifications_json.length
         : 0,
       last_weight: item.health_json?.last_weight ?? null,
+      hasHalal: (item.certifications_json ?? []).some(
+        (c) =>
+          c.certification_name?.toLowerCase().includes("halal") &&
+          c.status === "active"
+      ),
     }))
     .sort((a, b) => b.total_score - a.total_score)
     .slice(0, 5);
 
-  const heroHighlights = [
-    {
-      label: "Animais monitorados",
-      value: totalAnimals,
-      description: "ativos no passaporte vivo da Agraas",
-    },
-    {
-      label: "Score médio",
-      value: `${totalScoreAverage}`,
-      description: "qualidade consolidada do rebanho",
-    },
-    {
-      label: "Agraas IDs",
-      value: animalsWithAgraasId,
-      description: "identidades digitais já emitidas",
-    },
-  ];
+  // ── Map properties ────────────────────────────────────────────────────────────
+  const propertyScores = new Map<string, number[]>();
+  for (const p of passports) {
+    const propId = p.ownership_json?.current_property_id;
+    if (!propId) continue;
+    const score = p.score_json?.total_score ?? 0;
+    const arr = propertyScores.get(propId) ?? [];
+    arr.push(score);
+    propertyScores.set(propId, arr);
+  }
 
-  const boardSignals = [
-    {
-      label: "Cobertura de rastreabilidade",
-      value:
-        totalAnimals > 0 ? Math.round((activeAnimals / totalAnimals) * 100) : 0,
-      description: "participação de animais ativos na base monitorada",
-      tone: "green" as const,
-    },
-    {
-      label: "Cobertura de identidade",
-      value:
-        animals.length > 0
-          ? Math.round((animalsWithAgraasId / animals.length) * 100)
-          : 0,
-      description: "animais com Agraas ID emitido",
-      tone: "blue" as const,
-    },
-    {
-      label: "Cobertura de nascimento",
-      value:
-        animals.length > 0
-          ? Math.round((animalsWithBirthDate / animals.length) * 100)
-          : 0,
-      description: "animais com data de nascimento estruturada",
-      tone: "amber" as const,
-    },
-  ];
+  const propertiesForMap = properties
+    .filter((prop) => prop.x !== null && prop.y !== null)
+    .map((prop) => {
+      const scores = propertyScores.get(prop.id) ?? [];
+      return {
+        id: prop.id,
+        name: prop.name,
+        city: prop.city ?? "",
+        state: prop.state ?? "",
+        lat: prop.y as number,
+        lng: prop.x as number,
+        animalsCount: scores.length,
+        scoreAvg:
+          scores.length > 0
+            ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
+            : 0,
+      };
+    });
 
-  const chartSeries = buildSeries([
-    totalAnimals,
-    totalApplications,
-    totalCertifications,
-    totalProperties,
-    totalCertifiedAnimals,
-  ]);
+  // ─────────────────────────────────────────────────────────────────────────────
 
   return (
     <main className="space-y-8">
-      <section className="ag-card-strong overflow-hidden">
-        <div className="grid gap-0 xl:grid-cols-[1.08fr_0.92fr]">
-          <div className="relative p-8 lg:p-10">
-            <div className="pointer-events-none absolute right-0 top-0 h-48 w-48 rounded-full bg-[radial-gradient(circle,rgba(122,168,76,0.20)_0%,rgba(122,168,76,0.00)_70%)]" />
+      {/* ── 1. Hero executivo ── */}
+      <section className="ag-card-strong overflow-hidden p-8 lg:p-10">
+        <div className="pointer-events-none absolute right-0 top-0 h-64 w-64 rounded-full bg-[radial-gradient(circle,rgba(122,168,76,0.16)_0%,rgba(122,168,76,0.00)_70%)]" />
 
-            <div className="ag-badge ag-badge-green">Painel executivo</div>
+        <div className="ag-badge ag-badge-green">Painel executivo</div>
 
-            <h1 className="mt-5 max-w-4xl text-4xl font-semibold leading-[1.02] tracking-[-0.065em] text-[var(--text-primary)] lg:text-6xl">
-              A infraestrutura digital da cadeia pecuária começa na identidade do animal.
+        <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h1 className="text-4xl font-semibold tracking-[-0.05em] text-[var(--text-primary)] lg:text-5xl">
+              {greeting}, {firstName}
             </h1>
-
-            <p className="mt-5 max-w-3xl text-[1.05rem] leading-8 text-[var(--text-secondary)]">
-              A Agraas conecta identidade digital, score, certificações,
-              histórico auditável, cadeia produtiva e leitura operacional em
-              uma camada única de software pronta para gestão, rastreabilidade,
-              mercado e expansão institucional.
+            <p className="mt-2 text-base text-[var(--text-secondary)]">
+              {dateDisplay}
             </p>
-
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/animais" className="ag-button-primary">
-                Explorar animais
-              </Link>
-              <Link href="/inteligencia" className="ag-button-secondary">
-                Inteligência da base
-              </Link>
-              <Link href="/cadeia" className="ag-button-secondary">
-                Ver cadeia
-              </Link>
-            </div>
-
-            <div className="mt-10 grid gap-4 md:grid-cols-3">
-              {heroHighlights.map((item) => (
-                <div
-                  key={item.label}
-                  className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5"
-                >
-                  <p className="text-sm text-[var(--text-muted)]">{item.label}</p>
-                  <p className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-[var(--text-primary)]">
-                    {item.value}
-                  </p>
-                  <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-                    {item.description}
-                  </p>
-                </div>
-              ))}
-            </div>
           </div>
 
-          <div className="border-t border-[var(--border)] bg-[linear-gradient(180deg,#eef6ea_0%,#f5f7f4_100%)] p-8 lg:p-10 xl:border-l xl:border-t-0">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                  Radar da plataforma
-                </p>
-                <h2 className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
-                  Top ativos do rebanho
-                </h2>
-              </div>
-
-              <Link href="/scores" className="ag-button-secondary">
-                Ver ranking
-              </Link>
-            </div>
-
-            <div className="mt-6 grid gap-4 md:grid-cols-3">
-              <MetricPill
-                label="Médio total"
-                value={totalScoreAverage}
-                suffix="pts"
-              />
-              <MetricPill
-                label="Sanitário"
-                value={sanitaryAverage}
-                suffix="pts"
-              />
-              <MetricPill
-                label="Operacional"
-                value={operationalAverage}
-                suffix="pts"
-              />
-            </div>
-
-            <div className="mt-8 space-y-4">
-              {passportsError ? (
-                <div className="rounded-3xl bg-white p-5 text-sm text-[var(--danger)] shadow-[var(--shadow-soft)]">
-                  Erro ao carregar a base executiva.
-                </div>
-              ) : topAnimals.length === 0 ? (
-                <div className="rounded-3xl bg-white p-5 text-sm text-[var(--text-muted)] shadow-[var(--shadow-soft)]">
-                  Nenhum animal encontrado.
-                </div>
-              ) : (
-                topAnimals.map((animal, index) => {
-                  const scorePercent = Math.max(
-                    6,
-                    Math.round(Math.min(100, animal.total_score))
-                  );
-
-                  return (
-                    <Link
-                      key={animal.animal_id}
-                      href={`/animais/${animal.animal_id}`}
-                      className="block rounded-3xl border border-[var(--border)] bg-white p-5 shadow-[var(--shadow-soft)] transition hover:border-[rgba(93,156,68,0.25)] hover:shadow-[var(--shadow-card)]"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <p className="text-xs uppercase tracking-[0.16em] text-[var(--text-muted)]">
-                            Top {index + 1}
-                          </p>
-                          <p className="mt-2 text-lg font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
-                            {animal.internal_code}
-                          </p>
-                          <p className="mt-1 text-sm text-[var(--text-muted)]">
-                            {formatStatus(animal.status)}
-                          </p>
-                        </div>
-
-                        <div className="text-right">
-                          <p className="text-xs uppercase tracking-[0.14em] text-[var(--text-muted)]">
-                            Score
-                          </p>
-                          <p className="mt-2 text-2xl font-semibold tracking-[-0.05em] text-[var(--primary-hover)]">
-                            {animal.total_score}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-[rgba(93,156,68,0.10)]">
-                        <div
-                          className="h-full rounded-full bg-[linear-gradient(90deg,#8dbc5f_0%,#5d9c44_100%)]"
-                          style={{ width: `${scorePercent}%` }}
-                        />
-                      </div>
-
-                      <div className="mt-4 flex flex-wrap gap-2">
-                        <span className="ag-badge ag-badge-green">
-                          Certificações: {animal.certifications_count}
-                        </span>
-                        <span className="ag-badge ag-badge-dark">
-                          Peso: {animal.last_weight ?? "-"} kg
-                        </span>
-                        <span className="ag-badge ag-badge-dark">
-                          Ativo rastreado
-                        </span>
-                      </div>
-                    </Link>
-                  );
-                })
-              )}
-            </div>
+          <div className="flex flex-wrap gap-3">
+            <Link href="/animais" className="ag-button-primary">
+              Explorar animais
+            </Link>
+            <Link href="/inteligencia" className="ag-button-secondary">
+              Inteligência
+            </Link>
+            <Link href="/cadeia" className="ag-button-secondary">
+              Cadeia
+            </Link>
           </div>
+        </div>
+
+        <div className="mt-8 grid gap-4 md:grid-cols-3">
+          <HeroStat
+            label="Animais monitorados"
+            value={totalAnimals}
+            description="no passaporte vivo da Agraas"
+          />
+          <HeroStat
+            label="Propriedades ativas"
+            value={totalProperties}
+            description="unidades operacionais mapeadas"
+          />
+          <HeroStat
+            label="Alertas ativos"
+            value={totalActiveAlerts}
+            description={
+              totalActiveAlerts > 0
+                ? "requerem atenção imediata"
+                : "operação em dia"
+            }
+            alert={totalActiveAlerts > 0}
+          />
         </div>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-6">
+      {/* ── 2. Alertas críticos ── */}
+      <section>
+        <div className="mb-4 flex items-center justify-between gap-4">
+          <div>
+            <h2 className="ag-section-title">Atenção imediata</h2>
+            <p className="ag-section-subtitle">
+              Animais que requerem ação agora.
+            </p>
+          </div>
+          <span
+            className={`rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] ${
+              totalActiveAlerts > 0
+                ? "bg-red-100 text-red-700"
+                : "ag-badge ag-badge-green"
+            }`}
+          >
+            {totalActiveAlerts > 0
+              ? `${totalActiveAlerts} alerta${totalActiveAlerts !== 1 ? "s" : ""}`
+              : "Tudo certo"}
+          </span>
+        </div>
+
+        {totalActiveAlerts === 0 ? (
+          <div className="flex items-center gap-4 rounded-3xl border border-green-200 bg-green-50 p-6">
+            <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-green-100">
+              <IconCheck />
+            </div>
+            <div>
+              <p className="font-semibold text-green-800">
+                Operação em dia — nenhum alerta ativo
+              </p>
+              <p className="mt-1 text-sm text-green-700">
+                Todos os animais estão dentro dos parâmetros esperados.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {alerts.map((alert, i) => (
+              <AlertCard key={i} alert={alert} />
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* ── 3. KPIs ── */}
+      <section className="grid gap-4 md:grid-cols-3 xl:grid-cols-6">
         <KpiCard
-          label="Animais ativos"
-          value={activeAnimals}
-          icon="🐂"
-          subtitle="base animal com status operacional ativo"
-        />
-        <KpiCard
-          label="Agraas IDs"
-          value={animalsWithAgraasId}
-          icon="🪪"
-          subtitle="identidade digital emitida"
-        />
-        <KpiCard
-          label="Aplicações"
-          value={totalApplications}
-          icon="💉"
-          subtitle="registros sanitários realizados"
-        />
-        <KpiCard
-          label="Certificações"
-          value={totalCertifications}
-          icon="✅"
-          subtitle="chancelas registradas no ambiente"
-        />
-        <KpiCard
-          label="Propriedades"
-          value={totalProperties}
-          icon="📍"
-          subtitle="unidades operacionais mapeadas"
+          label="Animais"
+          value={totalAnimals}
+          icon={<IconAnimal />}
+          subtitle="base animal monitorada"
         />
         <KpiCard
           label="Score médio"
           value={totalScoreAverage}
-          icon="📈"
-          subtitle="confiança média consolidada da base"
+          icon={<IconScore />}
+          subtitle="confiança média do rebanho"
+          valueSuffix=" pts"
+        />
+        <KpiCard
+          label="Arrobas totais"
+          value={totalArrobas}
+          icon={<IconWeight />}
+          subtitle="peso vivo estimado da base"
+          valueSuffix=" @"
+        />
+        <KpiCard
+          label="Valor estimado"
+          value={estimatedValue}
+          icon={<IconCurrency />}
+          subtitle="base · R$ 330/@"
+        />
+        <KpiCard
+          label="Halal certificados"
+          value={halalCount}
+          icon={<IconHalal />}
+          subtitle="com certificação Halal ativa"
+          highlight
+        />
+        <KpiCard
+          label="Aptos exportação"
+          value={exportReadyCount}
+          icon={<IconPlane />}
+          subtitle="score ≥ 75 + Halal + sem carência"
+          highlight
         />
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
+      {/* ── 4. Mapa + Top 5 ── */}
+      <section className="grid gap-6 xl:grid-cols-2">
         <div className="ag-card p-8">
-          <div className="flex items-start justify-between gap-4">
+          <div className="mb-6 flex items-start justify-between gap-4">
             <div>
-              <h2 className="ag-section-title">Leitura visual da operação</h2>
+              <h2 className="ag-section-title">Fazendas ativas</h2>
               <p className="ag-section-subtitle">
-                Resumo executivo dos blocos principais da plataforma para leitura rápida de board.
+                Distribuição geográfica das propriedades com score médio.
               </p>
             </div>
-
-            <span className="ag-badge ag-badge-green">Resumo visual</span>
-          </div>
-
-          <div className="mt-8 overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5">
-            <div className="grid gap-5 md:grid-cols-[1.1fr_0.9fr]">
-              <div>
-                <div className="flex h-60 items-end gap-3">
-                  {chartSeries.map((item) => (
-                    <div
-                      key={item.label}
-                      className="flex flex-1 flex-col items-center gap-3"
-                    >
-                      <div className="flex w-full items-end justify-center rounded-2xl bg-[rgba(93,156,68,0.08)] px-2">
-                        <div
-                          className="w-full rounded-t-2xl bg-[linear-gradient(180deg,#8dbc5f_0%,#5d9c44_100%)]"
-                          style={{ height: `${item.height}px` }}
-                        />
-                      </div>
-                      <div className="text-center">
-                        <p className="text-sm font-semibold text-[var(--text-primary)]">
-                          {item.value}
-                        </p>
-                        <p className="mt-1 text-xs uppercase tracking-[0.12em] text-[var(--text-muted)]">
-                          {item.label}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid gap-4">
-                <StatPanel
-                  title="Score sanitário médio"
-                  value={sanitaryAverage}
-                  subtitle="média da confiança sanitária da base"
-                />
-                <StatPanel
-                  title="Score operacional médio"
-                  value={operationalAverage}
-                  subtitle="qualidade operacional consolidada"
-                />
-                <StatPanel
-                  title="Score continuidade"
-                  value={continuityAverage}
-                  subtitle="consistência e integridade histórica"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="ag-card p-8">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h2 className="ag-section-title">Radar executivo</h2>
-              <p className="ag-section-subtitle">
-                Sinais rápidos para orientar leitura de confiança, risco e maturidade da base.
-              </p>
-            </div>
-
-            <span className="ag-badge ag-badge-dark">Board view</span>
-          </div>
-
-          <div className="mt-8 grid gap-4">
-            {boardSignals.map((signal) => (
-              <ExecutiveSignal
-                key={signal.label}
-                label={signal.label}
-                value={signal.value}
-                color={signal.tone}
-                description={signal.description}
-              />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
-        <div className="ag-card p-8">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h2 className="ag-section-title">Infraestrutura da cadeia</h2>
-              <p className="ag-section-subtitle">
-                A Agraas conecta operação, identidade animal, score, histórico e rastreabilidade.
-              </p>
-            </div>
-
-            <span className="ag-badge ag-badge-dark">Core thesis</span>
-          </div>
-
-          <div className="mt-8 grid gap-4 md:grid-cols-2">
-            <FrameworkCard
-              title="ERP Pecuário"
-              subtitle="cadastro, pesagens, aplicações, custos, movimentações e lotes"
-            />
-            <FrameworkCard
-              title="Identidade Animal"
-              subtitle="Agraas ID como camada de identidade digital do rebanho"
-            />
-            <FrameworkCard
-              title="Passaporte Digital"
-              subtitle="timeline, sanitário, peso, cadeia produtiva e score consolidado"
-            />
-            <FrameworkCard
-              title="Inteligência da Cadeia"
-              subtitle="base para certificação, rastreabilidade e leitura de mercado"
-            />
-          </div>
-        </div>
-
-        <div className="ag-card p-8">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h2 className="ag-section-title">Últimos eventos</h2>
-              <p className="ag-section-subtitle">
-                Leitura rápida da trilha operacional registrada na base.
-              </p>
-            </div>
-
-            <Link href="/eventos" className="ag-button-secondary">
-              Ver timeline
+            <Link href="/propriedades" className="ag-button-secondary">
+              Ver todas
             </Link>
           </div>
 
-          <div className="mt-8 space-y-4">
-            {recentEvents.length === 0 ? (
-              <div className="rounded-3xl bg-[var(--surface-soft)] p-6 text-sm text-[var(--text-muted)]">
-                Nenhum evento encontrado.
-              </div>
-            ) : (
-              recentEvents.map((event, index) => (
-                <div
-                  key={`${event.animal_id}-${event.event_date}-${index}`}
-                  className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5"
-                >
-                  <div className="flex items-center justify-between gap-4">
-                    <span className="ag-badge ag-badge-green">
-                      {getEventIcon(event.event_type ?? "")}{" "}
-                      {formatEventType(event.event_type ?? "")}
-                    </span>
+          {propertiesForMap.length > 0 ? (
+            <BrazilMapSVG properties={propertiesForMap} />
+          ) : (
+            <div className="flex h-64 items-center justify-center rounded-3xl bg-[var(--surface-soft)] text-sm text-[var(--text-muted)]">
+              Nenhuma propriedade com coordenadas registradas.
+            </div>
+          )}
 
-                    <span className="text-sm text-[var(--text-muted)]">
-                      {event.event_date
-                        ? new Date(event.event_date).toLocaleString("pt-BR")
-                        : "-"}
-                    </span>
-                  </div>
+          {/* Legend */}
+          <div className="mt-4 flex items-center gap-6 text-xs text-[var(--text-muted)]">
+            <span className="flex items-center gap-1.5">
+              <span className="inline-block h-3 w-3 rounded-full bg-[#5d9c44]" />
+              Score ≥ 70
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="inline-block h-3 w-3 rounded-full bg-[#d97706]" />
+              50 – 69
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="inline-block h-3 w-3 rounded-full bg-[#dc2626]" />
+              &lt; 50
+            </span>
+          </div>
+        </div>
 
-                  <p className="mt-4 text-sm font-medium text-[var(--text-primary)]">
-                    Animal:{" "}
-                    {event.animal_id
-                      ? animalMap.get(event.animal_id) ?? event.animal_id
+        <div className="ag-card p-8">
+          <div className="mb-6 flex items-start justify-between gap-4">
+            <div>
+              <h2 className="ag-section-title">Top 5 animais</h2>
+              <p className="ag-section-subtitle">
+                Maiores scores consolidados da base.
+              </p>
+            </div>
+            <Link href="/scores" className="ag-button-secondary">
+              Ver ranking
+            </Link>
+          </div>
+
+          {passportsError ? (
+            <div className="rounded-3xl bg-[var(--surface-soft)] p-5 text-sm text-[var(--danger)]">
+              Erro ao carregar a base.
+            </div>
+          ) : topAnimals.length === 0 ? (
+            <div className="rounded-3xl bg-[var(--surface-soft)] p-5 text-sm text-[var(--text-muted)]">
+              Nenhum animal encontrado.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {topAnimals.map((animal, index) => {
+                const scorePercent = Math.max(
+                  6,
+                  Math.round(Math.min(100, animal.total_score))
+                );
+                return (
+                  <Link
+                    key={animal.animal_id}
+                    href={`/animais/${animal.animal_id}`}
+                    className="block rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-4 transition hover:border-[rgba(93,156,68,0.25)] hover:bg-[var(--primary-soft)]"
+                  >
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-2xl bg-white text-xs font-semibold shadow-[var(--shadow-soft)]">
+                          {index + 1}
+                        </span>
+                        <div>
+                          <p className="text-sm font-semibold text-[var(--text-primary)]">
+                            {animal.internal_code}
+                          </p>
+                          <div className="mt-1 flex items-center gap-2">
+                            {animal.hasHalal && (
+                              <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-green-700">
+                                Halal
+                              </span>
+                            )}
+                            <span className="text-xs text-[var(--text-muted)]">
+                              {animal.last_weight
+                                ? `${animal.last_weight} kg`
+                                : "—"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-xl font-semibold tracking-[-0.04em] text-[var(--primary-hover)]">
+                        {animal.total_score}
+                      </p>
+                    </div>
+
+                    <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-[rgba(93,156,68,0.12)]">
+                      <div
+                        className="h-full rounded-full bg-[linear-gradient(90deg,#8dbc5f_0%,#5d9c44_100%)]"
+                        style={{ width: `${scorePercent}%` }}
+                      />
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ── 5. Eventos recentes ── */}
+      <section className="ag-card p-8">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="ag-section-title">Últimos eventos</h2>
+            <p className="ag-section-subtitle">
+              Trilha operacional registrada na base.
+            </p>
+          </div>
+          <Link href="/eventos" className="ag-button-secondary">
+            Ver timeline
+          </Link>
+        </div>
+
+        <div className="mt-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {recentEvents.length === 0 ? (
+            <div className="col-span-full rounded-3xl bg-[var(--surface-soft)] p-6 text-sm text-[var(--text-muted)]">
+              Nenhum evento encontrado.
+            </div>
+          ) : (
+            recentEvents.map((event, index) => (
+              <div
+                key={`${event.animal_id}-${event.event_date}-${index}`}
+                className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="ag-badge ag-badge-green text-xs">
+                    {formatEventType(event.event_type ?? "")}
+                  </span>
+                  <span className="text-xs text-[var(--text-muted)]">
+                    {event.event_date
+                      ? new Date(event.event_date).toLocaleDateString("pt-BR")
                       : "-"}
-                  </p>
-
-                  <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-                    {event.notes ?? "Sem observações detalhadas registradas."}
-                  </p>
+                  </span>
                 </div>
-              ))
-            )}
-          </div>
+                <p className="mt-3 text-sm font-medium text-[var(--text-primary)]">
+                  {event.animal_id
+                    ? animalMap.get(event.animal_id) ?? event.animal_id
+                    : "-"}
+                </p>
+                <p className="mt-1 line-clamp-2 text-xs leading-5 text-[var(--text-secondary)]">
+                  {event.notes ?? "Sem observações."}
+                </p>
+              </div>
+            ))
+          )}
         </div>
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[1.02fr_0.98fr]">
-        <div className="ag-card p-8">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h2 className="ag-section-title">Market intelligence</h2>
-              <p className="ag-section-subtitle">
-                Visão dos ativos mais fortes no market com leitura comercial imediata.
-              </p>
-            </div>
-
-            <Link href="/market" className="ag-button-secondary">
-              Abrir market
-            </Link>
+      {/* ── 6. Market intelligence ── */}
+      <section className="ag-card p-8">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="ag-section-title">Market intelligence</h2>
+            <p className="ag-section-subtitle">
+              Ativos mais fortes com leitura comercial imediata.
+            </p>
           </div>
-
-          <div className="mt-8 grid gap-4">
-            {marketRows.length === 0 ? (
-              <div className="rounded-3xl bg-[var(--surface-soft)] p-6 text-sm text-[var(--text-muted)]">
-                Nenhum ativo disponível no market.
-              </div>
-            ) : (
-              marketRows.slice(0, 4).map((animal) => (
-                <Link
-                  key={animal.animal_id}
-                  href={`/animais/${animal.animal_id}`}
-                  className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5 transition hover:border-[rgba(93,156,68,0.24)] hover:bg-[var(--primary-soft)]"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-base font-semibold tracking-[-0.02em] text-[var(--text-primary)]">
-                        {animal.internal_code ?? animal.animal_id}
-                      </p>
-                      <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-                        {animal.property_name ?? "Propriedade não informada"}
-                      </p>
-                    </div>
-
-                    <div className="text-right">
-                      <p className="text-xs uppercase tracking-[0.12em] text-[var(--text-muted)]">
-                        Score
-                      </p>
-                      <p className="mt-2 text-2xl font-semibold text-[var(--primary-hover)]">
-                        {animal.total_score ?? "-"}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <span className="ag-badge ag-badge-green">
-                      Peso: {animal.last_weight ?? "-"} kg
-                    </span>
-                    <span className="ag-badge ag-badge-dark">
-                      {formatStatus(animal.status)}
-                    </span>
-                    <span className="ag-badge ag-badge-dark">
-                      Certificações:{" "}
-                      {Array.isArray(animal.certifications)
-                        ? animal.certifications.length
-                        : 0}
-                    </span>
-                  </div>
-                </Link>
-              ))
-            )}
-          </div>
+          <Link href="/market" className="ag-button-secondary">
+            Abrir market
+          </Link>
         </div>
 
-        <div className="ag-card p-8">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h2 className="ag-section-title">Atalhos para demo</h2>
-              <p className="ag-section-subtitle">
-                Fluxo recomendado para apresentação da plataforma aos sócios.
-              </p>
+        <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {marketRows.length === 0 ? (
+            <div className="col-span-full rounded-3xl bg-[var(--surface-soft)] p-6 text-sm text-[var(--text-muted)]">
+              Nenhum ativo disponível.
             </div>
-
-            <span className="ag-badge ag-badge-green">Demo flow</span>
-          </div>
-
-          <div className="mt-8 grid gap-4">
-            <DemoStep
-              number="1"
-              title="Animais"
-              description="mostre a base animal com Agraas ID e o posicionamento de identidade digital."
-              href="/animais"
-            />
-            <DemoStep
-              number="2"
-              title="Passaporte"
-              description="abra um animal e mostre score, timeline, sanitário, pesagens e cadeia produtiva."
-              href="/animais"
-            />
-            <DemoStep
-              number="3"
-              title="Inteligência"
-              description="mostre a leitura da base, evolução, GMD, risco produtivo e ranking de confiança."
-              href="/inteligencia"
-            />
-            <DemoStep
-              number="4"
-              title="Cadeia"
-              description="mostre a conexão entre animal, propriedade, lote, destino e rastreabilidade."
-              href="/cadeia"
-            />
-          </div>
+          ) : (
+            marketRows.slice(0, 4).map((animal) => (
+              <Link
+                key={animal.animal_id}
+                href={`/animais/${animal.animal_id}`}
+                className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5 transition hover:border-[rgba(93,156,68,0.24)] hover:bg-[var(--primary-soft)]"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-base font-semibold tracking-[-0.02em] text-[var(--text-primary)]">
+                    {animal.internal_code ?? animal.animal_id}
+                  </p>
+                  <p className="text-xl font-semibold text-[var(--primary-hover)]">
+                    {animal.total_score ?? "-"}
+                  </p>
+                </div>
+                <p className="mt-1 text-xs text-[var(--text-secondary)]">
+                  {animal.property_name ?? "Propriedade não informada"}
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <span className="ag-badge ag-badge-green text-xs">
+                    {animal.last_weight ?? "-"} kg
+                  </span>
+                  <span className="ag-badge ag-badge-dark text-xs">
+                    {formatStatus(animal.status)}
+                  </span>
+                </div>
+              </Link>
+            ))
+          )}
         </div>
       </section>
     </main>
   );
 }
 
-function MetricPill({
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+function HeroStat({
   label,
   value,
-  suffix,
+  description,
+  alert = false,
 }: {
   label: string;
   value: string | number;
-  suffix?: string;
+  description: string;
+  alert?: boolean;
 }) {
   return (
-    <div className="rounded-3xl border border-[var(--border)] bg-white px-5 py-4 shadow-[var(--shadow-soft)]">
-      <p className="text-xs uppercase tracking-[0.14em] text-[var(--text-muted)]">
-        {label}
-      </p>
-      <p className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
-        {value}
-        {suffix ? ` ${suffix}` : ""}
-      </p>
-    </div>
-  );
-}
-
-function StatPanel({
-  title,
-  value,
-  subtitle,
-}: {
-  title: string;
-  value: string | number;
-  subtitle: string;
-}) {
-  return (
-    <div className="rounded-3xl border border-[var(--border)] bg-white p-5 shadow-[var(--shadow-soft)]">
-      <p className="text-sm text-[var(--text-muted)]">{title}</p>
-      <p className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
+    <div
+      className={`rounded-3xl border p-5 ${
+        alert
+          ? "border-red-200 bg-red-50"
+          : "border-[var(--border)] bg-[var(--surface-soft)]"
+      }`}
+    >
+      <p className="text-sm text-[var(--text-muted)]">{label}</p>
+      <p
+        className={`mt-3 text-3xl font-semibold tracking-[-0.05em] ${
+          alert ? "text-red-600" : "text-[var(--text-primary)]"
+        }`}
+      >
         {value}
       </p>
       <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-        {subtitle}
+        {description}
       </p>
     </div>
   );
 }
 
-function ExecutiveSignal({
-  label,
-  value,
-  color,
-  description,
-}: {
-  label: string;
-  value: number;
-  color: "green" | "amber" | "blue";
-  description: string;
-}) {
-  const colorMap: Record<"green" | "amber" | "blue", string> = {
-    green:
-      "bg-[linear-gradient(90deg,#8dbc5f_0%,#5d9c44_100%)] text-[var(--text-primary)]",
-    amber:
-      "bg-[linear-gradient(90deg,#e6c26d_0%,#d9a343_100%)] text-[var(--text-primary)]",
-    blue:
-      "bg-[linear-gradient(90deg,#8ab7f2_0%,#4a90e2_100%)] text-white",
+function AlertCard({ alert }: { alert: Alert }) {
+  const styles: Record<
+    Alert["type"],
+    { border: string; bg: string; badge: string; icon: React.ReactNode }
+  > = {
+    critical: {
+      border: "border-red-200",
+      bg: "bg-red-50",
+      badge: "bg-red-100 text-red-700",
+      icon: <IconAlertCritical />,
+    },
+    warning: {
+      border: "border-amber-200",
+      bg: "bg-amber-50",
+      badge: "bg-amber-100 text-amber-700",
+      icon: <IconAlertWarning />,
+    },
+    withdrawal: {
+      border: "border-amber-200",
+      bg: "bg-amber-50",
+      badge: "bg-amber-100 text-amber-700",
+      icon: <IconClock />,
+    },
+    cert: {
+      border: "border-yellow-200",
+      bg: "bg-yellow-50",
+      badge: "bg-yellow-100 text-yellow-800",
+      icon: <IconCertExpired />,
+    },
   };
 
+  const s = styles[alert.type];
+
   return (
-    <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-sm font-medium text-[var(--text-primary)]">{label}</p>
-          <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-            {description}
-          </p>
+    <div className={`rounded-3xl border ${s.border} ${s.bg} p-5`}>
+      <div className="flex items-start gap-3">
+        <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm">
+          {s.icon}
         </div>
-        <div className="rounded-2xl bg-white px-4 py-3 shadow-[var(--shadow-soft)]">
-          <p className="text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
-            {value}%
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold text-[var(--text-primary)]">
+            {alert.code}
+          </p>
+          <p className="mt-1 text-sm text-[var(--text-secondary)]">
+            {alert.problem}
           </p>
         </div>
       </div>
 
-      <div className="mt-4 h-2.5 w-full overflow-hidden rounded-full bg-white">
-        <div
-          className={`h-full rounded-full ${colorMap[color]}`}
-          style={{ width: `${Math.max(4, Math.min(value, 100))}%` }}
-        />
-      </div>
+      <Link
+        href={alert.href}
+        className="mt-4 block rounded-2xl border border-white bg-white px-4 py-2.5 text-center text-sm font-medium text-[var(--text-primary)] shadow-sm transition hover:shadow-md"
+      >
+        Ver passaporte →
+      </Link>
     </div>
   );
 }
@@ -835,42 +861,37 @@ function KpiCard({
   value,
   icon,
   subtitle,
+  valueSuffix,
+  highlight = false,
 }: {
   label: string;
   value: string | number;
-  icon: string;
+  icon: React.ReactNode;
   subtitle: string;
+  valueSuffix?: string;
+  highlight?: boolean;
 }) {
   return (
-    <div className="ag-card p-6">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--primary-soft)] text-xl shadow-[var(--shadow-soft)]">
+    <div
+      className={`ag-card p-6 ${highlight ? "ring-1 ring-[rgba(93,156,68,0.18)]" : ""}`}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--primary-soft)] shadow-[var(--shadow-soft)]">
           {icon}
         </div>
-        <span className="text-xs uppercase tracking-[0.14em] text-[var(--text-muted)]">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
           Live
         </span>
       </div>
-
       <p className="mt-5 ag-kpi-label">{label}</p>
-      <p className="mt-3 ag-kpi-value">{value}</p>
-      <p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">
-        {subtitle}
+      <p className="mt-2 ag-kpi-value">
+        {value}
+        {valueSuffix && (
+          <span className="text-lg font-medium text-[var(--text-secondary)]">
+            {valueSuffix}
+          </span>
+        )}
       </p>
-    </div>
-  );
-}
-
-function FrameworkCard({
-  title,
-  subtitle,
-}: {
-  title: string;
-  subtitle: string;
-}) {
-  return (
-    <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5">
-      <p className="text-base font-semibold text-[var(--text-primary)]">{title}</p>
       <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
         {subtitle}
       </p>
@@ -878,51 +899,202 @@ function FrameworkCard({
   );
 }
 
-function DemoStep({
-  number,
-  title,
-  description,
-  href,
-}: {
-  number: string;
-  title: string;
-  description: string;
-  href: string;
-}) {
+// ─── Icons (inline SVG) ───────────────────────────────────────────────────────
+
+function IconAnimal() {
   return (
-    <Link
-      href={href}
-      className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5 transition hover:border-[rgba(93,156,68,0.24)] hover:bg-[var(--primary-soft)]"
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="#5d9c44"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-6 w-6"
     >
-      <div className="flex items-start gap-4">
-        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-sm font-semibold shadow-[var(--shadow-soft)]">
-          {number}
-        </div>
-        <div>
-          <p className="text-base font-semibold text-[var(--text-primary)]">{title}</p>
-          <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-            {description}
-          </p>
-        </div>
-      </div>
-    </Link>
+      <path d="M3 17l3-6 4 7 3-4 4 6" />
+      <circle cx="18" cy="5" r="2" />
+    </svg>
   );
 }
 
-function buildSeries(values: number[]) {
-  const labels = ["Animais", "Aplic.", "Certif.", "Fazendas", "Chancelados"];
-  const max = Math.max(...values, 1);
-
-  return values.map((value, index) => ({
-    label: labels[index],
-    value,
-    height: Math.max(24, Math.round((value / max) * 180)),
-  }));
+function IconScore() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="#5d9c44"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-6 w-6"
+    >
+      <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
+      <polyline points="16 7 22 7 22 13" />
+    </svg>
+  );
 }
+
+function IconWeight() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="#5d9c44"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-6 w-6"
+    >
+      <path d="M12 2a4 4 0 0 1 4 4H8a4 4 0 0 1 4-4z" />
+      <path d="M2 22l2.5-16h15L22 22H2z" />
+      <line x1="12" y1="12" x2="12" y2="18" />
+      <line x1="9" y1="15" x2="15" y2="15" />
+    </svg>
+  );
+}
+
+function IconCurrency() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="#5d9c44"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-6 w-6"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <path d="M16 8h-6a2 2 0 0 0 0 4h4a2 2 0 0 1 0 4H8" />
+      <line x1="12" y1="6" x2="12" y2="8" />
+      <line x1="12" y1="16" x2="12" y2="18" />
+    </svg>
+  );
+}
+
+function IconHalal() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="#5d9c44"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-6 w-6"
+    >
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+    </svg>
+  );
+}
+
+function IconPlane() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="#5d9c44"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-6 w-6"
+    >
+      <path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" />
+    </svg>
+  );
+}
+
+function IconCheck() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="#16a34a"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-5 w-5"
+    >
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  );
+}
+
+function IconAlertCritical() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="#dc2626"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-5 w-5"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <line x1="12" y1="8" x2="12" y2="12" />
+      <line x1="12" y1="16" x2="12.01" y2="16" />
+    </svg>
+  );
+}
+
+function IconAlertWarning() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="#d97706"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-5 w-5"
+    >
+      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+      <line x1="12" y1="9" x2="12" y2="13" />
+      <line x1="12" y1="17" x2="12.01" y2="17" />
+    </svg>
+  );
+}
+
+function IconClock() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="#d97706"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-5 w-5"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <polyline points="12 6 12 12 16 14" />
+    </svg>
+  );
+}
+
+function IconCertExpired() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="#ca8a04"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-5 w-5"
+    >
+      <rect x="2" y="4" width="20" height="16" rx="2" />
+      <path d="M8 10h8M8 14h4" />
+    </svg>
+  );
+}
+
+// ─── Formatters ───────────────────────────────────────────────────────────────
 
 function formatStatus(value: string | null) {
   if (!value) return "-";
-
   const map: Record<string, string> = {
     active: "Ativo",
     inactive: "Inativo",
@@ -933,7 +1105,6 @@ function formatStatus(value: string | null) {
     slaughtered: "Abatido",
     ACTIVE: "Ativo",
   };
-
   return map[value] ?? map[value.toLowerCase()] ?? value;
 }
 
@@ -941,50 +1112,23 @@ function formatEventType(value: string) {
   const map: Record<string, string> = {
     BIRTH: "Nascimento",
     RFID_LINKED: "RFID vinculado",
-    WEIGHT_RECORDED: "Pesagem registrada",
-    HEALTH_APPLICATION: "Aplicação sanitária",
+    WEIGHT_RECORDED: "Pesagem",
+    HEALTH_APPLICATION: "Aplicação",
     LOT_ENTRY: "Entrada em lote",
     OWNERSHIP_TRANSFER: "Transferência",
     SALE: "Venda",
     SLAUGHTER: "Abate",
     CERTIFICATION: "Certificação",
     birth: "Nascimento",
-    rfid_assigned: "Identificação vinculada",
-    health_application: "Aplicação registrada",
-    weight_recorded: "Pesagem registrada",
-    sale: "Venda registrada",
-    ownership_transfer: "Transferência de propriedade",
-    lot_entry: "Entrada em lote",
-    slaughter: "Abate registrado",
+    rfid_assigned: "Identificação",
+    health_application: "Aplicação",
+    weight_recorded: "Pesagem",
+    sale: "Venda",
+    ownership_transfer: "Transferência",
+    lot_entry: "Lote",
+    slaughter: "Abate",
     weighing: "Pesagem",
-    application: "Aplicação sanitária",
+    application: "Aplicação",
   };
-
   return map[value] ?? value.replaceAll("_", " ");
-}
-
-function getEventIcon(value: string) {
-  const map: Record<string, string> = {
-    BIRTH: "🐣",
-    RFID_LINKED: "🏷️",
-    WEIGHT_RECORDED: "⚖️",
-    HEALTH_APPLICATION: "💉",
-    LOT_ENTRY: "📦",
-    OWNERSHIP_TRANSFER: "🔁",
-    SALE: "💰",
-    SLAUGHTER: "📋",
-    CERTIFICATION: "✅",
-    birth: "🐣",
-    rfid_assigned: "🏷️",
-    health_application: "💉",
-    weight_recorded: "⚖️",
-    sale: "💰",
-    ownership_transfer: "🔁",
-    lot_entry: "📦",
-    slaughter: "📋",
-    weighing: "⚖️",
-    application: "💉",
-  };
-
-  return map[value] ?? "•";
 }
