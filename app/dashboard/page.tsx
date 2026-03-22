@@ -5,7 +5,6 @@ import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { calculateAgraasScore, calculateAgeInMonths } from "@/lib/agraas-analytics";
 
-const COTACAO_ARROBA = 330; // R$/@ — placeholder até Bloco 3
 const KG_POR_ARROBA = 15;
 
 type AnimalRow = {
@@ -47,6 +46,11 @@ export default function DashboardPage() {
   const [applications, setApplications] = useState<ApplicationRow[]>([]);
   const [events, setEvents] = useState<EventRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [cotacao, setCotacao] = useState(330);
+  const [cotacaoMeta, setCotacaoMeta] = useState<{ fonte: string; updated_at: string | null }>({ fonte: "cache", updated_at: null });
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [cotacaoInput, setCotacaoInput] = useState("");
+  const [updatingCotacao, setUpdatingCotacao] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -56,6 +60,8 @@ export default function DashboardPage() {
         { data: weightsData },
         { data: applicationsData },
         { data: eventsData },
+        cotacaoRes,
+        { data: { user } },
       ] = await Promise.all([
         supabase.from("animals").select(
           "id, internal_code, nickname, agraas_id, birth_date, breed, status, blood_type, sire_animal_id, dam_animal_id"
@@ -64,15 +70,40 @@ export default function DashboardPage() {
           .order("weighing_date", { ascending: false }),
         supabase.from("applications").select("animal_id, withdrawal_date"),
         supabase.from("events").select("animal_id"),
+        fetch("/api/cotacao").then(r => r.json()).catch(() => ({ cotacao: 330, fonte: "fallback", updated_at: null })),
+        supabase.auth.getUser(),
       ]);
       setAnimals((animalsData as AnimalRow[]) ?? []);
       setWeights((weightsData as WeightRow[]) ?? []);
       setApplications((applicationsData as ApplicationRow[]) ?? []);
       setEvents((eventsData as EventRow[]) ?? []);
+      setCotacao(cotacaoRes.cotacao ?? 330);
+      setCotacaoMeta({ fonte: cotacaoRes.fonte ?? "cache", updated_at: cotacaoRes.updated_at ?? null });
+
+      if (user) {
+        const { data: c } = await supabase.from("clients").select("role").eq("auth_user_id", user.id).single();
+        setIsAdmin(c?.role === "admin");
+      }
       setLoading(false);
     }
     load();
   }, []);
+
+  async function atualizarCotacao() {
+    const value = parseFloat(cotacaoInput);
+    if (!value || value < 100) return;
+    setUpdatingCotacao(true);
+    const res = await fetch("/api/cotacao", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cotacao: value }),
+    });
+    const data = await res.json();
+    setCotacao(data.cotacao ?? value);
+    setCotacaoMeta({ fonte: data.fonte ?? "manual", updated_at: data.updated_at ?? null });
+    setCotacaoInput("");
+    setUpdatingCotacao(false);
+  }
 
   // Tela de boas-vindas
   if (!loading && animals.length === 0) {
@@ -95,17 +126,28 @@ export default function DashboardPage() {
     );
   }
 
-  return <DashboardContent animals={animals} weights={weights} applications={applications} events={events} loading={loading} />;
+  return <DashboardContent animals={animals} weights={weights} applications={applications} events={events} loading={loading}
+    cotacao={cotacao} cotacaoMeta={cotacaoMeta} isAdmin={isAdmin}
+    cotacaoInput={cotacaoInput} setCotacaoInput={setCotacaoInput}
+    updatingCotacao={updatingCotacao} onAtualizarCotacao={atualizarCotacao} />;
 }
 
 function DashboardContent({
-  animals, weights, applications, events, loading
+  animals, weights, applications, events, loading,
+  cotacao, cotacaoMeta, isAdmin, cotacaoInput, setCotacaoInput, updatingCotacao, onAtualizarCotacao,
 }: {
   animals: AnimalRow[];
   weights: WeightRow[];
   applications: ApplicationRow[];
   events: EventRow[];
   loading: boolean;
+  cotacao: number;
+  cotacaoMeta: { fonte: string; updated_at: string | null };
+  isAdmin: boolean;
+  cotacaoInput: string;
+  setCotacaoInput: (v: string) => void;
+  updatingCotacao: boolean;
+  onAtualizarCotacao: () => void;
 }) {
   const today = new Date();
   const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
@@ -155,7 +197,7 @@ function DashboardContent({
       hasGenealogy: Boolean(animal.sire_animal_id || animal.dam_animal_id),
     });
     const arrobas = lastWeight ? lastWeight / KG_POR_ARROBA : null;
-    const estimatedValue = arrobas ? arrobas * COTACAO_ARROBA : null;
+    const estimatedValue = arrobas ? arrobas * cotacao : null;
     return {
       id: animal.id,
       code: animal.nickname ?? animal.internal_code ?? animal.id.slice(0, 8),
@@ -235,16 +277,44 @@ function DashboardContent({
             <p className="mt-4 text-5xl font-semibold tracking-[-0.06em] text-[var(--text-primary)]">
               {loading ? "—" : `R$ ${Math.round(valorRebanho).toLocaleString("pt-BR")}`}
             </p>
-            <div className="mt-3 flex items-center gap-2">
-              <span className="rounded-full border border-[rgba(217,163,67,0.30)] bg-[rgba(217,163,67,0.12)] px-3 py-1 text-xs font-semibold text-[var(--warning)]">
-                Cotação de referência — atualizar no Bloco 3
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${
+                cotacaoMeta.fonte === "cepea"
+                  ? "border-[rgba(93,156,68,0.30)] bg-[var(--primary-soft)] text-[var(--primary-hover)]"
+                  : "border-[rgba(217,163,67,0.30)] bg-[rgba(217,163,67,0.12)] text-[var(--warning)]"
+              }`}>
+                {cotacaoMeta.fonte === "cepea" ? "CEPEA ao vivo" : cotacaoMeta.fonte === "manual" ? "Atualizado manualmente" : "Cotação em cache"}
               </span>
+              {cotacaoMeta.updated_at && (
+                <span className="text-xs text-[var(--text-muted)]">
+                  {new Date(cotacaoMeta.updated_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                </span>
+              )}
             </div>
-            <p className="mt-2 text-sm text-[var(--text-muted)]">R$ {COTACAO_ARROBA}/@ · {KG_POR_ARROBA} kg por arroba</p>
-            <div className="mt-6 rounded-3xl border border-[var(--border)] bg-white p-5 shadow-[var(--shadow-soft)]">
+            <p className="mt-2 text-sm text-[var(--text-muted)]">R$ {cotacao.toFixed(2)}/@ · {KG_POR_ARROBA} kg por arroba</p>
+
+            {isAdmin && (
+              <div className="mt-4 flex items-center gap-2">
+                <input
+                  type="number"
+                  value={cotacaoInput}
+                  onChange={e => setCotacaoInput(e.target.value)}
+                  placeholder="Nova cotação R$/@"
+                  className="w-44 rounded-xl border border-black/10 px-3 py-2 text-sm outline-none focus:border-[#4A7C3A]"
+                  min="100" max="1000" step="0.01"
+                />
+                <button type="button" onClick={onAtualizarCotacao}
+                  disabled={updatingCotacao || !cotacaoInput}
+                  className="rounded-xl bg-[var(--primary-hover)] px-4 py-2 text-sm font-semibold text-white hover:bg-[#3B6B2E] disabled:opacity-50">
+                  {updatingCotacao ? "Atualizando..." : "Atualizar"}
+                </button>
+              </div>
+            )}
+
+            <div className="mt-5 rounded-3xl border border-[var(--border)] bg-white p-5 shadow-[var(--shadow-soft)]">
               <p className="text-sm font-medium text-[var(--text-primary)]">Fórmula de cálculo</p>
               <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-                Peso atual ÷ {KG_POR_ARROBA} kg = arrobas × R$ {COTACAO_ARROBA} = valor por animal. Total consolidado de toda a base.
+                Peso atual ÷ {KG_POR_ARROBA} kg = arrobas × R$ {cotacao.toFixed(2)} = valor por animal. Total consolidado de toda a base.
               </p>
             </div>
           </div>
