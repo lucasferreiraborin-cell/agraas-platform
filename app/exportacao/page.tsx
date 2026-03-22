@@ -43,38 +43,47 @@ export default function ExportacaoPage() {
     if (lotList.length === 0) { setLoading(false); return; }
 
     const lotIds = lotList.map(l => l.id);
-    const { data: assignData } = await supabase
+
+    // Step 1: get raw lot_id + animal_id without join (join falha silenciosamente se coluna não existe)
+    const { data: rawAssign } = await supabase
       .from("animal_lot_assignments")
-      .select("lot_id, animal_id, animals(nickname, internal_code, breed, current_property_id)")
+      .select("lot_id, animal_id")
       .in("lot_id", lotIds)
       .is("exit_date", null);
 
-    const assignList: LotAssignment[] = ((assignData ?? []) as any[])
-      .filter(a => a.animals)
-      .map(a => ({
-        lot_id: a.lot_id,
-        animal_id: a.animal_id,
-        nickname: a.animals.nickname,
-        internal_code: a.animals.internal_code,
-        breed: a.animals.breed,
-        current_property_id: a.animals.current_property_id,
-      }));
-    setAssignments(assignList);
-
-    const animalIds = [...new Set(assignList.map(a => a.animal_id))];
+    const rawList = (rawAssign ?? []) as { lot_id: string; animal_id: string }[];
+    const animalIds = [...new Set(rawList.map(a => a.animal_id))];
     if (animalIds.length === 0) { setLoading(false); return; }
 
+    // Step 2: buscar dados dos animais + cache de scores + certs + carências em paralelo
     const [
+      { data: animalsData },
       { data: scoreData },
       { data: certData },
       { data: appData },
       { data: weightData },
     ] = await Promise.all([
+      supabase.from("animals").select("id, nickname, internal_code, breed, current_property_id").in("id", animalIds),
       supabase.from("agraas_master_passport_cache").select("animal_id, score_json").in("animal_id", animalIds),
       supabase.from("animal_certifications").select("animal_id, certification_name, status, expires_at").in("animal_id", animalIds),
       supabase.from("applications").select("animal_id, withdrawal_date").in("animal_id", animalIds),
       supabase.from("weights").select("animal_id, weight, weighing_date").in("animal_id", animalIds).order("weighing_date", { ascending: false }),
     ]);
+
+    // Montar assignList com dados dos animais
+    const animalDataMap = new Map<string, any>((animalsData ?? []).map((a: any) => [a.id, a]));
+    const assignList: LotAssignment[] = rawList.map(r => {
+      const animal = animalDataMap.get(r.animal_id);
+      return {
+        lot_id: r.lot_id,
+        animal_id: r.animal_id,
+        nickname: animal?.nickname ?? null,
+        internal_code: animal?.internal_code ?? null,
+        breed: animal?.breed ?? null,
+        current_property_id: animal?.current_property_id ?? null,
+      };
+    });
+    setAssignments(assignList);
 
     setScores((scoreData as ScoreRow[]) ?? []);
     setCerts((certData as CertRow[]) ?? []);
