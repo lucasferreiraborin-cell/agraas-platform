@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
+import TargetArrobasEditor from "@/app/components/TargetArrobasEditor";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -17,6 +18,7 @@ type PropertyRow = {
   profile: string | null;
   area_hectares: number | null;
   client_id: string | null;
+  target_arrobas: number | null;
 };
 
 type AnimalRow = {
@@ -54,7 +56,7 @@ export default async function PropriedadeDetailPage({ params }: PageProps) {
   const { data: propertyData, error: propertyError } = await supabase
     .from("properties")
     .select(
-      "id, name, code, region, state, animals_count, lots_count, status, profile, area_hectares, client_id"
+      "id, name, code, region, state, animals_count, lots_count, status, profile, area_hectares, client_id, target_arrobas"
     )
     .eq("id", id)
     .single();
@@ -99,6 +101,37 @@ export default async function PropriedadeDetailPage({ params }: PageProps) {
     .select("id")
     .eq("property_id", id);
   const lotsCount = lotsData?.length ?? 0;
+
+  // Cotação e pesos para valor do rebanho
+  const [{ data: cotacaoData }, weightsResult] = await Promise.all([
+    supabase.from("platform_settings").select("value").eq("key", "cotacao_arroba").single(),
+    animalIds.length > 0
+      ? supabase.from("weights").select("animal_id, weight, weighing_date")
+          .in("animal_id", animalIds)
+          .order("weighing_date", { ascending: false })
+      : Promise.resolve({ data: [] }),
+  ]);
+  const cotacao = parseFloat(cotacaoData?.value ?? "330");
+  const weightsData = (weightsResult.data ?? []) as { animal_id: string; weight: number; weighing_date: string | null }[];
+
+  // Última pesagem por animal
+  const lastWeightByAnimal = new Map<string, number>();
+  for (const w of weightsData) {
+    if (!lastWeightByAnimal.has(w.animal_id)) {
+      lastWeightByAnimal.set(w.animal_id, Number(w.weight));
+    }
+  }
+
+  const KG_POR_ARROBA = 15;
+  const totalArrobas = Array.from(lastWeightByAnimal.values()).reduce((s, w) => s + w / KG_POR_ARROBA, 0);
+  const valorRebanho = totalArrobas * cotacao;
+  const targetArrobas = property?.target_arrobas ?? null;
+  const animaisNaMeta = targetArrobas
+    ? Array.from(lastWeightByAnimal.values()).filter(w => w / KG_POR_ARROBA >= targetArrobas).length
+    : 0;
+  const strikePct = animals.length > 0 && targetArrobas
+    ? Math.round((animaisNaMeta / animals.length) * 100)
+    : null;
 
   // Score do passaporte por animal (evita query .in() vazia)
   const passports: PassportRow[] =
@@ -389,6 +422,60 @@ export default async function PropriedadeDetailPage({ params }: PageProps) {
               </table>
             </div>
           )}
+        </div>
+      </section>
+
+      {/* Valor do rebanho */}
+      <section className="ag-card p-8">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div>
+            <h2 className="ag-section-title">Valor estimado do rebanho</h2>
+            <p className="ag-section-subtitle">
+              Calculado com cotação atual: R$ {cotacao.toFixed(2)}/@ · {KG_POR_ARROBA} kg por arroba
+            </p>
+          </div>
+          <span className="ag-badge ag-badge-green">Cotação ao vivo</span>
+        </div>
+
+        <div className="mt-6 grid gap-4 sm:grid-cols-3">
+          <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5">
+            <p className="text-sm text-[var(--text-muted)]">Total arrobas</p>
+            <p className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
+              {totalArrobas > 0 ? `${totalArrobas.toFixed(1)} @` : "—"}
+            </p>
+            <p className="mt-2 text-xs text-[var(--text-secondary)]">{lastWeightByAnimal.size} animais com pesagem</p>
+          </div>
+
+          <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5">
+            <p className="text-sm text-[var(--text-muted)]">Valor estimado</p>
+            <p className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
+              {valorRebanho > 0 ? `R$ ${Math.round(valorRebanho).toLocaleString("pt-BR")}` : "—"}
+            </p>
+            <p className="mt-2 text-xs text-[var(--text-secondary)]">R$ {cotacao.toFixed(2)} por @</p>
+          </div>
+
+          <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5">
+            <p className="text-sm text-[var(--text-muted)]">Strike tracker</p>
+            <p className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
+              {strikePct !== null ? `${strikePct}%` : "—"}
+            </p>
+            <p className="mt-2 text-xs text-[var(--text-secondary)]">
+              {targetArrobas ? `${animaisNaMeta} animais ≥ ${targetArrobas} @` : "Meta não definida"}
+            </p>
+            {strikePct !== null && (
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-black/8">
+                <div
+                  className="h-full rounded-full bg-[linear-gradient(90deg,#8dbc5f,#5d9c44)]"
+                  style={{ width: `${strikePct}%` }}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-5 flex flex-col gap-2">
+          <p className="text-sm font-medium text-[var(--text-primary)]">Meta de arrobas por animal</p>
+          <TargetArrobasEditor propertyId={id} initialValue={targetArrobas} />
         </div>
       </section>
 
