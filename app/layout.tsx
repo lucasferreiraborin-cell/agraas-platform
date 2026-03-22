@@ -1,43 +1,8 @@
 import "./globals.css";
-import Link from "next/link";
 import LogoutButton from "./components/LogoutButton";
+import SidebarNav from "./components/SidebarNav";
+import { ToastContainer } from "./components/Toast";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-
-const menuItems = [
-  { href: "/", label: "Painel", icon: "◉" },
-  { href: "/dashboard", label: "Dashboard Executivo", icon: "✳" },
-  { href: "/inteligencia", label: "Inteligência", icon: "✺" },
-  { href: "/cadeia", label: "Cadeia", icon: "⛓" },
-  { href: "/animais", label: "Animais", icon: "◌" },
-  { href: "/market", label: "Market", icon: "◈" },
-  { href: "/operacoes", label: "Operações", icon: "◎" },
-  { href: "/propriedades", label: "Propriedades", icon: "▣" },
-  { href: "/estoque", label: "Estoque", icon: "▥" },
-  { href: "/estoque/dashboard", label: "Dashboard Sanitário", icon: "▤" },
-  { href: "/estoque/historico", label: "Histórico Estoque", icon: "△" },
-  { href: "/aplicacoes", label: "Aplicações", icon: "✚" },
-  { href: "/aplicacoes/historico", label: "Histórico Aplicações", icon: "◔" },
-  { href: "/pesagens", label: "Pesagens", icon: "⚖" },
-  { href: "/pesagens/historico", label: "Histórico Pesagens", icon: "◴" },
-  { href: "/eventos", label: "Eventos", icon: "☰" },
-  { href: "/produtivo", label: "Dashboard Produtivo", icon: "▲" },
-  { href: "/movimentacoes", label: "Movimentações", icon: "⇄" },
-  {
-    href: "/movimentacoes/historico",
-    label: "Histórico Movimentações",
-    icon: "↺",
-  },
-  { href: "/custos", label: "Custos", icon: "$" },
-  { href: "/custos/historico", label: "Histórico Custos", icon: "◫" },
-  { href: "/relatorios", label: "Relatórios", icon: "☷" },
-  { href: "/alertas", label: "Alertas", icon: "!" },
-  { href: "/vendas", label: "Vendas", icon: "↔️" },
-  { href: "/lotes", label: "Lotes", icon: "▤" },
-  { href: "/abates", label: "Abates", icon: "◆" },
-  { href: "/scores", label: "Scores", icon: "✦" },
-  { href: "/certificacoes", label: "Certificações", icon: "✓" },
-  { href: "/historico", label: "Histórico", icon: "◷" },
-];
 
 export default async function RootLayout({
   children,
@@ -100,20 +65,7 @@ export default async function RootLayout({
                 </div>
               </div>
 
-              <nav className="flex-1 space-y-1 overflow-y-auto px-5 py-6">
-                {menuItems.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className="group flex items-center gap-3 rounded-2xl px-5 py-3.5 text-[15px] font-medium text-white/82 transition duration-200 hover:bg-white/12 hover:text-white"
-                  >
-                    <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/8 bg-white/8 text-sm text-white/90 ring-1 ring-white/6 transition duration-200 group-hover:bg-white/14 group-hover:ring-white/12">
-                      {item.icon}
-                    </span>
-                    <span>{item.label}</span>
-                  </Link>
-                ))}
-              </nav>
+              <SidebarNav />
 
               <div className="border-t border-white/10 p-5">
                 <div className="rounded-[28px] border border-white/10 bg-white/8 p-5 ring-1 ring-white/8 backdrop-blur-xl">
@@ -179,6 +131,7 @@ export default async function RootLayout({
                   {children}
                 </div>
               </main>
+              <ToastContainer />
             </div>
           </div>
         </div>

@@ -1,13 +1,24 @@
+"use client";
+
+import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
+import { calculateAgraasScore, calculateAgeInMonths } from "@/lib/agraas-analytics";
+
+const COTACAO_ARROBA = 330; // R$/@ — placeholder até Bloco 3
+const KG_POR_ARROBA = 15;
 
 type AnimalRow = {
   id: string;
   internal_code: string | null;
+  nickname: string | null;
   agraas_id: string | null;
   birth_date: string | null;
   breed: string | null;
   status: string | null;
+  blood_type: string | null;
+  sire_animal_id: string | null;
+  dam_animal_id: string | null;
 };
 
 type WeightRow = {
@@ -17,161 +28,66 @@ type WeightRow = {
   weighing_date: string | null;
 };
 
-type ApplicationRow = {
-  animal_id: string;
-};
+type ApplicationRow = { animal_id: string; withdrawal_date?: string | null };
+type EventRow = { animal_id: string | null };
 
-type EventRow = {
-  animal_id: string | null;
-};
-
-type DashboardAnimalRow = {
-  animal_id: string;
-  internal_code: string;
-  agraas_id: string;
-  breed: string;
-  status: string;
-  current_weight: number | null;
-  previous_weight: number | null;
-  delta: number | null;
-  age_months: number | null;
+type DashboardRow = {
+  id: string;
+  code: string;
   score: number;
+  lastWeight: number | null;
+  lastWeighDate: string | null;
+  arrobas: number | null;
+  estimatedValue: number | null;
 };
 
-export default async function DashboardPage() {
-  const [
-    { data: animalsData, error: animalsError },
-    { data: weightsData, error: weightsError },
-    { data: applicationsData, error: applicationsError },
-    { data: eventsData, error: eventsError },
-  ] = await Promise.all([
-    supabase
-      .from("animals")
-      .select("id, internal_code, agraas_id, birth_date, breed, status")
-      .order("internal_code", { ascending: true }),
+export default function DashboardPage() {
+  const [animals, setAnimals] = useState<AnimalRow[]>([]);
+  const [weights, setWeights] = useState<WeightRow[]>([]);
+  const [applications, setApplications] = useState<ApplicationRow[]>([]);
+  const [events, setEvents] = useState<EventRow[]>([]);
+  const [loading, setLoading] = useState(true);
 
-    supabase
-      .from("weights")
-      .select("id, animal_id, weight, weighing_date")
-      .order("weighing_date", { ascending: false }),
+  useEffect(() => {
+    async function load() {
+      setLoading(true);
+      const [
+        { data: animalsData },
+        { data: weightsData },
+        { data: applicationsData },
+        { data: eventsData },
+      ] = await Promise.all([
+        supabase.from("animals").select(
+          "id, internal_code, nickname, agraas_id, birth_date, breed, status, blood_type, sire_animal_id, dam_animal_id"
+        ).order("internal_code"),
+        supabase.from("weights").select("id, animal_id, weight, weighing_date")
+          .order("weighing_date", { ascending: false }),
+        supabase.from("applications").select("animal_id, withdrawal_date"),
+        supabase.from("events").select("animal_id"),
+      ]);
+      setAnimals((animalsData as AnimalRow[]) ?? []);
+      setWeights((weightsData as WeightRow[]) ?? []);
+      setApplications((applicationsData as ApplicationRow[]) ?? []);
+      setEvents((eventsData as EventRow[]) ?? []);
+      setLoading(false);
+    }
+    load();
+  }, []);
 
-    supabase.from("applications").select("animal_id"),
-
-    supabase.from("events").select("animal_id"),
-  ]);
-
-  if (animalsError) console.error("Erro ao buscar animais:", animalsError);
-  if (weightsError) console.error("Erro ao buscar pesos:", weightsError);
-  if (applicationsError) console.error("Erro ao buscar aplicações:", applicationsError);
-  if (eventsError) console.error("Erro ao buscar eventos:", eventsError);
-
-  const animals = (animalsData ?? []) as AnimalRow[];
-  const weights = (weightsData ?? []) as WeightRow[];
-  const applications = (applicationsData ?? []) as ApplicationRow[];
-  const events = (eventsData ?? []) as EventRow[];
-
-  const weightsByAnimal = new Map<string, WeightRow[]>();
-  for (const row of weights) {
-    const list = weightsByAnimal.get(row.animal_id) ?? [];
-    list.push(row);
-    weightsByAnimal.set(row.animal_id, list);
-  }
-
-  const applicationsCountByAnimal = new Map<string, number>();
-  for (const row of applications) {
-    applicationsCountByAnimal.set(
-      row.animal_id,
-      (applicationsCountByAnimal.get(row.animal_id) ?? 0) + 1
-    );
-  }
-
-  const eventsCountByAnimal = new Map<string, number>();
-  for (const row of events) {
-    if (!row.animal_id) continue;
-    eventsCountByAnimal.set(
-      row.animal_id,
-      (eventsCountByAnimal.get(row.animal_id) ?? 0) + 1
-    );
-  }
-
-  const dashboardRows: DashboardAnimalRow[] = animals.map((animal) => {
-    const animalWeights = weightsByAnimal.get(animal.id) ?? [];
-    const currentWeight =
-      animalWeights.length > 0 ? Number(animalWeights[0].weight) : null;
-    const previousWeight =
-      animalWeights.length > 1 ? Number(animalWeights[1].weight) : null;
-
-    const delta =
-      currentWeight !== null && previousWeight !== null
-        ? currentWeight - previousWeight
-        : null;
-
-    const ageMonths = animal.birth_date
-      ? calculateAgeInMonths(animal.birth_date)
-      : null;
-
-    const sanitaryScore = Math.min(
-      100,
-      50 + (applicationsCountByAnimal.get(animal.id) ?? 0) * 8
-    );
-
-    const operationalScore = Math.min(
-      100,
-      45 + (eventsCountByAnimal.get(animal.id) ?? 0) * 4
-    );
-
-    let continuityScore = 40;
-    continuityScore += Math.min(30, animalWeights.length * 8);
-    if (animal.birth_date) continuityScore += 15;
-    if (animal.agraas_id) continuityScore += 15;
-    continuityScore = Math.min(100, continuityScore);
-
-    const score = calculateAgraasScore({
-      lastWeight: currentWeight,
-      ageMonths,
-      sanitaryScore,
-      operationalScore,
-      continuityScore,
-    });
-
-    return {
-      animal_id: animal.id,
-      internal_code: animal.internal_code ?? animal.id,
-      agraas_id:
-        animal.agraas_id ?? `AGR-${animal.id.substring(0, 8).toUpperCase()}`,
-      breed: animal.breed ?? "-",
-      status: animal.status ?? "-",
-      current_weight: currentWeight,
-      previous_weight: previousWeight,
-      delta,
-      age_months: ageMonths,
-      score,
-    };
-  });
-
-  const totalAnimals = dashboardRows.length;
-
-  // Tela de boas-vindas para usuários sem dados ainda
-  if (totalAnimals === 0) {
+  // Tela de boas-vindas
+  if (!loading && animals.length === 0) {
     return (
       <main className="space-y-8">
         <div className="ag-card-strong overflow-hidden">
           <div className="flex flex-col items-center px-8 py-16 text-center">
-            <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-[var(--primary-soft)] text-4xl shadow-[var(--shadow-soft)]">
-              🏡
-            </div>
+            <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-[var(--primary-soft)] text-4xl shadow-[var(--shadow-soft)]">🏡</div>
             <div className="ag-badge ag-badge-green mt-8">Bem-vindo à Agraas</div>
-            <h2 className="mt-5 text-3xl font-semibold tracking-[-0.04em] text-[var(--text-primary)] lg:text-4xl">
-              Sua operação começa aqui
-            </h2>
+            <h2 className="mt-5 text-3xl font-semibold tracking-[-0.04em] text-[var(--text-primary)] lg:text-4xl">Sua operação começa aqui</h2>
             <p className="mt-5 max-w-lg text-base leading-8 text-[var(--text-secondary)]">
-              Cadastre sua primeira fazenda para ativar o dashboard com animais,
-              scores, pesagens e rastreabilidade completa da sua operação.
+              Cadastre sua primeira fazenda para ativar o dashboard com animais, scores, pesagens e rastreabilidade completa.
             </p>
             <div className="mt-8">
-              <Link href="/propriedades/novo" className="ag-button-primary">
-                Cadastrar minha primeira fazenda
-              </Link>
+              <Link href="/propriedades/novo" className="ag-button-primary">Cadastrar minha primeira fazenda</Link>
             </div>
           </div>
         </div>
@@ -179,488 +95,304 @@ export default async function DashboardPage() {
     );
   }
 
-  const averageScore =
-    totalAnimals > 0
-      ? dashboardRows.reduce((acc, item) => acc + item.score, 0) / totalAnimals
-      : 0;
+  return <DashboardContent animals={animals} weights={weights} applications={applications} events={events} loading={loading} />;
+}
 
-  const validWeights = dashboardRows
-    .map((item) => item.current_weight)
-    .filter((value): value is number => value !== null);
+function DashboardContent({
+  animals, weights, applications, events, loading
+}: {
+  animals: AnimalRow[];
+  weights: WeightRow[];
+  applications: ApplicationRow[];
+  events: EventRow[];
+  loading: boolean;
+}) {
+  const today = new Date();
+  const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const ninetyDaysAgo = new Date(today.getTime() - 90 * 24 * 60 * 60 * 1000);
 
-  const averageWeight =
-    validWeights.length > 0
-      ? validWeights.reduce((acc, value) => acc + value, 0) / validWeights.length
-      : 0;
+  // Índices por animal
+  const weightsByAnimal = useMemo(() => {
+    const map = new Map<string, WeightRow[]>();
+    for (const w of weights) {
+      const list = map.get(w.animal_id) ?? [];
+      list.push(w);
+      map.set(w.animal_id, list);
+    }
+    return map;
+  }, [weights]);
 
-  const positiveDeltaCount = dashboardRows.filter(
-    (item) => item.delta !== null && item.delta > 0
-  ).length;
+  const appCountByAnimal = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const a of applications) map.set(a.animal_id, (map.get(a.animal_id) ?? 0) + 1);
+    return map;
+  }, [applications]);
 
-  const alertsCount = dashboardRows.filter(
-    (item) => item.delta !== null && item.delta < 0
-  ).length;
+  const eventCountByAnimal = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const e of events) {
+      if (e.animal_id) map.set(e.animal_id, (map.get(e.animal_id) ?? 0) + 1);
+    }
+    return map;
+  }, [events]);
 
-  const agraasIdCount = dashboardRows.filter((item) => Boolean(item.agraas_id)).length;
+  // Calcular rows do dashboard
+  const rows: DashboardRow[] = useMemo(() => animals.map(animal => {
+    const animalWeights = weightsByAnimal.get(animal.id) ?? [];
+    const lastWeight = animalWeights[0] ? Number(animalWeights[0].weight) : null;
+    const lastWeighDate = animalWeights[0]?.weighing_date ?? null;
+    const ageMonths = calculateAgeInMonths(animal.birth_date);
+    const sanitaryScore = Math.min(100, 50 + (appCountByAnimal.get(animal.id) ?? 0) * 8);
+    const operationalScore = Math.min(100, 45 + (eventCountByAnimal.get(animal.id) ?? 0) * 2);
+    const continuityScore = Math.min(100,
+      40 + Math.min(30, animalWeights.length * 8)
+        + (animal.birth_date ? 15 : 0)
+        + (animal.agraas_id ? 15 : 0)
+    );
+    const score = calculateAgraasScore({
+      lastWeight, ageMonths, sanitaryScore, operationalScore, continuityScore,
+      hasBloodType: Boolean(animal.blood_type),
+      hasGenealogy: Boolean(animal.sire_animal_id || animal.dam_animal_id),
+    });
+    const arrobas = lastWeight ? lastWeight / KG_POR_ARROBA : null;
+    const estimatedValue = arrobas ? arrobas * COTACAO_ARROBA : null;
+    return {
+      id: animal.id,
+      code: animal.nickname ?? animal.internal_code ?? animal.id.slice(0, 8),
+      score,
+      lastWeight,
+      lastWeighDate,
+      arrobas,
+      estimatedValue,
+    };
+  }), [animals, weightsByAnimal, appCountByAnimal, eventCountByAnimal]);
 
-  const topScoreAnimals = [...dashboardRows]
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 5);
+  // KPIs
+  const totalAnimais = rows.length;
+  const scoresMedio = totalAnimais > 0 ? Math.round(rows.reduce((s, r) => s + r.score, 0) / totalAnimais) : 0;
+  const valorRebanho = rows.reduce((s, r) => s + (r.estimatedValue ?? 0), 0);
+  const arroba_rebanho = rows.reduce((s, r) => s + (r.arrobas ?? 0), 0);
 
-  const topDeltaAnimals = [...dashboardRows]
-    .filter((item) => item.delta !== null)
-    .sort((a, b) => Number(b.delta) - Number(a.delta))
-    .slice(0, 5);
+  // Animais sem pesagem há >30 dias
+  const animaisSemPesagem = rows.filter(r => {
+    if (!r.lastWeighDate) return true;
+    return new Date(r.lastWeighDate) < thirtyDaysAgo;
+  });
 
-  const platformCards = [
-    {
-      title: "Identidade digital",
-      subtitle:
-        "Agraas ID estrutura a base animal e cria uma camada única de referência para o rebanho.",
-    },
-    {
-      title: "Leitura produtiva",
-      subtitle:
-        "Peso, evolução, idade e score consolidam a visão executiva da operação pecuária.",
-    },
-    {
-      title: "Confiança operacional",
-      subtitle:
-        "Sanidade, continuidade e eventos estruturam uma base pronta para rastreabilidade e certificação.",
-    },
-    {
-      title: "Infraestrutura de dados",
-      subtitle:
-        "A Agraas organiza a cadeia pecuária em uma lógica de dados, identidade e inteligência.",
-    },
-  ];
+  // Top 5 por score
+  const top5 = [...rows].sort((a, b) => b.score - a.score).slice(0, 5);
+
+  // Gráfico score evolução (últimos 90 dias com base em pesagens)
+  const chartData = useMemo(() => {
+    const points: { date: Date; score: number }[] = [];
+    for (const w of weights) {
+      if (!w.weighing_date) continue;
+      const d = new Date(w.weighing_date);
+      if (d < ninetyDaysAgo) continue;
+      const animal = animals.find(a => a.id === w.animal_id);
+      if (!animal) continue;
+      const animalWeights = weightsByAnimal.get(w.animal_id) ?? [];
+      const appCount = appCountByAnimal.get(w.animal_id) ?? 0;
+      const evtCount = eventCountByAnimal.get(w.animal_id) ?? 0;
+      const ageMonths = calculateAgeInMonths(animal.birth_date);
+      const score = calculateAgraasScore({
+        lastWeight: Number(w.weight),
+        ageMonths,
+        sanitaryScore: Math.min(100, 50 + appCount * 8),
+        operationalScore: Math.min(100, 45 + evtCount * 2),
+        continuityScore: Math.min(100, 40 + Math.min(30, animalWeights.length * 8) + (animal.birth_date ? 15 : 0) + (animal.agraas_id ? 15 : 0)),
+        hasBloodType: Boolean(animal.blood_type),
+        hasGenealogy: Boolean(animal.sire_animal_id || animal.dam_animal_id),
+      });
+      points.push({ date: d, score });
+    }
+    return points.sort((a, b) => a.date.getTime() - b.date.getTime());
+  }, [weights, animals, weightsByAnimal, appCountByAnimal, eventCountByAnimal, ninetyDaysAgo]);
 
   return (
     <main className="space-y-8">
+      {/* Hero */}
       <section className="ag-card-strong overflow-hidden">
-        <div className="grid gap-0 xl:grid-cols-[1.08fr_0.92fr]">
+        <div className="grid xl:grid-cols-[1.1fr_0.9fr]">
           <div className="relative p-8 lg:p-10">
+            <div className="pointer-events-none absolute right-0 top-0 h-56 w-56 rounded-full bg-[radial-gradient(circle,rgba(93,156,68,0.18)_0%,rgba(93,156,68,0)_72%)]" />
             <div className="ag-badge ag-badge-green">Dashboard executivo</div>
-
-            <h1 className="mt-5 max-w-4xl text-4xl font-semibold leading-[1.02] tracking-[-0.065em] text-[var(--text-primary)] lg:text-6xl">
-              Inteligência executiva do rebanho
+            <h1 className="mt-5 text-4xl font-semibold tracking-[-0.06em] text-[var(--text-primary)] lg:text-6xl">
+              Visão da operação
             </h1>
-
-            <p className="mt-5 max-w-3xl text-[1.05rem] leading-8 text-[var(--text-secondary)]">
-              Visualize a base animal sob a ótica de identidade digital,
-              produtividade, evolução de peso e confiança operacional em uma
-              camada única de dados da cadeia pecuária.
+            <p className="mt-5 max-w-2xl text-[1.02rem] leading-8 text-[var(--text-secondary)]">
+              KPIs em tempo real da sua fazenda — score médio do rebanho, valor estimado, alertas e performance produtiva.
             </p>
-
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/animais" className="ag-button-primary">
-                Abrir animais
-              </Link>
-              <Link href="/scores" className="ag-button-secondary">
-                Ver scores
-              </Link>
-              <Link href="/produtivo" className="ag-button-secondary">
-                Dashboard produtivo
-              </Link>
+            <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <HeroKpi label="Animais" value={loading ? "—" : totalAnimais} sub="base total" />
+              <HeroKpi label="Score médio" value={loading ? "—" : scoresMedio} sub="qualidade do rebanho" />
+              <HeroKpi label="Em alerta" value={loading ? "—" : animaisSemPesagem.length} sub="sem pesagem >30 dias" danger />
+              <HeroKpi label="@ no rebanho" value={loading ? "—" : Math.round(arroba_rebanho)} sub="arrobas estimadas" />
             </div>
           </div>
-
           <div className="border-t border-[var(--border)] bg-[linear-gradient(180deg,#eef6ea_0%,#f5f7f4_100%)] p-8 lg:p-10 xl:border-l xl:border-t-0">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <MetricCard
-                label="Animais monitorados"
-                value={totalAnimals}
-                subtitle="ativos estruturados na base"
-              />
-              <MetricCard
-                label="Agraas IDs"
-                value={agraasIdCount}
-                subtitle="identidades digitais emitidas"
-              />
-              <MetricCard
-                label="Score médio"
-                value={averageScore > 0 ? averageScore.toFixed(1) : "-"}
-                subtitle="média consolidada da operação"
-              />
-              <MetricCard
-                label="Peso médio"
-                value={averageWeight > 0 ? `${averageWeight.toFixed(1)} kg` : "-"}
-                subtitle="última pesagem disponível"
-              />
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Valor estimado do rebanho</p>
+            <p className="mt-4 text-5xl font-semibold tracking-[-0.06em] text-[var(--text-primary)]">
+              {loading ? "—" : `R$ ${Math.round(valorRebanho).toLocaleString("pt-BR")}`}
+            </p>
+            <div className="mt-3 flex items-center gap-2">
+              <span className="rounded-full border border-[rgba(217,163,67,0.30)] bg-[rgba(217,163,67,0.12)] px-3 py-1 text-xs font-semibold text-[var(--warning)]">
+                Cotação de referência — atualizar no Bloco 3
+              </span>
+            </div>
+            <p className="mt-2 text-sm text-[var(--text-muted)]">R$ {COTACAO_ARROBA}/@ · {KG_POR_ARROBA} kg por arroba</p>
+            <div className="mt-6 rounded-3xl border border-[var(--border)] bg-white p-5 shadow-[var(--shadow-soft)]">
+              <p className="text-sm font-medium text-[var(--text-primary)]">Fórmula de cálculo</p>
+              <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
+                Peso atual ÷ {KG_POR_ARROBA} kg = arrobas × R$ {COTACAO_ARROBA} = valor por animal. Total consolidado de toda a base.
+              </p>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {platformCards.map((item) => (
-          <div
-            key={item.title}
-            className="rounded-3xl border border-[var(--border)] bg-white p-6 shadow-[var(--shadow-soft)]"
-          >
-            <p className="text-lg font-semibold text-[var(--text-primary)]">
-              {item.title}
-            </p>
-            <p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">
-              {item.subtitle}
-            </p>
-          </div>
-        ))}
-      </section>
-
-      <section className="grid gap-4 xl:grid-cols-5">
-        <KpiCard
-          label="Base monitorada"
-          value={totalAnimals}
-          icon="🐂"
-          subtitle="animais presentes no dashboard"
-        />
-        <KpiCard
-          label="Score médio"
-          value={averageScore > 0 ? averageScore.toFixed(1) : "-"}
-          icon="📈"
-          subtitle="nível médio de confiança da base"
-        />
-        <KpiCard
-          label="Peso médio"
-          value={averageWeight > 0 ? `${averageWeight.toFixed(1)} kg` : "-"}
-          icon="⚖️"
-          subtitle="média da última pesagem"
-        />
-        <KpiCard
-          label="Evolução positiva"
-          value={positiveDeltaCount}
-          icon="📊"
-          subtitle="ganho entre últimas pesagens"
-        />
-        <KpiCard
-          label="Alertas produtivos"
-          value={alertsCount}
-          icon="⚠️"
-          subtitle="queda detectada entre leituras"
-        />
-      </section>
-
+      {/* Gráfico de evolução do score */}
       <section className="ag-card p-8">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="ag-section-title">Como ler este dashboard</h2>
-            <p className="ag-section-subtitle">
-              A Agraas transforma dados operacionais em uma visão executiva simples para gestão e tomada de decisão.
-            </p>
+            <h2 className="ag-section-title">Evolução do score — últimos 90 dias</h2>
+            <p className="ag-section-subtitle">Score calculado por evento de pesagem registrado no período.</p>
           </div>
-          <span className="ag-badge ag-badge-green">Data layer</span>
+          <span className="ag-badge ag-badge-dark">{chartData.length} pontos</span>
         </div>
-
-        <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <FlowCard
-            number="1"
-            title="Identidade"
-            description="Cada animal recebe uma identidade digital única via Agraas ID."
-          />
-          <FlowCard
-            number="2"
-            title="Registro"
-            description="Pesagens, aplicações e eventos alimentam continuamente a base."
-          />
-          <FlowCard
-            number="3"
-            title="Leitura"
-            description="A plataforma calcula score, evolução e sinais de consistência operacional."
-          />
-          <FlowCard
-            number="4"
-            title="Decisão"
-            description="A gestão passa a operar com inteligência sobre o rebanho e a cadeia."
-          />
-        </div>
-      </section>
-
-      <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
-        <div className="ag-card p-8">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <h2 className="ag-section-title">Top score</h2>
-              <p className="ag-section-subtitle">
-                Animais com maior score Agraas na leitura atual.
-              </p>
-            </div>
-            <Link href="/scores" className="ag-button-secondary">
-              Ver ranking
-            </Link>
-          </div>
-
-          <div className="mt-6 space-y-4">
-            {topScoreAnimals.length === 0 ? (
-              <div className="rounded-3xl bg-[var(--surface-soft)] p-6 text-sm text-[var(--text-muted)]">
-                Nenhum animal encontrado.
-              </div>
-            ) : (
-              topScoreAnimals.map((item, index) => (
-                <Link
-                  key={item.animal_id}
-                  href={`/animais/${item.animal_id}`}
-                  className="block rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5 transition hover:border-[rgba(93,156,68,0.24)] hover:bg-[var(--primary-soft)]"
-                >
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.14em] text-[var(--text-muted)]">
-                        Top {index + 1}
-                      </p>
-                      <p className="mt-2 text-base font-semibold text-[var(--text-primary)]">
-                        {item.internal_code}
-                      </p>
-                      <p className="mt-1 text-sm text-[var(--text-muted)]">
-                        {item.agraas_id}
-                      </p>
-                    </div>
-
-                    <span className="ag-badge ag-badge-green">
-                      {item.score} pts
-                    </span>
-                  </div>
-                </Link>
-              ))
-            )}
-          </div>
-        </div>
-
-        <div className="ag-card p-8">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <h2 className="ag-section-title">Top evolução</h2>
-              <p className="ag-section-subtitle">
-                Animais com maior ganho entre as duas últimas pesagens.
-              </p>
-            </div>
-            <Link href="/produtivo" className="ag-button-secondary">
-              Ver produtivo
-            </Link>
-          </div>
-
-          <div className="mt-6 space-y-4">
-            {topDeltaAnimals.length === 0 ? (
-              <div className="rounded-3xl bg-[var(--surface-soft)] p-6 text-sm text-[var(--text-muted)]">
-                Ainda não há pesagens suficientes.
-              </div>
-            ) : (
-              topDeltaAnimals.map((item) => (
-                <Link
-                  key={item.animal_id}
-                  href={`/animais/${item.animal_id}`}
-                  className="block rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5 transition hover:border-[rgba(93,156,68,0.24)] hover:bg-[var(--primary-soft)]"
-                >
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <p className="text-base font-semibold text-[var(--text-primary)]">
-                        {item.internal_code}
-                      </p>
-                      <p className="mt-1 text-sm text-[var(--text-muted)]">
-                        {item.agraas_id}
-                      </p>
-                    </div>
-
-                    <span className="ag-badge ag-badge-green">
-                      {item.delta !== null
-                        ? item.delta >= 0
-                          ? `+${item.delta.toFixed(1)} kg`
-                          : `${item.delta.toFixed(1)} kg`
-                        : "-"}
-                    </span>
-                  </div>
-                </Link>
-              ))
-            )}
-          </div>
-        </div>
-      </section>
-
-      <section className="ag-card p-8">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <h2 className="ag-section-title">Tabela executiva</h2>
-            <p className="ag-section-subtitle">
-              Visão consolidada da base com identidade, peso, idade e score.
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-6 overflow-x-auto">
-          {dashboardRows.length === 0 ? (
+        <div className="mt-6">
+          {loading ? (
+            <div className="h-40 animate-pulse rounded-3xl bg-[var(--surface-soft)]" />
+          ) : chartData.length < 2 ? (
             <div className="rounded-3xl bg-[var(--surface-soft)] p-6 text-sm text-[var(--text-muted)]">
-              Nenhum dado encontrado.
+              Registre pesagens para visualizar a evolução do score ao longo do tempo.
             </div>
           ) : (
-            <table className="ag-table">
-              <thead>
-                <tr>
-                  <th>Animal</th>
-                  <th>Agraas ID</th>
-                  <th>Raça</th>
-                  <th>Peso atual</th>
-                  <th>Variação</th>
-                  <th>Idade</th>
-                  <th>Score</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {dashboardRows
-                  .sort((a, b) => b.score - a.score)
-                  .map((item) => (
-                    <tr key={item.animal_id}>
-                      <td>
-                        <Link
-                          href={`/animais/${item.animal_id}`}
-                          className="text-[var(--primary-hover)] hover:underline"
-                        >
-                          {item.internal_code}
-                        </Link>
-                      </td>
-                      <td>{item.agraas_id}</td>
-                      <td>{item.breed}</td>
-                      <td>{item.current_weight ? `${item.current_weight} kg` : "-"}</td>
-                      <td>
-                        {item.delta !== null
-                          ? item.delta >= 0
-                            ? `+${item.delta.toFixed(1)} kg`
-                            : `${item.delta.toFixed(1)} kg`
-                          : "-"}
-                      </td>
-                      <td>{item.age_months !== null ? `${item.age_months} meses` : "-"}</td>
-                      <td>{item.score}</td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
+            <ScoreChart data={chartData} />
           )}
         </div>
       </section>
+
+      {/* Top 5 e alertas lado a lado */}
+      <div className="grid gap-4 xl:grid-cols-2">
+        {/* Top 5 por score */}
+        <section className="ag-card p-8">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="ag-section-title">Top 5 — maior score</h2>
+              <p className="ag-section-subtitle">Melhores animais da operação.</p>
+            </div>
+            <span className="ag-badge ag-badge-green">Ranking</span>
+          </div>
+          <div className="mt-6 space-y-3">
+            {loading ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="h-14 animate-pulse rounded-2xl bg-[var(--surface-soft)]" />
+              ))
+            ) : top5.map((r, i) => (
+              <Link key={r.id} href={`/animais/${r.id}`}
+                className="flex items-center gap-4 rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] p-4 transition hover:border-[rgba(93,156,68,0.25)] hover:bg-[var(--primary-soft)]">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-sm font-bold shadow-[var(--shadow-soft)] text-[var(--text-muted)]">
+                  {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i + 1}`}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{r.code}</p>
+                  {r.lastWeight && <p className="text-xs text-[var(--text-muted)]">{r.lastWeight} kg</p>}
+                </div>
+                <span className="text-lg font-semibold text-[var(--primary-hover)]">{r.score}</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {/* Alertas */}
+        <section className="ag-card p-8">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="ag-section-title">Alertas</h2>
+              <p className="ag-section-subtitle">Animais sem pesagem há mais de 30 dias.</p>
+            </div>
+            {animaisSemPesagem.length > 0 && (
+              <span className="inline-flex rounded-full bg-[rgba(214,69,69,0.12)] px-3 py-1.5 text-xs font-semibold text-[var(--danger)]">
+                {animaisSemPesagem.length} em alerta
+              </span>
+            )}
+          </div>
+          <div className="mt-6 space-y-3">
+            {loading ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="h-14 animate-pulse rounded-2xl bg-[var(--surface-soft)]" />
+              ))
+            ) : animaisSemPesagem.length === 0 ? (
+              <div className="rounded-3xl bg-[var(--primary-soft)] p-6 text-sm font-medium text-[var(--primary-hover)]">
+                ✓ Todos os animais foram pesados nos últimos 30 dias.
+              </div>
+            ) : animaisSemPesagem.slice(0, 8).map(r => (
+              <Link key={r.id} href={`/animais/${r.id}`}
+                className="flex items-center gap-4 rounded-2xl border border-[rgba(214,69,69,0.15)] bg-[rgba(214,69,69,0.04)] p-4 transition hover:bg-[rgba(214,69,69,0.08)]">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-sm shadow-[var(--shadow-soft)]">⚠</span>
+                <div className="flex-1 min-w-0">
+                  <p className="truncate text-sm font-semibold text-[var(--text-primary)]">{r.code}</p>
+                  <p className="text-xs text-[var(--text-muted)]">
+                    {r.lastWeighDate
+                      ? `Última pesagem: ${new Date(r.lastWeighDate).toLocaleDateString("pt-BR")}`
+                      : "Nunca pesado"}
+                  </p>
+                </div>
+                <span className="text-xs font-medium text-[var(--danger)]">Registrar →</span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      </div>
     </main>
   );
 }
 
-function MetricCard({
-  label,
-  value,
-  subtitle,
-}: {
-  label: string;
-  value: string | number;
-  subtitle: string;
-}) {
-  return (
-    <div className="rounded-3xl border border-[var(--border)] bg-white p-5 shadow-[var(--shadow-soft)]">
-      <p className="text-sm text-[var(--text-muted)]">{label}</p>
-      <p className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-[var(--text-primary)]">
-        {value}
-      </p>
-      <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-        {subtitle}
-      </p>
-    </div>
-  );
-}
-
-function KpiCard({
-  label,
-  value,
-  icon,
-  subtitle,
-}: {
-  label: string;
-  value: string | number;
-  icon: string;
-  subtitle: string;
-}) {
-  return (
-    <div className="ag-card p-6">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--primary-soft)] text-xl shadow-[var(--shadow-soft)]">
-          {icon}
-        </div>
-        <span className="text-xs uppercase tracking-[0.14em] text-[var(--text-muted)]">
-          Live
-        </span>
-      </div>
-
-      <p className="mt-5 ag-kpi-label">{label}</p>
-      <p className="mt-3 ag-kpi-value">{value}</p>
-      <p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">
-        {subtitle}
-      </p>
-    </div>
-  );
-}
-
-function FlowCard({
-  number,
-  title,
-  description,
-}: {
-  number: string;
-  title: string;
-  description: string;
-}) {
+function HeroKpi({ label, value, sub, danger }: { label: string; value: string | number; sub: string; danger?: boolean }) {
   return (
     <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5">
-      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-sm font-semibold shadow-[var(--shadow-soft)]">
-        {number}
-      </div>
-      <p className="mt-4 text-base font-semibold text-[var(--text-primary)]">
-        {title}
+      <p className="text-sm text-[var(--text-muted)]">{label}</p>
+      <p className={`mt-3 text-3xl font-semibold tracking-[-0.05em] ${danger && Number(value) > 0 ? "text-[var(--danger)]" : "text-[var(--text-primary)]"}`}>
+        {value}
       </p>
-      <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-        {description}
-      </p>
+      <p className="mt-2 text-xs leading-5 text-[var(--text-secondary)]">{sub}</p>
     </div>
   );
 }
 
-function calculateAgeInMonths(birthDate: string) {
-  const birth = new Date(birthDate);
-  const now = new Date();
+function ScoreChart({ data }: { data: { date: Date; score: number }[] }) {
+  const W = 600; const H = 140; const PAD = 16;
+  const minScore = Math.max(0, Math.min(...data.map(d => d.score)) - 10);
+  const maxScore = Math.min(100, Math.max(...data.map(d => d.score)) + 10);
+  const minTime = data[0].date.getTime();
+  const maxTime = data[data.length - 1].date.getTime();
+  const range = maxTime - minTime || 1;
+  const scoreRange = maxScore - minScore || 1;
 
-  let months =
-    (now.getFullYear() - birth.getFullYear()) * 12 +
-    (now.getMonth() - birth.getMonth());
+  const toX = (d: Date) => PAD + ((d.getTime() - minTime) / range) * (W - PAD * 2);
+  const toY = (s: number) => H - PAD - ((s - minScore) / scoreRange) * (H - PAD * 2);
 
-  if (now.getDate() < birth.getDate()) {
-    months -= 1;
-  }
+  const points = data.map(d => `${toX(d.date)},${toY(d.score)}`).join(" ");
+  const areaPoints = `${toX(data[0].date)},${H - PAD} ${points} ${toX(data[data.length - 1].date)},${H - PAD}`;
 
-  return Math.max(0, months);
-}
-
-function calculateAgraasScore({
-  lastWeight,
-  ageMonths,
-  sanitaryScore,
-  operationalScore,
-  continuityScore,
-}: {
-  lastWeight: number | null;
-  ageMonths: number | null;
-  sanitaryScore: number;
-  operationalScore: number;
-  continuityScore: number;
-}) {
-  const productive =
-    lastWeight && lastWeight > 0
-      ? Math.min(100, 35 + Math.round(lastWeight / 10))
-      : 35;
-
-  const ageFactor =
-    ageMonths !== null ? Math.min(100, 40 + Math.round(ageMonths / 2)) : 50;
-
-  return Math.min(
-    100,
-    Math.round(
-      productive * 0.30 +
-        sanitaryScore * 0.24 +
-        operationalScore * 0.18 +
-        continuityScore * 0.18 +
-        ageFactor * 0.10
-    )
+  return (
+    <div className="overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-4">
+      <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full">
+        <defs>
+          <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="rgba(93,156,68,0.25)" />
+            <stop offset="100%" stopColor="rgba(93,156,68,0)" />
+          </linearGradient>
+        </defs>
+        <polygon points={areaPoints} fill="url(#chartGrad)" />
+        <polyline points={points} fill="none" stroke="#5d9c44" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+        {data.map((d, i) => (
+          <circle key={i} cx={toX(d.date)} cy={toY(d.score)} r="4" fill="#5d9c44" stroke="white" strokeWidth="2" />
+        ))}
+        <text x={PAD} y={toY(maxScore) + 4} fontSize="11" fill="rgba(30,42,27,0.5)">{Math.round(maxScore)}</text>
+        <text x={PAD} y={toY(minScore) - 4} fontSize="11" fill="rgba(30,42,27,0.5)">{Math.round(minScore)}</text>
+      </svg>
+    </div>
   );
 }

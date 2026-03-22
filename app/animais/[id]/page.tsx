@@ -7,6 +7,7 @@ import {
   getMarketPotential,
   getExportEligibility,
 } from "@/lib/agraas-analytics";
+import EventModal from "@/app/components/EventModal";
 
 type PageProps = {
   params: Promise<{
@@ -83,6 +84,22 @@ type MovementRow = {
   notes: string | null;
 };
 
+type CertificationRow = {
+  id: string;
+  certification_name: string | null;
+  issued_at: string | null;
+  expires_at: string | null;
+  status: string | null;
+};
+
+type ParentAnimalRow = {
+  id: string;
+  internal_code: string | null;
+  nickname: string | null;
+  sex: string | null;
+  breed: string | null;
+};
+
 type SanitaryHistoryRow = {
   id: string;
   product_name: string;
@@ -112,6 +129,7 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
     { data: eventsData },
     { data: weightsData },
     { data: movementsData },
+    { data: certificationsData },
   ] = await Promise.all([
     supabase
       .from("agraas_master_passport_cache")
@@ -154,6 +172,11 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
       )
       .eq("animal_id", id)
       .order("movement_date", { ascending: false }),
+
+    supabase
+      .from("animal_certifications")
+      .select("id, certification_name, issued_at, expires_at, status")
+      .eq("animal_id", id),
   ]);
 
   if (animalError || !animalData) {
@@ -198,6 +221,19 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
   const events = (eventsData ?? []) as EventRow[];
   const weights = (weightsData ?? []) as WeightRow[];
   const movements = (movementsData ?? []) as MovementRow[];
+  const certifications = (certificationsData ?? []) as CertificationRow[];
+
+  // Busca pai e mãe em paralelo (se existirem)
+  const [sireData, damData] = await Promise.all([
+    animal.sire_animal_id
+      ? supabase.from("animals").select("id, internal_code, nickname, sex, breed")
+          .eq("id", animal.sire_animal_id).single().then(r => r.data as ParentAnimalRow | null)
+      : Promise.resolve(null),
+    animal.dam_animal_id
+      ? supabase.from("animals").select("id, internal_code, nickname, sex, breed")
+          .eq("id", animal.dam_animal_id).single().then(r => r.data as ParentAnimalRow | null)
+      : Promise.resolve(null),
+  ]);
 
   const productMap = new Map<string, string>();
   for (const product of products) {
@@ -529,11 +565,110 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
         </div>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-4">
-        <ScoreCard label="Sanitário" value={calculatedSanitaryScore} />
-        <ScoreCard label="Operacional" value={calculatedOperationalScore} />
-        <ScoreCard label="Continuidade" value={calculatedContinuityScore} />
-        <ScoreCard label="Total" value={calculatedAgraasScore} />
+      {/* Score breakdown */}
+      <section className="ag-card p-8">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="ag-section-title">Breakdown do score Agraas</h2>
+            <p className="ag-section-subtitle">Composição detalhada por dimensão de avaliação.</p>
+          </div>
+          <span className="ag-badge ag-badge-dark">Score {calculatedAgraasScore}/100</span>
+        </div>
+        <div className="mt-6 space-y-4">
+          <ScoreBar label="Sanitário" value={calculatedSanitaryScore} weight={24} color="#5d9c44" />
+          <ScoreBar label="Continuidade" value={calculatedContinuityScore} weight={20} color="#5d9c44" />
+          <ScoreBar label="Operacional" value={calculatedOperationalScore} weight={18} color="#7db35a" />
+          <ScoreBar label="Produtivo" value={latestWeight ? Math.min(100, 35 + Math.round(latestWeight / 10)) : 35} weight={28} color="#8dbc5f" />
+          <ScoreBar label="Fator etário" value={ageMonths !== null ? Math.min(100, 40 + Math.round(ageMonths / 2)) : 50} weight={10} color="#a0c878" />
+        </div>
+      </section>
+
+      {/* Genealogia */}
+      {(sireData || damData || animal.sire_animal_id || animal.dam_animal_id) && (
+        <section className="ag-card p-8">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="ag-section-title">Genealogia</h2>
+              <p className="ag-section-subtitle">Pai e mãe vinculados ao passaporte deste animal.</p>
+            </div>
+            <span className="ag-badge ag-badge-green">Genealogia mapeada</span>
+          </div>
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            {sireData ? (
+              <Link href={`/animais/${sireData.id}`}
+                className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5 transition hover:border-[rgba(93,156,68,0.30)] hover:bg-[var(--primary-soft)]">
+                <p className="text-xs uppercase tracking-[0.14em] text-[var(--text-muted)]">Pai</p>
+                <p className="mt-3 text-xl font-semibold text-[var(--text-primary)]">
+                  {sireData.nickname ?? sireData.internal_code ?? "—"}
+                </p>
+                <p className="mt-1 text-sm text-[var(--text-muted)]">
+                  {sireData.internal_code}{sireData.breed ? ` • ${sireData.breed}` : ""}
+                </p>
+                <p className="mt-3 text-sm font-medium text-[var(--primary-hover)]">Ver passaporte →</p>
+              </Link>
+            ) : animal.sire_animal_id ? (
+              <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5">
+                <p className="text-xs uppercase tracking-[0.14em] text-[var(--text-muted)]">Pai</p>
+                <p className="mt-3 text-sm text-[var(--text-secondary)]">Dados não disponíveis</p>
+              </div>
+            ) : null}
+            {damData ? (
+              <Link href={`/animais/${damData.id}`}
+                className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5 transition hover:border-[rgba(93,156,68,0.30)] hover:bg-[var(--primary-soft)]">
+                <p className="text-xs uppercase tracking-[0.14em] text-[var(--text-muted)]">Mãe</p>
+                <p className="mt-3 text-xl font-semibold text-[var(--text-primary)]">
+                  {damData.nickname ?? damData.internal_code ?? "—"}
+                </p>
+                <p className="mt-1 text-sm text-[var(--text-muted)]">
+                  {damData.internal_code}{damData.breed ? ` • ${damData.breed}` : ""}
+                </p>
+                <p className="mt-3 text-sm font-medium text-[var(--primary-hover)]">Ver passaporte →</p>
+              </Link>
+            ) : animal.dam_animal_id ? (
+              <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5">
+                <p className="text-xs uppercase tracking-[0.14em] text-[var(--text-muted)]">Mãe</p>
+                <p className="mt-3 text-sm text-[var(--text-secondary)]">Dados não disponíveis</p>
+              </div>
+            ) : null}
+          </div>
+        </section>
+      )}
+
+      {/* Certificações */}
+      <section className="ag-card p-8">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="ag-section-title">Selos e certificações</h2>
+            <p className="ag-section-subtitle">Certificações reais vinculadas a este animal no banco de dados.</p>
+          </div>
+          {certifications.length > 0 && (
+            <span className="ag-badge ag-badge-green">{certifications.length} ativo{certifications.length > 1 ? "s" : ""}</span>
+          )}
+        </div>
+        <div className="mt-6">
+          {certifications.length === 0 ? (
+            <div className="rounded-3xl bg-[var(--surface-soft)] p-6 text-sm text-[var(--text-muted)]">
+              Nenhum selo ou certificação vinculado a este animal.
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-3">
+              {certifications.map(cert => (
+                <div key={cert.id}
+                  className="rounded-2xl border border-[rgba(93,156,68,0.24)] bg-[var(--primary-soft)] px-4 py-3">
+                  <p className="text-sm font-semibold text-[var(--primary-hover)]">
+                    ✓ {cert.certification_name ?? "Certificação"}
+                  </p>
+                  {cert.issued_at && (
+                    <p className="mt-1 text-xs text-[var(--text-muted)]">
+                      Emitido: {new Date(cert.issued_at).toLocaleDateString("pt-BR")}
+                      {cert.expires_at ? ` • Válido até: ${new Date(cert.expires_at).toLocaleDateString("pt-BR")}` : ""}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </section>
 
       <section className="grid gap-4 xl:grid-cols-4">
@@ -620,9 +755,10 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
             </p>
           </div>
 
-          <span className="ag-badge ag-badge-dark">
-            {timeline.length} registros
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="ag-badge ag-badge-dark">{timeline.length} registros</span>
+            <EventModal animalId={id} />
+          </div>
         </div>
 
         <div className="mt-8">
@@ -738,17 +874,33 @@ function SnapshotCard({ label, value }: { label: string; value: string }) {
   );
 }
 
-function ScoreCard({
+function ScoreBar({
   label,
   value,
+  weight,
+  color,
 }: {
   label: string;
   value: number | null | undefined;
+  weight: number;
+  color: string;
 }) {
+  const v = Math.max(0, Math.min(100, Math.round(Number(value ?? 0))));
   return (
-    <div className="ag-card p-6">
-      <p className="ag-kpi-label">{label}</p>
-      <p className="mt-4 ag-kpi-value">{value ?? "-"}</p>
+    <div className="flex items-center gap-4">
+      <div className="w-32 shrink-0">
+        <p className="text-sm font-medium text-[var(--text-primary)]">{label}</p>
+        <p className="mt-0.5 text-xs text-[var(--text-muted)]">peso {weight}%</p>
+      </div>
+      <div className="flex flex-1 items-center gap-3">
+        <div className="flex-1 h-2.5 overflow-hidden rounded-full bg-[rgba(93,156,68,0.10)]">
+          <div
+            className="h-full rounded-full transition-all"
+            style={{ width: `${v}%`, backgroundColor: color }}
+          />
+        </div>
+        <span className="w-10 text-right text-sm font-semibold text-[var(--primary-hover)]">{v}</span>
+      </div>
     </div>
   );
 }
