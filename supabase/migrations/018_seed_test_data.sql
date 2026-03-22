@@ -2,6 +2,25 @@
 -- Lucas (admin) — operação premium GO + MS
 -- Pedro (client) — operação básica MG
 
+-- Stubs para compatibilidade com shadow DB da Supabase CLI
+-- (migration 002 faz SELECT FROM animal_events que não existe em schema limpo)
+CREATE TABLE IF NOT EXISTS animal_events (
+  id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  animal_id      uuid,
+  event_type     text,
+  event_timestamp timestamptz,
+  notes          text,
+  created_at     timestamptz DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS farm_events (
+  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  animal_id   uuid,
+  type        text,
+  event_date  date,
+  description text,
+  created_at  timestamptz DEFAULT now()
+);
+
 DO $$
 DECLARE
   lucas_client_id uuid;
@@ -263,29 +282,29 @@ BEGIN
   -- ============================================================
   -- EVENTOS
   -- ============================================================
-  INSERT INTO events (animal_id, source, event_type, event_date, notes, client_id) VALUES
+  INSERT INTO events (animal_id, source, event_type, event_date, notes) VALUES
     -- Lucas — eventos sanitários e operacionais distribuídos nos últimos 90 dias
-    (a_imperador, 'animal', 'health_check',       today - 80, 'Avaliação pré-embarque — score sanitário excelente', lucas_client_id),
-    (a_imperador, 'animal', 'weight_measurement',  today - 65, 'Pesagem de entrada no lote Engorda GO',             lucas_client_id),
-    (a_imperador, 'animal', 'vaccination',         today - 66, 'Vacina Aftosa Bivalente — dose 2 mL',               lucas_client_id),
-    (a_imperador, 'animal', 'weight_measurement',  today -  7, 'Pesagem mensal — 515 kg — excelente evolução',      lucas_client_id),
-    (a_estrela,   'animal', 'health_check',        today - 70, 'Exame ginecológico — reprodução normal',            lucas_client_id),
-    (a_estrela,   'animal', 'vaccination',         today - 66, 'Vacina Aftosa Bivalente',                           lucas_client_id),
-    (a_atlantico, 'animal', 'health_check',        today - 75, 'Score corporal 4/5 — apto para embarque',           lucas_client_id),
-    (a_atlantico, 'animal', 'vaccination',         today - 66, 'Vacina Aftosa Bivalente',                           lucas_client_id),
-    (a_aurora,    'animal', 'health_check',        today - 40, 'Monitoramento gestação — normal',                   lucas_client_id),
-    (a_trovao,    'animal', 'observation',         today - 30, 'Score baixo — plano de melhora em andamento',       lucas_client_id),
-    (a_lua,       'animal', 'health_check',        today - 21, 'Bezerra saudável — vacinação programada',           lucas_client_id),
+    (a_imperador, 'animal', 'health_check',       today - 80, 'Avaliação pré-embarque — score sanitário excelente'),
+    (a_imperador, 'animal', 'weight_measurement',  today - 65, 'Pesagem de entrada no lote Engorda GO'),
+    (a_imperador, 'animal', 'vaccination',         today - 66, 'Vacina Aftosa Bivalente — dose 2 mL'),
+    (a_imperador, 'animal', 'weight_measurement',  today -  7, 'Pesagem mensal — 515 kg — excelente evolução'),
+    (a_estrela,   'animal', 'health_check',        today - 70, 'Exame ginecológico — reprodução normal'),
+    (a_estrela,   'animal', 'vaccination',         today - 66, 'Vacina Aftosa Bivalente'),
+    (a_atlantico, 'animal', 'health_check',        today - 75, 'Score corporal 4/5 — apto para embarque'),
+    (a_atlantico, 'animal', 'vaccination',         today - 66, 'Vacina Aftosa Bivalente'),
+    (a_aurora,    'animal', 'health_check',        today - 40, 'Monitoramento gestação — normal'),
+    (a_trovao,    'animal', 'observation',         today - 30, 'Score baixo — plano de melhora em andamento'),
+    (a_lua,       'animal', 'health_check',        today - 21, 'Bezerra saudável — vacinação programada'),
     -- Farm events — Santa Cruz
-    (NULL,        'farm',   'routine_inspection',  today - 45, 'Inspeção sanitária semestral — Fazenda Santa Cruz — aprovada sem ressalvas', lucas_client_id),
-    (NULL,        'farm',   'routine_inspection',  today - 10, 'Visita técnica MAPA — documentação exportação em ordem',                    lucas_client_id),
+    (NULL,        'farm',   'routine_inspection',  today - 45, 'Inspeção sanitária semestral — Fazenda Santa Cruz — aprovada sem ressalvas'),
+    (NULL,        'farm',   'routine_inspection',  today - 10, 'Visita técnica MAPA — documentação exportação em ordem'),
     -- Bom Jesus
-    (a_primavera, 'animal', 'weight_measurement',  today - 35, 'Última pesagem — 398 kg — reagendar próxima',       lucas_client_id),
-    (a_vendaval,  'animal', 'vaccination',         today - 66, 'Vacina Aftosa Bivalente',                           lucas_client_id),
+    (a_primavera, 'animal', 'weight_measurement',  today - 35, 'Última pesagem — 398 kg — reagendar próxima'),
+    (a_vendaval,  'animal', 'vaccination',         today - 66, 'Vacina Aftosa Bivalente'),
     -- Pedro — eventos espaçados
-    (a_forte,     'animal', 'vaccination',         today - 45, 'Vacina Aftosa Bivalente',                           pedro_client_id),
-    (a_guerreiro, 'animal', 'observation',         today - 30, 'Pesagem atrasada — marcar urgente',                 pedro_client_id),
-    (NULL,        'farm',   'routine_inspection',  today - 60, 'Inspeção básica — Fazenda Boa Esperança',           pedro_client_id);
+    (a_forte,     'animal', 'vaccination',         today - 45, 'Vacina Aftosa Bivalente'),
+    (a_guerreiro, 'animal', 'observation',         today - 30, 'Pesagem atrasada — marcar urgente'),
+    (NULL,        'farm',   'routine_inspection',  today - 60, 'Inspeção básica — Fazenda Boa Esperança');
 
   -- ============================================================
   -- MOVIMENTAÇÃO: Relâmpago — transferência e retorno
