@@ -4,7 +4,10 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 
-const OBJECTIVES = ["Engorda", "Cria", "Recria", "Reprodução", "Descarte"];
+const OBJECTIVES = ["Engorda", "Cria", "Recria", "Reprodução", "Descarte", "Exportação"];
+const PAISES_DESTINO = ["Arábia Saudita", "Emirados Árabes", "Kuwait", "Qatar", "Omã", "Jordânia", "Egito", "Líbia", "Argélia"];
+const PORTOS = ["Santos (SP)", "Paranaguá (PR)", "Vitória (ES)", "Salvador (BA)", "Fortaleza (CE)", "Belém (PA)", "Outro"];
+const CERTS_DISPONIVEIS = ["Halal", "MAPA", "GTA", "TRACES", "SIF"];
 
 type LotRow = {
   id: string;
@@ -15,6 +18,9 @@ type LotRow = {
   status: string | null;
   property_id: string | null;
   client_id: string | null;
+  pais_destino: string | null;
+  porto_embarque: string | null;
+  data_embarque: string | null;
 };
 
 type PropertyRow = { id: string; name: string | null };
@@ -31,8 +37,21 @@ export default function LotesPage() {
   const [propertyId, setPropertyId] = useState("");
   const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 10));
   const [targetWeight, setTargetWeight] = useState("");
+  // Campos de exportação
+  const [paisDestino, setPaisDestino] = useState("");
+  const [portoEmbarque, setPortoEmbarque] = useState("");
+  const [dataEmbarque, setDataEmbarque] = useState("");
+  const [certsExigidas, setCertsExigidas] = useState<string[]>([]);
+  const [numeroContrato, setNumeroContrato] = useState("");
+
   const [saving, setSaving] = useState(false);
   const [myClientId, setMyClientId] = useState<string | null>(null);
+
+  const isExport = objetivo === "Exportação";
+
+  function toggleCert(cert: string) {
+    setCertsExigidas(prev => prev.includes(cert) ? prev.filter(c => c !== cert) : [...prev, cert]);
+  }
 
   useEffect(() => {
     async function load() {
@@ -45,7 +64,9 @@ export default function LotesPage() {
       }
 
       const [{ data: lotsData }, { data: propsData }] = await Promise.all([
-        supabase.from("lots").select("id, name, description, objective, start_date, status, property_id, client_id").order("created_at", { ascending: false }),
+        supabase.from("lots")
+          .select("id, name, description, objective, start_date, status, property_id, client_id, pais_destino, porto_embarque, data_embarque")
+          .order("created_at", { ascending: false }),
         supabase.from("properties").select("id, name").order("name"),
       ]);
       setLots((lotsData as LotRow[]) ?? []);
@@ -67,13 +88,21 @@ export default function LotesPage() {
       target_weight: targetWeight ? Number(targetWeight) : null,
       status: "active",
       client_id: myClientId,
+      ...(isExport ? {
+        pais_destino: paisDestino || null,
+        porto_embarque: portoEmbarque || null,
+        data_embarque: dataEmbarque || null,
+        certificacoes_exigidas: certsExigidas.length > 0 ? certsExigidas : null,
+        numero_contrato: numeroContrato || null,
+      } : {}),
     }).select("id").single();
 
     if (data) {
       setShowForm(false);
       setNome(""); setObjetivo(""); setPropertyId(""); setTargetWeight("");
+      setPaisDestino(""); setPortoEmbarque(""); setDataEmbarque(""); setCertsExigidas([]); setNumeroContrato("");
       const { data: lot } = await supabase.from("lots")
-        .select("id, name, description, objective, start_date, status, property_id, client_id")
+        .select("id, name, description, objective, start_date, status, property_id, client_id, pais_destino, porto_embarque, data_embarque")
         .eq("id", data.id).single();
       if (lot) setLots(prev => [lot as LotRow, ...prev]);
     }
@@ -89,7 +118,7 @@ export default function LotesPage() {
             <div className="ag-badge ag-badge-green mt-8">Gestão de lotes</div>
             <h2 className="mt-5 text-3xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">Nenhum lote cadastrado</h2>
             <p className="mt-4 max-w-md text-base leading-8 text-[var(--text-secondary)]">
-              Organize seus animais em lotes por objetivo (engorda, cria, recria) para controlar GMD e performance.
+              Organize seus animais em lotes por objetivo produtivo ou crie um <strong>Lote de Exportação</strong> com rastreabilidade completa para mercados internacionais.
             </p>
             <button onClick={() => setShowForm(true)} className="ag-button-primary mt-8">Criar primeiro lote</button>
           </div>
@@ -107,7 +136,7 @@ export default function LotesPage() {
               <div className="ag-badge ag-badge-green">Gestão de lotes</div>
               <h1 className="mt-5 text-4xl font-semibold tracking-[-0.06em] text-[var(--text-primary)] lg:text-5xl">Lotes da operação</h1>
               <p className="mt-4 text-[1.02rem] leading-8 text-[var(--text-secondary)]">
-                Organize o rebanho por objetivo produtivo. Acompanhe GMD, score médio e previsão de saída.
+                Organize o rebanho por objetivo produtivo. Acompanhe GMD, score médio, previsão de saída e conformidade de exportação.
               </p>
             </div>
             <button onClick={() => setShowForm(true)} className="ag-button-primary shrink-0">+ Novo lote</button>
@@ -117,41 +146,99 @@ export default function LotesPage() {
 
       {/* Formulário de criação */}
       {showForm && (
-        <section className="ag-card p-8">
-          <h2 className="ag-section-title">Criar novo lote</h2>
+        <section className={`overflow-hidden rounded-3xl border ${isExport ? "border-[rgba(26,26,46,0.20)] bg-[linear-gradient(135deg,#0f0f1a_0%,#1a1a2e_100%)]" : "ag-card"} p-8`}>
+          <h2 className={`text-xl font-semibold ${isExport ? "text-white" : "ag-section-title"}`}>
+            {isExport ? "🌍 Criar Lote de Exportação" : "Criar novo lote"}
+          </h2>
+          {isExport && <p className="mt-1 text-sm text-white/60">Lote com rastreabilidade completa para mercados internacionais</p>}
+
           <form onSubmit={criarLote} className="mt-6 grid gap-5 sm:grid-cols-2">
             <div className="sm:col-span-2">
-              <label className="mb-2 block text-sm font-medium">Nome do lote *</label>
+              <label className={`mb-2 block text-sm font-medium ${isExport ? "text-white/80" : ""}`}>Nome do lote *</label>
               <input type="text" value={nome} onChange={e => setNome(e.target.value)} required
-                className={inp} placeholder="Ex.: Lote Engorda Ago/24" />
+                className={isExport ? inpDark : inp} placeholder="Ex.: Lote Exportação Riad Mar/26" />
             </div>
             <div>
-              <label className="mb-2 block text-sm font-medium">Objetivo</label>
-              <select value={objetivo} onChange={e => setObjetivo(e.target.value)} className={inp}>
+              <label className={`mb-2 block text-sm font-medium ${isExport ? "text-white/80" : ""}`}>Objetivo</label>
+              <select value={objetivo} onChange={e => setObjetivo(e.target.value)} className={isExport ? inpDark : inp}>
                 <option value="">Selecione</option>
                 {OBJECTIVES.map(o => <option key={o} value={o}>{o}</option>)}
               </select>
             </div>
             <div>
-              <label className="mb-2 block text-sm font-medium">Propriedade</label>
-              <select value={propertyId} onChange={e => setPropertyId(e.target.value)} className={inp}>
+              <label className={`mb-2 block text-sm font-medium ${isExport ? "text-white/80" : ""}`}>Propriedade</label>
+              <select value={propertyId} onChange={e => setPropertyId(e.target.value)} className={isExport ? inpDark : inp}>
                 <option value="">Selecione</option>
                 {properties.map(p => <option key={p.id} value={p.id}>{p.name ?? p.id}</option>)}
               </select>
             </div>
             <div>
-              <label className="mb-2 block text-sm font-medium">Data de início</label>
-              <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className={inp} />
+              <label className={`mb-2 block text-sm font-medium ${isExport ? "text-white/80" : ""}`}>Data de início</label>
+              <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className={isExport ? inpDark : inp} />
             </div>
             <div>
-              <label className="mb-2 block text-sm font-medium">Meta de peso (kg)</label>
+              <label className={`mb-2 block text-sm font-medium ${isExport ? "text-white/80" : ""}`}>Meta de peso (kg)</label>
               <input type="number" value={targetWeight} onChange={e => setTargetWeight(e.target.value)}
-                className={inp} placeholder="Ex.: 480" min="0" />
+                className={isExport ? inpDark : inp} placeholder="Ex.: 480" min="0" />
             </div>
+
+            {/* Campos exclusivos de exportação */}
+            {isExport && (
+              <>
+                <div className="sm:col-span-2">
+                  <div className="my-2 border-t border-white/10" />
+                  <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-white/40">Dados de Exportação</p>
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-white/80">País de destino</label>
+                  <select value={paisDestino} onChange={e => setPaisDestino(e.target.value)} className={inpDark}>
+                    <option value="">Selecione</option>
+                    {PAISES_DESTINO.map(p => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-white/80">Porto de embarque</label>
+                  <select value={portoEmbarque} onChange={e => setPortoEmbarque(e.target.value)} className={inpDark}>
+                    <option value="">Selecione</option>
+                    {PORTOS.map(p => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-white/80">Data prevista de embarque</label>
+                  <input type="date" value={dataEmbarque} onChange={e => setDataEmbarque(e.target.value)} className={inpDark} />
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-white/80">Número do contrato</label>
+                  <input type="text" value={numeroContrato} onChange={e => setNumeroContrato(e.target.value)}
+                    className={inpDark} placeholder="Ex.: CONT-2026-001" />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="mb-3 block text-sm font-medium text-white/80">Certificações exigidas</label>
+                  <div className="flex flex-wrap gap-3">
+                    {CERTS_DISPONIVEIS.map(cert => (
+                      <button key={cert} type="button" onClick={() => toggleCert(cert)}
+                        className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                          certsExigidas.includes(cert)
+                            ? "border-emerald-400 bg-emerald-500 text-white"
+                            : "border-white/20 bg-white/8 text-white/70 hover:bg-white/15"
+                        }`}>
+                        {cert === "Halal" ? "☪ Halal" : cert}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+
             <div className="flex gap-3 sm:col-span-2">
               <button type="submit" disabled={saving || !nome}
-                className="ag-button-primary disabled:opacity-60">{saving ? "Criando..." : "Criar lote"}</button>
-              <button type="button" onClick={() => setShowForm(false)} className="ag-button-secondary">Cancelar</button>
+                className={`rounded-2xl px-6 py-3 text-sm font-semibold disabled:opacity-60 ${isExport ? "bg-white text-[#1a1a2e] hover:bg-white/90" : "ag-button-primary"}`}>
+                {saving ? "Criando..." : isExport ? "🌍 Criar Lote de Exportação" : "Criar lote"}
+              </button>
+              <button type="button" onClick={() => setShowForm(false)}
+                className={`rounded-2xl border px-6 py-3 text-sm font-semibold ${isExport ? "border-white/20 text-white/70 hover:bg-white/8" : "ag-button-secondary"}`}>
+                Cancelar
+              </button>
             </div>
           </form>
         </section>
@@ -164,25 +251,35 @@ export default function LotesPage() {
         </div>
       ) : (
         <section className="grid gap-4 xl:grid-cols-3">
-          {lots.map(lot => (
-            <Link key={lot.id} href={`/lotes/${lot.id}`}
-              className="ag-card block p-6 transition hover:border-[rgba(93,156,68,0.30)] hover:bg-[var(--primary-soft)]">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--primary-soft)] text-xl">📦</div>
-                <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
-                  lot.status === "active"
-                    ? "bg-[var(--primary-soft)] text-[var(--primary-hover)]"
-                    : "bg-[rgba(31,41,55,0.08)] text-[var(--text-secondary)]"
-                }`}>{lot.status === "active" ? "Ativo" : lot.status ?? "—"}</span>
-              </div>
-              <h3 className="mt-4 text-xl font-semibold tracking-[-0.03em] text-[var(--text-primary)]">{lot.name}</h3>
-              <p className="mt-1 text-sm text-[var(--text-muted)]">
-                {lot.objective ?? "—"}
-                {lot.start_date ? ` · início ${new Date(lot.start_date).toLocaleDateString("pt-BR")}` : ""}
-              </p>
-              <p className="mt-4 text-sm font-medium text-[var(--primary-hover)]">Ver dashboard →</p>
-            </Link>
-          ))}
+          {lots.map(lot => {
+            const isExportLot = lot.objective === "Exportação";
+            return (
+              <Link key={lot.id} href={`/lotes/${lot.id}`}
+                className={`block rounded-3xl border p-6 transition ${
+                  isExportLot
+                    ? "border-[rgba(26,26,46,0.15)] bg-[linear-gradient(135deg,#0f0f1a_0%,#1a1a2e_100%)] hover:border-[rgba(255,255,255,0.15)]"
+                    : "ag-card hover:border-[rgba(93,156,68,0.30)] hover:bg-[var(--primary-soft)]"
+                }`}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className={`flex h-12 w-12 items-center justify-center rounded-2xl text-xl ${isExportLot ? "bg-white/10" : "bg-[var(--primary-soft)]"}`}>
+                    {isExportLot ? "🌍" : "📦"}
+                  </div>
+                  <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+                    isExportLot ? "bg-emerald-500/20 text-emerald-300" : lot.status === "active" ? "bg-[var(--primary-soft)] text-[var(--primary-hover)]" : "bg-[rgba(31,41,55,0.08)] text-[var(--text-secondary)]"
+                  }`}>{lot.status === "active" ? (isExportLot ? "Export Active" : "Ativo") : lot.status ?? "—"}</span>
+                </div>
+                <h3 className={`mt-4 text-xl font-semibold tracking-[-0.03em] ${isExportLot ? "text-white" : "text-[var(--text-primary)]"}`}>{lot.name}</h3>
+                <p className={`mt-1 text-sm ${isExportLot ? "text-white/55" : "text-[var(--text-muted)]"}`}>
+                  {lot.objective ?? "—"}
+                  {lot.pais_destino ? ` · ${lot.pais_destino}` : ""}
+                  {lot.data_embarque ? ` · embarque ${new Date(lot.data_embarque).toLocaleDateString("pt-BR")}` : lot.start_date ? ` · início ${new Date(lot.start_date).toLocaleDateString("pt-BR")}` : ""}
+                </p>
+                <p className={`mt-4 text-sm font-medium ${isExportLot ? "text-emerald-400" : "text-[var(--primary-hover)]"}`}>
+                  {isExportLot ? "Ver conformidade →" : "Ver dashboard →"}
+                </p>
+              </Link>
+            );
+          })}
         </section>
       )}
     </main>
@@ -190,3 +287,4 @@ export default function LotesPage() {
 }
 
 const inp = "w-full rounded-lg border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-[#4A7C3A]";
+const inpDark = "w-full rounded-lg border border-white/15 bg-white/8 px-4 py-3 text-sm text-white outline-none focus:border-white/40 placeholder:text-white/30";

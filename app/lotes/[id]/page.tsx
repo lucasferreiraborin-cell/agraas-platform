@@ -5,11 +5,16 @@ import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { use } from "react";
 import { calculateAgraasScore, calculateAgeInMonths, calculateDailyGain } from "@/lib/agraas-analytics";
+import ExportConformityReport from "@/app/components/ExportConformityReport";
+
+const SCORE_MINIMO_EXPORT = 60;
 
 type LotRow = {
   id: string; name: string; description: string | null;
   objective: string | null; start_date: string | null;
   target_weight: number | null; status: string | null; property_id: string | null;
+  pais_destino: string | null; porto_embarque: string | null; data_embarque: string | null;
+  certificacoes_exigidas: string[] | null; numero_contrato: string | null;
 };
 type AnimalInLot = {
   id: string; internal_code: string | null; nickname: string | null;
@@ -19,12 +24,16 @@ type AnimalInLot = {
 };
 type SearchAnimal = { id: string; internal_code: string | null; nickname: string | null };
 type WeightRow = { animal_id: string; weight: number; weighing_date: string | null };
+type ApplicationRow = { animal_id: string; withdrawal_date: string | null; product_name: string | null };
+type CertRow = { animal_id: string; certification_name: string; status: string; expires_at: string | null };
 
 export default function LoteDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const [lot, setLot] = useState<LotRow | null>(null);
   const [animals, setAnimals] = useState<AnimalInLot[]>([]);
   const [weights, setWeights] = useState<WeightRow[]>([]);
+  const [applications, setApplications] = useState<ApplicationRow[]>([]);
+  const [certifications, setCertifications] = useState<CertRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchAnimal[]>([]);
@@ -32,7 +41,9 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
 
   async function loadData() {
     const [{ data: lotData }, { data: assignData }, { data: wData }] = await Promise.all([
-      supabase.from("lots").select("id, name, description, objective, start_date, target_weight, status, property_id").eq("id", id).single(),
+      supabase.from("lots")
+        .select("id, name, description, objective, start_date, target_weight, status, property_id, pais_destino, porto_embarque, data_embarque, certificacoes_exigidas, numero_contrato")
+        .eq("id", id).single(),
       supabase.from("animal_lot_assignments")
         .select("id, animal_id, animals(id, internal_code, nickname, sex, breed, birth_date, blood_type, sire_animal_id, dam_animal_id)")
         .eq("lot_id", id).is("exit_date", null),
@@ -41,12 +52,20 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
     setLot((lotData as LotRow) ?? null);
     const animalList: AnimalInLot[] = ((assignData ?? []) as any[])
       .filter((a: any) => a.animals)
-      .map((a: any) => ({
-        ...(a.animals as AnimalInLot),
-        assignment_id: a.id,
-      }));
+      .map((a: any) => ({ ...(a.animals as AnimalInLot), assignment_id: a.id }));
     setAnimals(animalList);
     setWeights((wData as WeightRow[]) ?? []);
+
+    // Carrega aplicações e certificações depois de ter os animalIds
+    const animalIds = animalList.map(a => a.id);
+    if (animalIds.length > 0) {
+      const [{ data: appData }, { data: certData }] = await Promise.all([
+        supabase.from("applications").select("animal_id, withdrawal_date, product_name").in("animal_id", animalIds),
+        supabase.from("animal_certifications").select("animal_id, certification_name, status, expires_at").in("animal_id", animalIds),
+      ]);
+      setApplications((appData as ApplicationRow[]) ?? []);
+      setCertifications((certData as CertRow[]) ?? []);
+    }
     setLoading(false);
   }
 
@@ -81,13 +100,45 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
     setAnimals(prev => prev.filter(a => a.assignment_id !== assignmentId));
   }
 
-  const stats = useMemo(() => {
-    const weightByAnimal = new Map<string, WeightRow[]>();
+  const isExportLot = lot?.objective === "Exportação";
+  const today = new Date();
+
+  // Índices por animal
+  const weightByAnimal = useMemo(() => {
+    const map = new Map<string, WeightRow[]>();
     for (const w of weights) {
-      const list = weightByAnimal.get(w.animal_id) ?? [];
+      const list = map.get(w.animal_id) ?? [];
       list.push(w);
-      weightByAnimal.set(w.animal_id, list);
+      map.set(w.animal_id, list);
     }
+    return map;
+  }, [weights]);
+
+  const activeCarenciasByAnimal = useMemo(() => {
+    const map = new Map<string, string[]>();
+    for (const a of applications) {
+      if (a.withdrawal_date && new Date(a.withdrawal_date) > today) {
+        const list = map.get(a.animal_id) ?? [];
+        list.push(a.product_name ?? "produto");
+        map.set(a.animal_id, list);
+      }
+    }
+    return map;
+  }, [applications]);
+
+  const certsByAnimal = useMemo(() => {
+    const map = new Map<string, string[]>();
+    for (const c of certifications) {
+      if (c.status === "active" && (!c.expires_at || new Date(c.expires_at) > today)) {
+        const list = map.get(c.animal_id) ?? [];
+        list.push(c.certification_name);
+        map.set(c.animal_id, list);
+      }
+    }
+    return map;
+  }, [certifications]);
+
+  const stats = useMemo(() => {
     let totalGmd = 0; let gmdCount = 0;
     let totalScore = 0; let atMeta = 0;
     const avgWeights: number[] = [];
@@ -115,12 +166,51 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
     let previsaoSaida: string | null = null;
     if (lot?.target_weight && avgGmd && Number(avgGmd) > 0 && avgWeight < lot.target_weight) {
       const dias = Math.round((lot.target_weight - avgWeight) / Number(avgGmd));
-      const d = new Date();
-      d.setDate(d.getDate() + dias);
+      const d = new Date(); d.setDate(d.getDate() + dias);
       previsaoSaida = d.toLocaleDateString("pt-BR");
     }
     return { avgGmd, avgScore, atMeta, previsaoSaida };
-  }, [animals, weights, lot]);
+  }, [animals, weightByAnimal, lot]);
+
+  // Aptidão por animal para lotes de exportação
+  const exportAptidao = useMemo(() => {
+    if (!isExportLot) return null;
+    const certRequired: string[] = lot?.certificacoes_exigidas ?? [];
+    return animals.map(animal => {
+      const aw = weightByAnimal.get(animal.id) ?? [];
+      const last = aw[0] ? Number(aw[0].weight) : null;
+      const score = calculateAgraasScore({
+        lastWeight: last, ageMonths: calculateAgeInMonths(animal.birth_date),
+        sanitaryScore: 60, operationalScore: 60, continuityScore: 60,
+        hasBloodType: Boolean(animal.blood_type),
+        hasGenealogy: Boolean(animal.sire_animal_id || animal.dam_animal_id),
+      });
+      const carencias = activeCarenciasByAnimal.get(animal.id) ?? [];
+      const certs = certsByAnimal.get(animal.id) ?? [];
+      const certsFaltando = certRequired.filter(c => !certs.includes(c));
+
+      const pendencias: string[] = [];
+      if (score < SCORE_MINIMO_EXPORT) pendencias.push(`Score ${score} < ${SCORE_MINIMO_EXPORT}`);
+      if (carencias.length > 0) pendencias.push(`Carência: ${carencias.join(", ")}`);
+      if (certsFaltando.length > 0) pendencias.push(`Cert faltando: ${certsFaltando.join(", ")}`);
+
+      const status: "apto" | "pendencias" | "inapto" =
+        pendencias.length === 0 ? "apto"
+        : score < SCORE_MINIMO_EXPORT || carencias.length > 0 ? "inapto"
+        : "pendencias";
+
+      return { animal, score, last, carencias, certs, certsFaltando, pendencias, status };
+    });
+  }, [isExportLot, animals, weightByAnimal, activeCarenciasByAnimal, certsByAnimal, lot]);
+
+  const exportStats = useMemo(() => {
+    if (!exportAptidao) return null;
+    const aptos = exportAptidao.filter(a => a.status === "apto").length;
+    const inaptos = exportAptidao.filter(a => a.status === "inapto").length;
+    const pendencias = exportAptidao.filter(a => a.status === "pendencias").length;
+    const pct = animals.length > 0 ? Math.round((aptos / animals.length) * 100) : 0;
+    return { aptos, inaptos, pendencias, pct };
+  }, [exportAptidao, animals]);
 
   if (loading) return (
     <main className="space-y-8">
@@ -139,25 +229,149 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
     <main className="space-y-8">
       <Link href="/lotes" className="text-sm font-medium text-[var(--primary-hover)] hover:underline">← Lotes</Link>
 
-      <section className="ag-card-strong overflow-hidden">
-        <div className="p-8 lg:p-10">
-          <div className="ag-badge ag-badge-green">{lot.objective ?? "Lote"}</div>
-          <h1 className="mt-4 text-4xl font-semibold tracking-[-0.05em] text-[var(--text-primary)]">{lot.name}</h1>
-          {lot.start_date && (
-            <p className="mt-2 text-sm text-[var(--text-muted)]">
-              Início: {new Date(lot.start_date).toLocaleDateString("pt-BR")}
-              {lot.target_weight ? ` · Meta: ${lot.target_weight} kg` : ""}
-            </p>
-          )}
-          <div className="mt-8 grid gap-4 sm:grid-cols-4">
-            <KPI label="Animais" value={animals.length} sub="no lote" />
-            <KPI label="GMD médio" value={stats.avgGmd ? `${stats.avgGmd} kg/d` : "—"} sub="ganho diário médio" />
-            <KPI label="Score médio" value={stats.avgScore ?? "—"} sub="qualidade do lote" />
-            <KPI label="Previsão saída" value={stats.previsaoSaida ?? "—"} sub="estimativa pela meta" />
-          </div>
-        </div>
-      </section>
+      {/* Hero — visual diferenciado para exportação */}
+      {isExportLot ? (
+        <section className="overflow-hidden rounded-3xl border border-[rgba(255,255,255,0.06)] bg-[linear-gradient(135deg,#0f0f1a_0%,#1a1a2e_60%,#0d2137_100%)] shadow-2xl">
+          <div className="p-8 lg:p-10">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-3">
+                  <span className="rounded-full bg-emerald-500/15 border border-emerald-500/30 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-400">
+                    🌍 Lote de Exportação
+                  </span>
+                  {lot.numero_contrato && (
+                    <span className="rounded-full bg-white/8 border border-white/12 px-3 py-1.5 text-xs text-white/50">
+                      {lot.numero_contrato}
+                    </span>
+                  )}
+                </div>
+                <h1 className="mt-4 text-4xl font-semibold tracking-[-0.05em] text-white">{lot.name}</h1>
+                <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-white/55">
+                  {lot.pais_destino && <span>🏳️ {lot.pais_destino}</span>}
+                  {lot.porto_embarque && <span>⚓ {lot.porto_embarque}</span>}
+                  {lot.data_embarque && <span>📅 Embarque: {new Date(lot.data_embarque).toLocaleDateString("pt-BR")}</span>}
+                  {lot.target_weight && <span>⚖ Meta: {lot.target_weight} kg</span>}
+                </div>
+                {lot.certificacoes_exigidas && lot.certificacoes_exigidas.length > 0 && (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {lot.certificacoes_exigidas.map(cert => (
+                      <span key={cert} className={`rounded-full border px-3 py-1 text-xs font-semibold ${cert === "Halal" ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-300" : "border-white/15 bg-white/8 text-white/60"}`}>
+                        {cert === "Halal" ? "☪ Halal" : cert}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {exportStats && (
+                <div className="rounded-2xl border border-white/10 bg-white/6 p-5 text-center min-w-[140px]">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/40">Conformidade</p>
+                  <p className={`mt-2 text-5xl font-semibold tracking-tight ${exportStats.pct >= 80 ? "text-emerald-400" : exportStats.pct >= 50 ? "text-amber-400" : "text-red-400"}`}>
+                    {exportStats.pct}%
+                  </p>
+                  <p className="mt-1 text-xs text-white/40">{exportStats.aptos}/{animals.length} aptos</p>
+                </div>
+              )}
+            </div>
 
+            {/* KPIs exportação */}
+            <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <ExportKPI label="Total no lote" value={animals.length} sub="animais" />
+              <ExportKPI label="Aptos" value={exportStats?.aptos ?? "—"} sub="prontos para embarque" green />
+              <ExportKPI label="Pendências" value={exportStats?.pendencias ?? "—"} sub="sanáveis" amber />
+              <ExportKPI label="Inaptos" value={exportStats?.inaptos ?? "—"} sub="fora do critério" red />
+            </div>
+
+            {/* Barra de conformidade */}
+            {exportStats && animals.length > 0 && (
+              <div className="mt-6">
+                <div className="mb-2 flex justify-between text-xs text-white/40">
+                  <span>Conformidade do lote</span>
+                  <span>{exportStats.aptos}/{animals.length} animais aptos</span>
+                </div>
+                <div className="h-2.5 overflow-hidden rounded-full bg-white/8">
+                  <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all"
+                    style={{ width: `${exportStats.pct}%` }} />
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+      ) : (
+        <section className="ag-card-strong overflow-hidden">
+          <div className="p-8 lg:p-10">
+            <div className="ag-badge ag-badge-green">{lot.objective ?? "Lote"}</div>
+            <h1 className="mt-4 text-4xl font-semibold tracking-[-0.05em] text-[var(--text-primary)]">{lot.name}</h1>
+            {lot.start_date && (
+              <p className="mt-2 text-sm text-[var(--text-muted)]">
+                Início: {new Date(lot.start_date).toLocaleDateString("pt-BR")}
+                {lot.target_weight ? ` · Meta: ${lot.target_weight} kg` : ""}
+              </p>
+            )}
+            <div className="mt-8 grid gap-4 sm:grid-cols-4">
+              <KPI label="Animais" value={animals.length} sub="no lote" />
+              <KPI label="GMD médio" value={stats.avgGmd ? `${stats.avgGmd} kg/d` : "—"} sub="ganho diário médio" />
+              <KPI label="Score médio" value={stats.avgScore ?? "—"} sub="qualidade do lote" />
+              <KPI label="Previsão saída" value={stats.previsaoSaida ?? "—"} sub="estimativa pela meta" />
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Tabela de aptidão — exclusiva para lotes de exportação */}
+      {isExportLot && exportAptidao && (
+        <section className="overflow-hidden rounded-3xl border border-[rgba(26,26,46,0.15)] bg-white">
+          <div className="flex items-center justify-between px-8 py-6 border-b border-[var(--border)]">
+            <div>
+              <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--text-primary)]">Status de aptidão por animal</h2>
+              <p className="mt-1 text-sm text-[var(--text-muted)]">Score mínimo: {SCORE_MINIMO_EXPORT} · Carências zeradas · Certificações exigidas</p>
+            </div>
+            <span className="ag-badge ag-badge-dark">{animals.length} animais</span>
+          </div>
+          <div className="divide-y divide-[var(--border)]">
+            {exportAptidao.map(({ animal, score, last, pendencias, status, certs }) => {
+              const cfg = STATUS_STYLES[status];
+              return (
+                <div key={animal.id} className={`flex items-start gap-4 px-8 py-5 ${cfg.bg}`}>
+                  <span className={`mt-1 h-3 w-3 shrink-0 rounded-full ${cfg.dot}`} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <p className="font-semibold text-[var(--text-primary)]">
+                        {animal.nickname ?? animal.internal_code ?? animal.id.slice(0, 8)}
+                      </p>
+                      <span className="text-xs text-[var(--text-muted)]">{animal.breed ?? "—"} · {animal.sex === "Male" ? "Macho" : animal.sex === "Female" ? "Fêmea" : "—"}</span>
+                      <span className="text-xs font-medium text-[var(--text-secondary)]">Score {score}</span>
+                      {last && <span className="text-xs text-[var(--text-muted)]">{last} kg</span>}
+                      {certs.length > 0 && certs.map(c => (
+                        <span key={c} className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${c === "Halal" ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-600"}`}>{c}</span>
+                      ))}
+                    </div>
+                    {pendencias.length > 0 && (
+                      <p className="mt-1.5 text-xs text-amber-700">{pendencias.join(" · ")}</p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${cfg.badge}`}>
+                      {cfg.label}
+                    </span>
+                    <Link href={`/animais/${animal.id}`} className="text-xs font-medium text-[var(--primary-hover)] hover:underline">
+                      Passaporte →
+                    </Link>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* Relatório de conformidade por IA */}
+      {isExportLot && (
+        <section className="ag-card p-8">
+          <ExportConformityReport lotId={id} lotName={lot.name} />
+        </section>
+      )}
+
+      {/* Adicionar animal */}
       <section className="ag-card p-8">
         <h2 className="ag-section-title">Adicionar animal ao lote</h2>
         <div className="relative mt-5 max-w-md">
@@ -178,6 +392,7 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
         </div>
       </section>
 
+      {/* Tabela de animais */}
       <section className="ag-card p-8">
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -198,18 +413,31 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
             <div className="overflow-x-auto">
               <table className="ag-table">
                 <thead>
-                  <tr><th>Animal</th><th>Sexo</th><th>Raça</th><th>Passaporte</th><th>Remover</th></tr>
+                  <tr>
+                    <th>Animal</th><th>Sexo</th><th>Raça</th>
+                    {isExportLot && <th>Aptidão</th>}
+                    <th>Passaporte</th><th>Remover</th>
+                  </tr>
                 </thead>
                 <tbody>
-                  {animals.map(a => (
-                    <tr key={a.id}>
-                      <td className="font-medium text-[var(--text-primary)]">{a.nickname ?? a.internal_code ?? a.id.slice(0, 8)}</td>
-                      <td>{a.sex === "Male" ? "Macho" : a.sex === "Female" ? "Fêmea" : "—"}</td>
-                      <td>{a.breed ?? "—"}</td>
-                      <td><Link href={`/animais/${a.id}`} className="text-sm font-medium text-[var(--primary-hover)] hover:underline">Ver →</Link></td>
-                      <td><button type="button" onClick={() => removeAnimal(a.assignment_id)} className="text-sm text-[var(--danger)] hover:underline">Remover</button></td>
-                    </tr>
-                  ))}
+                  {animals.map(a => {
+                    const apt = exportAptidao?.find(e => e.animal.id === a.id);
+                    const cfg = apt ? STATUS_STYLES[apt.status] : null;
+                    return (
+                      <tr key={a.id}>
+                        <td className="font-medium text-[var(--text-primary)]">{a.nickname ?? a.internal_code ?? a.id.slice(0, 8)}</td>
+                        <td>{a.sex === "Male" ? "Macho" : a.sex === "Female" ? "Fêmea" : "—"}</td>
+                        <td>{a.breed ?? "—"}</td>
+                        {isExportLot && cfg && (
+                          <td>
+                            <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${cfg.badge}`}>{cfg.label}</span>
+                          </td>
+                        )}
+                        <td><Link href={`/animais/${a.id}`} className="text-sm font-medium text-[var(--primary-hover)] hover:underline">Ver →</Link></td>
+                        <td><button type="button" onClick={() => removeAnimal(a.assignment_id)} className="text-sm text-[var(--danger)] hover:underline">Remover</button></td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -220,12 +448,29 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
   );
 }
 
+const STATUS_STYLES = {
+  apto:      { label: "Apto ✓",       bg: "bg-emerald-50/60",  dot: "bg-emerald-400",  badge: "border-emerald-200 bg-emerald-50 text-emerald-700" },
+  pendencias:{ label: "Pendências ⚠", bg: "bg-amber-50/60",    dot: "bg-amber-400",    badge: "border-amber-200 bg-amber-50 text-amber-700" },
+  inapto:    { label: "Inapto ✗",     bg: "bg-red-50/40",      dot: "bg-red-400",      badge: "border-red-200 bg-red-50 text-red-700" },
+};
+
 function KPI({ label, value, sub }: { label: string; value: string | number; sub: string }) {
   return (
     <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5">
       <p className="text-sm text-[var(--text-muted)]">{label}</p>
       <p className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">{value}</p>
       <p className="mt-2 text-xs text-[var(--text-secondary)]">{sub}</p>
+    </div>
+  );
+}
+
+function ExportKPI({ label, value, sub, green, amber, red }: { label: string; value: string | number; sub: string; green?: boolean; amber?: boolean; red?: boolean }) {
+  const color = green ? "text-emerald-400" : amber ? "text-amber-400" : red ? "text-red-400" : "text-white";
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/6 p-4">
+      <p className="text-xs text-white/40">{label}</p>
+      <p className={`mt-2 text-2xl font-semibold tracking-[-0.04em] ${color}`}>{value}</p>
+      <p className="mt-1 text-xs text-white/35">{sub}</p>
     </div>
   );
 }
