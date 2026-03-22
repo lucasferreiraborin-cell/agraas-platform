@@ -9,6 +9,7 @@ import {
 } from "@/lib/agraas-analytics";
 import EventModal from "@/app/components/EventModal";
 import AnimalAnalysis from "@/app/components/AnimalAnalysis";
+import AnimalQRCode from "@/app/components/AnimalQRCode";
 
 type PageProps = {
   params: Promise<{
@@ -794,6 +795,12 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
           )}
         </div>
       </section>
+
+      {animal.agraas_id && (
+        <section className="ag-card p-8">
+          <AnimalQRCode agraasId={animal.agraas_id} animalName={displayInternalCode} />
+        </section>
+      )}
 
       <section className="ag-card p-8">
         <AnimalAnalysis animalId={id} />
