@@ -192,25 +192,25 @@ BEGIN
   -- CERTIFICAÇÕES
   -- ============================================================
   -- Halal ativa: Imperador, Estrela, Atlântico (válida 12 meses)
-  INSERT INTO animal_certifications (animal_id, certification_name, status, issued_at, expires_at) VALUES
-    (a_imperador, 'Halal', 'active', today - 81,  today + 284),
-    (a_estrela,   'Halal', 'active', today - 81,  today + 284),
-    (a_atlantico, 'Halal', 'active', today - 81,  today + 284);
+  INSERT INTO animal_certifications (animal_id, certification_code, certification_name, status, issued_at, expires_at) VALUES
+    (a_imperador, 'HALAL-IMP-001', 'Halal', 'active', today - 81, today + 284),
+    (a_estrela,   'HALAL-EST-001', 'Halal', 'active', today - 81, today + 284),
+    (a_atlantico, 'HALAL-ATL-001', 'Halal', 'active', today - 81, today + 284);
 
   -- Halal vencida: Aurora (venceu há 30 dias → gera alerta no lote exportação)
-  INSERT INTO animal_certifications (animal_id, certification_name, status, issued_at, expires_at) VALUES
-    (a_aurora, 'Halal', 'expired', today - 395, today - 30);
+  INSERT INTO animal_certifications (animal_id, certification_code, certification_name, status, issued_at, expires_at) VALUES
+    (a_aurora, 'HALAL-AUR-001', 'Halal', 'expired', today - 395, today - 30);
 
   -- MAPA: Imperador, Atlântico
-  INSERT INTO animal_certifications (animal_id, certification_name, status, issued_at, expires_at) VALUES
-    (a_imperador, 'MAPA', 'active', today - 66, today + 119),
-    (a_atlantico, 'MAPA', 'active', today - 66, today + 119);
+  INSERT INTO animal_certifications (animal_id, certification_code, certification_name, status, issued_at, expires_at) VALUES
+    (a_imperador, 'MAPA-IMP-001', 'MAPA', 'active', today - 66, today + 119),
+    (a_atlantico, 'MAPA-ATL-001', 'MAPA', 'active', today - 66, today + 119);
 
   -- GTA: Imperador, Estrela, Atlântico
-  INSERT INTO animal_certifications (animal_id, certification_name, status, issued_at, expires_at) VALUES
-    (a_imperador, 'GTA', 'active', today - 30, today + 150),
-    (a_estrela,   'GTA', 'active', today - 30, today + 150),
-    (a_atlantico, 'GTA', 'active', today - 30, today + 150);
+  INSERT INTO animal_certifications (animal_id, certification_code, certification_name, status, issued_at, expires_at) VALUES
+    (a_imperador, 'GTA-IMP-001', 'GTA', 'active', today - 30, today + 150),
+    (a_estrela,   'GTA-EST-001', 'GTA', 'active', today - 30, today + 150),
+    (a_atlantico, 'GTA-ATL-001', 'GTA', 'active', today - 30, today + 150);
 
   -- ============================================================
   -- LOTES
