@@ -10,6 +10,7 @@ import {
 import EventModal from "@/app/components/EventModal";
 import AnimalAnalysis from "@/app/components/AnimalAnalysis";
 import AnimalQRCode from "@/app/components/AnimalQRCode";
+import ExportPassportModal from "@/app/components/ExportPassportModal";
 
 type PageProps = {
   params: Promise<{
@@ -21,6 +22,7 @@ type AnimalRow = {
   id: string;
   internal_code: string | null;
   agraas_id: string | null;
+  nickname: string | null;
   birth_date: string | null;
   sex: string | null;
   breed: string | null;
@@ -28,6 +30,9 @@ type AnimalRow = {
   status: string | null;
   category: string | null;
   blood_type: string | null;
+  birth_weight: number | null;
+  rfid: string | null;
+  notes: string | null;
   sire_animal_id: string | null;
   dam_animal_id: string | null;
   created_at: string | null;
@@ -43,9 +48,13 @@ type ApplicationRow = {
   id: string;
   animal_id: string;
   product_id: string | null;
+  product_name: string | null;
   batch_id: string | null;
   dose: number | null;
+  unit: string | null;
+  operator_name: string | null;
   application_date: string | null;
+  withdrawal_date: string | null;
   created_at: string | null;
 };
 
@@ -98,6 +107,7 @@ type ParentAnimalRow = {
   id: string;
   internal_code: string | null;
   nickname: string | null;
+  agraas_id: string | null;
   sex: string | null;
   breed: string | null;
 };
@@ -146,7 +156,7 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
     supabase
       .from("applications")
       .select(
-        "id, animal_id, product_id, batch_id, dose, application_date, created_at"
+        "id, animal_id, product_id, product_name, batch_id, dose, unit, operator_name, application_date, withdrawal_date, created_at"
       )
       .eq("animal_id", id)
       .order("application_date", { ascending: false }),
@@ -225,15 +235,19 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
   const movements = (movementsData ?? []) as MovementRow[];
   const certifications = (certificationsData ?? []) as CertificationRow[];
 
-  // Busca pai e mãe em paralelo (se existirem)
-  const [sireData, damData] = await Promise.all([
+  // Busca pai, mãe e propriedade atual em paralelo
+  const [sireData, damData, currentPropertyData] = await Promise.all([
     animal.sire_animal_id
-      ? supabase.from("animals").select("id, internal_code, nickname, sex, breed")
+      ? supabase.from("animals").select("id, internal_code, nickname, agraas_id, sex, breed")
           .eq("id", animal.sire_animal_id).single().then(r => r.data as ParentAnimalRow | null)
       : Promise.resolve(null),
     animal.dam_animal_id
-      ? supabase.from("animals").select("id, internal_code, nickname, sex, breed")
+      ? supabase.from("animals").select("id, internal_code, nickname, agraas_id, sex, breed")
           .eq("id", animal.dam_animal_id).single().then(r => r.data as ParentAnimalRow | null)
+      : Promise.resolve(null),
+    animal.current_property_id
+      ? supabase.from("properties").select("id, name, city, state")
+          .eq("id", animal.current_property_id).single().then(r => r.data as { id: string; name: string | null; city: string | null; state: string | null } | null)
       : Promise.resolve(null),
   ]);
 
@@ -251,6 +265,19 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
   for (const property of properties) {
     propertyMap.set(property.id, property.name ?? property.id);
   }
+
+  // Dados para o passaporte de exportação (usa product_name direto, não product_id)
+  const applicationsForExport = applications
+    .filter((a) => a.product_name)
+    .slice(0, 5)
+    .map((a) => ({
+      product_name: a.product_name as string,
+      dose: a.dose ?? null,
+      unit: a.unit ?? null,
+      application_date: a.application_date ?? null,
+      withdrawal_date: a.withdrawal_date ?? null,
+      operator_name: a.operator_name ?? null,
+    }));
 
   const sanitaryHistory: SanitaryHistoryRow[] = applications.map((application) => ({
     id: application.id,
@@ -800,6 +827,31 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
         <section className="ag-card p-8">
           <AnimalQRCode agraasId={animal.agraas_id} animalName={displayInternalCode} />
         </section>
+      )}
+
+      {animal.agraas_id && (
+        <ExportPassportModal
+          animal={{
+            agraas_id: animal.agraas_id,
+            internal_code: animal.internal_code,
+            nickname: animal.nickname,
+            sex: animal.sex,
+            breed: displayBreed,
+            birth_date: animal.birth_date,
+            category: animal.category,
+            rfid: animal.rfid,
+            blood_type: animal.blood_type,
+            birth_weight: animal.birth_weight,
+          }}
+          property={currentPropertyData}
+          score={calculatedAgraasScore}
+          certifications={certifications}
+          applications={applicationsForExport}
+          latestWeight={latestWeight}
+          latestWeightDate={weights[0]?.weighing_date ?? null}
+          sire={sireData ? { nickname: sireData.nickname, internal_code: sireData.internal_code, agraas_id: sireData.agraas_id } : null}
+          dam={damData ? { nickname: damData.nickname, internal_code: damData.internal_code, agraas_id: damData.agraas_id } : null}
+        />
       )}
 
       <section className="ag-card p-8">
