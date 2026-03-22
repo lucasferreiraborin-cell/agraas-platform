@@ -3,11 +3,14 @@
 -- Pedro (client) — operação básica MG
 
 -- Colunas que faltaram em migrations anteriores
-ALTER TABLE applications          ADD COLUMN IF NOT EXISTS withdrawal_date date;
-ALTER TABLE animal_certifications ADD COLUMN IF NOT EXISTS issued_at       date;
-ALTER TABLE animal_certifications ADD COLUMN IF NOT EXISTS expires_at      date;
-ALTER TABLE animal_certifications ADD COLUMN IF NOT EXISTS status          text DEFAULT 'active';
-ALTER TABLE events                ADD COLUMN IF NOT EXISTS performed_by    text;
+ALTER TABLE applications                  ADD COLUMN IF NOT EXISTS withdrawal_date  date;
+ALTER TABLE animal_certifications         ADD COLUMN IF NOT EXISTS issued_at         date;
+ALTER TABLE animal_certifications         ADD COLUMN IF NOT EXISTS expires_at        date;
+ALTER TABLE animal_certifications         ADD COLUMN IF NOT EXISTS status            text DEFAULT 'active';
+ALTER TABLE events                        ADD COLUMN IF NOT EXISTS performed_by      text;
+ALTER TABLE agraas_master_passport_cache  ADD COLUMN IF NOT EXISTS identity_json     jsonb;
+ALTER TABLE agraas_master_passport_cache  ADD COLUMN IF NOT EXISTS traceability_json jsonb;
+ALTER TABLE agraas_master_passport_cache  ADD COLUMN IF NOT EXISTS sanitary_json     jsonb;
 
 -- Stubs para compatibilidade com shadow DB da Supabase CLI
 -- (migration 002 faz SELECT FROM animal_events que não existe em schema limpo)
@@ -192,6 +195,9 @@ BEGIN
   -- ============================================================
   -- CERTIFICAÇÕES
   -- ============================================================
+  -- Desabilita triggers da tabela (criados fora das migrations, só existem no banco remoto)
+  EXECUTE 'ALTER TABLE animal_certifications DISABLE TRIGGER USER';
+
   -- Halal ativa: Imperador, Estrela, Atlântico (válida 12 meses)
   INSERT INTO animal_certifications (animal_id, certification_code, certification_name, status, issued_at, expires_at) VALUES
     (a_imperador, 'HALAL-IMP-001', 'Halal', 'active', today - 81, today + 284),
@@ -212,6 +218,9 @@ BEGIN
     (a_imperador, 'GTA-IMP-001', 'GTA', 'active', today - 30, today + 150),
     (a_estrela,   'GTA-EST-001', 'GTA', 'active', today - 30, today + 150),
     (a_atlantico, 'GTA-ATL-001', 'GTA', 'active', today - 30, today + 150);
+
+  -- Reabilita triggers
+  EXECUTE 'ALTER TABLE animal_certifications ENABLE TRIGGER USER';
 
   -- ============================================================
   -- LOTES
