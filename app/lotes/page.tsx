@@ -1,262 +1,192 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 
-type PageProps = {
-  params: Promise<{
-    id: string;
-  }>;
-};
+const OBJECTIVES = ["Engorda", "Cria", "Recria", "Reprodução", "Descarte"];
 
 type LotRow = {
   id: string;
   name: string;
   description: string | null;
-  phase: string | null;
+  objective: string | null;
+  start_date: string | null;
   status: string | null;
-  created_at: string | null;
+  property_id: string | null;
+  client_id: string | null;
 };
 
-type AssignmentRow = {
-  id: string;
-  animal_id: string;
-  lot_id: string;
-  entry_date: string | null;
-  exit_date: string | null;
-  notes: string | null;
-};
+type PropertyRow = { id: string; name: string | null };
 
-type AnimalRow = {
-  id: string;
-  internal_code: string | null;
-};
+export default function LotesPage() {
+  const [lots, setLots] = useState<LotRow[]>([]);
+  const [properties, setProperties] = useState<PropertyRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
 
-export default async function LoteDetalhePage({ params }: PageProps) {
-  const { id } = await params;
+  // Campos do form
+  const [nome, setNome] = useState("");
+  const [objetivo, setObjetivo] = useState("");
+  const [propertyId, setPropertyId] = useState("");
+  const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 10));
+  const [targetWeight, setTargetWeight] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [myClientId, setMyClientId] = useState<string | null>(null);
 
-  const [
-    { data: lotData, error: lotError },
-    { data: assignmentsData, error: assignmentsError },
-    { data: animalsData, error: animalsError },
-  ] = await Promise.all([
-    supabase
-      .from("lots")
-      .select("id, name, description, phase, status, created_at")
-      .eq("id", id)
-      .single(),
+  useEffect(() => {
+    async function load() {
+      const { data: { user } } = await supabase.auth.getUser();
+      let clientId: string | null = null;
+      if (user) {
+        const { data: c } = await supabase.from("clients").select("id").eq("auth_user_id", user.id).single();
+        clientId = c?.id ?? null;
+        setMyClientId(clientId);
+      }
 
-    supabase
-      .from("animal_lot_assignments")
-      .select("id, animal_id, lot_id, entry_date, exit_date, notes")
-      .eq("lot_id", id)
-      .order("entry_date", { ascending: false }),
+      const [{ data: lotsData }, { data: propsData }] = await Promise.all([
+        supabase.from("lots").select("id, name, description, objective, start_date, status, property_id, client_id").order("created_at", { ascending: false }),
+        supabase.from("properties").select("id, name").order("name"),
+      ]);
+      setLots((lotsData as LotRow[]) ?? []);
+      setProperties((propsData as PropertyRow[]) ?? []);
+      setLoading(false);
+    }
+    load();
+  }, []);
 
-    supabase
-      .from("animals")
-      .select("id, internal_code"),
-  ]);
+  async function criarLote(e: React.FormEvent) {
+    e.preventDefault();
+    if (!nome || !myClientId) return;
+    setSaving(true);
+    const { data } = await supabase.from("lots").insert({
+      name: nome,
+      objective: objetivo || null,
+      property_id: propertyId || null,
+      start_date: startDate || null,
+      target_weight: targetWeight ? Number(targetWeight) : null,
+      status: "active",
+      client_id: myClientId,
+    }).select("id").single();
 
-  if (lotError || !lotData) {
+    if (data) {
+      setShowForm(false);
+      setNome(""); setObjetivo(""); setPropertyId(""); setTargetWeight("");
+      const { data: lot } = await supabase.from("lots")
+        .select("id, name, description, objective, start_date, status, property_id, client_id")
+        .eq("id", data.id).single();
+      if (lot) setLots(prev => [lot as LotRow, ...prev]);
+    }
+    setSaving(false);
+  }
+
+  if (!loading && lots.length === 0 && !showForm) {
     return (
       <main className="space-y-8">
-        <Link
-          href="/lotes"
-          className="text-sm font-medium text-[var(--primary-hover)] hover:underline"
-        >
-          ← Voltar para Lotes
-        </Link>
-
-        <div className="ag-card-strong p-8">
-          <h1 className="text-3xl font-semibold text-[var(--text-primary)]">
-            Lote não encontrado
-          </h1>
+        <div className="ag-card-strong overflow-hidden">
+          <div className="flex flex-col items-center px-8 py-16 text-center">
+            <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-[var(--primary-soft)] text-4xl">📦</div>
+            <div className="ag-badge ag-badge-green mt-8">Gestão de lotes</div>
+            <h2 className="mt-5 text-3xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">Nenhum lote cadastrado</h2>
+            <p className="mt-4 max-w-md text-base leading-8 text-[var(--text-secondary)]">
+              Organize seus animais em lotes por objetivo (engorda, cria, recria) para controlar GMD e performance.
+            </p>
+            <button onClick={() => setShowForm(true)} className="ag-button-primary mt-8">Criar primeiro lote</button>
+          </div>
         </div>
       </main>
     );
   }
 
-  if (assignmentsError) {
-    console.error("Erro ao buscar vínculos do lote:", assignmentsError);
-  }
-
-  if (animalsError) {
-    console.error("Erro ao buscar animais:", animalsError);
-  }
-
-  const lot = lotData as LotRow;
-  const assignments = (assignmentsData ?? []) as AssignmentRow[];
-  const animals = (animalsData ?? []) as AnimalRow[];
-
-  const animalMap = new Map<string, string>();
-  for (const animal of animals) {
-    animalMap.set(animal.id, animal.internal_code ?? animal.id);
-  }
-
-  const activeAnimals = assignments.filter((item) => !item.exit_date);
-  const inactiveAnimals = assignments.filter((item) => !!item.exit_date);
-
   return (
     <main className="space-y-8">
-      <Link
-        href="/lotes"
-        className="text-sm font-medium text-[var(--primary-hover)] hover:underline"
-      >
-        ← Voltar para Lotes
-      </Link>
-
       <section className="ag-card-strong overflow-hidden">
-        <div className="grid gap-0 xl:grid-cols-[1.05fr_0.95fr]">
-          <div className="p-8 lg:p-10">
-            <div className="ag-badge ag-badge-green">Lote operacional</div>
-
-            <h1 className="mt-5 text-4xl font-semibold tracking-[-0.06em] text-[var(--text-primary)] lg:text-6xl">
-              {lot.name}
-            </h1>
-
-            <p className="mt-5 max-w-3xl text-[1.02rem] leading-8 text-[var(--text-secondary)]">
-              {lot.description ?? "Sem descrição cadastrada para este lote."}
-            </p>
-
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link href={`/lotes/${lot.id}/adicionar`} className="ag-button-primary">
-                Adicionar animal
-              </Link>
-
-              <Link href="/animais" className="ag-button-secondary">
-                Ver animais
-              </Link>
+        <div className="p-8 lg:p-10">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="ag-badge ag-badge-green">Gestão de lotes</div>
+              <h1 className="mt-5 text-4xl font-semibold tracking-[-0.06em] text-[var(--text-primary)] lg:text-5xl">Lotes da operação</h1>
+              <p className="mt-4 text-[1.02rem] leading-8 text-[var(--text-secondary)]">
+                Organize o rebanho por objetivo produtivo. Acompanhe GMD, score médio e previsão de saída.
+              </p>
             </div>
-
-            <div className="mt-10 grid gap-4 md:grid-cols-3">
-              <MetricCard
-                label="Fase"
-                value={lot.phase ?? "-"}
-                subtitle="etapa operacional do lote"
-              />
-              <MetricCard
-                label="Status"
-                value={formatStatus(lot.status)}
-                subtitle="situação atual do grupo"
-              />
-              <MetricCard
-                label="Animais ativos"
-                value={activeAnimals.length}
-                subtitle="vínculos sem data de saída"
-              />
-            </div>
-          </div>
-
-          <div className="border-t border-[var(--border)] bg-[linear-gradient(180deg,#eef6ea_0%,#f5f7f4_100%)] p-8 lg:p-10 xl:border-l xl:border-t-0">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <MetricCard
-                label="Entradas"
-                value={assignments.length}
-                subtitle="registros totais de alocação"
-              />
-              <MetricCard
-                label="Saídas"
-                value={inactiveAnimals.length}
-                subtitle="animais já retirados do lote"
-              />
-              <MetricCard
-                label="Criado em"
-                value={formatDate(lot.created_at)}
-                subtitle="data de criação do lote"
-              />
-              <MetricCard
-                label="Tipo"
-                value="Operacional"
-                subtitle="grupo de manejo animal"
-              />
-            </div>
+            <button onClick={() => setShowForm(true)} className="ag-button-primary shrink-0">+ Novo lote</button>
           </div>
         </div>
       </section>
 
-      <section className="ag-card p-8">
-        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div>
-            <h2 className="ag-section-title">Animais no lote</h2>
-            <p className="ag-section-subtitle">
-              Relação dos animais vinculados a este grupo operacional.
-            </p>
-          </div>
-
-          <div className="ag-badge ag-badge-dark">
-            {assignments.length} vínculos
-          </div>
-        </div>
-
-        <div className="mt-8 overflow-x-auto">
-          {assignments.length === 0 ? (
-            <div className="rounded-3xl bg-[var(--surface-soft)] p-6 text-sm text-[var(--text-muted)]">
-              Nenhum animal vinculado a este lote.
+      {/* Formulário de criação */}
+      {showForm && (
+        <section className="ag-card p-8">
+          <h2 className="ag-section-title">Criar novo lote</h2>
+          <form onSubmit={criarLote} className="mt-6 grid gap-5 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <label className="mb-2 block text-sm font-medium">Nome do lote *</label>
+              <input type="text" value={nome} onChange={e => setNome(e.target.value)} required
+                className={inp} placeholder="Ex.: Lote Engorda Ago/24" />
             </div>
-          ) : (
-            <table className="ag-table">
-              <thead>
-                <tr>
-                  <th>Animal</th>
-                  <th>Entrada</th>
-                  <th>Saída</th>
-                  <th>Status</th>
-                  <th>Observações</th>
-                </tr>
-              </thead>
+            <div>
+              <label className="mb-2 block text-sm font-medium">Objetivo</label>
+              <select value={objetivo} onChange={e => setObjetivo(e.target.value)} className={inp}>
+                <option value="">Selecione</option>
+                {OBJECTIVES.map(o => <option key={o} value={o}>{o}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium">Propriedade</label>
+              <select value={propertyId} onChange={e => setPropertyId(e.target.value)} className={inp}>
+                <option value="">Selecione</option>
+                {properties.map(p => <option key={p.id} value={p.id}>{p.name ?? p.id}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium">Data de início</label>
+              <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className={inp} />
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium">Meta de peso (kg)</label>
+              <input type="number" value={targetWeight} onChange={e => setTargetWeight(e.target.value)}
+                className={inp} placeholder="Ex.: 480" min="0" />
+            </div>
+            <div className="flex gap-3 sm:col-span-2">
+              <button type="submit" disabled={saving || !nome}
+                className="ag-button-primary disabled:opacity-60">{saving ? "Criando..." : "Criar lote"}</button>
+              <button type="button" onClick={() => setShowForm(false)} className="ag-button-secondary">Cancelar</button>
+            </div>
+          </form>
+        </section>
+      )}
 
-              <tbody>
-                {assignments.map((item) => (
-                  <tr key={item.id}>
-                    <td>{animalMap.get(item.animal_id) ?? item.animal_id}</td>
-                    <td>{formatDate(item.entry_date)}</td>
-                    <td>{formatDate(item.exit_date)}</td>
-                    <td>{item.exit_date ? "Inativo" : "Ativo"}</td>
-                    <td>{item.notes ?? "-"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+      {/* Lista de lotes */}
+      {loading ? (
+        <div className="grid gap-4 xl:grid-cols-3">
+          {[1,2,3].map(i => <div key={i} className="h-40 animate-pulse rounded-3xl bg-[var(--surface-soft)]" />)}
         </div>
-      </section>
+      ) : (
+        <section className="grid gap-4 xl:grid-cols-3">
+          {lots.map(lot => (
+            <Link key={lot.id} href={`/lotes/${lot.id}`}
+              className="ag-card block p-6 transition hover:border-[rgba(93,156,68,0.30)] hover:bg-[var(--primary-soft)]">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--primary-soft)] text-xl">📦</div>
+                <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+                  lot.status === "active"
+                    ? "bg-[var(--primary-soft)] text-[var(--primary-hover)]"
+                    : "bg-[rgba(31,41,55,0.08)] text-[var(--text-secondary)]"
+                }`}>{lot.status === "active" ? "Ativo" : lot.status ?? "—"}</span>
+              </div>
+              <h3 className="mt-4 text-xl font-semibold tracking-[-0.03em] text-[var(--text-primary)]">{lot.name}</h3>
+              <p className="mt-1 text-sm text-[var(--text-muted)]">
+                {lot.objective ?? "—"}
+                {lot.start_date ? ` · início ${new Date(lot.start_date).toLocaleDateString("pt-BR")}` : ""}
+              </p>
+              <p className="mt-4 text-sm font-medium text-[var(--primary-hover)]">Ver dashboard →</p>
+            </Link>
+          ))}
+        </section>
+      )}
     </main>
   );
 }
 
-function MetricCard({
-  label,
-  value,
-  subtitle,
-}: {
-  label: string;
-  value: string | number;
-  subtitle: string;
-}) {
-  return (
-    <div className="rounded-3xl border border-[var(--border)] bg-white p-5 shadow-[var(--shadow-soft)]">
-      <p className="text-sm text-[var(--text-muted)]">{label}</p>
-      <p className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-[var(--text-primary)]">
-        {value}
-      </p>
-      <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-        {subtitle}
-      </p>
-    </div>
-  );
-}
-
-function formatStatus(value: string | null) {
-  if (!value) return "-";
-
-  const map: Record<string, string> = {
-    active: "Ativo",
-    inactive: "Inativo",
-    closed: "Fechado",
-  };
-
-  return map[value.toLowerCase()] ?? value;
-}
-
-function formatDate(value: string | null | undefined) {
-  if (!value) return "-";
-  return new Date(value).toLocaleDateString("pt-BR");
-}
+const inp = "w-full rounded-lg border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-[#4A7C3A]";
