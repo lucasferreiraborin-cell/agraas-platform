@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { showToast } from "@/app/components/Toast";
 
 const UF_LIST = [
   "AC","AL","AM","AP","BA","CE","DF","ES","GO","MA",
@@ -28,7 +29,6 @@ export default function NovaPropriedadePage() {
   const [areaHectares, setAreaHectares] = useState("");
 
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
   // Detecta client_id e role do usuário logado
   useEffect(() => {
@@ -64,7 +64,6 @@ export default function NovaPropriedadePage() {
     e.preventDefault();
     if (!effectiveClientId) return;
     setLoading(true);
-    setError("");
 
     const { error: insertError } = await supabase.from("properties").insert({
       name: nome,
@@ -77,11 +76,12 @@ export default function NovaPropriedadePage() {
     });
 
     if (insertError) {
-      setError(`Erro ao salvar: ${insertError.message}`);
+      showToast("Erro ao salvar — tente novamente", "error");
       setLoading(false);
       return;
     }
 
+    showToast("Fazenda cadastrada com sucesso");
     router.push("/propriedades");
   }
 
@@ -198,12 +198,6 @@ export default function NovaPropriedadePage() {
                 step="0.01"
               />
             </div>
-
-            {error && (
-              <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
-                {error}
-              </div>
-            )}
 
             <button
               type="submit"

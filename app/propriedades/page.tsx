@@ -324,8 +324,32 @@ export default function PropriedadesPage() {
       </section>
 
       {loading ? (
-        <div className="ag-card p-8 text-sm text-[var(--text-muted)]">
-          Carregando propriedades...
+        <div className="space-y-4">
+          <div className="ag-card-strong overflow-hidden animate-pulse">
+            <div className="p-8 lg:p-10 space-y-4">
+              <div className="h-4 w-28 rounded-full bg-black/8" />
+              <div className="h-8 w-64 rounded-full bg-black/8" />
+              <div className="mt-6 grid gap-4 sm:grid-cols-3">
+                {[1,2,3].map(i => <div key={i} className="h-24 rounded-3xl bg-black/6" />)}
+              </div>
+            </div>
+          </div>
+          <div className="grid gap-4 xl:grid-cols-3">
+            {[1,2,3].map(i => (
+              <div key={i} className="ag-card p-6 animate-pulse space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="h-12 w-12 rounded-2xl bg-black/8" />
+                  <div className="h-6 w-16 rounded-full bg-black/6" />
+                </div>
+                <div className="h-5 w-40 rounded-full bg-black/8" />
+                <div className="h-3 w-28 rounded-full bg-black/6" />
+                <div className="grid grid-cols-2 gap-3 mt-4">
+                  <div className="h-16 rounded-2xl bg-black/6" />
+                  <div className="h-16 rounded-2xl bg-black/6" />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       ) : filteredProperties.length === 0 ? (
         <WelcomeEmpty />

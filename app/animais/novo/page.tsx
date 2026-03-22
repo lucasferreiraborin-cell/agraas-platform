@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { showToast } from "@/app/components/Toast";
 
 type ClientRow = { id: string; name: string };
 type PropertyRow = { id: string; name: string | null };
@@ -51,7 +52,7 @@ export default function NovoAnimalPage() {
 
   const [properties, setProperties] = useState<PropertyRow[]>([]);
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
+
 
   const sireTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const damTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -127,7 +128,6 @@ export default function NovoAnimalPage() {
     e.preventDefault();
     if (!effectiveClientId) return;
     setLoading(true);
-    setMessage("");
 
     const { data: newAnimal, error } = await supabase.from("animals").insert({
       nickname: nickname || null,
@@ -148,11 +148,12 @@ export default function NovoAnimalPage() {
     }).select("id").single();
 
     if (error || !newAnimal) {
-      setMessage(`Erro ao criar animal: ${error?.message ?? "desconhecido"}`);
+      showToast("Erro ao salvar — tente novamente", "error");
       setLoading(false);
       return;
     }
 
+    showToast("Animal cadastrado com sucesso");
     router.push(`/animais/${newAnimal.id}`);
   }
 
@@ -344,10 +345,6 @@ export default function NovoAnimalPage() {
               <textarea value={notes} onChange={e => setNotes(e.target.value)}
                 className={`${inputClass} min-h-[80px] resize-y`} placeholder="Informações adicionais sobre o animal..." />
             </Field>
-
-            {message && (
-              <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{message}</div>
-            )}
 
             <button type="submit" disabled={loading || !effectiveClientId}
               className="rounded-lg bg-[#4A7C3A] px-6 py-3 text-sm font-medium text-white hover:bg-[#3B6B2E] disabled:opacity-60">

@@ -327,8 +327,20 @@ export default function AnimaisPage() {
 
         <div className="mt-8">
           {loading ? (
-            <div className="rounded-3xl bg-[var(--surface-soft)] p-6 text-sm text-[var(--text-muted)]">
-              Carregando animais...
+            <div className="space-y-3">
+              {[1,2,3,4,5].map(i => (
+                <div key={i} className="flex items-center gap-4 rounded-2xl bg-[var(--surface-soft)] px-5 py-4 animate-pulse">
+                  <div className="h-12 w-12 rounded-2xl bg-black/8 shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 w-32 rounded-full bg-black/8" />
+                    <div className="h-3 w-24 rounded-full bg-black/6" />
+                  </div>
+                  <div className="h-3 w-16 rounded-full bg-black/6" />
+                  <div className="h-3 w-20 rounded-full bg-black/6" />
+                  <div className="h-2.5 w-24 rounded-full bg-black/6" />
+                  <div className="h-8 w-28 rounded-2xl bg-black/6" />
+                </div>
+              ))}
             </div>
           ) : error ? (
             <p className="text-sm text-[var(--danger)]">
