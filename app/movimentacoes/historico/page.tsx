@@ -94,7 +94,7 @@ export default async function MovimentacoesHistoricoPage() {
             </div>
           </div>
 
-          <div className="border-t border-[var(--border)] bg-[linear-gradient(180deg,#eef6ea_0%,#f5f7f4_100%)] p-8 lg:p-10 xl:border-l xl:border-t-0">
+          <div className="ag-hero-panel">
             <div className="grid gap-4 sm:grid-cols-2">
               <MetricCard
                 label="Movimentações"
@@ -122,7 +122,7 @@ export default async function MovimentacoesHistoricoPage() {
       </section>
 
       <section className="ag-card p-8">
-        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div className="ag-section-header">
           <div>
             <h2 className="ag-section-title">Tabela consolidada</h2>
             <p className="ag-section-subtitle">
@@ -183,7 +183,7 @@ function MetricCard({
   subtitle: string;
 }) {
   return (
-    <div className="rounded-3xl border border-[var(--border)] bg-white p-5 shadow-[var(--shadow-soft)]">
+    <div className="ag-kpi-card">
       <p className="text-sm text-[var(--text-muted)]">{label}</p>
       <p className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-[var(--text-primary)]">
         {value}

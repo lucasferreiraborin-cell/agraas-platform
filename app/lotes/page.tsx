@@ -116,7 +116,7 @@ export default function LotesPage() {
           <div className="flex flex-col items-center px-8 py-16 text-center">
             <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-[var(--primary-soft)] text-4xl">📦</div>
             <div className="ag-badge ag-badge-green mt-8">Gestão de lotes</div>
-            <h2 className="mt-5 text-3xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">Nenhum lote cadastrado</h2>
+            <h2 className="mt-5 text-3xl font-semibold tracking-[-0.06em] text-[var(--text-primary)]">Nenhum lote cadastrado</h2>
             <p className="mt-4 max-w-md text-base leading-8 text-[var(--text-secondary)]">
               Organize seus animais em lotes por objetivo produtivo ou crie um <strong>Lote de Exportação</strong> com rastreabilidade completa para mercados internacionais.
             </p>

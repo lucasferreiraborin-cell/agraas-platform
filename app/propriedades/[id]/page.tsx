@@ -548,7 +548,7 @@ function HighlightCard({
   subtitle: string;
 }) {
   return (
-    <div className="rounded-3xl border border-[var(--border)] bg-white p-5 shadow-[var(--shadow-soft)]">
+    <div className="ag-kpi-card">
       <p className="text-sm text-[var(--text-muted)]">{label}</p>
       <p className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
         {value}
@@ -579,7 +579,7 @@ function StatPanel({
   subtitle: string;
 }) {
   return (
-    <div className="rounded-3xl border border-[var(--border)] bg-white p-5 shadow-[var(--shadow-soft)]">
+    <div className="ag-kpi-card">
       <p className="text-sm text-[var(--text-muted)]">{title}</p>
       <p className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
         {value}

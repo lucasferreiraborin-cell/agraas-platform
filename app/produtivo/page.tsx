@@ -274,7 +274,7 @@ export default async function ProdutivoPage() {
 
             <div className="ag-badge ag-badge-green">Dashboard produtivo</div>
 
-            <h1 className="mt-5 max-w-4xl text-4xl font-semibold leading-[1.02] tracking-[-0.065em] text-[var(--text-primary)] lg:text-6xl">
+            <h1 className="ag-page-title max-w-4xl">
               Inteligência produtiva do rebanho
             </h1>
 
@@ -317,7 +317,7 @@ export default async function ProdutivoPage() {
             </div>
           </div>
 
-          <div className="border-t border-[var(--border)] bg-[linear-gradient(180deg,#eef6ea_0%,#f5f7f4_100%)] p-8 lg:p-10 xl:border-l xl:border-t-0">
+          <div className="ag-hero-panel">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">
                 Destaques da performance
@@ -337,7 +337,7 @@ export default async function ProdutivoPage() {
                   <Link
                     key={item.animal_id}
                     href={`/animais/${item.animal_id}`}
-                    className="block rounded-3xl border border-[var(--border)] bg-white p-5 shadow-[var(--shadow-soft)] transition hover:border-[rgba(93,156,68,0.24)] hover:shadow-[var(--shadow-card)]"
+                    className="block ag-kpi-card transition hover:border-[rgba(93,156,68,0.24)] hover:shadow-[var(--shadow-card)]"
                   >
                     <div className="flex items-center justify-between gap-4">
                       <div>

@@ -87,7 +87,7 @@ export default async function AlertasPage() {
           <div className="relative p-8 lg:p-10">
             <div className="ag-badge ag-badge-green">Alertas operacionais</div>
 
-            <h1 className="mt-5 max-w-4xl text-4xl font-semibold leading-[1.02] tracking-[-0.065em] text-[var(--text-primary)] lg:text-6xl">
+            <h1 className="ag-page-title max-w-4xl">
               Monitoramento preventivo da operação
             </h1>
 
@@ -106,7 +106,7 @@ export default async function AlertasPage() {
             </div>
           </div>
 
-          <div className="border-t border-[var(--border)] bg-[linear-gradient(180deg,#eef6ea_0%,#f5f7f4_100%)] p-8 lg:p-10 xl:border-l xl:border-t-0">
+          <div className="ag-hero-panel">
             <div className="grid gap-4 sm:grid-cols-2">
               <MetricCard
                 label="Estoque crítico"
@@ -233,7 +233,7 @@ function MetricCard({
   subtitle: string;
 }) {
   return (
-    <div className="rounded-3xl border border-[var(--border)] bg-white p-5 shadow-[var(--shadow-soft)]">
+    <div className="ag-kpi-card">
       <p className="text-sm text-[var(--text-muted)]">{label}</p>
       <p className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-[var(--text-primary)]">
         {value}

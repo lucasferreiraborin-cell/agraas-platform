@@ -272,7 +272,7 @@ function DashboardContent({
               <HeroKpi label="@ no rebanho" value={loading ? "—" : Math.round(arroba_rebanho)} sub="arrobas estimadas" />
             </div>
           </div>
-          <div className="border-t border-[var(--border)] bg-[linear-gradient(180deg,#eef6ea_0%,#f5f7f4_100%)] p-8 lg:p-10 xl:border-l xl:border-t-0">
+          <div className="ag-hero-panel">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Valor estimado do rebanho</p>
             <p className="mt-4 text-5xl font-semibold tracking-[-0.06em] text-[var(--text-primary)]">
               {loading ? "—" : `R$ ${Math.round(valorRebanho).toLocaleString("pt-BR")}`}
@@ -311,7 +311,7 @@ function DashboardContent({
               </div>
             )}
 
-            <div className="mt-5 rounded-3xl border border-[var(--border)] bg-white p-5 shadow-[var(--shadow-soft)]">
+            <div className="mt-5 ag-kpi-card">
               <p className="text-sm font-medium text-[var(--text-primary)]">Fórmula de cálculo</p>
               <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
                 Peso atual ÷ {KG_POR_ARROBA} kg = arrobas × R$ {cotacao.toFixed(2)} = valor por animal. Total consolidado de toda a base.

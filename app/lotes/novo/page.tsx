@@ -76,7 +76,7 @@ export default function NovoLotePage() {
             </p>
           </div>
 
-          <div className="border-t border-[var(--border)] bg-[linear-gradient(180deg,#eef6ea_0%,#f5f7f4_100%)] p-8 lg:p-10 xl:border-l xl:border-t-0">
+          <div className="ag-hero-panel">
             <div className="grid gap-5">
               <label>
                 <div className="mb-2 text-sm font-medium text-[var(--text-primary)]">
