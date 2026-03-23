@@ -15,25 +15,21 @@ const MARITIME_ROUTE: [number, number][] = [
   [-34.8,  19.9], // Cape of Good Hope
   [-28,    33],   // East Africa coast
   [-20,    37],   // Mozambique channel
-  [-15,    40],   // Mozambique
-  [ -8,    40],   // Tanzania
-  [ -2,    42],   // Kenya
-  [  0,    42.5], // Kenya/Somalia coast
-  [  2,    44],   // Somalia south
-  [  5,    46],   // Somalia mid
-  [  8,    47],   // Somalia north
-  [ 10,    45],   // Gulf of Aden approach
-  [ 11,    43.5], // Djibouti
-  [ 12.5,  43.3], // Bab-el-Mandeb
-  [ 16,    41],   // Red Sea
-  [ 18,    40],   // Red Sea north
+  [ -2,    45],   // Indian Ocean, east of Kenya
+  [ -2,    50],   // Indian Ocean, offshore Somalia
+  [  5,    50],   // Indian Ocean, north Somalia
+  [ 11,    45],   // Gulf of Aden
+  [ 12.5,  43.5], // Bab-el-Mandeb
+  [ 14,    42.5], // Red Sea south
+  [ 16,    41.5], // Red Sea mid-south
+  [ 18,    40.5], // Red Sea mid
   [ 21.5,  39.1], // Jeddah, Saudi Arabia
 ];
 
 const SANTOS = MARITIME_ROUTE[0];
 const JEDDAH = MARITIME_ROUTE[MARITIME_ROUTE.length - 1];
 
-const ROUTE_BOUNDS = L.latLngBounds(L.latLng(-34.8, -46.3), L.latLng(21.5, 43.3));
+const ROUTE_BOUNDS = L.latLngBounds(L.latLng(-34.8, -46.3), L.latLng(21.5, 50));
 
 function FitRoute() {
   const map = useMap();
