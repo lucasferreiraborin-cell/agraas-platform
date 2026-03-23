@@ -1,228 +1,86 @@
 "use client";
 
-import "mapbox-gl/dist/mapbox-gl.css";
-import { useCallback, useRef, useState } from "react";
-import Map, { Marker, Popup, Source, Layer } from "react-map-gl/mapbox";
-import type { MapRef, LayerProps } from "react-map-gl/mapbox";
+import "leaflet/dist/leaflet.css";
+import { useEffect } from "react";
+import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import L from "leaflet";
 
-type PropertyPin = {
+export type PropertyPin = {
   id: string;
   name: string;
-  city: string;
-  state: string;
+  city: string | null;
+  state: string | null;
   lat: number;
   lng: number;
   scoreAvg: number;
   animalsCount: number;
 };
 
-const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
-
-// Brazil bounding box fallback
-const BRAZIL_BOUNDS: [[number, number], [number, number]] = [
-  [-73.9, -33.8],
-  [-28.8, 5.3],
-];
-
-function pinColor(score: number): string {
-  if (score >= 70) return "#5d9c44";
-  if (score >= 50) return "#d97706";
-  return "#dc2626";
+function pinIcon(score: number) {
+  const color =
+    score >= 75 ? "#4ade80" : score >= 50 ? "#fbbf24" : "#f87171";
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="36" viewBox="0 0 28 36">
+      <circle cx="14" cy="13" r="12" fill="${color}" opacity="0.15"/>
+      <circle cx="14" cy="13" r="7" fill="${color}"/>
+      <line x1="14" y1="20" x2="14" y2="34" stroke="${color}" stroke-width="2" stroke-linecap="round"/>
+    </svg>`;
+  return L.divIcon({
+    html: svg,
+    iconSize: [28, 36],
+    iconAnchor: [14, 34],
+    popupAnchor: [0, -30],
+    className: "",
+  });
 }
 
-// ── Cluster layers ─────────────────────────────────────────────────────────────
-
-const clusterCircleLayer: LayerProps = {
-  id: "clusters",
-  type: "circle",
-  source: "properties",
-  filter: ["has", "point_count"],
-  paint: {
-    "circle-color": [
-      "step",
-      ["get", "point_count"],
-      "#5d9c44",
-      5, "#d97706",
-      10, "#dc2626",
-    ],
-    "circle-radius": ["step", ["get", "point_count"], 20, 5, 26, 10, 32],
-    "circle-stroke-width": 2.5,
-    "circle-stroke-color": "#ffffff",
-    "circle-opacity": 0.92,
-  },
-};
-
-const clusterCountLayer: LayerProps = {
-  id: "cluster-count",
-  type: "symbol",
-  source: "properties",
-  filter: ["has", "point_count"],
-  layout: {
-    "text-field": "{point_count_abbreviated}",
-    "text-font": ["DIN Offc Pro Medium", "Arial Unicode MS Bold"],
-    "text-size": 13,
-  },
-  paint: {
-    "text-color": "#ffffff",
-  },
-};
+function FitBounds({ pins }: { pins: PropertyPin[] }) {
+  const map = useMap();
+  useEffect(() => {
+    if (pins.length === 0) {
+      map.setView([-14.5, -51.5], 4);
+      return;
+    }
+    const bounds = L.latLngBounds(pins.map((p) => [p.lat, p.lng]));
+    map.fitBounds(bounds, { padding: [48, 48], maxZoom: 8 });
+  }, [map, pins]);
+  return null;
+}
 
 export default function BrazilMap({ properties }: { properties: PropertyPin[] }) {
-  const mapRef = useRef<MapRef>(null);
-  const [hovered, setHovered] = useState<PropertyPin | null>(null);
-
-  // Build GeoJSON for clustering
-  const geojson = {
-    type: "FeatureCollection" as const,
-    features: properties.map((p) => ({
-      type: "Feature" as const,
-      properties: { id: p.id, scoreAvg: p.scoreAvg },
-      geometry: { type: "Point" as const, coordinates: [p.lng, p.lat] },
-    })),
-  };
-
-  const onLoad = useCallback(() => {
-    if (!mapRef.current) return;
-    const map = mapRef.current.getMap();
-
-    if (properties.length === 0) {
-      map.fitBounds(BRAZIL_BOUNDS, { padding: 32, duration: 0 });
-      return;
-    }
-
-    if (properties.length === 1) {
-      map.flyTo({ center: [properties[0].lng, properties[0].lat], zoom: 7, duration: 0 });
-      return;
-    }
-
-    const lngs = properties.map((p) => p.lng);
-    const lats = properties.map((p) => p.lat);
-    map.fitBounds(
-      [[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]],
-      { padding: 60, duration: 0 }
-    );
-  }, [properties]);
-
   return (
-    <div className="overflow-hidden rounded-2xl" style={{ height: 360 }}>
-      <Map
-        ref={mapRef}
-        mapboxAccessToken={TOKEN}
-        mapStyle="mapbox://styles/mapbox/light-v11"
-        initialViewState={{
-          longitude: -52,
-          latitude: -14,
-          zoom: 3.5,
-        }}
-        onLoad={onLoad}
-        interactiveLayerIds={["clusters"]}
-        style={{ width: "100%", height: "100%" }}
-      >
-        {/* Cluster source */}
-        <Source
-          id="properties"
-          type="geojson"
-          data={geojson}
-          cluster={true}
-          clusterMaxZoom={10}
-          clusterRadius={50}
-        >
-          <Layer {...clusterCircleLayer} />
-          <Layer {...clusterCountLayer} />
-        </Source>
-
-        {/* Individual pins */}
-        {properties.map((prop) => (
-          <Marker
-            key={prop.id}
-            longitude={prop.lng}
-            latitude={prop.lat}
-            anchor="center"
-          >
-            <button
-              type="button"
-              aria-label={prop.name}
-              onMouseEnter={() => setHovered(prop)}
-              onMouseLeave={() => setHovered(null)}
-              onClick={() => { window.location.href = `/propriedades/${prop.id}`; }}
-              style={{
-                width: 28,
-                height: 28,
-                borderRadius: "50%",
-                background: pinColor(prop.scoreAvg),
-                border: "2.5px solid white",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.22)",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                transition: "transform 0.15s",
-              }}
-              onMouseOver={(e) => { (e.currentTarget as HTMLElement).style.transform = "scale(1.25)"; }}
-              onFocus={(e) => { (e.currentTarget as HTMLElement).style.transform = "scale(1.25)"; }}
-              onMouseOut={(e) => { (e.currentTarget as HTMLElement).style.transform = "scale(1)"; }}
-              onBlur={(e) => { (e.currentTarget as HTMLElement).style.transform = "scale(1)"; }}
-            >
-              <span
-                style={{
-                  width: 10,
-                  height: 10,
-                  borderRadius: "50%",
-                  background: "rgba(255,255,255,0.88)",
-                  display: "block",
-                }}
-              />
-            </button>
-          </Marker>
-        ))}
-
-        {/* Tooltip popup */}
-        {hovered && (
-          <Popup
-            longitude={hovered.lng}
-            latitude={hovered.lat}
-            anchor="bottom"
-            offset={20}
-            closeButton={false}
-            closeOnClick={false}
-            style={{ zIndex: 10 }}
-          >
-            <div
-              style={{
-                fontFamily: "inherit",
-                minWidth: 160,
-                padding: "12px 14px",
-              }}
-            >
-              <p style={{ fontWeight: 600, fontSize: 14, color: "#1e2a1b", margin: 0 }}>
-                {hovered.name}
+    <MapContainer
+      center={[-14.5, -51.5]}
+      zoom={4}
+      style={{ width: "100%", height: "100%" }}
+      zoomControl={false}
+      attributionControl={false}
+    >
+      <TileLayer
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        attribution=""
+      />
+      <FitBounds pins={properties} />
+      {properties.map((p) => (
+        <Marker key={p.id} position={[p.lat, p.lng]} icon={pinIcon(p.scoreAvg)}>
+          <Popup>
+            <div style={{ minWidth: 140 }}>
+              <p style={{ fontWeight: 700, fontSize: 13, margin: "0 0 4px" }}>{p.name}</p>
+              {(p.city || p.state) && (
+                <p style={{ fontSize: 11, color: "#666", margin: "0 0 4px" }}>
+                  {[p.city, p.state].filter(Boolean).join(", ")}
+                </p>
+              )}
+              <p style={{ fontSize: 11, margin: 0 }}>
+                Score médio: <strong>{p.scoreAvg}</strong>
               </p>
-              <p style={{ fontSize: 12, color: "#788473", marginTop: 2 }}>
-                {hovered.city}, {hovered.state}
+              <p style={{ fontSize: 11, margin: 0 }}>
+                Animais: <strong>{p.animalsCount}</strong>
               </p>
-              <div style={{ display: "flex", gap: 16, marginTop: 10 }}>
-                <div>
-                  <p style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.12em", color: "#788473", margin: 0 }}>
-                    Score médio
-                  </p>
-                  <p style={{ fontSize: 18, fontWeight: 700, color: "#4f8a38", margin: "2px 0 0" }}>
-                    {hovered.scoreAvg}
-                  </p>
-                </div>
-                <div style={{ width: 1, background: "rgba(30,42,27,0.08)" }} />
-                <div>
-                  <p style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.12em", color: "#788473", margin: 0 }}>
-                    Animais
-                  </p>
-                  <p style={{ fontSize: 18, fontWeight: 700, color: "#1e2a1b", margin: "2px 0 0" }}>
-                    {hovered.animalsCount}
-                  </p>
-                </div>
-              </div>
             </div>
           </Popup>
-        )}
-      </Map>
-    </div>
+        </Marker>
+      ))}
+    </MapContainer>
   );
 }

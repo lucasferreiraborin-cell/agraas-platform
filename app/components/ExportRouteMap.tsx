@@ -1,5 +1,6 @@
 "use client";
-import ExportMapGL from "./ExportMapGL";
+import dynamic from "next/dynamic";
+const ExportMapGL = dynamic(() => import("./ExportMapGL"), { ssr: false });
 
 type LotInfo = {
   pais_destino: string | null;
