@@ -54,7 +54,25 @@ export default function AgroAssistant() {
         className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--primary-hover)] shadow-2xl transition hover:bg-[#3B6B2E] active:scale-95"
         title="Assistente Agraas"
       >
-        <span className="text-2xl">{open ? "✕" : "🤖"}</span>
+        {open ? (
+          <span className="text-lg font-bold text-white">✕</span>
+        ) : (
+          <svg width="28" height="28" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            {/* Face */}
+            <circle cx="20" cy="22" r="11" fill="#F5C47A"/>
+            {/* Hat brim */}
+            <ellipse cx="20" cy="12.5" rx="14" ry="3.5" fill="#4A3000"/>
+            {/* Hat crown */}
+            <rect x="13" y="4" width="14" height="9" rx="3" fill="#4A3000"/>
+            {/* Hat band */}
+            <rect x="13" y="10.5" width="14" height="2.5" rx="1" fill="#C68C1A"/>
+            {/* Eyes */}
+            <circle cx="16" cy="21" r="1.5" fill="#3B2800"/>
+            <circle cx="24" cy="21" r="1.5" fill="#3B2800"/>
+            {/* Smile */}
+            <path d="M16 26 Q20 29 24 26" stroke="#3B2800" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+          </svg>
+        )}
       </button>
 
       {/* Chat panel */}
@@ -62,7 +80,15 @@ export default function AgroAssistant() {
         <div className="fixed bottom-24 right-6 z-40 flex w-[380px] max-w-[calc(100vw-48px)] flex-col rounded-3xl border border-[var(--border)] bg-white shadow-2xl">
           {/* Header */}
           <div className="flex items-center gap-3 rounded-t-3xl border-b border-[var(--border)] bg-[var(--primary-hover)] px-5 py-4">
-            <span className="text-xl">🤖</span>
+            <svg width="28" height="28" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="20" cy="22" r="11" fill="#F5C47A"/>
+              <ellipse cx="20" cy="12.5" rx="14" ry="3.5" fill="#6B4A00"/>
+              <rect x="13" y="4" width="14" height="9" rx="3" fill="#6B4A00"/>
+              <rect x="13" y="10.5" width="14" height="2.5" rx="1" fill="#E8A820"/>
+              <circle cx="16" cy="21" r="1.5" fill="#3B2800"/>
+              <circle cx="24" cy="21" r="1.5" fill="#3B2800"/>
+              <path d="M16 26 Q20 29 24 26" stroke="#3B2800" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
+            </svg>
             <div>
               <p className="text-sm font-semibold text-white">Assistente Agraas</p>
               <p className="text-xs text-white/70">Dados reais da sua fazenda</p>

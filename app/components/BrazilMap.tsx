@@ -45,7 +45,7 @@ function FitBounds({ pins }: { pins: PropertyPin[] }) {
   const map = useMap();
   useEffect(() => {
     // Always start with full Brazil view, with min zoom 3
-    map.fitBounds(BRAZIL_BOUNDS, { padding: [24, 24], maxZoom: 5 });
+    map.setView([-14, -53], 4);
   }, [map, pins]);
   return null;
 }
