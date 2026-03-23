@@ -3,6 +3,7 @@ import LogoutButton from "./components/LogoutButton";
 import SidebarNav from "./components/SidebarNav";
 import { ToastContainer } from "./components/Toast";
 import AgroAssistant from "./components/AgroAssistant";
+import QuickActions from "./components/QuickActions";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export default async function RootLayout({
@@ -133,6 +134,7 @@ export default async function RootLayout({
                 </div>
               </main>
               <ToastContainer />
+              <QuickActions />
               <AgroAssistant />
             </div>
           </div>
