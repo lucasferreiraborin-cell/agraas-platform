@@ -16,20 +16,27 @@ export type PropertyPin = {
   animalsCount: number;
 };
 
-function pinIcon(score: number) {
-  const color =
-    score >= 75 ? "#4ade80" : score >= 50 ? "#fbbf24" : "#f87171";
+// Brazil full bounds
+const BRAZIL_BOUNDS = L.latLngBounds(
+  L.latLng(-33.75, -73.99), // SW
+  L.latLng(5.27, -28.84)    // NE
+);
+
+function pinIcon(score: number, selected = false) {
+  const color = score >= 75 ? "#4ade80" : score >= 50 ? "#fbbf24" : "#f87171";
+  const r = selected ? 10 : 7;
+  const ring = selected ? 22 : 16;
   const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="36" viewBox="0 0 28 36">
-      <circle cx="14" cy="13" r="12" fill="${color}" opacity="0.15"/>
-      <circle cx="14" cy="13" r="7" fill="${color}"/>
-      <line x1="14" y1="20" x2="14" y2="34" stroke="${color}" stroke-width="2" stroke-linecap="round"/>
+    <svg xmlns="http://www.w3.org/2000/svg" width="${ring * 2}" height="${ring * 2 + 8}" viewBox="0 0 ${ring * 2} ${ring * 2 + 8}">
+      <circle cx="${ring}" cy="${ring}" r="${ring - 1}" fill="${color}" opacity="0.18"/>
+      <circle cx="${ring}" cy="${ring}" r="${r}" fill="${color}" stroke="white" stroke-width="${selected ? 2.5 : 2}"/>
+      <line x1="${ring}" y1="${ring + r}" x2="${ring}" y2="${ring * 2 + 6}" stroke="${color}" stroke-width="2" stroke-linecap="round"/>
     </svg>`;
   return L.divIcon({
     html: svg,
-    iconSize: [28, 36],
-    iconAnchor: [14, 34],
-    popupAnchor: [0, -30],
+    iconSize: [ring * 2, ring * 2 + 8],
+    iconAnchor: [ring, ring * 2 + 8],
+    popupAnchor: [0, -(ring * 2 + 8)],
     className: "",
   });
 }
@@ -37,24 +44,28 @@ function pinIcon(score: number) {
 function FitBounds({ pins }: { pins: PropertyPin[] }) {
   const map = useMap();
   useEffect(() => {
-    if (pins.length === 0) {
-      map.setView([-14.5, -51.5], 4);
-      return;
-    }
-    const bounds = L.latLngBounds(pins.map((p) => [p.lat, p.lng]));
-    map.fitBounds(bounds, { padding: [48, 48], maxZoom: 8 });
+    // Always start with full Brazil view, with min zoom 3
+    map.fitBounds(BRAZIL_BOUNDS, { padding: [24, 24], maxZoom: 5 });
   }, [map, pins]);
   return null;
 }
 
-export default function BrazilMap({ properties }: { properties: PropertyPin[] }) {
+export default function BrazilMap({
+  properties,
+  selectedId,
+  onSelect,
+}: {
+  properties: PropertyPin[];
+  selectedId?: string;
+  onSelect?: (id: string) => void;
+}) {
   return (
     <MapContainer
-      center={[-14.5, -51.5]}
-      zoom={4}
+      bounds={BRAZIL_BOUNDS}
       style={{ width: "100%", height: "100%" }}
       zoomControl={false}
       attributionControl={false}
+      minZoom={3}
     >
       <TileLayer
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -62,7 +73,12 @@ export default function BrazilMap({ properties }: { properties: PropertyPin[] })
       />
       <FitBounds pins={properties} />
       {properties.map((p) => (
-        <Marker key={p.id} position={[p.lat, p.lng]} icon={pinIcon(p.scoreAvg)}>
+        <Marker
+          key={p.id}
+          position={[p.lat, p.lng]}
+          icon={pinIcon(p.scoreAvg, p.id === selectedId)}
+          eventHandlers={onSelect ? { click: () => onSelect(p.id) } : {}}
+        >
           <Popup>
             <div style={{ minWidth: 140 }}>
               <p style={{ fontWeight: 700, fontSize: 13, margin: "0 0 4px" }}>{p.name}</p>

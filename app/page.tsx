@@ -73,8 +73,8 @@ type PropertyRow = {
   name: string;
   city: string | null;
   state: string | null;
-  x: number | null;
-  y: number | null;
+  lat: number | null;
+  lng: number | null;
 };
 
 type WeighingRow = {
@@ -191,7 +191,7 @@ export default async function PainelPage() {
 
     supabaseServer
       .from("properties")
-      .select("id, name, city, state, x, y")
+      .select("id, name, city, state, lat, lng")
       .eq("client_id", clientId),
 
     // Market view — sem client_id direto; filtrado indiretamente pelo passportCache
@@ -416,7 +416,7 @@ export default async function PainelPage() {
   }
 
   const propertiesForMap = properties
-    .filter((prop) => prop.x !== null && prop.y !== null)
+    .filter((prop) => prop.lat !== null && prop.lng !== null)
     .map((prop) => {
       const scores = propertyScores.get(prop.id) ?? [];
       return {
@@ -424,8 +424,8 @@ export default async function PainelPage() {
         name: prop.name,
         city: prop.city ?? "",
         state: prop.state ?? "",
-        lat: prop.y as number,
-        lng: prop.x as number,
+        lat: prop.lat as number,
+        lng: prop.lng as number,
         animalsCount: scores.length,
         scoreAvg:
           scores.length > 0

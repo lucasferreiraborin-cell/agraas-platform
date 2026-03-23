@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import BrazilMapWrapper from "@/app/components/BrazilMapWrapper";
 
 type ClientRow = {
   id: string;
@@ -21,6 +22,8 @@ type PropertyRow = {
   profile: string | null;
   x: number | null;
   y: number | null;
+  lat: number | null;
+  lng: number | null;
   client_id: string | null;
 };
 
@@ -40,7 +43,7 @@ export default function PropriedadesPage() {
           supabase
             .from("properties")
             .select(
-              "id, name, code, region, state, status, profile, x, y, client_id"
+              "id, name, code, region, state, status, profile, x, y, lat, lng, client_id"
             )
             .order("name"),
           supabase.from("animals").select("id, current_property_id"),
@@ -372,105 +375,23 @@ export default function PropriedadesPage() {
                 </div>
               </div>
 
-              <div className="mt-8 overflow-hidden rounded-[28px] border border-[var(--border)] bg-[linear-gradient(180deg,#f7faf5_0%,#eef4ea_100%)] p-4 shadow-[var(--shadow-soft)]">
-                <div className="rounded-[24px] border border-[var(--border)] bg-white/70 p-4">
-                  <svg viewBox="0 0 800 520" className="h-auto w-full">
-                    <defs>
-                      <linearGradient
-                        id="territoryGlow"
-                        x1="0%"
-                        y1="0%"
-                        x2="100%"
-                        y2="100%"
-                      >
-                        <stop offset="0%" stopColor="#e8f4e2" />
-                        <stop offset="100%" stopColor="#dcefd2" />
-                      </linearGradient>
-                    </defs>
-
-                    <rect
-                      x="20"
-                      y="20"
-                      width="760"
-                      height="480"
-                      rx="28"
-                      fill="url(#territoryGlow)"
-                    />
-
-                    <path
-                      d="M260 70 L350 55 L455 70 L545 125 L590 195 L612 275
-                         L588 355 L545 420 L455 455 L370 445 L320 470
-                         L275 438 L215 430 L180 380 L165 315 L120 250
-                         L145 180 L200 115 L260 70Z"
-                      fill="rgba(93,156,68,0.10)"
-                      stroke="rgba(93,156,68,0.28)"
-                      strokeWidth="4"
-                      strokeLinejoin="round"
-                    />
-
-                    <line x1="250" y1="150" x2="565" y2="150" stroke="rgba(30,42,27,0.06)" strokeDasharray="6 8" />
-                    <line x1="220" y1="250" x2="600" y2="250" stroke="rgba(30,42,27,0.06)" strokeDasharray="6 8" />
-                    <line x1="210" y1="350" x2="560" y2="350" stroke="rgba(30,42,27,0.06)" strokeDasharray="6 8" />
-                    <line x1="290" y1="90"  x2="290" y2="440" stroke="rgba(30,42,27,0.05)" strokeDasharray="6 8" />
-                    <line x1="410" y1="80"  x2="410" y2="455" stroke="rgba(30,42,27,0.05)" strokeDasharray="6 8" />
-                    <line x1="530" y1="110" x2="530" y2="430" stroke="rgba(30,42,27,0.05)" strokeDasharray="6 8" />
-
-                    <text x="280" y="105" fill="rgba(30,42,27,0.45)" fontSize="13" fontWeight="600">Norte</text>
-                    <text x="285" y="205" fill="rgba(30,42,27,0.45)" fontSize="13" fontWeight="600">Centro-Oeste</text>
-                    <text x="510" y="315" fill="rgba(30,42,27,0.45)" fontSize="13" fontWeight="600">Sudeste</text>
-                    <text x="365" y="455" fill="rgba(30,42,27,0.45)" fontSize="13" fontWeight="600">Sul</text>
-
-                    {filteredProperties.map((property) => {
-                      const isSelected = validSelectedId === property.id;
-                      const px = property.x ?? 400;
-                      const py = property.y ?? 260;
-
-                      return (
-                        <g
-                          key={property.id}
-                          onClick={() => setSelectedPropertyId(property.id)}
-                          style={{ cursor: "pointer" }}
-                        >
-                          <circle
-                            cx={px}
-                            cy={py}
-                            r={isSelected ? "24" : "16"}
-                            fill={
-                              isSelected
-                                ? "rgba(93,156,68,0.22)"
-                                : "rgba(93,156,68,0.16)"
-                            }
-                          />
-                          <circle
-                            cx={px}
-                            cy={py}
-                            r={isSelected ? "11" : "9"}
-                            fill={isSelected ? "#4f8a38" : "#5d9c44"}
-                            stroke="white"
-                            strokeWidth="4"
-                          />
-                          <text
-                            x={px + 16}
-                            y={py - 14}
-                            fill="rgba(30,42,27,0.82)"
-                            fontSize="12"
-                            fontWeight={isSelected ? "800" : "700"}
-                          >
-                            {property.code ?? property.name}
-                          </text>
-                          <text
-                            x={px + 16}
-                            y={py + 3}
-                            fill="rgba(30,42,27,0.56)"
-                            fontSize="11"
-                          >
-                            {property.state ?? ""}
-                          </text>
-                        </g>
-                      );
-                    })}
-                  </svg>
-                </div>
+              <div className="mt-8 overflow-hidden rounded-[28px] border border-[var(--border)] shadow-[var(--shadow-soft)]" style={{ height: 380 }}>
+                <BrazilMapWrapper
+                  properties={filteredProperties
+                    .filter((p) => p.lat !== null && p.lng !== null)
+                    .map((p) => ({
+                      id: p.id,
+                      name: p.name,
+                      city: null,
+                      state: p.state,
+                      lat: p.lat as number,
+                      lng: p.lng as number,
+                      scoreAvg: 0,
+                      animalsCount: p.animals_count,
+                    }))}
+                  selectedId={validSelectedId}
+                  onSelect={setSelectedPropertyId}
+                />
               </div>
 
               <div className="mt-5 flex flex-wrap gap-3">

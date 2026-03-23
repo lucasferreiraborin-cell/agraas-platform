@@ -159,7 +159,7 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
   const scoreByAnimal = useMemo(() => {
     const map = new Map<string, number>();
     for (const p of passportScores) {
-      const overall = (p.score_json as any)?.overall;
+      const overall = (p.score_json as any)?.total_score;
       if (overall != null) map.set(p.animal_id, Number(overall));
     }
     return map;
