@@ -236,7 +236,7 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
   const certifications = (certificationsData ?? []) as CertificationRow[];
 
   // Busca pai, mãe e propriedade atual em paralelo
-  const [sireData, damData, currentPropertyData] = await Promise.all([
+  const [sireData, damData, currentPropertyData, sireScoreRaw, damScoreRaw] = await Promise.all([
     animal.sire_animal_id
       ? supabase.from("animals").select("id, internal_code, nickname, agraas_id, sex, breed")
           .eq("id", animal.sire_animal_id).single().then(r => r.data as ParentAnimalRow | null)
@@ -249,7 +249,19 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
       ? supabase.from("properties").select("id, name, city, state")
           .eq("id", animal.current_property_id).single().then(r => r.data as { id: string; name: string | null; city: string | null; state: string | null } | null)
       : Promise.resolve(null),
+    animal.sire_animal_id
+      ? supabase.from("agraas_master_passport_cache").select("score_json")
+          .eq("animal_id", animal.sire_animal_id).maybeSingle()
+          .then(r => { const v = (r.data?.score_json as any)?.overall; return v != null ? Number(v) : null; })
+      : Promise.resolve(null as number | null),
+    animal.dam_animal_id
+      ? supabase.from("agraas_master_passport_cache").select("score_json")
+          .eq("animal_id", animal.dam_animal_id).maybeSingle()
+          .then(r => { const v = (r.data?.score_json as any)?.overall; return v != null ? Number(v) : null; })
+      : Promise.resolve(null as number | null),
   ]);
+  const sireScore = sireScoreRaw;
+  const damScore = damScoreRaw;
 
   const productMap = new Map<string, string>();
   for (const product of products) {
@@ -407,10 +419,6 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
           continuityScore: Number(calculatedContinuityScore ?? 0),
         });
 
-  const scorePercent = Math.max(
-    6,
-    Math.min(100, Math.round(Number(calculatedAgraasScore ?? 0)))
-  );
 
   return (
     <main className="space-y-8">
@@ -536,26 +544,15 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
               Agraas score
             </p>
 
-            <div className="mt-6 rounded-3xl border bg-white p-6 shadow">
-              <p className="text-sm text-[var(--text-muted)]">
+            <div className="mt-6 flex flex-col items-center gap-3 rounded-3xl border bg-white p-6 shadow">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
                 Score consolidado
               </p>
-
-              <p className="mt-2 text-5xl font-semibold text-[var(--primary-hover)]">
-                {calculatedAgraasScore}
-              </p>
-
-              <div className="mt-5 h-3 w-full rounded-full bg-[rgba(93,156,68,0.10)]">
-                <div
-                  className="h-full rounded-full bg-[linear-gradient(90deg,#8dbc5f,#5d9c44)]"
-                  style={{ width: `${scorePercent}%` }}
-                />
-              </div>
-
-              <p className="mt-4 text-sm text-[var(--text-secondary)]">
+              <ScoreDonut score={calculatedAgraasScore} size={148} />
+              <p className="mt-1 text-center text-xs leading-relaxed text-[var(--text-secondary)] max-w-[200px]">
                 {Number(score.total_score ?? 0) > 0
-                  ? "Leitura consolidada do passaporte, da operação e consistência operacional"
-                  : "Score calculado dinamicamente a partir de peso, histórico, integridade cadastral e consistência operacional"}
+                  ? "Passaporte consolidado · operação · consistência"
+                  : "Score dinâmico: peso, histórico, integridade e operação"}
               </p>
             </div>
 
@@ -626,14 +623,24 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
             {sireData ? (
               <Link href={`/animais/${sireData.id}`}
                 className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5 transition hover:border-[rgba(93,156,68,0.30)] hover:bg-[var(--primary-soft)]">
-                <p className="text-xs uppercase tracking-[0.14em] text-[var(--text-muted)]">Pai</p>
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-xs uppercase tracking-[0.14em] text-[var(--text-muted)]">Pai</p>
+                  {sireScore !== null && (
+                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${sireScore >= 70 ? "bg-emerald-100 text-emerald-700" : sireScore >= 50 ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"}`}>
+                      {sireScore}
+                    </span>
+                  )}
+                </div>
                 <p className="mt-3 text-xl font-semibold text-[var(--text-primary)]">
                   {sireData.nickname ?? sireData.internal_code ?? "—"}
                 </p>
                 <p className="mt-1 text-sm text-[var(--text-muted)]">
                   {sireData.internal_code}{sireData.breed ? ` • ${sireData.breed}` : ""}
                 </p>
-                <p className="mt-3 text-sm font-medium text-[var(--primary-hover)]">Ver passaporte →</p>
+                <div className="mt-4 flex items-center justify-between gap-3">
+                  <span className="text-sm font-medium text-[var(--primary-hover)]">Ver passaporte →</span>
+                  {sireScore !== null && <ScoreDonut score={sireScore} size={56} />}
+                </div>
               </Link>
             ) : animal.sire_animal_id ? (
               <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5">
@@ -644,14 +651,24 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
             {damData ? (
               <Link href={`/animais/${damData.id}`}
                 className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5 transition hover:border-[rgba(93,156,68,0.30)] hover:bg-[var(--primary-soft)]">
-                <p className="text-xs uppercase tracking-[0.14em] text-[var(--text-muted)]">Mãe</p>
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-xs uppercase tracking-[0.14em] text-[var(--text-muted)]">Mãe</p>
+                  {damScore !== null && (
+                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${damScore >= 70 ? "bg-emerald-100 text-emerald-700" : damScore >= 50 ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"}`}>
+                      {damScore}
+                    </span>
+                  )}
+                </div>
                 <p className="mt-3 text-xl font-semibold text-[var(--text-primary)]">
                   {damData.nickname ?? damData.internal_code ?? "—"}
                 </p>
                 <p className="mt-1 text-sm text-[var(--text-muted)]">
                   {damData.internal_code}{damData.breed ? ` • ${damData.breed}` : ""}
                 </p>
-                <p className="mt-3 text-sm font-medium text-[var(--primary-hover)]">Ver passaporte →</p>
+                <div className="mt-4 flex items-center justify-between gap-3">
+                  <span className="text-sm font-medium text-[var(--primary-hover)]">Ver passaporte →</span>
+                  {damScore !== null && <ScoreDonut score={damScore} size={56} />}
+                </div>
               </Link>
             ) : animal.dam_animal_id ? (
               <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5">
@@ -796,28 +813,34 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
               Nenhum evento encontrado para este animal.
             </div>
           ) : (
-            <div className="space-y-4">
-              {timeline.map((item) => (
-                <div
-                  key={item.id}
-                  className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5 transition hover:border-[rgba(93,156,68,0.20)]"
-                >
-                  <div className="flex items-center justify-between gap-4">
-                    <span className="ag-badge ag-badge-green">{item.badge}</span>
-                    <span className="text-sm text-[var(--text-muted)]">
-                      {formatDateTime(item.date)}
-                    </span>
-                  </div>
-
-                  <p className="mt-4 text-base font-semibold text-[var(--text-primary)]">
-                    {item.title}
-                  </p>
-
-                  <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-                    {item.description}
-                  </p>
-                </div>
-              ))}
+            <div className="relative">
+              {/* Linha vertical */}
+              <div className="absolute left-5 top-2 bottom-2 w-px bg-[var(--border)]" />
+              <div className="space-y-0">
+                {timeline.map((item) => {
+                  const dotColor = timelineItemColor(item.badge);
+                  const emoji = [...item.badge][0] ?? "•";
+                  return (
+                    <div key={item.id} className="relative flex gap-5 pb-7 last:pb-0">
+                      {/* Círculo colorido */}
+                      <div
+                        className="relative z-10 mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 bg-white text-base"
+                        style={{ borderColor: dotColor }}
+                      >
+                        {emoji}
+                      </div>
+                      {/* Conteúdo */}
+                      <div className="flex-1 min-w-0 pt-1">
+                        <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-0.5">
+                          <p className="font-semibold text-[var(--text-primary)]">{item.title}</p>
+                          <span className="shrink-0 text-xs text-[var(--text-muted)]">{formatDate(item.date)}</span>
+                        </div>
+                        <p className="mt-1 text-sm leading-relaxed text-[var(--text-secondary)]">{item.description}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>
@@ -1145,4 +1168,61 @@ function formatMovementType(value: string) {
   };
 
   return map[value] ?? value;
+}
+
+// ── Score donut SVG — funciona em server components (sem hooks) ──
+function ScoreDonut({ score, size = 140 }: { score: number; size?: number }) {
+  const r = 52;
+  const cx = 70;
+  const cy = 70;
+  const circ = 2 * Math.PI * r; // ≈ 326.73
+  const pct = Math.max(0, Math.min(100, score));
+  const offset = circ * (1 - pct / 100);
+  const color = score >= 70 ? "#2d9b6f" : score >= 50 ? "#d4930a" : "#c0392b";
+  const track = score >= 70 ? "#d1fae5" : score >= 50 ? "#fef3c7" : "#fee2e2";
+
+  return (
+    <svg width={size} height={size} viewBox="0 0 140 140" aria-label={`Score ${score}`}>
+      {/* Track */}
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke={track} strokeWidth="14" />
+      {/* Arc */}
+      <circle
+        cx={cx} cy={cy} r={r}
+        fill="none"
+        stroke={color}
+        strokeWidth="14"
+        strokeLinecap="round"
+        strokeDasharray={circ}
+        strokeDashoffset={offset}
+        transform={`rotate(-90 ${cx} ${cy})`}
+      />
+      {/* Número central */}
+      <text
+        x={cx} y={cy - 7}
+        textAnchor="middle" dominantBaseline="middle"
+        fontSize="28" fontWeight="700" fill={color} fontFamily="inherit"
+      >
+        {score}
+      </text>
+      {/* "/100" */}
+      <text
+        x={cx} y={cy + 16}
+        textAnchor="middle" dominantBaseline="middle"
+        fontSize="11" fill="#9ca3af" fontFamily="inherit"
+      >
+        / 100
+      </text>
+    </svg>
+  );
+}
+
+// ── Cor do dot por tipo de evento na timeline ──
+function timelineItemColor(badge: string): string {
+  if (badge.includes("⚖") || badge.includes("Pesagem")) return "#3b82f6";
+  if (badge.includes("💉") || badge.includes("Aplicação")) return "#f59e0b";
+  if (badge.includes("🔁") || badge.includes("Movimento")) return "#8b5cf6";
+  if (badge.includes("📦") || badge.includes("Lote")) return "#6b7280";
+  if (badge.includes("🐣") || badge.includes("Nascimento")) return "#10b981";
+  if (badge.includes("✅") || badge.includes("Certif")) return "#059669";
+  return "#9ca3af";
 }
