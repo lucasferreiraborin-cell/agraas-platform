@@ -1,8 +1,6 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import Link from "next/link";
-import dynamic from "next/dynamic";
-
-const BrazilMap = dynamic(() => import("@/app/components/BrazilMap"), { ssr: false });
+import BrazilMapWrapper from "@/app/components/BrazilMapWrapper";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -598,7 +596,7 @@ export default async function PainelPage() {
           </div>
 
           {propertiesForMap.length > 0 ? (
-            <BrazilMap properties={propertiesForMap} />
+            <BrazilMapWrapper properties={propertiesForMap} />
           ) : (
             <div className="flex h-64 items-center justify-center rounded-3xl bg-[var(--surface-soft)] text-sm text-[var(--text-muted)]">
               Nenhuma propriedade com coordenadas registradas.
