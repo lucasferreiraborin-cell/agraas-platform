@@ -1,12 +1,4 @@
-"use client";
-
-function EmptyState({ label }: { label: string }) {
-  return (
-    <div className="flex min-h-[80px] items-center justify-center rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface-soft)] px-6 py-8 text-sm text-[var(--text-muted)]">
-      {label}
-    </div>
-  );
-}
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 function SectionTitle({ title, sub }: { title: string; sub?: string }) {
   return (
@@ -17,35 +9,78 @@ function SectionTitle({ title, sub }: { title: string; sub?: string }) {
   );
 }
 
-function CounterCard({
-  label, value, sub, variant = "neutral",
-}: {
-  label: string; value: string | number; sub: string; variant?: "neutral" | "green" | "amber" | "red";
-}) {
-  const colors = {
-    neutral: "border-[var(--border)] bg-[var(--surface-soft)]",
-    green:   "border-green-200 bg-green-50",
-    amber:   "border-amber-200 bg-amber-50",
-    red:     "border-red-200 bg-red-50",
-  };
-  const textColors = {
-    neutral: "text-[var(--text-primary)]",
-    green:   "text-green-700",
-    amber:   "text-amber-700",
-    red:     "text-red-700",
-  };
+function EmptyState({ label }: { label: string }) {
   return (
-    <div className={`rounded-2xl border p-5 ${colors[variant]}`}>
-      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">{label}</p>
-      <p className={`mt-2 text-3xl font-semibold tracking-tight ${textColors[variant]}`}>{value}</p>
-      <p className="mt-1 text-xs text-[var(--text-muted)]">{sub}</p>
+    <div className="flex min-h-[80px] items-center justify-center rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface-soft)] px-6 py-8 text-sm text-[var(--text-muted)]">
+      {label}
     </div>
   );
 }
 
-const SAIDAS_CATEGORIAS = ["Venda", "Morte", "Transferência", "Ajuste de inventário", "Abate"];
+function StatCard({
+  label, valueIn, labelIn, valueOut, labelOut, variant = "neutral",
+}: {
+  label: string;
+  valueIn: number;
+  labelIn: string;
+  valueOut: number;
+  labelOut: string;
+  variant?: "neutral" | "green" | "amber" | "red";
+}) {
+  const border = { neutral: "border-[var(--border)]", green: "border-green-200", amber: "border-amber-200", red: "border-red-200" }[variant];
+  const bg    = { neutral: "bg-[var(--surface-soft)]", green: "bg-green-50", amber: "bg-amber-50", red: "bg-red-50" }[variant];
+  const text  = { neutral: "text-[var(--text-primary)]", green: "text-green-700", amber: "text-amber-700", red: "text-red-700" }[variant];
+  return (
+    <div className={`rounded-2xl border p-5 ${border} ${bg}`}>
+      <p className={`text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]`}>{label}</p>
+      <div className={`mt-3 flex items-end justify-between gap-2 ${text}`}>
+        <div>
+          <p className="text-[10px] text-[var(--text-muted)]">{labelIn}</p>
+          <p className="text-2xl font-semibold">{valueIn.toLocaleString("pt-BR")}</p>
+        </div>
+        <div className="text-right">
+          <p className="text-[10px] text-[var(--text-muted)]">{labelOut}</p>
+          <p className="text-2xl font-semibold">{valueOut.toLocaleString("pt-BR")}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
-export default function AuditoriaPage() {
+function AlertPoint({
+  icon, label, value, note, variant,
+}: {
+  icon: string; label: string; value: number; note: string; variant: "green" | "amber" | "red";
+}) {
+  const colors = {
+    green: "border-green-200 bg-green-50 text-green-800",
+    amber: "border-amber-200 bg-amber-50 text-amber-800",
+    red:   "border-red-200 bg-red-50 text-red-800",
+  }[variant];
+  const sub = { green: "text-green-600", amber: "text-amber-600", red: "text-red-600" }[variant];
+  return (
+    <div className={`flex items-center gap-4 rounded-2xl border p-5 ${colors}`}>
+      <span className="text-2xl">{icon}</span>
+      <div className="flex-1">
+        <p className="text-sm font-semibold">{label}</p>
+        <p className={`text-xs ${sub}`}>{note}</p>
+      </div>
+      <p className="text-2xl font-bold">{value.toLocaleString("pt-BR")}</p>
+    </div>
+  );
+}
+
+export default async function AuditoriaPage() {
+  const supabase = await createSupabaseServerClient();
+
+  const { data: snapshots } = await supabase
+    .from("audit_snapshot")
+    .select("*")
+    .order("snapshot_date", { ascending: false })
+    .limit(1);
+
+  const snap = snapshots?.[0] ?? null;
+
   return (
     <main className="space-y-8">
       {/* Hero */}
@@ -56,105 +91,150 @@ export default function AuditoriaPage() {
           Auditoria
         </h1>
         <p className="mt-3 max-w-xl text-[1rem] leading-7 text-[var(--text-secondary)]">
-          Reconciliação do rebanho, rastreabilidade de saídas, alertas de duplicidade e pontos de atenção.
+          Reconciliação do rebanho, rastreabilidade de saídas e pontos de atenção.
+          {snap && (
+            <span className="ml-2 text-[var(--text-muted)]">
+              · Snapshot {new Date(snap.snapshot_date).toLocaleDateString("pt-BR")}
+            </span>
+          )}
         </p>
       </section>
 
-      {/* Reconciliação do Rebanho */}
-      <section className="ag-card p-6 lg:p-8">
-        <SectionTitle title="Reconciliação do Rebanho" sub="Inventário × registros ativos × movimentações" />
-        <div className="grid gap-4 sm:grid-cols-3">
-          <CounterCard label="Inventariados" value="—" sub="animais com registro ativo" variant="green" />
-          <CounterCard label="Não inventariados" value="—" sub="sem movimentação recente" variant="amber" />
-          <CounterCard label="Com movimentação" value="—" sub="transferência / saída / entrada" variant="neutral" />
-        </div>
-        <div className="mt-4">
-          <EmptyState label="Nenhum dado de inventário registrado ainda" />
-        </div>
-      </section>
-
-      {/* Saídas por Categoria */}
-      <section className="ag-card p-6 lg:p-8">
-        <SectionTitle title="Saídas por Categoria" sub="Classificação de todas as baixas do período" />
-        <div className="overflow-x-auto">
-          <table className="ag-table w-full">
-            <thead>
-              <tr>
-                <th>Categoria de saída</th>
-                <th>Quantidade</th>
-                <th>% do total</th>
-                <th>Valor envolvido (R$)</th>
-                <th>Última ocorrência</th>
-              </tr>
-            </thead>
-            <tbody>
-              {SAIDAS_CATEGORIAS.map(cat => (
-                <tr key={cat}>
-                  <td className="font-medium text-[var(--text-primary)]">{cat}</td>
-                  <td className="text-[var(--text-muted)]">—</td>
-                  <td className="text-[var(--text-muted)]">—</td>
-                  <td className="text-[var(--text-muted)]">—</td>
-                  <td className="text-[var(--text-muted)]">—</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <EmptyState label="Nenhuma saída registrada ainda" />
-      </section>
-
-      {/* Alertas de IDs Duplicados */}
-      <section className="ag-card p-6 lg:p-8">
-        <SectionTitle title="Alertas de IDs Duplicados" sub="RFID e ID Usual com mais de um animal associado" />
-        <div className="grid gap-4 sm:grid-cols-2">
-          <CounterCard label="RFID duplicados" value="—" sub="leituras com conflito de identidade" variant="neutral" />
-          <CounterCard label="ID Usual duplicados" value="—" sub="brincos / marcações repetidas" variant="neutral" />
-        </div>
-        <div className="mt-4 overflow-x-auto">
-          <table className="ag-table w-full">
-            <thead>
-              <tr>
-                <th>Tipo</th>
-                <th>Código</th>
-                <th>Animais afetados</th>
-                <th>Propriedades</th>
-                <th>Ação sugerida</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td colSpan={5} className="py-8 text-center text-sm text-[var(--text-muted)]">
-                  Nenhum ID duplicado identificado
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      {/* Pontos de Atenção */}
-      <section className="ag-card p-6 lg:p-8">
-        <SectionTitle title="Pontos de Atenção" sub="Inconsistências detectadas automaticamente" />
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <CounterCard label="Sem pesagem recente" value="—" sub="mais de 60 dias sem peso" variant="amber" />
-          <CounterCard label="Sem propriedade" value="—" sub="animais sem localização" variant="red" />
-          <CounterCard label="Certs vencidas" value="—" sub="certificações expiradas" variant="amber" />
-          <CounterCard label="Eventos pendentes" value="—" sub="registros incompletos" variant="neutral" />
-        </div>
-        <div className="mt-6">
-          <div className="flex items-center gap-3 rounded-2xl border border-green-200 bg-green-50 p-5">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-green-100">
-              <svg className="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
+      {!snap ? (
+        <EmptyState label="Nenhum dado de auditoria registrado ainda" />
+      ) : (
+        <>
+          {/* Reconciliação */}
+          <section className="ag-card p-6 lg:p-8">
+            <SectionTitle title="Reconciliação do Rebanho" sub="Entrada versus saída por categoria de movimentação" />
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <StatCard
+                label="Inventariados"
+                valueIn={snap.inventoried_in}
+                labelIn="entrada"
+                valueOut={snap.inventoried_out}
+                labelOut="saldo"
+                variant="green"
+              />
+              <StatCard
+                label="Com movimentação"
+                valueIn={snap.movements_in}
+                labelIn="entrada"
+                valueOut={snap.movements_out}
+                labelOut="saldo"
+                variant="neutral"
+              />
+              <StatCard
+                label="Não inventariados"
+                valueIn={snap.not_inventoried_in}
+                labelIn="entrada"
+                valueOut={snap.not_inventoried_out}
+                labelOut="saldo"
+                variant="amber"
+              />
             </div>
-            <div>
-              <p className="text-sm font-medium text-green-800">Sistema pronto para auditoria</p>
-              <p className="text-xs text-green-600">Nenhuma inconsistência detectada — popule os dados para ativar os alertas</p>
+
+            {/* Totais */}
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              <StatCard
+                label="Total presentes"
+                valueIn={snap.total_present_in}
+                labelIn="entrada"
+                valueOut={snap.total_present_out}
+                labelOut="saldo"
+                variant="neutral"
+              />
+              <StatCard
+                label="Estoque total"
+                valueIn={snap.total_stock_in}
+                labelIn="entrada"
+                valueOut={snap.total_stock_out}
+                labelOut="saldo"
+                variant="neutral"
+              />
             </div>
-          </div>
-        </div>
-      </section>
+
+            {/* Diferença */}
+            <div className="mt-4 rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] p-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">Saídas totais (entrada − saldo)</p>
+              <div className="mt-2 flex items-end gap-6">
+                <div>
+                  <p className="text-xs text-[var(--text-muted)]">Inventariados</p>
+                  <p className="text-xl font-semibold text-[var(--text-primary)]">
+                    {(snap.inventoried_in - snap.inventoried_out).toLocaleString("pt-BR")}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-[var(--text-muted)]">Não inventariados</p>
+                  <p className="text-xl font-semibold text-[var(--text-primary)]">
+                    {Math.abs(snap.not_inventoried_in - snap.not_inventoried_out).toLocaleString("pt-BR")}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-[var(--text-muted)]">Estoque total</p>
+                  <p className="text-xl font-semibold text-[var(--text-primary)]">
+                    {(snap.total_stock_in - snap.total_stock_out).toLocaleString("pt-BR")}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* IDs duplicados */}
+          <section className="ag-card p-6 lg:p-8">
+            <SectionTitle title="IDs Duplicados" sub="RFID e ID Usual com conflito de identidade" />
+            {snap.duplicates === 0 ? (
+              <div className="flex items-center gap-3 rounded-2xl border border-green-200 bg-green-50 p-5">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-green-100">
+                  <svg className="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-green-800">Nenhum ID duplicado identificado</p>
+                  <p className="text-xs text-green-600">Todos os identificadores são únicos no sistema</p>
+                </div>
+              </div>
+            ) : (
+              <AlertPoint
+                icon="⚠️"
+                label="Duplicados encontrados"
+                value={snap.duplicates}
+                note="IDs com conflito — requer revisão"
+                variant="red"
+              />
+            )}
+          </section>
+
+          {/* Pontos de atenção */}
+          <section className="ag-card p-6 lg:p-8">
+            <SectionTitle title="Pontos de Atenção" sub="Inconsistências detectadas automaticamente" />
+            <div className="space-y-3">
+              <AlertPoint
+                icon="✅"
+                label="IDs duplicados"
+                value={snap.duplicates}
+                note="Nenhum conflito de identidade detectado"
+                variant="green"
+              />
+              <AlertPoint
+                icon="⚠️"
+                label="Ajustes inseridos"
+                value={snap.adjustments_inserted}
+                note="Movimentações classificadas como ajuste de inventário"
+                variant="amber"
+              />
+              <AlertPoint
+                icon="🔴"
+                label="Saídas como ajuste"
+                value={snap.exits_as_adjustment}
+                note="Saídas registradas via ajuste — requer revisão de causa"
+                variant="red"
+              />
+            </div>
+          </section>
+        </>
+      )}
     </main>
   );
 }

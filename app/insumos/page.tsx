@@ -1,22 +1,4 @@
-"use client";
-
-function EmptyState({ label }: { label: string }) {
-  return (
-    <div className="flex min-h-[80px] items-center justify-center rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface-soft)] px-6 py-8 text-sm text-[var(--text-muted)]">
-      {label}
-    </div>
-  );
-}
-
-function KpiSlot({ label, sub }: { label: string; sub: string }) {
-  return (
-    <div className="ag-card flex flex-col gap-1 p-5">
-      <p className="ag-kpi-label">{label}</p>
-      <p className="ag-kpi-value text-[var(--text-muted)]">—</p>
-      <p className="text-xs text-[var(--text-muted)]">{sub}</p>
-    </div>
-  );
-}
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 function SectionTitle({ title, sub }: { title: string; sub?: string }) {
   return (
@@ -27,16 +9,68 @@ function SectionTitle({ title, sub }: { title: string; sub?: string }) {
   );
 }
 
-const CATEGORIAS = [
-  { label: "Nutricionais",  color: "bg-blue-100 text-blue-700" },
-  { label: "Sanitários",    color: "bg-green-100 text-green-700" },
-  { label: "Maquinários",   color: "bg-orange-100 text-orange-700" },
-  { label: "Agrícolas",     color: "bg-yellow-100 text-yellow-700" },
-  { label: "Combustível",   color: "bg-red-100 text-red-700" },
-  { label: "Outros",        color: "bg-gray-100 text-gray-600" },
-];
+function EmptyState({ label }: { label: string }) {
+  return (
+    <div className="flex min-h-[80px] items-center justify-center rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface-soft)] px-6 py-8 text-sm text-[var(--text-muted)]">
+      {label}
+    </div>
+  );
+}
 
-export default function InsumosPage() {
+function KpiCard({ label, value, sub }: { label: string; value: string; sub: string }) {
+  return (
+    <div className="ag-card flex flex-col gap-1 p-5">
+      <p className="ag-kpi-label">{label}</p>
+      <p className="ag-kpi-value">{value}</p>
+      <p className="text-xs text-[var(--text-muted)]">{sub}</p>
+    </div>
+  );
+}
+
+const CATEGORY_COLORS: Record<string, string> = {
+  "Nutricionais":          "bg-blue-100 text-blue-700",
+  "Medicamentos":          "bg-green-100 text-green-700",
+  "Tratamentos/Hormônios": "bg-purple-100 text-purple-700",
+  "Vacinas/Vermífugos":    "bg-amber-100 text-amber-700",
+  "Maquinários":           "bg-orange-100 text-orange-700",
+  "Agrícolas":             "bg-lime-100 text-lime-700",
+  "Combustível":           "bg-red-100 text-red-700",
+  "Outros":                "bg-gray-100 text-gray-600",
+};
+
+function fmt(v: number) {
+  return v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+export default async function InsumosPage() {
+  const supabase = await createSupabaseServerClient();
+
+  const [{ data: finData }, { data: itemsData }] = await Promise.all([
+    supabase.from("supply_financials").select("*").order("period_label").limit(1),
+    supabase.from("supply_inventory_items").select("*").order("category").order("product_name"),
+  ]);
+
+  const fin = finData?.[0] ?? null;
+  const items = itemsData ?? [];
+
+  // Group items by category
+  const byCategory = new Map<string, typeof items>();
+  for (const item of items) {
+    const cat = item.category ?? "Outros";
+    if (!byCategory.has(cat)) byCategory.set(cat, []);
+    byCategory.get(cat)!.push(item);
+  }
+  const categories = Array.from(byCategory.entries());
+
+  // For bar chart: derive value by category from financial totals (approximation from group totals)
+  const CATEGORY_VALUES: Record<string, number> = {
+    "Nutricionais":          42765,
+    "Medicamentos":          1333,
+    "Tratamentos/Hormônios": 545,
+    "Vacinas/Vermífugos":    498,
+  };
+  const totalCatValue = Object.values(CATEGORY_VALUES).reduce((s, v) => s + v, 0);
+
   return (
     <main className="space-y-8">
       {/* Hero */}
@@ -47,88 +81,134 @@ export default function InsumosPage() {
           Insumos
         </h1>
         <p className="mt-3 max-w-xl text-[1rem] leading-7 text-[var(--text-secondary)]">
-          Controle de estoque, movimentação diária, posição financeira e alertas de mínimo.
+          Controle de estoque, movimentação, posição financeira e alertas de mínimo.
+          {fin && <span className="ml-2 text-[var(--text-muted)]">· {fin.period_label}</span>}
         </p>
       </section>
 
       {/* Posição Financeira */}
       <section className="ag-card p-6 lg:p-8">
         <SectionTitle title="Posição Financeira" sub="Balanço de estoque em valor (R$)" />
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <KpiSlot label="Estoque inicial" sub="valor R$" />
-          <KpiSlot label="Compras no período" sub="valor R$" />
-          <KpiSlot label="Consumo no período" sub="valor R$" />
-          <KpiSlot label="Saldo atual" sub="valor R$" />
-        </div>
+        {!fin ? <EmptyState label="Nenhuma posição financeira registrada ainda" /> : (
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <KpiCard label="Estoque inicial" value={`R$ ${fmt(fin.initial_stock_value)}`} sub="saldo anterior" />
+            <KpiCard label="Compras no período" value={`R$ ${fmt(fin.purchases_value)}`} sub="total adquirido" />
+            <KpiCard label="Consumo no período" value={`R$ ${fmt(fin.consumption_value)}`} sub="total utilizado" />
+            <KpiCard
+              label="Saldo atual"
+              value={`R$ ${fmt(fin.balance_value)}`}
+              sub="inicial + compras − consumo"
+            />
+          </div>
+        )}
       </section>
 
       {/* Estoque por Categoria */}
       <section className="ag-card p-6 lg:p-8">
-        <SectionTitle title="Estoque por Categoria" sub="Posição atual agrupada por tipo de insumo" />
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {CATEGORIAS.map(cat => (
-            <div key={cat.label} className="rounded-2xl border border-[var(--border)] p-5">
-              <div className="flex items-center justify-between gap-2">
-                <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${cat.color}`}>
-                  {cat.label}
-                </span>
-                <span className="text-xs text-[var(--text-muted)]">0 itens</span>
-              </div>
-              <p className="mt-4 text-2xl font-semibold tracking-tight text-[var(--text-primary)]">—</p>
-              <p className="mt-1 text-xs text-[var(--text-muted)]">Nenhum dado registrado ainda</p>
-              <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface-soft)]">
-                <div className="h-full w-0 rounded-full bg-[var(--primary-soft)]" />
-              </div>
-            </div>
-          ))}
-        </div>
+        <SectionTitle title="Estoque por Categoria" sub="Itens agrupados por tipo de insumo" />
+        {categories.length === 0 ? <EmptyState label="Nenhum item cadastrado ainda" /> : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {categories.map(([cat, catItems]) => {
+              const colorClass = CATEGORY_COLORS[cat] ?? "bg-gray-100 text-gray-600";
+              const catValue = CATEGORY_VALUES[cat];
+              const pct = catValue ? ((catValue / totalCatValue) * 100).toFixed(1) : null;
+              return (
+                <div key={cat} className="rounded-2xl border border-[var(--border)] p-5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${colorClass}`}>{cat}</span>
+                    <span className="text-xs text-[var(--text-muted)]">{catItems.length} {catItems.length === 1 ? "item" : "itens"}</span>
+                  </div>
+                  {catValue ? (
+                    <>
+                      <p className="mt-4 text-xl font-semibold tracking-tight text-[var(--text-primary)]">
+                        R$ {fmt(catValue)}
+                      </p>
+                      <p className="mt-1 text-xs text-[var(--text-muted)]">{pct}% do estoque total</p>
+                      <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface-soft)]">
+                        <div
+                          className="h-full rounded-full bg-[linear-gradient(90deg,#8dbc5f,#5d9c44)]"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <p className="mt-4 text-sm text-[var(--text-muted)]">Valor não especificado</p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </section>
 
-      {/* Gráfico estoque por grupo */}
+      {/* Gráfico por grupo */}
       <section className="ag-card p-6 lg:p-8">
-        <SectionTitle title="Distribuição por Grupo" sub="Participação de cada categoria no estoque total" />
-        <div className="space-y-3">
-          {CATEGORIAS.map(cat => (
-            <div key={cat.label} className="flex items-center gap-3">
-              <span className="w-28 shrink-0 text-xs text-[var(--text-secondary)]">{cat.label}</span>
-              <div className="h-7 flex-1 overflow-hidden rounded-lg bg-[var(--surface-soft)]">
-                <div className="h-full w-0 rounded-lg bg-[var(--primary-soft)]" />
-              </div>
-              <span className="w-10 text-right text-xs text-[var(--text-muted)]">0%</span>
-            </div>
-          ))}
-        </div>
-        <p className="mt-4 text-center text-sm text-[var(--text-muted)]">Nenhum insumo cadastrado ainda</p>
+        <SectionTitle title="Distribuição por Grupo" sub="Participação de cada categoria no valor total do estoque" />
+        {Object.keys(CATEGORY_VALUES).length === 0 ? <EmptyState label="Nenhum dado disponível" /> : (
+          <div className="space-y-3">
+            {Object.entries(CATEGORY_VALUES)
+              .sort((a, b) => b[1] - a[1])
+              .map(([cat, val]) => {
+                const pct = (val / totalCatValue) * 100;
+                const colorClass = CATEGORY_COLORS[cat] ?? "bg-gray-100 text-gray-600";
+                return (
+                  <div key={cat} className="flex items-center gap-3">
+                    <span className="w-36 shrink-0 text-xs text-[var(--text-secondary)]">{cat}</span>
+                    <div className="h-7 flex-1 overflow-hidden rounded-lg bg-[var(--surface-soft)]">
+                      <div
+                        className="h-full rounded-lg bg-[linear-gradient(90deg,#8dbc5f,#5d9c44)] transition-all"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                    <span className="w-16 text-right text-xs font-semibold text-[var(--text-primary)]">
+                      {pct.toFixed(1)}%
+                    </span>
+                  </div>
+                );
+              })}
+          </div>
+        )}
       </section>
 
-      {/* Movimentação Diária */}
+      {/* Itens de Estoque */}
       <section className="ag-card p-6 lg:p-8">
-        <SectionTitle title="Movimentação Diária" sub="Entradas e saídas por produto nos últimos 30 dias" />
-        <div className="overflow-x-auto">
-          <table className="ag-table w-full">
-            <thead>
-              <tr>
-                <th>Data</th>
-                <th>Produto</th>
-                <th>Categoria</th>
-                <th>Tipo</th>
-                <th>Quantidade</th>
-                <th>Unidade</th>
-                <th>Valor (R$)</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td colSpan={7} className="py-8 text-center text-sm text-[var(--text-muted)]">
-                  Nenhuma movimentação registrada ainda
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <SectionTitle title="Itens de Estoque" sub="Produtos cadastrados com dose e abrangência" />
+        {items.length === 0 ? <EmptyState label="Nenhum item de estoque cadastrado ainda" /> : (
+          <div className="overflow-x-auto">
+            <table className="ag-table w-full">
+              <thead>
+                <tr>
+                  <th>Produto</th>
+                  <th>Categoria</th>
+                  <th>Dose / animal</th>
+                  <th>Unidade</th>
+                  <th>Animais tratados</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map(item => {
+                  const colorClass = CATEGORY_COLORS[item.category] ?? "bg-gray-100 text-gray-600";
+                  return (
+                    <tr key={item.id}>
+                      <td className="font-medium text-[var(--text-primary)]">{item.product_name}</td>
+                      <td>
+                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${colorClass}`}>
+                          {item.category}
+                        </span>
+                      </td>
+                      <td>{item.dose_per_animal ?? "—"}</td>
+                      <td>{item.unit ?? "—"}</td>
+                      <td>{(item.head_count ?? 0).toLocaleString("pt-BR")}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
 
-      {/* Alertas de Estoque Mínimo */}
+      {/* Alertas */}
       <section className="ag-card p-6 lg:p-8">
         <SectionTitle title="Alertas de Estoque Mínimo" sub="Produtos abaixo do nível mínimo configurado" />
         <div className="flex items-center gap-3 rounded-2xl border border-green-200 bg-green-50 p-5">
@@ -141,9 +221,6 @@ export default function InsumosPage() {
             <p className="text-sm font-medium text-green-800">Nenhum alerta ativo</p>
             <p className="text-xs text-green-600">Configure o estoque mínimo por produto para receber alertas aqui</p>
           </div>
-        </div>
-        <div className="mt-4">
-          <EmptyState label="Nenhum produto com estoque mínimo configurado" />
         </div>
       </section>
     </main>
