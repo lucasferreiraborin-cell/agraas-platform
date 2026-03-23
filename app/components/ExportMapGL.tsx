@@ -18,11 +18,10 @@ const MARITIME_ROUTE: [number, number][] = [
   [ -2,    45],   // Indian Ocean, east of Kenya
   [ -2,    50],   // Indian Ocean, offshore Somalia
   [  5,    50],   // Indian Ocean, north Somalia
-  [ 11,    45],   // Gulf of Aden
-  [ 12.5,  43.5], // Bab-el-Mandeb
-  [ 14,    42.5], // Red Sea south
-  [ 16,    41.5], // Red Sea mid-south
-  [ 18,    40.5], // Red Sea mid
+  [ 11.5,  51.5], // Somalia, Indian Ocean
+  [ 12,    50],   // Gulf of Aden east
+  [ 13,    47],   // Gulf of Aden
+  [ 16,    42],   // Bab-el-Mandeb / Red Sea
   [ 21.5,  39.1], // Jeddah, Saudi Arabia
 ];
 
