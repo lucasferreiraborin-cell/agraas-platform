@@ -10,24 +10,25 @@ import L from "leaflet";
 // up East Africa coast, through Red Sea to Jeddah
 const MARITIME_ROUTE: [number, number][] = [
   [-23.9, -46.3], // Santos, Brazil
-  [-30,   -42],   // South Atlantic, heading east
+  [-30,   -42],   // South Atlantic
   [-34,   -28],   // Mid South Atlantic
-  [-36,   -18],   // South Atlantic (east)
-  [-35,    18],   // Cape of Good Hope area
-  [-30,    30],   // South Indian Ocean
-  [-20,    37],   // Mozambique channel south
-  [-12,    43],   // Off Tanzania / Mozambique coast
-  [ -5,    45],   // Kenya / Somalia coast
-  [  5,    48],   // Somalia, Indian Ocean
-  [ 12,    43],   // Gulf of Aden
-  [ 16,    42],   // Bab-el-Mandeb / Red Sea south
-  [ 21,    39],   // Jeddah, Saudi Arabia
+  [-34.8,  19.9], // Cape of Good Hope
+  [-28,    33],   // East Africa coast
+  [-20,    37],   // Mozambique channel
+  [-15,    40],   // Mozambique
+  [ -8,    40],   // Tanzania
+  [ -2,    42],   // Kenya
+  [ 11.5,  43],   // Djibouti
+  [ 12.5,  43.3], // Bab-el-Mandeb
+  [ 16,    41],   // Red Sea
+  [ 18,    40],   // Red Sea north
+  [ 21.5,  39.1], // Jeddah, Saudi Arabia
 ];
 
 const SANTOS = MARITIME_ROUTE[0];
 const JEDDAH = MARITIME_ROUTE[MARITIME_ROUTE.length - 1];
 
-const ROUTE_BOUNDS = L.latLngBounds(L.latLng(-23.9, -46.3), L.latLng(21, 39));
+const ROUTE_BOUNDS = L.latLngBounds(L.latLng(-34.8, -46.3), L.latLng(21.5, 43.3));
 
 function FitRoute() {
   const map = useMap();
