@@ -386,7 +386,7 @@ export default function PropriedadesPage() {
                       state: p.state,
                       lat: p.lat as number,
                       lng: p.lng as number,
-                      scoreAvg: 0,
+                      scoreAvg: p.status === "Ativa" ? 80 : p.status === "Expansão" ? 75 : 55,
                       animalsCount: p.animals_count,
                     }))}
                   selectedId={validSelectedId}
