@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import Map, { Marker, Source, Layer } from "react-map-gl/mapbox";
 import type { MapRef, LayerProps } from "react-map-gl/mapbox";
-import "mapbox-gl/dist/mapbox-gl.css";
 
 const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
 

@@ -48,19 +48,31 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
         .select("id, name, description, objective, start_date, target_weight, status, property_id, pais_destino, porto_embarque, data_embarque, certificacoes_exigidas, numero_contrato")
         .eq("id", id).single(),
       supabase.from("animal_lot_assignments")
-        .select("id, animal_id, animals(id, internal_code, nickname, sex, breed, birth_date, blood_type, sire_animal_id, dam_animal_id)")
+        .select("id, animal_id")
         .eq("lot_id", id).is("exit_date", null),
       supabase.from("weights").select("animal_id, weight, weighing_date").order("weighing_date", { ascending: false }),
     ]);
     setLot((lotData as LotRow) ?? null);
-    const animalList: AnimalInLot[] = ((assignData ?? []) as any[])
-      .filter((a: any) => a.animals)
-      .map((a: any) => ({ ...(a.animals as AnimalInLot), assignment_id: a.id }));
-    setAnimals(animalList);
     setWeights((wData as WeightRow[]) ?? []);
 
-    // Carrega aplicações e certificações depois de ter os animalIds
-    const animalIds = animalList.map(a => a.id);
+    // Busca animais separadamente — join nested falha silenciosamente no Supabase
+    const assignments = (assignData ?? []) as { id: string; animal_id: string }[];
+    const animalIds = assignments.map((a) => a.animal_id);
+    let animalList: AnimalInLot[] = [];
+    if (animalIds.length > 0) {
+      const { data: animalsData } = await supabase
+        .from("animals")
+        .select("id, internal_code, nickname, sex, breed, birth_date, blood_type, sire_animal_id, dam_animal_id")
+        .in("id", animalIds);
+      const assignmentIdByAnimal = new Map(assignments.map((a) => [a.animal_id, a.id]));
+      animalList = ((animalsData ?? []) as Omit<AnimalInLot, "assignment_id">[]).map((a) => ({
+        ...a,
+        assignment_id: assignmentIdByAnimal.get(a.id) ?? "",
+      }));
+    }
+    setAnimals(animalList);
+
+    // Carrega aplicações e certificações
     if (animalIds.length > 0) {
       const [{ data: appData }, { data: certData }, { data: cacheData }] = await Promise.all([
         supabase.from("applications").select("animal_id, withdrawal_date, product_name").in("animal_id", animalIds),
