@@ -2,11 +2,37 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import {
+  Home,
+  LayoutDashboard,
+  Brain,
+  Beef,
+  MapPin,
+  Package,
+  BarChart2,
+  TrendingUp,
+  Plane,
+  Syringe,
+  Scale,
+  Warehouse,
+  Activity,
+  ArrowLeftRight,
+  LayoutGrid,
+  DollarSign,
+  ArrowUpRight,
+  Scissors,
+  FileText,
+  Bell,
+  BadgeCheck,
+  Clock,
+  Link2,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 type NavItem = {
   href: string;
   label: string;
-  icon: string;
+  icon: LucideIcon;
   sub?: true;
   highlight?: true;
 };
@@ -20,60 +46,60 @@ const menuGroups: NavGroup[] = [
   {
     label: null,
     items: [
-      { href: "/",            label: "Painel",               icon: "⊹" },
-      { href: "/dashboard",   label: "Dashboard Executivo",  icon: "◎" },
-      { href: "/inteligencia",label: "Inteligência",         icon: "◈" },
+      { href: "/",             label: "Painel",              icon: Home },
+      { href: "/dashboard",   label: "Dashboard Executivo",  icon: LayoutDashboard },
+      { href: "/inteligencia",label: "Inteligência",         icon: Brain },
     ],
   },
   {
     label: "Rebanho",
     items: [
-      { href: "/animais",      label: "Animais",      icon: "◉" },
-      { href: "/propriedades", label: "Propriedades", icon: "▦" },
-      { href: "/lotes",        label: "Lotes",        icon: "⊟" },
-      { href: "/scores",       label: "Scores",       icon: "◐" },
-      { href: "/market",       label: "Market",       icon: "◇" },
+      { href: "/animais",      label: "Animais",      icon: Beef },
+      { href: "/propriedades", label: "Propriedades", icon: MapPin },
+      { href: "/lotes",        label: "Lotes",        icon: Package },
+      { href: "/scores",       label: "Scores",       icon: BarChart2 },
+      { href: "/market",       label: "Market",       icon: TrendingUp },
     ],
   },
   {
     label: null,
     items: [
-      { href: "/exportacao", label: "Exportação", icon: "✈", highlight: true },
+      { href: "/exportacao", label: "Exportação", icon: Plane, highlight: true },
     ],
   },
   {
     label: "Operações",
     items: [
-      { href: "/aplicacoes",           label: "Aplicações",           icon: "✚" },
-      { href: "/aplicacoes/historico", label: "Histórico Aplicações", icon: "—", sub: true },
-      { href: "/pesagens",             label: "Pesagens",             icon: "⚖" },
-      { href: "/pesagens/historico",   label: "Histórico Pesagens",   icon: "—", sub: true },
-      { href: "/estoque",              label: "Estoque",              icon: "▩" },
-      { href: "/estoque/dashboard",    label: "Dashboard Sanitário",  icon: "—", sub: true },
-      { href: "/estoque/historico",    label: "Histórico Estoque",    icon: "—", sub: true },
-      { href: "/eventos",              label: "Eventos",              icon: "◷" },
-      { href: "/movimentacoes",        label: "Movimentações",        icon: "⇄" },
-      { href: "/movimentacoes/historico", label: "Histórico Movim.",  icon: "—", sub: true },
-      { href: "/operacoes",            label: "Operações",            icon: "◎" },
+      { href: "/aplicacoes",              label: "Aplicações",              icon: Syringe },
+      { href: "/aplicacoes/historico",    label: "Histórico Aplicações",    icon: Syringe,       sub: true },
+      { href: "/pesagens",                label: "Pesagens",                icon: Scale },
+      { href: "/pesagens/historico",      label: "Histórico Pesagens",      icon: Scale,         sub: true },
+      { href: "/estoque",                 label: "Estoque",                 icon: Warehouse },
+      { href: "/estoque/dashboard",       label: "Dashboard Sanitário",     icon: Warehouse,     sub: true },
+      { href: "/estoque/historico",       label: "Histórico Estoque",       icon: Warehouse,     sub: true },
+      { href: "/eventos",                 label: "Eventos",                 icon: Activity },
+      { href: "/movimentacoes",           label: "Movimentações",           icon: ArrowLeftRight },
+      { href: "/movimentacoes/historico", label: "Histórico Movimentações", icon: ArrowLeftRight, sub: true },
+      { href: "/operacoes",               label: "Operações",               icon: LayoutGrid },
     ],
   },
   {
     label: "Financeiro",
     items: [
-      { href: "/custos",          label: "Custos",          icon: "◇" },
-      { href: "/custos/historico",label: "Histórico Custos",icon: "—", sub: true },
-      { href: "/vendas",          label: "Vendas",          icon: "↗" },
-      { href: "/abates",          label: "Abates",          icon: "◆" },
+      { href: "/custos",           label: "Custos",           icon: DollarSign },
+      { href: "/custos/historico", label: "Histórico Custos", icon: DollarSign,  sub: true },
+      { href: "/vendas",           label: "Vendas",           icon: ArrowUpRight },
+      { href: "/abates",           label: "Abates",           icon: Scissors },
     ],
   },
   {
     label: "Relatórios",
     items: [
-      { href: "/relatorios",    label: "Relatórios",    icon: "≣" },
-      { href: "/alertas",       label: "Alertas",       icon: "◬" },
-      { href: "/certificacoes", label: "Certificações", icon: "✓" },
-      { href: "/historico",     label: "Histórico",     icon: "◴" },
-      { href: "/cadeia",        label: "Cadeia",        icon: "∿" },
+      { href: "/relatorios",    label: "Relatórios",    icon: FileText },
+      { href: "/alertas",       label: "Alertas",       icon: Bell },
+      { href: "/certificacoes", label: "Certificações", icon: BadgeCheck },
+      { href: "/historico",     label: "Histórico",     icon: Clock },
+      { href: "/cadeia",        label: "Cadeia",        icon: Link2 },
     ],
   },
 ];
@@ -106,6 +132,7 @@ export default function SidebarNav() {
           <div className="mt-1 space-y-0.5">
             {group.items.map((item) => {
               const active = isActive(item.href);
+              const Icon = item.icon;
 
               /* ── Sub-item ── */
               if (item.sub) {
@@ -119,7 +146,7 @@ export default function SidebarNav() {
                         : "text-white/45 hover:text-white/75"
                     }`}
                   >
-                    <span className="h-px w-3 rounded-full bg-current opacity-60" />
+                    <Icon size={12} className="shrink-0 opacity-50" />
                     <span>{item.label}</span>
                     {active && (
                       <span className="ml-auto h-1 w-1 rounded-full bg-emerald-300 shadow-[0_0_5px_rgba(110,231,183,0.9)]" />
@@ -141,13 +168,13 @@ export default function SidebarNav() {
                     }`}
                   >
                     <span
-                      className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border text-sm transition duration-200 ${
+                      className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border transition duration-200 ${
                         active
                           ? "border-emerald-500/40 bg-emerald-500/22 text-emerald-300 ring-1 ring-emerald-500/20"
                           : "border-emerald-500/20 bg-emerald-500/10 text-emerald-400 group-hover:bg-emerald-500/16"
                       }`}
                     >
-                      {item.icon}
+                      <Icon size={16} />
                     </span>
                     <span>{item.label}</span>
                     {active ? (
@@ -173,13 +200,13 @@ export default function SidebarNav() {
                   }`}
                 >
                   <span
-                    className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border text-sm transition duration-200 ${
+                    className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border transition duration-200 ${
                       active
                         ? "border-white/22 bg-white/20 text-white ring-1 ring-white/14"
                         : "border-white/8 bg-white/7 text-white/80 group-hover:bg-white/12 group-hover:text-white"
                     }`}
                   >
-                    {item.icon}
+                    <Icon size={16} />
                   </span>
                   <span>{item.label}</span>
                   {active && (
