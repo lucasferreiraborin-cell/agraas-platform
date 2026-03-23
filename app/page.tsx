@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import BrazilMapWrapper from "@/app/components/BrazilMapWrapper";
 
@@ -123,10 +124,13 @@ export default async function PainelPage() {
   const { data: clientData } = user
     ? await supabaseServer
         .from("clients")
-        .select("id, name")
+        .select("id, name, role")
         .eq("auth_user_id", user.id)
-        .single<ClientRow>()
+        .single()
     : { data: null };
+
+  // Redireciona compradores para a página dedicada
+  if (clientData?.role === "buyer") redirect("/comprador");
 
   // clientId is used to filter every query explicitly —
   // some tables (passport cache, properties) have no RLS.
