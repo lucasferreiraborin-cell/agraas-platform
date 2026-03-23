@@ -1,5 +1,6 @@
 "use client";
 
+import "mapbox-gl/dist/mapbox-gl.css";
 import { useCallback, useRef, useState } from "react";
 import Map, { Marker, Popup, Source, Layer } from "react-map-gl/mapbox";
 import type { MapRef, LayerProps } from "react-map-gl/mapbox";

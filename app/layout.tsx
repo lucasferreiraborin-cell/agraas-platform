@@ -1,5 +1,4 @@
 import "./globals.css";
-import "mapbox-gl/dist/mapbox-gl.css";
 import LogoutButton from "./components/LogoutButton";
 import SidebarNav from "./components/SidebarNav";
 import { ToastContainer } from "./components/Toast";

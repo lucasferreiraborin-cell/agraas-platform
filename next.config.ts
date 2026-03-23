@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ["mapbox-gl"],
+  transpilePackages: ["mapbox-gl", "react-map-gl"],
 };
 
 export default nextConfig;
