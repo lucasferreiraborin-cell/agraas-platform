@@ -18,7 +18,12 @@ const MARITIME_ROUTE: [number, number][] = [
   [-15,    40],   // Mozambique
   [ -8,    40],   // Tanzania
   [ -2,    42],   // Kenya
-  [ 11.5,  43],   // Djibouti
+  [  0,    42.5], // Kenya/Somalia coast
+  [  2,    44],   // Somalia south
+  [  5,    46],   // Somalia mid
+  [  8,    47],   // Somalia north
+  [ 10,    45],   // Gulf of Aden approach
+  [ 11,    43.5], // Djibouti
   [ 12.5,  43.3], // Bab-el-Mandeb
   [ 16,    41],   // Red Sea
   [ 18,    40],   // Red Sea north
