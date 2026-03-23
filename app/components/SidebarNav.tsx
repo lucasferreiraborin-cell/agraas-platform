@@ -26,6 +26,10 @@ import {
   BadgeCheck,
   Clock,
   Link2,
+  HeartPulse,
+  BarChart3,
+  Boxes,
+  ClipboardCheck,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -57,6 +61,7 @@ const menuGroups: NavGroup[] = [
       { href: "/animais",      label: "Animais",      icon: Beef },
       { href: "/propriedades", label: "Propriedades", icon: MapPin },
       { href: "/lotes",        label: "Lotes",        icon: Package },
+      { href: "/reprodutivo",  label: "Reprodutivo",  icon: HeartPulse },
       { href: "/scores",       label: "Scores",       icon: BarChart2 },
       { href: "/market",       label: "Market",       icon: TrendingUp },
     ],
@@ -70,6 +75,8 @@ const menuGroups: NavGroup[] = [
   {
     label: "Operações",
     items: [
+      { href: "/producao",                label: "Produção",                icon: BarChart3 },
+      { href: "/insumos",                 label: "Insumos",                 icon: Boxes },
       { href: "/aplicacoes",              label: "Aplicações",              icon: Syringe },
       { href: "/aplicacoes/historico",    label: "Histórico Aplicações",    icon: Syringe,       sub: true },
       { href: "/pesagens",                label: "Pesagens",                icon: Scale },
@@ -96,6 +103,7 @@ const menuGroups: NavGroup[] = [
     label: "Relatórios",
     items: [
       { href: "/relatorios",    label: "Relatórios",    icon: FileText },
+      { href: "/auditoria",     label: "Auditoria",     icon: ClipboardCheck },
       { href: "/alertas",       label: "Alertas",       icon: Bell },
       { href: "/certificacoes", label: "Certificações", icon: BadgeCheck },
       { href: "/historico",     label: "Histórico",     icon: Clock },
