@@ -913,7 +913,7 @@ function KpiCard({
 }) {
   return (
     <div
-      className={`ag-card flex h-[180px] flex-col p-6 ${highlight ? "ring-1 ring-[rgba(93,156,68,0.18)]" : ""}`}
+      className={`ag-card flex min-h-[180px] flex-col p-6 ${highlight ? "ring-1 ring-[rgba(93,156,68,0.18)]" : ""}`}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[var(--primary-soft)] shadow-[var(--shadow-soft)]">

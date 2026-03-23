@@ -1,7 +1,8 @@
 "use client";
 
 import "leaflet/dist/leaflet.css";
-import { MapContainer, TileLayer, Polyline, Marker } from "react-leaflet";
+import { MapContainer, TileLayer, Polyline, Marker, useMap } from "react-leaflet";
+import { useEffect } from "react";
 import L from "leaflet";
 
 // Maritime route: Santos (BR) → Cape of Good Hope (ZA) → Jeddah (SA)
@@ -26,6 +27,16 @@ const MARITIME_ROUTE: [number, number][] = [
 const SANTOS = MARITIME_ROUTE[0];
 const JEDDAH = MARITIME_ROUTE[MARITIME_ROUTE.length - 1];
 
+const ROUTE_BOUNDS = L.latLngBounds(L.latLng(-23.9, -46.3), L.latLng(21, 39));
+
+function FitRoute() {
+  const map = useMap();
+  useEffect(() => {
+    map.fitBounds(ROUTE_BOUNDS, { padding: [60, 60] });
+  }, [map]);
+  return null;
+}
+
 function portIcon(label: string, sub: string) {
   return L.divIcon({
     html: `
@@ -45,21 +56,16 @@ function portIcon(label: string, sub: string) {
 }
 
 export default function ExportMapGL() {
-  const allLat = MARITIME_ROUTE.map((p) => p[0]);
-  const allLng = MARITIME_ROUTE.map((p) => p[1]);
-  const bounds = L.latLngBounds(
-    [Math.min(...allLat) - 3, Math.min(...allLng) - 5],
-    [Math.max(...allLat) + 3, Math.max(...allLng) + 5]
-  );
-
   return (
     <div className="overflow-hidden rounded-2xl" style={{ height: 300 }}>
       <MapContainer
-        bounds={bounds}
+        center={[-7, -4]}
+        zoom={2}
         style={{ width: "100%", height: "100%", background: "#111827" }}
         zoomControl={false}
         attributionControl={false}
       >
+        <FitRoute />
         <TileLayer
           url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
           attribution=""
