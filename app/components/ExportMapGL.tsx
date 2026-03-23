@@ -8,29 +8,19 @@ import L from "leaflet";
 // Waypoints follow real shipping lane through South Atlantic, around Cape,
 // up East Africa coast, through Red Sea to Jeddah
 const MARITIME_ROUTE: [number, number][] = [
-  [-23.94, -46.33], // Santos, Brazil
-  [-27.60, -48.55], // Florianópolis coast
-  [-32.10, -50.80], // Rio Grande do Sul coast
-  [-34.90, -51.20], // Rio Grande port area
-  [-38.50, -52.00], // South Atlantic, heading SE
-  [-42.00, -48.00], // Deep South Atlantic
-  [-44.50, -38.00], // Mid South Atlantic
-  [-44.00, -20.00], // South Atlantic (east)
-  [-42.00,  -5.00], // Approaching Africa
-  [-38.00,  14.00], // Gulf of Guinea approach
-  [-34.36,  18.47], // Cape of Good Hope, South Africa
-  [-32.00,  27.00], // South Indian Ocean, east of Cape
-  [-26.00,  34.00], // Mozambique channel south
-  [-18.00,  37.00], // Mozambique channel mid
-  [-11.00,  41.00], // Off Tanzania coast
-  [ -4.00,  41.00], // Mombasa area, Kenya
-  [  2.00,  45.00], // Somalia coast
-  [ 11.00,  44.00], // Gulf of Aden west
-  [ 12.50,  43.50], // Bab-el-Mandeb strait
-  [ 14.00,  42.50], // Red Sea south
-  [ 17.00,  41.50], // Red Sea mid
-  [ 19.50,  37.30], // Red Sea central
-  [ 21.49,  39.17], // Jeddah, Saudi Arabia
+  [-23.9, -46.3], // Santos, Brazil
+  [-30,   -42],   // South Atlantic, heading east
+  [-34,   -28],   // Mid South Atlantic
+  [-36,   -18],   // South Atlantic (east)
+  [-35,    18],   // Cape of Good Hope area
+  [-30,    30],   // South Indian Ocean
+  [-20,    37],   // Mozambique channel south
+  [-12,    43],   // Off Tanzania / Mozambique coast
+  [ -5,    45],   // Kenya / Somalia coast
+  [  5,    48],   // Somalia, Indian Ocean
+  [ 12,    43],   // Gulf of Aden
+  [ 16,    42],   // Bab-el-Mandeb / Red Sea south
+  [ 21,    39],   // Jeddah, Saudi Arabia
 ];
 
 const SANTOS = MARITIME_ROUTE[0];

@@ -595,13 +595,15 @@ export default async function PainelPage() {
             </Link>
           </div>
 
-          {propertiesForMap.length > 0 ? (
-            <BrazilMapWrapper properties={propertiesForMap} />
-          ) : (
-            <div className="flex h-64 items-center justify-center rounded-3xl bg-[var(--surface-soft)] text-sm text-[var(--text-muted)]">
-              Nenhuma propriedade com coordenadas registradas.
-            </div>
-          )}
+          <div className="h-[360px] overflow-hidden rounded-3xl">
+            {propertiesForMap.length > 0 ? (
+              <BrazilMapWrapper properties={propertiesForMap} />
+            ) : (
+              <div className="flex h-full items-center justify-center bg-[var(--surface-soft)] text-sm text-[var(--text-muted)]">
+                Nenhuma propriedade com coordenadas registradas.
+              </div>
+            )}
+          </div>
 
           {/* Legend */}
           <div className="mt-4 flex items-center gap-6 text-xs text-[var(--text-muted)]">
@@ -911,10 +913,10 @@ function KpiCard({
 }) {
   return (
     <div
-      className={`ag-card p-6 ${highlight ? "ring-1 ring-[rgba(93,156,68,0.18)]" : ""}`}
+      className={`ag-card flex h-[180px] flex-col p-6 ${highlight ? "ring-1 ring-[rgba(93,156,68,0.18)]" : ""}`}
     >
       <div className="flex items-start justify-between gap-2">
-        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[var(--primary-soft)] shadow-[var(--shadow-soft)]">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[var(--primary-soft)] shadow-[var(--shadow-soft)]">
           {icon}
         </div>
         <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
@@ -922,7 +924,7 @@ function KpiCard({
         </span>
       </div>
       <p className="mt-5 ag-kpi-label">{label}</p>
-      <p className="mt-2 ag-kpi-value">
+      <p className="mt-2 truncate ag-kpi-value">
         {value}
         {valueSuffix && (
           <span className="text-lg font-medium text-[var(--text-secondary)]">
@@ -930,7 +932,7 @@ function KpiCard({
           </span>
         )}
       </p>
-      <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
+      <p className="mt-2 line-clamp-2 text-sm leading-5 text-[var(--text-secondary)]">
         {subtitle}
       </p>
     </div>
