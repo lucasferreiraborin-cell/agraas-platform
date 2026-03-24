@@ -19,7 +19,7 @@ export default function AgroAssistant() {
     if (open && messages.length === 0) {
       setMessages([{
         role: "assistant",
-        content: "Olá! Sou o assistente da Agraas. Tenho acesso aos dados reais da sua fazenda. Pergunte sobre seus animais, scores, alertas ou sugestões de manejo."
+        content: "Olá! Sou o assistente da Agraas. Tenho acesso completo aos dados da sua fazenda: rebanho, reprodutivo, produção, insumos e auditoria. Pode perguntar qualquer coisa — taxa de prenhez, animais aptos para exportação, saldo de insumos, GPD do desmame..."
       }]);
     }
   }, [open]);
@@ -126,9 +126,14 @@ export default function AgroAssistant() {
           {messages.length === 1 && (
             <div className="flex flex-wrap gap-2 px-5 pb-3">
               {[
-                "Qual meu animal com maior score?",
-                "Animais sem pesagem?",
-                "Quantos animais tenho?",
+                "Qual a taxa de prenhez?",
+                "Quais animais estão aptos para exportação?",
+                "Qual animal tem o maior score?",
+                "Quantos bezerros foram desmamados?",
+                "Qual o saldo de insumos?",
+                "Quantas vacas estão vazias?",
+                "Qual o GPD médio do desmame?",
+                "Animais com carência ativa?",
               ].map(q => (
                 <button key={q} type="button"
                   onClick={() => { setInput(q); }}
