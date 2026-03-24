@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 
 const actions = [
@@ -18,8 +19,11 @@ const colorMap: Record<string, { bg: string; border: string; text: string; hover
 };
 
 export default function QuickActions() {
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+
+  if (pathname.startsWith("/comprador")) return null;
 
   useEffect(() => {
     function onMouseDown(e: MouseEvent) {
