@@ -224,9 +224,9 @@ function DashboardContent({
   // Top 5 por score
   const top5 = [...rows].sort((a, b) => b.score - a.score).slice(0, 5);
 
-  // Gráfico score evolução (últimos 90 dias com base em pesagens)
+  // Gráfico score evolução — média semanal, máx 12 semanas
   const chartData = useMemo(() => {
-    const points: { date: Date; score: number }[] = [];
+    const weekMap = new Map<string, number[]>();
     for (const w of weights) {
       if (!w.weighing_date) continue;
       const d = new Date(w.weighing_date);
@@ -246,9 +246,22 @@ function DashboardContent({
         hasBloodType: Boolean(animal.blood_type),
         hasGenealogy: Boolean(animal.sire_animal_id || animal.dam_animal_id),
       });
-      points.push({ date: d, score });
+      // Chave da semana: ano + número da semana ISO
+      const dayOfYear = Math.floor((d.getTime() - new Date(d.getFullYear(), 0, 0).getTime()) / 86400000);
+      const weekNum = Math.ceil(dayOfYear / 7);
+      const key = `${d.getFullYear()}-W${String(weekNum).padStart(2, "0")}`;
+      const arr = weekMap.get(key) ?? [];
+      arr.push(score);
+      weekMap.set(key, arr);
     }
-    return points.sort((a, b) => a.date.getTime() - b.date.getTime());
+    return Array.from(weekMap.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .slice(-12)
+      .map(([key, scores]) => ({
+        week: key,
+        score: Math.round(scores.reduce((s, v) => s + v, 0) / scores.length),
+        label: key.replace(/^\d{4}-/, ""), // ex: "W12"
+      }));
   }, [weights, animals, weightsByAnimal, appCountByAnimal, eventCountByAnimal, ninetyDaysAgo]);
 
   return (
@@ -328,14 +341,18 @@ function DashboardContent({
             <h2 className="ag-section-title">Evolução do score — últimos 90 dias</h2>
             <p className="ag-section-subtitle">Score calculado por evento de pesagem registrado no período.</p>
           </div>
-          <span className="ag-badge ag-badge-dark">{chartData.length} pontos</span>
+          <span className="ag-badge ag-badge-dark">{chartData.length} semanas</span>
         </div>
         <div className="mt-6">
           {loading ? (
             <div className="h-40 animate-pulse rounded-3xl bg-[var(--surface-soft)]" />
-          ) : chartData.length < 2 ? (
-            <div className="rounded-3xl bg-[var(--surface-soft)] p-6 text-sm text-[var(--text-muted)]">
-              Registre pesagens para visualizar a evolução do score ao longo do tempo.
+          ) : chartData.length < 3 ? (
+            <div className="flex flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-[var(--border)] bg-[var(--surface-soft)] py-12">
+              <svg width="40" height="40" viewBox="0 0 40 40" fill="none" className="opacity-30">
+                <path d="M6 30 Q13 10 20 20 Q27 30 34 10" stroke="var(--primary-hover)" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
+              </svg>
+              <p className="text-sm font-medium text-[var(--text-muted)]">Dados insuficientes para tendência</p>
+              <p className="text-xs text-[var(--text-muted)]">Registre pesagens em pelo menos 3 semanas diferentes</p>
             </div>
           ) : (
             <ScoreChart data={chartData} />
@@ -431,37 +448,59 @@ function HeroKpi({ label, value, sub, danger }: { label: string; value: string |
   );
 }
 
-function ScoreChart({ data }: { data: { date: Date; score: number }[] }) {
-  const W = 600; const H = 140; const PAD = 16;
-  const minScore = Math.max(0, Math.min(...data.map(d => d.score)) - 10);
-  const maxScore = Math.min(100, Math.max(...data.map(d => d.score)) + 10);
-  const minTime = data[0].date.getTime();
-  const maxTime = data[data.length - 1].date.getTime();
-  const range = maxTime - minTime || 1;
+function ScoreChart({ data }: { data: { week: string; score: number; label: string }[] }) {
+  const W = 600; const H = 150; const PL = 32; const PR = 16; const PT = 16; const PB = 28;
+  const scores = data.map(d => d.score);
+  const minScore = Math.max(0,  Math.min(...scores) - 8);
+  const maxScore = Math.min(100, Math.max(...scores) + 8);
   const scoreRange = maxScore - minScore || 1;
+  const n = data.length;
 
-  const toX = (d: Date) => PAD + ((d.getTime() - minTime) / range) * (W - PAD * 2);
-  const toY = (s: number) => H - PAD - ((s - minScore) / scoreRange) * (H - PAD * 2);
+  const toX = (i: number) => PL + (i / (n - 1)) * (W - PL - PR);
+  const toY = (s: number) => PT + (1 - (s - minScore) / scoreRange) * (H - PT - PB);
 
-  const points = data.map(d => `${toX(d.date)},${toY(d.score)}`).join(" ");
-  const areaPoints = `${toX(data[0].date)},${H - PAD} ${points} ${toX(data[data.length - 1].date)},${H - PAD}`;
+  // Cubic bezier smooth path
+  const pts = data.map((d, i) => [toX(i), toY(d.score)] as [number, number]);
+  const linePath = pts.reduce((acc, [x, y], i) => {
+    if (i === 0) return `M ${x} ${y}`;
+    const [px, py] = pts[i - 1];
+    const cpx = (px + x) / 2;
+    return `${acc} C ${cpx} ${py}, ${cpx} ${y}, ${x} ${y}`;
+  }, "");
+  const areaPath = `${linePath} L ${pts[n - 1][0]} ${H - PB} L ${pts[0][0]} ${H - PB} Z`;
+
+  // Label every other week if many points
+  const labelStep = n > 8 ? 2 : 1;
 
   return (
-    <div className="overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-4">
+    <div className="overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-2">
       <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full">
         <defs>
-          <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="rgba(93,156,68,0.25)" />
+          <linearGradient id="chartGrad2" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%"   stopColor="rgba(93,156,68,0.22)" />
             <stop offset="100%" stopColor="rgba(93,156,68,0)" />
           </linearGradient>
         </defs>
-        <polygon points={areaPoints} fill="url(#chartGrad)" />
-        <polyline points={points} fill="none" stroke="#5d9c44" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
-        {data.map((d, i) => (
-          <circle key={i} cx={toX(d.date)} cy={toY(d.score)} r="4" fill="#5d9c44" stroke="white" strokeWidth="2" />
+        {/* Grid lines */}
+        {[25, 50, 75].map(v => (
+          <line key={v}
+            x1={PL} y1={toY(v)} x2={W - PR} y2={toY(v)}
+            stroke="rgba(0,0,0,0.05)" strokeWidth="1" strokeDasharray="4 4"
+          />
         ))}
-        <text x={PAD} y={toY(maxScore) + 4} fontSize="11" fill="rgba(30,42,27,0.5)">{Math.round(maxScore)}</text>
-        <text x={PAD} y={toY(minScore) - 4} fontSize="11" fill="rgba(30,42,27,0.5)">{Math.round(minScore)}</text>
+        {/* Area */}
+        <path d={areaPath} fill="url(#chartGrad2)" />
+        {/* Line */}
+        <path d={linePath} fill="none" stroke="#5d9c44" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        {/* X labels */}
+        {data.map((d, i) => i % labelStep === 0 && (
+          <text key={i} x={toX(i)} y={H - 6} textAnchor="middle" fontSize="9" fill="rgba(30,42,27,0.4)">
+            {d.label}
+          </text>
+        ))}
+        {/* Y labels */}
+        <text x={PL - 4} y={toY(maxScore) + 4} textAnchor="end" fontSize="9" fill="rgba(30,42,27,0.4)">{Math.round(maxScore)}</text>
+        <text x={PL - 4} y={toY(minScore) + 4} textAnchor="end" fontSize="9" fill="rgba(30,42,27,0.4)">{Math.round(minScore)}</text>
       </svg>
     </div>
   );
