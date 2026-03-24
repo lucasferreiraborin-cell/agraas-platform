@@ -2,299 +2,179 @@ import Anthropic from "@anthropic-ai/sdk";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { NextRequest } from "next/server";
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+// Wrapper que nunca joga exceção — retorna [] em caso de erro
+async function safeQuery<T>(promise: PromiseLike<{ data: T[] | null; error: unknown }>): Promise<T[]> {
+  try {
+    const { data } = await promise;
+    return data ?? [];
+  } catch {
+    return [];
+  }
+}
 
 export async function POST(req: NextRequest) {
-  const { message, history } = await req.json();
+  try {
+    const { message, history } = await req.json();
 
-  const supabase = await createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return new Response("Não autenticado", { status: 401 });
+    const supabase = await createSupabaseServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return new Response("Não autenticado", { status: 401 });
 
-  const { data: clientData } = await supabase
-    .from("clients")
-    .select("id, name, role")
-    .eq("auth_user_id", user.id)
-    .single();
+    const { data: clientData } = await supabase
+      .from("clients")
+      .select("id, name, role")
+      .eq("auth_user_id", user.id)
+      .single();
 
-  const clientId = clientData?.id;
+    // ── Todas as queries em paralelo, cada uma isolada ─────────────────────────
+    const [
+      animals, weights, applications, properties,
+      scores, certifications,
+      reproSeasons, reproIA, reproStock,
+      prodSnapshot, prodCalves, prodSales, prodMortality,
+      supplyFinancials, supplyItems,
+      auditSnapshot,
+    ] = await Promise.all([
+      safeQuery(supabase.from("animals").select("id, internal_code, nickname, sex, breed, birth_date, status").limit(100)),
+      safeQuery(supabase.from("weights").select("animal_id, weight, weighing_date").order("weighing_date", { ascending: false }).limit(300)),
+      safeQuery(supabase.from("applications").select("animal_id, product_name, application_date, withdrawal_date").order("application_date", { ascending: false }).limit(200)),
+      safeQuery(supabase.from("properties").select("id, name, state, status").limit(20)),
+      safeQuery(supabase.from("agraas_master_passport_cache").select("animal_id, score_json").limit(100)),
+      safeQuery(supabase.from("animal_certifications").select("animal_id, certification_name, status, expires_at").neq("status", "expired").limit(300)),
+      safeQuery(supabase.from("reproductive_seasons").select("*").order("inicio", { ascending: false }).limit(5)),
+      safeQuery(supabase.from("reproductive_ia_services").select("*").limit(20)),
+      safeQuery(supabase.from("reproductive_stock_summary").select("*").limit(20)),
+      safeQuery(supabase.from("production_stock_snapshot").select("*").limit(20)),
+      safeQuery(supabase.from("production_calf_entries").select("*").order("mes", { ascending: false }).limit(12)),
+      safeQuery(supabase.from("production_sales_history").select("*").order("data", { ascending: false }).limit(20)),
+      safeQuery(supabase.from("production_mortality").select("*").limit(10)),
+      safeQuery(supabase.from("supply_financials").select("*").limit(10)),
+      safeQuery(supabase.from("supply_inventory_items").select("*").limit(50)),
+      safeQuery(supabase.from("audit_snapshot").select("*").limit(5)),
+    ]);
 
-  // ── Todas as queries em paralelo ───────────────────────────────────────────
-  const [
-    { data: animals },
-    { data: weights },
-    { data: applications },
-    { data: properties },
-    { data: scores },
-    { data: certifications },
-    { data: reproSeasons },
-    { data: reproIA },
-    { data: reproStock },
-    { data: prodSnapshot },
-    { data: prodCalves },
-    { data: prodSales },
-    { data: prodMortality },
-    { data: supplyFinancials },
-    { data: supplyItems },
-    { data: auditSnapshot },
-  ] = await Promise.all([
-    supabase.from("animals")
-      .select("id, internal_code, nickname, sex, breed, birth_date, status")
-      .limit(100),
-    supabase.from("weights")
-      .select("animal_id, weight, weighing_date")
-      .order("weighing_date", { ascending: false })
-      .limit(300),
-    supabase.from("applications")
-      .select("animal_id, product_name, application_date, withdrawal_date")
-      .order("application_date", { ascending: false })
-      .limit(200),
-    supabase.from("properties").select("id, name, state, status").limit(20),
-    supabase.from("agraas_master_passport_cache")
-      .select("animal_id, score_json")
-      .limit(100),
-    supabase.from("animal_certifications")
-      .select("animal_id, certification_name, status, expires_at")
-      .neq("status", "expired")
-      .limit(300),
-    supabase.from("reproductive_seasons")
-      .select("*")
-      .order("inicio", { ascending: false })
-      .limit(5),
-    supabase.from("reproductive_ia_services")
-      .select("*")
-      .limit(20),
-    supabase.from("reproductive_stock_summary")
-      .select("*")
-      .limit(20),
-    supabase.from("production_stock_snapshot")
-      .select("*")
-      .limit(20),
-    supabase.from("production_calf_entries")
-      .select("*")
-      .order("mes", { ascending: false })
-      .limit(12),
-    supabase.from("production_sales_history")
-      .select("*")
-      .order("data", { ascending: false })
-      .limit(20),
-    supabase.from("production_mortality")
-      .select("*")
-      .limit(10),
-    supabase.from("supply_financials")
-      .select("*")
-      .limit(10),
-    supabase.from("supply_inventory_items")
-      .select("*")
-      .limit(50),
-    supabase.from("audit_snapshot")
-      .select("*")
-      .limit(5),
-  ]);
+    // ── Processamento ──────────────────────────────────────────────────────────
+    const today = new Date();
+    const todayStr = today.toISOString().split("T")[0];
 
-  // ── Processamento ──────────────────────────────────────────────────────────
-  const today = new Date();
-  const todayStr = today.toISOString().split("T")[0];
-
-  // Pesagens: última por animal
-  const weightByAnimal = new Map<string, { weight: number; date: string }>();
-  for (const w of (weights ?? [])) {
-    if (!weightByAnimal.has(w.animal_id)) {
-      weightByAnimal.set(w.animal_id, { weight: Number(w.weight), date: w.weighing_date ?? "" });
+    const weightByAnimal = new Map<string, { weight: number; date: string }>();
+    for (const w of weights as any[]) {
+      if (!weightByAnimal.has(w.animal_id))
+        weightByAnimal.set(w.animal_id, { weight: Number(w.weight), date: w.weighing_date ?? "" });
     }
-  }
 
-  // Scores
-  const scoreByAnimal = new Map<string, number>();
-  for (const s of (scores ?? [])) {
-    const total = (s.score_json as Record<string, number> | null)?.total_score;
-    if (total != null) scoreByAnimal.set(s.animal_id, Number(total));
-  }
-
-  // Certificações por animal
-  const certsByAnimal = new Map<string, string[]>();
-  for (const c of (certifications ?? [])) {
-    const list = certsByAnimal.get(c.animal_id) ?? [];
-    list.push(c.certification_name);
-    certsByAnimal.set(c.animal_id, list);
-  }
-
-  // Carências ativas
-  const carenciasAtivas = (applications ?? []).filter(a =>
-    a.withdrawal_date && a.withdrawal_date > todayStr
-  );
-  const carenciasByAnimal = new Map<string, string>();
-  for (const a of carenciasAtivas) {
-    carenciasByAnimal.set(a.animal_id, a.withdrawal_date ?? "");
-  }
-
-  // KPIs rebanho
-  const totalAnimais = animals?.length ?? 0;
-  const machos = (animals ?? []).filter(a => a.sex === "Male").length;
-  const femeas = (animals ?? []).filter(a => a.sex === "Female").length;
-  const pesoMedio = weightByAnimal.size > 0
-    ? Math.round(Array.from(weightByAnimal.values()).reduce((s, w) => s + w.weight, 0) / weightByAnimal.size)
-    : 0;
-
-  const semPesagem30d = (animals ?? []).filter(a => {
-    const w = weightByAnimal.get(a.id);
-    if (!w?.date) return true;
-    return new Date(w.date) < new Date(today.getTime() - 30 * 86400000);
-  }).length;
-
-  // Animais aptos para exportação (score >= 75, sem carência, com Halal)
-  const aptosExportacao = (animals ?? []).filter(a => {
-    const score = scoreByAnimal.get(a.id) ?? 0;
-    const semCarencia = !carenciasByAnimal.has(a.id);
-    const temHalal = certsByAnimal.get(a.id)?.includes("Halal") ?? false;
-    return score >= 75 && semCarencia && temHalal;
-  });
-
-  // Maior score
-  let maiorScore = 0;
-  let animalMaiorScore = "";
-  for (const a of (animals ?? [])) {
-    const s = scoreByAnimal.get(a.id) ?? 0;
-    if (s > maiorScore) {
-      maiorScore = s;
-      animalMaiorScore = a.nickname ?? a.internal_code ?? a.id.slice(0, 8);
+    const scoreByAnimal = new Map<string, number>();
+    for (const s of scores as any[]) {
+      const total = (s.score_json as Record<string, number> | null)?.total_score;
+      if (total != null) scoreByAnimal.set(s.animal_id, Number(total));
     }
+
+    const certsByAnimal = new Map<string, string[]>();
+    for (const c of certifications as any[]) {
+      const list = certsByAnimal.get(c.animal_id) ?? [];
+      list.push(c.certification_name);
+      certsByAnimal.set(c.animal_id, list);
+    }
+
+    const carenciasAtivas = (applications as any[]).filter((a: any) =>
+      a.withdrawal_date && a.withdrawal_date > todayStr
+    );
+    const carenciasByAnimal = new Map<string, string>();
+    for (const a of carenciasAtivas)
+      carenciasByAnimal.set(a.animal_id, a.withdrawal_date ?? "");
+
+    const totalAnimais = animals.length;
+    const machos  = (animals as any[]).filter((a: any) => a.sex === "Male").length;
+    const femeas  = (animals as any[]).filter((a: any) => a.sex === "Female").length;
+    const pesoMedio = weightByAnimal.size > 0
+      ? Math.round(Array.from(weightByAnimal.values()).reduce((s, w) => s + w.weight, 0) / weightByAnimal.size)
+      : 0;
+    const semPesagem30d = (animals as any[]).filter((a: any) => {
+      const w = weightByAnimal.get(a.id);
+      if (!w?.date) return true;
+      return new Date(w.date) < new Date(today.getTime() - 30 * 86400000);
+    }).length;
+    const aptosExportacao = (animals as any[]).filter((a: any) => {
+      const score = scoreByAnimal.get(a.id) ?? 0;
+      return score >= 75 && !carenciasByAnimal.has(a.id) && (certsByAnimal.get(a.id)?.includes("Halal") ?? false);
+    });
+    let maiorScore = 0; let animalMaiorScore = "";
+    for (const a of animals as any[]) {
+      const s = scoreByAnimal.get(a.id) ?? 0;
+      if (s > maiorScore) { maiorScore = s; animalMaiorScore = a.nickname ?? a.internal_code ?? a.id.slice(0, 8); }
+    }
+
+    const estacaoAtiva = (reproSeasons as any[])[0];
+    const estoqueTotal   = (prodSnapshot   as any[]).reduce((s, r) => s + (r.quantidade   ?? r.balance ?? 0), 0);
+    const totalDesmamados = (prodCalves    as any[]).reduce((s, r) => s + (r.total        ?? 0), 0);
+    const totalObitos     = (prodMortality as any[]).reduce((s, r) => s + (r.obitos       ?? r.deaths ?? 0), 0);
+    const receitaTotal    = (prodSales     as any[]).reduce((s, r) => s + (r.receita_total ?? 0), 0);
+    const gpdDesmameMedio = (prodCalves as any[]).length > 0
+      ? ((prodCalves as any[]).reduce((s, r) => s + (r.gmd_pos_desmame ?? 0), 0) / (prodCalves as any[]).length).toFixed(3)
+      : "n/d";
+    const totalInsumos = (supplyFinancials as any[]).reduce((s, r) => s + (r.valor ?? r.balance_value ?? 0), 0);
+    const saldoInsumos = (supplyFinancials as any[]).find((r: any) =>
+      typeof (r.categoria ?? r.period_label ?? "") === "string" &&
+      (r.categoria ?? r.period_label ?? "").toLowerCase().includes("saldo")
+    );
+
+    // ── System prompt (limitado a 8000 chars) ─────────────────────────────────
+    const animalLines = (animals as any[]).slice(0, 30).map((a: any) => {
+      const w = weightByAnimal.get(a.id);
+      const score = scoreByAnimal.get(a.id);
+      const certs = certsByAnimal.get(a.id) ?? [];
+      const carencia = carenciasByAnimal.get(a.id);
+      const nome = a.nickname ?? a.internal_code ?? a.id.slice(0, 8);
+      const sexo = a.sex === "Male" ? "M" : a.sex === "Female" ? "F" : "?";
+      return `- ${nome}|${sexo}|${a.breed ?? "?"}|Peso:${w ? `${w.weight}kg` : "—"}|Score:${score ?? "—"}|Certs:${certs.join(",") || "—"}|Car.:${carencia ? carencia : "livre"}`;
+    }).join("\n");
+
+    const fullContext = [
+      `Você é o assistente da Agraas. Fazenda: ${clientData?.name ?? user.email}. Hoje: ${today.toLocaleDateString("pt-BR")}. Responda em português, use só dados abaixo, nunca invente.`,
+      `\n## REBANHO\nTotal: ${totalAnimais} (${machos}M/${femeas}F) | Peso médio: ${pesoMedio > 0 ? `${pesoMedio}kg` : "—"} | Sem pesagem 30d: ${semPesagem30d} | Carência ativa: ${carenciasAtivas.length} | Aptos exportação: ${aptosExportacao.length} | Maior score: ${animalMaiorScore || "—"} (${maiorScore || "—"})`,
+      `\n${animalLines}`,
+      estacaoAtiva
+        ? `\n## REPRODUTIVO\nEstação: ${estacaoAtiva.name ?? estacaoAtiva.season_name ?? "atual"} | Prenhez: ${estacaoAtiva.taxa_prenhez ?? estacaoAtiva.pregnancy_rate ?? "n/d"}% | Concepção IA: ${estacaoAtiva.taxa_concepcao_ia ?? estacaoAtiva.avg_conception_rate ?? "n/d"}% | Aptas: ${estacaoAtiva.aptas ?? estacaoAtiva.apt_count ?? "n/d"} | Prenhas: ${estacaoAtiva.prenhas ?? "n/d"} | Vazias: ${estacaoAtiva.vazias ?? "n/d"}`
+        : "\n## REPRODUTIVO\nSem dados.",
+      (reproIA as any[]).length > 0
+        ? (reproIA as any[]).map((r: any) => `IA ${r.service_number ?? r.touro_nome ?? "?"}: ${r.conception_rate ?? r.concepcao_pct ?? "n/d"}% concepção`).join(" | ")
+        : "",
+      estoqueTotal > 0
+        ? `\n## PRODUÇÃO\nEstoque total: ${estoqueTotal} | Desmamados: ${totalDesmamados} | GPD desmame: ${gpdDesmameMedio}kg/dia | Óbitos: ${totalObitos} | Receita vendas: R$${receitaTotal.toLocaleString("pt-BR")}`
+        : "\n## PRODUÇÃO\nSem dados.",
+      totalInsumos > 0 || (supplyFinancials as any[]).length > 0
+        ? `\n## INSUMOS\n${(supplyFinancials as any[]).map((r: any) => `${r.categoria ?? r.period_label ?? "item"}: R$${Number(r.valor ?? r.balance_value ?? 0).toLocaleString("pt-BR")}`).join(" | ")} | Total: R$${totalInsumos.toLocaleString("pt-BR")}`
+        : "\n## INSUMOS\nSem dados.",
+      (supplyItems as any[]).length > 0
+        ? (supplyItems as any[]).slice(0, 15).map((r: any) => `${r.product_name ?? r.produto ?? "?"} (${r.category ?? r.categoria ?? "?"}): ${r.head_count ?? r.estoque ?? 0} ${r.unit ?? r.unidade ?? "un"}`).join(" | ")
+        : "",
+      (auditSnapshot as any[]).length > 0
+        ? `\n## AUDITORIA\n${Object.entries((auditSnapshot as any[])[0]).filter(([k]) => !["id","client_id","created_at"].includes(k)).map(([k,v]) => `${k}:${v}`).join(" | ")}`
+        : "\n## AUDITORIA\nSem dados.",
+    ].join("\n");
+
+    // Trunca se passar de 8000 chars
+    const context = fullContext.length > 8000 ? fullContext.slice(0, 8000) + "\n[contexto truncado]" : fullContext;
+
+    const msgs: Anthropic.MessageParam[] = [
+      ...(history ?? []),
+      { role: "user", content: message },
+    ];
+
+    const response = await anthropic.messages.create({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 1024,
+      system: context,
+      messages: msgs,
+    });
+
+    const text = response.content[0].type === "text" ? response.content[0].text : "";
+    return Response.json({ reply: text });
+
+  } catch (err) {
+    console.error("[agroassistant]", err);
+    return Response.json({ reply: "Erro interno ao consultar os dados da fazenda. Tente novamente." }, { status: 500 });
   }
-
-  // Resumo reprodutivo
-  const estacaoAtiva = (reproSeasons ?? [])[0];
-
-  // Produção: estoque total
-  const estoqueTotal = (prodSnapshot ?? []).reduce((s, r: any) => s + (r.quantidade ?? 0), 0);
-
-  // Insumos: totais financeiros
-  const totalInsumos = (supplyFinancials ?? []).reduce((s, r: any) => s + (r.valor ?? 0), 0);
-  const saldoInsumos = (supplyFinancials ?? []).find((r: any) =>
-    typeof r.categoria === "string" && r.categoria.toLowerCase().includes("saldo")
-  );
-
-  // Desmame acumulado (todos os meses)
-  const totalDesmamados = (prodCalves ?? []).reduce((s, r: any) => s + (r.total ?? 0), 0);
-  const gpdDesmameMedio = (prodCalves ?? []).length > 0
-    ? ((prodCalves ?? []).reduce((s: number, r: any) => s + (r.gmd_pos_desmame ?? 0), 0) / (prodCalves ?? []).length).toFixed(3)
-    : "n/d";
-
-  // Mortalidade total
-  const totalObitos = (prodMortality ?? []).reduce((s: number, r: any) => s + (r.obitos ?? 0), 0);
-
-  // Vendas: receita total
-  const receitaTotal = (prodSales ?? []).reduce((s: number, r: any) => s + (r.receita_total ?? 0), 0);
-
-  // ── System prompt ──────────────────────────────────────────────────────────
-  const context = `
-Você é o assistente inteligente da plataforma Agraas — sistema de rastreabilidade pecuária.
-Você tem acesso aos dados reais da fazenda ${clientData?.name ?? user.email}.
-Data de hoje: ${today.toLocaleDateString("pt-BR")}.
-Responda sempre em português, de forma direta e objetiva. Use os dados abaixo para responder.
-Quando uma informação não estiver disponível, diga claramente. Nunca invente dados.
-
-═══════════════════════════════════════════════════════
-REBANHO — RESUMO GERAL
-═══════════════════════════════════════════════════════
-Total de animais: ${totalAnimais} (${machos} machos, ${femeas} fêmeas)
-Propriedades: ${(properties ?? []).map((p: any) => `${p.name} (${p.state})`).join(", ") || "nenhuma"}
-Peso médio do rebanho: ${pesoMedio > 0 ? `${pesoMedio} kg` : "sem dados"}
-Animais sem pesagem há +30 dias: ${semPesagem30d}
-Animais com carência ativa: ${carenciasAtivas.length}
-Animais aptos para exportação (score ≥75 + Halal + sem carência): ${aptosExportacao.length}
-Animal com maior Agraas Score: ${animalMaiorScore || "n/d"} (${maiorScore > 0 ? maiorScore : "sem score"})
-
-LISTA DE ANIMAIS (score, peso, certificações):
-${(animals ?? []).map(a => {
-  const w = weightByAnimal.get(a.id);
-  const score = scoreByAnimal.get(a.id);
-  const certs = certsByAnimal.get(a.id) ?? [];
-  const carencia = carenciasByAnimal.get(a.id);
-  const nome = a.nickname ?? a.internal_code ?? a.id.slice(0, 8);
-  const sexo = a.sex === "Male" ? "M" : a.sex === "Female" ? "F" : "?";
-  const idadeMeses = a.birth_date
-    ? Math.floor((today.getTime() - new Date(a.birth_date).getTime()) / (1000 * 60 * 60 * 24 * 30.44))
-    : null;
-  return `- ${nome} | ${sexo} | ${a.breed ?? "raça n/d"} | ${idadeMeses != null ? `${idadeMeses}m` : "idade n/d"} | Peso: ${w ? `${w.weight}kg` : "s/pesagem"} | Score: ${score ?? "n/d"} | Certs: ${certs.length > 0 ? certs.join(", ") : "nenhuma"} | Carência: ${carencia ? `até ${carencia}` : "livre"}`;
-}).join("\n")}
-
-═══════════════════════════════════════════════════════
-REPRODUTIVO
-═══════════════════════════════════════════════════════
-${estacaoAtiva ? `Estação de monta: ${estacaoAtiva.name ?? "atual"} (${estacaoAtiva.inicio ?? "?"} → ${estacaoAtiva.fim ?? "?"})
-Taxa de prenhez: ${estacaoAtiva.taxa_prenhez != null ? `${estacaoAtiva.taxa_prenhez}%` : "n/d"}
-Taxa de concepção IA: ${estacaoAtiva.taxa_concepcao_ia != null ? `${estacaoAtiva.taxa_concepcao_ia}%` : "n/d"}
-Vacas elegíveis: ${estacaoAtiva.vacas_elegiveis ?? "n/d"} | APTAS: ${estacaoAtiva.aptas ?? "n/d"} | Prenhas: ${estacaoAtiva.prenhas ?? "n/d"} | Vazias: ${estacaoAtiva.vazias ?? "n/d"}` : "Sem estação reprodutiva registrada."}
-
-Serviços de IA:
-${(reproIA ?? []).map((r: any) => `- ${r.touro_nome ?? "touro n/d"} (${r.raca ?? "raça n/d"}) | Sêmen: ${r.semen_tipo ?? "n/d"} | Serviços: ${r.servicos ?? 0} | Concepção: ${r.concepcao_pct ?? "n/d"}%`).join("\n") || "Sem registros."}
-
-Estoque de reprodutores:
-${(reproStock ?? []).map((r: any) => `- ${r.categoria ?? "categoria n/d"}: ${r.quantidade ?? 0} (${r.observacao ?? ""})`).join("\n") || "Sem registros."}
-
-═══════════════════════════════════════════════════════
-PRODUÇÃO
-═══════════════════════════════════════════════════════
-Estoque total em pasto: ${estoqueTotal} animais
-Detalhamento por categoria:
-${(prodSnapshot ?? []).map((r: any) => `- ${r.categoria ?? "n/d"}: ${r.quantidade ?? 0} animais | Peso médio: ${r.peso_medio_kg ?? "n/d"} kg | GMD: ${r.gmd_kg ?? "n/d"} kg/dia`).join("\n") || "Sem dados."}
-
-Distribuição por peso:
-${(() => {
-  const dist = ([] as any[]);
-  // prodWeightDist not fetched separately — infer from snapshot if needed
-  return "Ver distribuição detalhada na página de Produção.";
-})()}
-
-Desmame (histórico mensal):
-${(prodCalves ?? []).map((r: any) => `- ${r.mes ?? "?"}: ${r.total ?? 0} bezerros (${r.machos ?? 0}M / ${r.femeas ?? 0}F) | GPD pós-desmame: ${r.gmd_pos_desmame ?? "n/d"} kg/dia`).join("\n") || "Sem registros."}
-Total desmamados (histórico): ${totalDesmamados}
-GPD médio pós-desmame: ${gpdDesmameMedio} kg/dia
-
-Mortalidade:
-${(prodMortality ?? []).map((r: any) => `- ${r.faixa_etaria ?? "n/d"}: ${r.obitos ?? 0} óbitos (${r.pct_rebanho ?? "n/d"}% do rebanho) | Causa: ${r.causa_principal ?? "n/d"}`).join("\n") || "Sem registros."}
-Total de óbitos: ${totalObitos}
-
-Vendas (histórico):
-${(prodSales ?? []).map((r: any) => `- ${r.data ?? "?"}: ${r.quantidade ?? 0} ${r.categoria ?? "animais"} | Peso médio: ${r.peso_medio ?? "n/d"} kg | R$/${r.preco_arroba != null ? `${r.preco_arroba}/@` : "n/d"} | Receita: R$ ${r.receita_total != null ? Number(r.receita_total).toLocaleString("pt-BR") : "n/d"}`).join("\n") || "Sem registros."}
-Receita total histórica: R$ ${receitaTotal.toLocaleString("pt-BR")}
-
-═══════════════════════════════════════════════════════
-INSUMOS
-═══════════════════════════════════════════════════════
-Posição financeira:
-${(supplyFinancials ?? []).map((r: any) => `- ${r.categoria ?? "n/d"}: R$ ${r.valor != null ? Number(r.valor).toLocaleString("pt-BR") : "n/d"}`).join("\n") || "Sem dados."}
-${saldoInsumos ? `Saldo disponível: R$ ${Number((saldoInsumos as any).valor).toLocaleString("pt-BR")}` : `Total de insumos: R$ ${totalInsumos.toLocaleString("pt-BR")}`}
-
-Estoque de produtos:
-${(supplyItems ?? []).map((r: any) => `- ${r.produto ?? "n/d"} (${r.categoria ?? "n/d"}): ${r.estoque ?? 0} ${r.unidade ?? "un"} | Dose média: ${r.dose_media ?? "n/d"} | Custo unitário: R$ ${r.custo_unitario ?? "n/d"}`).join("\n") || "Sem itens."}
-
-═══════════════════════════════════════════════════════
-AUDITORIA
-═══════════════════════════════════════════════════════
-${(auditSnapshot ?? []).length > 0 ? (auditSnapshot ?? []).map((r: any) => {
-  const entries = Object.entries(r)
-    .filter(([k]) => !["id", "client_id", "created_at"].includes(k))
-    .map(([k, v]) => `${k}: ${v}`)
-    .join(" | ");
-  return entries;
-}).join("\n") : "Sem dados de auditoria."}
-`.trim();
-
-  const msgs: Anthropic.MessageParam[] = [
-    ...(history ?? []),
-    { role: "user", content: message },
-  ];
-
-  const response = await anthropic.messages.create({
-    model: "claude-sonnet-4-20250514",
-    max_tokens: 1024,
-    system: context,
-    messages: msgs,
-  });
-
-  const text = response.content[0].type === "text" ? response.content[0].text : "";
-  return Response.json({ reply: text });
 }
