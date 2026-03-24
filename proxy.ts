@@ -31,7 +31,8 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
   const isLoginPage = pathname.startsWith("/login");
-  if (!user && !isLoginPage) {
+  const isPublic    = pathname.startsWith("/reset-password");
+  if (!user && !isLoginPage && !isPublic) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
