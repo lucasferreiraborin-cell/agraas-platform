@@ -1,8 +1,6 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import dynamic from "next/dynamic";
-
-const ReproGauge  = dynamic(() => import("@/app/components/charts/ReproGauge"),   { ssr: false });
-const IABreakdown = dynamic(() => import("@/app/components/charts/IABreakdown"),  { ssr: false });
+import ReproGauge  from "@/app/components/charts/ReproGaugeWrapper";
+import IABreakdown from "@/app/components/charts/IABreakdownWrapper";
 
 function KpiCard({ label, value, sub }: { label: string; value: string | number; sub: string }) {
   return (

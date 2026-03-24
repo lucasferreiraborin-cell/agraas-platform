@@ -1,7 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import dynamic from "next/dynamic";
-
-const WeightDist = dynamic(() => import("@/app/components/charts/WeightDist"), { ssr: false });
+import WeightDist from "@/app/components/charts/WeightDistWrapper";
 
 function SectionTitle({ title, sub }: { title: string; sub?: string }) {
   return (

@@ -1,7 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import dynamic from "next/dynamic";
-
-const InsumosBar = dynamic(() => import("@/app/components/charts/InsumosBar"), { ssr: false });
+import InsumosBar from "@/app/components/charts/InsumosBarWrapper";
 
 function SectionTitle({ title, sub }: { title: string; sub?: string }) {
   return (
