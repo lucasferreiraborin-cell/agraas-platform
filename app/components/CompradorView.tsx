@@ -352,7 +352,7 @@ export default function CompradorView({
                       eligible:   { bg: "rgba(74,222,128,0.12)",  color: "#4ade80",  label: t.compliance.eligible },
                       pending:    { bg: "rgba(251,191,36,0.12)",   color: "#fbbf24",  label: t.compliance.pending },
                       ineligible: { bg: "rgba(248,113,113,0.12)", color: "#f87171",  label: t.compliance.ineligible },
-                    }[status];
+                    }[status] ?? { bg: "rgba(156,163,175,0.12)", color: "#9ca3af", label: "N/A" };
                     return (
                       <tr key={animal.id}>
                         <td style={S.td}>
