@@ -43,6 +43,36 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // Buyer acessando "/" → redireciona para /comprador
+  if (user && request.nextUrl.pathname === "/") {
+    const { data: clientData } = await supabase
+      .from("clients")
+      .select("role")
+      .eq("auth_user_id", user.id)
+      .single();
+
+    if (clientData?.role === "buyer") {
+      const url = request.nextUrl.clone();
+      url.pathname = "/comprador";
+      return NextResponse.redirect(url);
+    }
+  }
+
+  // Não-buyer tentando acessar /comprador → redireciona para /
+  if (user && request.nextUrl.pathname.startsWith("/comprador")) {
+    const { data: clientData } = await supabase
+      .from("clients")
+      .select("role")
+      .eq("auth_user_id", user.id)
+      .single();
+
+    if (clientData?.role !== "buyer") {
+      const url = request.nextUrl.clone();
+      url.pathname = "/";
+      return NextResponse.redirect(url);
+    }
+  }
+
   return supabaseResponse;
 }
 
