@@ -7,9 +7,8 @@ type Message = { role: "user" | "assistant"; content: string };
 
 export default function AgroAssistant() {
   const pathname = usePathname();
+  // ── Todos os hooks antes de qualquer return condicional ──────────────────────
   const [open, setOpen] = useState(false);
-
-  if (pathname.startsWith("/comprador")) return null;
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -27,6 +26,9 @@ export default function AgroAssistant() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
+
+  // Não renderiza na página do comprador
+  if (pathname.startsWith("/comprador")) return null;
 
   async function send() {
     if (!input.trim() || loading) return;
@@ -61,30 +63,24 @@ export default function AgroAssistant() {
         {open ? (
           <span className="text-lg font-bold text-white">✕</span>
         ) : (
-          <svg width="28" height="28" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-            {/* Face */}
+          <svg width="28" height="28" viewBox="0 0 40 40" fill="none">
             <circle cx="20" cy="22" r="11" fill="#F5C47A"/>
-            {/* Hat brim */}
             <ellipse cx="20" cy="12.5" rx="14" ry="3.5" fill="#4A3000"/>
-            {/* Hat crown */}
             <rect x="13" y="4" width="14" height="9" rx="3" fill="#4A3000"/>
-            {/* Hat band */}
             <rect x="13" y="10.5" width="14" height="2.5" rx="1" fill="#C68C1A"/>
-            {/* Eyes */}
             <circle cx="16" cy="21" r="1.5" fill="#3B2800"/>
             <circle cx="24" cy="21" r="1.5" fill="#3B2800"/>
-            {/* Smile */}
             <path d="M16 26 Q20 29 24 26" stroke="#3B2800" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
           </svg>
         )}
       </button>
 
-      {/* Chat panel */}
+      {/* Chat panel — largura e altura fixas */}
       {open && (
-        <div className="fixed bottom-24 right-6 z-40 flex w-[380px] max-w-[calc(100vw-48px)] flex-col rounded-3xl border border-[var(--border)] bg-white shadow-2xl">
+        <div className="fixed bottom-24 right-6 z-40 flex max-h-[520px] w-[380px] max-w-[calc(100vw-48px)] flex-col rounded-3xl border border-[var(--border)] bg-white shadow-2xl">
           {/* Header */}
-          <div className="flex items-center gap-3 rounded-t-3xl border-b border-[var(--border)] bg-[var(--primary-hover)] px-5 py-4">
-            <svg width="28" height="28" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <div className="flex shrink-0 items-center gap-3 rounded-t-3xl border-b border-[var(--border)] bg-[var(--primary-hover)] px-5 py-4">
+            <svg width="28" height="28" viewBox="0 0 40 40" fill="none">
               <circle cx="20" cy="22" r="11" fill="#F5C47A"/>
               <ellipse cx="20" cy="12.5" rx="14" ry="3.5" fill="#6B4A00"/>
               <rect x="13" y="4" width="14" height="9" rx="3" fill="#6B4A00"/>
@@ -100,7 +96,7 @@ export default function AgroAssistant() {
           </div>
 
           {/* Mensagens */}
-          <div className="flex max-h-[380px] flex-col gap-3 overflow-y-auto p-5">
+          <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-5">
             {messages.map((m, i) => (
               <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
                 <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-6 ${
@@ -124,7 +120,7 @@ export default function AgroAssistant() {
 
           {/* Sugestões rápidas */}
           {messages.length === 1 && (
-            <div className="flex flex-wrap gap-2 px-5 pb-3">
+            <div className="shrink-0 flex flex-wrap gap-2 px-5 pb-3">
               {[
                 "Qual a taxa de prenhez?",
                 "Quais animais estão aptos para exportação?",
@@ -136,7 +132,7 @@ export default function AgroAssistant() {
                 "Animais com carência ativa?",
               ].map(q => (
                 <button key={q} type="button"
-                  onClick={() => { setInput(q); }}
+                  onClick={() => setInput(q)}
                   className="rounded-full border border-[var(--border)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--primary-soft)] hover:text-[var(--primary-hover)]">
                   {q}
                 </button>
@@ -145,7 +141,7 @@ export default function AgroAssistant() {
           )}
 
           {/* Input */}
-          <div className="flex items-center gap-2 rounded-b-3xl border-t border-[var(--border)] p-4">
+          <div className="shrink-0 flex items-center gap-2 rounded-b-3xl border-t border-[var(--border)] p-4">
             <input
               type="text"
               value={input}

@@ -164,7 +164,7 @@ export async function POST(req: NextRequest) {
     ];
 
     const response = await anthropic.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: "claude-sonnet-4-6",
       max_tokens: 1024,
       system: context,
       messages: msgs,
@@ -174,7 +174,8 @@ export async function POST(req: NextRequest) {
     return Response.json({ reply: text });
 
   } catch (err) {
-    console.error("[agroassistant]", err);
-    return Response.json({ reply: "Erro interno ao consultar os dados da fazenda. Tente novamente." }, { status: 500 });
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[agroassistant] erro:", msg, err);
+    return Response.json({ reply: `Erro interno: ${msg}` }, { status: 500 });
   }
 }
