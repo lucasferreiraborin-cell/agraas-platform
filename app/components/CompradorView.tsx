@@ -1,7 +1,11 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import Link from "next/link";
+import { useState, useMemo, useEffect } from "react";
+import dynamic from "next/dynamic";
+import { createBrowserClient } from "@supabase/ssr";
+import { useRouter } from "next/navigation";
+
+const ExportMapGL = dynamic(() => import("@/app/components/ExportMapGL"), { ssr: false });
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -23,18 +27,119 @@ type Cert = { animal_id: string; certification_name: string; status: string; exp
 type Withdrawal = { animal_id: string; product_name: string | null; withdrawal_date: string | null };
 type Score = { animal_id: string; score_json: Record<string, unknown> | null };
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── i18n ─────────────────────────────────────────────────────────────────────
 
-function scoreColor(s: number) {
-  if (s >= 75) return "#4ade80";
-  if (s >= 60) return "#fbbf24";
-  return "#f87171";
+const EN = {
+  portal: "PIF Procurement Portal",
+  hero: { title: "Brazilian Livestock · Export Intelligence", sub: "Real-time traceability from farm to port — Santos to Jeddah" },
+  kpi: { total: "Total Animals Tracked", eligible: "Export Eligible", halal: "Halal Certified", departure: "Next Departure" },
+  shipments: { title: "Active Shipments", lotId: "Lot ID", contract: "Contract", origin: "Origin", dest: "Destination", dep: "Departure", animals: "Animals", compliance: "Compliance", status: "Status", manifest: "View Full Manifest" },
+  matrix: { title: "Animal Certification Matrix", animal: "Animal", breed: "Breed", halal: "Halal", mapa: "MAPA", gta: "GTA", sif: "SIF", withdrawal: "Withdrawal", score: "Score", status: "Status" },
+  tracking: { title: "Live Route Tracking", route: "Santos → Cape of Good Hope → Red Sea → Jeddah", nextShipment: "Next Shipment", daysTo: "Days to Departure", confirmed: "Animals Confirmed" },
+  footer: "Powered by Agraas Intelligence Layer · Certified by MAPA · Real-time data",
+  signOut: "Sign Out",
+  eligible: "ELIGIBLE",
+  pending: "PENDING",
+  ineligible: "INELIGIBLE",
+  clear: "Clear",
+  active: "Active",
+  na: "N/A",
+};
+
+const PT = {
+  portal: "Portal de Compras PIF",
+  hero: { title: "Pecuária Brasileira · Inteligência de Exportação", sub: "Rastreabilidade em tempo real da fazenda ao porto — Santos a Jeddah" },
+  kpi: { total: "Total de Animais", eligible: "Aptos para Exportação", halal: "Certificados Halal", departure: "Próximo Embarque" },
+  shipments: { title: "Embarques Ativos", lotId: "ID do Lote", contract: "Contrato", origin: "Origem", dest: "Destino", dep: "Embarque", animals: "Animais", compliance: "Conformidade", status: "Status", manifest: "Ver Manifesto Completo" },
+  matrix: { title: "Matriz de Certificações", animal: "Animal", breed: "Raça", halal: "Halal", mapa: "MAPA", gta: "GTA", sif: "SIF", withdrawal: "Carência", score: "Score", status: "Status" },
+  tracking: { title: "Rastreamento da Rota", route: "Santos → Cabo da Boa Esperança → Mar Vermelho → Jeddah", nextShipment: "Próximo Embarque", daysTo: "Dias para Embarque", confirmed: "Animais Confirmados" },
+  footer: "Powered by Agraas Intelligence Layer · Certificado pelo MAPA · Dados em tempo real",
+  signOut: "Sair",
+  eligible: "APTO",
+  pending: "PENDENTE",
+  ineligible: "INAPTO",
+  clear: "Livre",
+  active: "Ativo",
+  na: "N/D",
+};
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function daysUntil(dateStr: string | null): number | null {
+  if (!dateStr) return null;
+  const diff = new Date(dateStr).getTime() - Date.now();
+  return Math.ceil(diff / 86400000);
 }
 
-function certBadge(has: boolean) {
-  return has
-    ? <span style={{ background: "rgba(74,222,128,0.15)", color: "#4ade80", border: "1px solid rgba(74,222,128,0.3)" }} className="rounded-full px-2 py-0.5 text-[11px] font-semibold">✓</span>
-    : <span style={{ background: "rgba(248,113,113,0.15)", color: "#f87171", border: "1px solid rgba(248,113,113,0.3)" }} className="rounded-full px-2 py-0.5 text-[11px] font-semibold">✗</span>;
+function fmtDate(dateStr: string | null): string {
+  if (!dateStr) return "—";
+  return new Date(dateStr).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+function fmtAge(birth: string | null): string {
+  if (!birth) return "—";
+  const months = Math.floor((Date.now() - new Date(birth).getTime()) / (1000 * 60 * 60 * 24 * 30.44));
+  return months >= 12 ? `${Math.floor(months / 12)}y ${months % 12}m` : `${months}m`;
+}
+
+function ComplianceBar({ pct, eligible, total }: { pct: number; eligible: number; total: number }) {
+  const color = pct >= 80 ? "#22c55e" : pct >= 50 ? "#f59e0b" : "#ef4444";
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 5, minWidth: 140 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+        <span style={{ fontSize: 18, fontWeight: 700, color, letterSpacing: "-0.03em" }}>{pct}%</span>
+        <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", letterSpacing: "0.05em" }}>{eligible}/{total}</span>
+      </div>
+      <div style={{ height: 3, background: "rgba(255,255,255,0.06)", borderRadius: 2, overflow: "hidden" }}>
+        <div style={{ height: "100%", width: `${pct}%`, background: color, borderRadius: 2, transition: "width 0.8s ease" }} />
+      </div>
+    </div>
+  );
+}
+
+function CertCell({ has }: { has: boolean }) {
+  return (
+    <span style={{
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+      width: 22,
+      height: 22,
+      borderRadius: 6,
+      background: has ? "rgba(34,197,94,0.12)" : "rgba(239,68,68,0.08)",
+      color: has ? "#22c55e" : "rgba(239,68,68,0.5)",
+      fontSize: 11,
+      fontWeight: 700,
+      border: `1px solid ${has ? "rgba(34,197,94,0.25)" : "rgba(239,68,68,0.15)"}`,
+    }}>
+      {has ? "✓" : "—"}
+    </span>
+  );
+}
+
+function StatusBadge({ status, t }: { status: "eligible" | "pending" | "ineligible"; t: typeof EN }) {
+  const map = {
+    eligible:   { bg: "rgba(34,197,94,0.1)",  border: "rgba(34,197,94,0.25)",  color: "#22c55e",  label: t.eligible },
+    pending:    { bg: "rgba(245,158,11,0.1)",  border: "rgba(245,158,11,0.25)", color: "#f59e0b",  label: t.pending },
+    ineligible: { bg: "rgba(239,68,68,0.1)",   border: "rgba(239,68,68,0.2)",   color: "#ef4444",  label: t.ineligible },
+  };
+  const s = map[status];
+  return (
+    <span style={{
+      display: "inline-block",
+      background: s.bg,
+      border: `1px solid ${s.border}`,
+      color: s.color,
+      borderRadius: 6,
+      padding: "3px 10px",
+      fontSize: 10,
+      fontWeight: 800,
+      letterSpacing: "0.15em",
+      textTransform: "uppercase",
+    }}>
+      {s.label}
+    </span>
+  );
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -57,9 +162,22 @@ export default function CompradorView({
   scores: Score[];
 }) {
   const [lang, setLang] = useState<"en" | "pt">("en");
+  const [hoveredRow, setHoveredRow] = useState<string | null>(null);
+  const [utcTime, setUtcTime] = useState("");
+  const router = useRouter();
   const t = lang === "en" ? EN : PT;
 
-  // ── Derived data ────────────────────────────────────────────────────────────
+  useEffect(() => {
+    const tick = () => {
+      const now = new Date();
+      setUtcTime(now.toUTCString().replace(" GMT", " UTC"));
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  // ── Derived maps ────────────────────────────────────────────────────────────
 
   const animalsByLot = useMemo(() => {
     const map = new Map<string, string[]>();
@@ -84,7 +202,7 @@ export default function CompradorView({
     const map = new Map<string, string[]>();
     for (const w of activeWithdrawals) {
       const list = map.get(w.animal_id) ?? [];
-      list.push(w.product_name ?? "produto");
+      list.push(w.withdrawal_date ?? "");
       map.set(w.animal_id, list);
     }
     return map;
@@ -99,323 +217,449 @@ export default function CompradorView({
     return map;
   }, [scores]);
 
-  // ── KPIs ────────────────────────────────────────────────────────────────────
-
-  const totalAnimals = animals.length;
-  const halalCertified = animals.filter(a => certsByAnimal.get(a.id)?.has("Halal")).length;
-  const exportReady = animals.filter(a => {
-    const certs = certsByAnimal.get(a.id) ?? new Set();
-    const score = scoreByAnimal.get(a.id) ?? 0;
-    const noWithdrawal = !withdrawalsByAnimal.has(a.id);
-    const requiredCerts = lots[0]?.certificacoes_exigidas ?? [];
-    const certsOk = requiredCerts.every(c => certs.has(c));
-    return score >= 60 && noWithdrawal && certsOk;
-  }).length;
-  const activeShipments = lots.filter(l => l.status !== "closed").length;
-
   // ── Compliance per animal ────────────────────────────────────────────────────
 
+  const requiredCerts = lots[0]?.certificacoes_exigidas ?? [];
+
   const complianceRows = useMemo(() => animals.map(animal => {
-    const certs = certsByAnimal.get(animal.id) ?? new Set();
+    const certs = certsByAnimal.get(animal.id) ?? new Set<string>();
     const score = scoreByAnimal.get(animal.id) ?? 0;
     const withdrawals = withdrawalsByAnimal.get(animal.id) ?? [];
-    const requiredCerts = lots[0]?.certificacoes_exigidas ?? [];
     const certsOk = requiredCerts.every(c => certs.has(c));
-    const status =
+    const status: "eligible" | "pending" | "ineligible" =
       score < 60 || withdrawals.length > 0 ? "ineligible"
       : !certsOk ? "pending"
       : "eligible";
     return { animal, certs, score, withdrawals, status };
-  }), [animals, certsByAnimal, scoreByAnimal, withdrawalsByAnimal, lots]);
+  }), [animals, certsByAnimal, scoreByAnimal, withdrawalsByAnimal, requiredCerts]);
+
+  // ── KPIs ────────────────────────────────────────────────────────────────────
+
+  const totalAnimals = animals.length;
+  const halalCount = animals.filter(a => certsByAnimal.get(a.id)?.has("Halal")).length;
+  const eligibleCount = complianceRows.filter(r => r.status === "eligible").length;
+  const nextDeparture = lots
+    .map(l => l.data_embarque)
+    .filter(Boolean)
+    .sort()[0] ?? null;
+  const daysToNext = daysUntil(nextDeparture);
+
+  // ── Lot compliance ───────────────────────────────────────────────────────────
+
+  const lotCompliance = useMemo(() => lots.map(lot => {
+    const ids = animalsByLot.get(lot.id) ?? [];
+    const eligible = ids.filter(id => {
+      const row = complianceRows.find(r => r.animal.id === id);
+      return row?.status === "eligible";
+    }).length;
+    return { lot, total: ids.length, eligible, pct: ids.length ? Math.round((eligible / ids.length) * 100) : 0 };
+  }), [lots, animalsByLot, complianceRows]);
+
+  // ── Sign out ─────────────────────────────────────────────────────────────────
+
+  async function handleSignOut() {
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
+    );
+    await supabase.auth.signOut();
+    router.push("/login");
+  }
+
+  // ── Grid pattern ─────────────────────────────────────────────────────────────
+
+  const gridBg = {
+    backgroundColor: "#0a0a0a",
+    backgroundImage: `
+      linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px)
+    `,
+    backgroundSize: "48px 48px",
+  } as const;
 
   const CERT_LIST = ["Halal", "MAPA", "GTA", "SIF"];
 
-  // ── Styles ──────────────────────────────────────────────────────────────────
-
-  const S = {
-    bg:        { background: "#0a0e1a" },
-    card:      { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 20 },
-    cardGold:  { background: "rgba(201,162,39,0.08)", border: "1px solid rgba(201,162,39,0.2)", borderRadius: 20 },
-    text:      { color: "#f1f5f9" },
-    muted:     { color: "rgba(255,255,255,0.45)" },
-    gold:      { color: "#c9a227" },
-    emerald:   { color: "#4ade80" },
-    kpiVal:    { fontSize: 32, fontWeight: 700, letterSpacing: "-0.04em", color: "#f1f5f9" },
-    kpiLabel:  { fontSize: 11, fontWeight: 600, textTransform: "uppercase" as const, letterSpacing: "0.2em", color: "rgba(255,255,255,0.4)" },
-    th:        { padding: "10px 16px", textAlign: "left" as const, fontSize: 11, fontWeight: 600, textTransform: "uppercase" as const, letterSpacing: "0.16em", color: "rgba(255,255,255,0.35)", borderBottom: "1px solid rgba(255,255,255,0.07)" },
-    td:        { padding: "12px 16px", fontSize: 13, color: "rgba(255,255,255,0.75)", borderBottom: "1px solid rgba(255,255,255,0.05)" },
-  };
+  // ─────────────────────────────────────────────────────────────────────────────
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 50, overflowY: "auto", ...S.bg }}>
-      <div style={{ maxWidth: 1400, margin: "0 auto", padding: "0 32px 64px" }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 50, overflowY: "auto", ...gridBg, fontFamily: "'Inter', -apple-system, sans-serif" }}>
+      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 40px 80px" }}>
 
-        {/* ── Header ── */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "28px 0 32px", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-            {/* PIF Logo SVG */}
-            <div style={{ width: 52, height: 52, borderRadius: 14, background: "rgba(201,162,39,0.12)", border: "1px solid rgba(201,162,39,0.3)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <svg width="28" height="28" viewBox="0 0 40 40" fill="none">
-                <circle cx="20" cy="20" r="18" stroke="#c9a227" strokeWidth="1.5" fill="none"/>
-                <path d="M10 20h20M20 10v20" stroke="#c9a227" strokeWidth="1.5" strokeLinecap="round"/>
-                <circle cx="20" cy="20" r="4" fill="#c9a227" fillOpacity="0.8"/>
+        {/* ── Header ─────────────────────────────────────────────────────────── */}
+        <header style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "24px 0",
+          borderBottom: "1px solid rgba(255,255,255,0.06)",
+          marginBottom: 64,
+          position: "sticky",
+          top: 0,
+          zIndex: 10,
+          backdropFilter: "blur(12px)",
+          backgroundColor: "rgba(10,10,10,0.85)",
+          margin: "0 -40px",
+          padding2: "24px 40px",
+        } as React.CSSProperties}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, paddingLeft: 40 }}>
+            {/* Agraas mark */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 34, height: 34, background: "#22c55e", borderRadius: 8 }}>
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <path d="M3 15L9 3l6 12H3z" fill="#000" />
               </svg>
             </div>
             <div>
-              <p style={{ ...S.muted, fontSize: 11, letterSpacing: "0.22em", textTransform: "uppercase", marginBottom: 4 }}>Public Investment Fund</p>
-              <h1 style={{ ...S.text, fontSize: 22, fontWeight: 700, letterSpacing: "-0.04em", margin: 0 }}>
-                {t.welcome}, PIF Procurement Team
-              </h1>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", letterSpacing: "-0.01em" }}>agraas</div>
+              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", letterSpacing: "0.15em", textTransform: "uppercase", marginTop: 1 }}>{t.portal}</div>
             </div>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 16, paddingRight: 40 }}>
             {/* Lang toggle */}
-            <div style={{ display: "flex", gap: 4, background: "rgba(255,255,255,0.06)", borderRadius: 12, padding: 4 }}>
+            <div style={{ display: "flex", background: "rgba(255,255,255,0.05)", borderRadius: 8, border: "1px solid rgba(255,255,255,0.08)", overflow: "hidden" }}>
               {(["en", "pt"] as const).map(l => (
-                <button
-                  key={l}
-                  onClick={() => setLang(l)}
-                  style={{
-                    padding: "6px 14px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600,
-                    background: lang === l ? "rgba(201,162,39,0.2)" : "transparent",
-                    color: lang === l ? "#c9a227" : "rgba(255,255,255,0.45)",
-                    transition: "all 0.15s",
-                  }}
-                >
+                <button key={l} onClick={() => setLang(l)} style={{
+                  padding: "6px 14px",
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: "0.1em",
+                  textTransform: "uppercase",
+                  background: lang === l ? "rgba(255,255,255,0.1)" : "transparent",
+                  color: lang === l ? "#fff" : "rgba(255,255,255,0.35)",
+                  border: "none",
+                  cursor: "pointer",
+                  transition: "all 0.15s",
+                }}>
                   {l.toUpperCase()}
                 </button>
               ))}
             </div>
-            {/* Logout */}
-            <Link href="/login" style={{ padding: "8px 18px", borderRadius: 10, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.5)", fontSize: 13, textDecoration: "none" }}>
-              {t.logout}
-            </Link>
-          </div>
-        </div>
 
-        {/* ── KPIs ── */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16, marginTop: 36 }}>
+            <button onClick={handleSignOut} style={{
+              fontSize: 12,
+              fontWeight: 600,
+              color: "rgba(255,255,255,0.4)",
+              background: "transparent",
+              border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: 8,
+              padding: "6px 14px",
+              cursor: "pointer",
+              letterSpacing: "0.05em",
+              transition: "all 0.15s",
+            }}>
+              {t.signOut}
+            </button>
+          </div>
+        </header>
+
+        <div style={{ paddingTop: 64 }}>
+
+        {/* ── Hero ───────────────────────────────────────────────────────────── */}
+        <section style={{ marginBottom: 72 }}>
+          <div style={{ marginBottom: 8 }}>
+            <span style={{
+              fontSize: 10,
+              fontWeight: 700,
+              letterSpacing: "0.25em",
+              textTransform: "uppercase",
+              color: "#22c55e",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+            }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22c55e", display: "inline-block", boxShadow: "0 0 8px #22c55e" }} />
+              Live
+            </span>
+          </div>
+          <h1 style={{
+            fontSize: "clamp(28px, 3.5vw, 48px)",
+            fontWeight: 800,
+            color: "#fff",
+            letterSpacing: "-0.04em",
+            margin: "0 0 12px",
+            lineHeight: 1.05,
+          }}>
+            {t.hero.title}
+          </h1>
+          <p style={{ fontSize: 15, color: "rgba(255,255,255,0.4)", margin: 0, letterSpacing: "0.01em" }}>
+            {t.hero.sub}
+          </p>
+        </section>
+
+        {/* ── KPIs ───────────────────────────────────────────────────────────── */}
+        <section style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 1, background: "rgba(255,255,255,0.06)", borderRadius: 16, overflow: "hidden", marginBottom: 72, border: "1px solid rgba(255,255,255,0.06)" }}>
           {[
-            { label: t.kpi.animals,   value: totalAnimals,    accent: false },
-            { label: t.kpi.ready,     value: exportReady,     accent: true  },
-            { label: t.kpi.halal,     value: halalCertified,  accent: false },
-            { label: t.kpi.shipments, value: activeShipments, accent: false },
-          ].map(k => (
-            <div key={k.label} style={k.accent ? S.cardGold : S.card} className="p-6">
-              <p style={S.kpiLabel}>{k.label}</p>
-              <p style={{ ...S.kpiVal, ...(k.accent ? S.gold : {}) }} className="mt-2">{k.value}</p>
+            { value: totalAnimals, label: t.kpi.total, color: "#fff" },
+            { value: eligibleCount, label: t.kpi.eligible, color: "#22c55e" },
+            { value: halalCount, label: t.kpi.halal, color: "#f59e0b" },
+            { value: daysToNext != null ? `T−${daysToNext}` : fmtDate(nextDeparture), label: t.kpi.departure, color: "#3b82f6" },
+          ].map((kpi, i) => (
+            <div key={i} style={{ background: "#0a0a0a", padding: "32px 28px" }}>
+              <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.3)", marginBottom: 14 }}>
+                {kpi.label}
+              </div>
+              <div style={{ fontSize: 44, fontWeight: 800, letterSpacing: "-0.05em", color: kpi.color, lineHeight: 1 }}>
+                {kpi.value}
+              </div>
             </div>
           ))}
-        </div>
+        </section>
 
-        {/* ── Available Lots ── */}
-        <div style={{ ...S.card, marginTop: 36, padding: "28px 32px" }}>
-          <h2 style={{ ...S.text, fontSize: 16, fontWeight: 600, letterSpacing: "-0.03em", marginBottom: 20 }}>
-            {t.lots.title}
-          </h2>
-          {lots.length === 0 ? (
-            <p style={S.muted}>{t.empty}</p>
-          ) : (
+        {/* ── Shipments ──────────────────────────────────────────────────────── */}
+        <section style={{ marginBottom: 72 }}>
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 24 }}>
+            <h2 style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: "rgba(255,255,255,0.5)", margin: 0 }}>
+              {t.shipments.title}
+            </h2>
+            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.2)" }}>{lots.length} lot{lots.length !== 1 ? "s" : ""}</span>
+          </div>
+
+          <div style={{ border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, overflow: "hidden" }}>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
-                <tr>
-                  {[t.lots.lot, t.lots.origin, t.lots.destination, t.lots.departure, t.lots.conformance, t.lots.eligible, t.lots.action].map(h => (
-                    <th key={h} style={S.th}>{h}</th>
+                <tr style={{ background: "rgba(255,255,255,0.02)" }}>
+                  {[t.shipments.lotId, t.shipments.contract, t.shipments.origin, t.shipments.dest, t.shipments.dep, t.shipments.animals, t.shipments.compliance, t.shipments.status, ""].map((h, i) => (
+                    <th key={i} style={{
+                      padding: "12px 16px",
+                      textAlign: "left",
+                      fontSize: 10,
+                      fontWeight: 700,
+                      letterSpacing: "0.18em",
+                      textTransform: "uppercase",
+                      color: "rgba(255,255,255,0.25)",
+                      borderBottom: "1px solid rgba(255,255,255,0.06)",
+                      whiteSpace: "nowrap",
+                    }}>
+                      {h}
+                    </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {lots.map(lot => {
-                  const lotAnimals = animalsByLot.get(lot.id) ?? [];
-                  const aptCount = lotAnimals.filter(aid => {
-                    const certs = certsByAnimal.get(aid) ?? new Set();
-                    const score = scoreByAnimal.get(aid) ?? 0;
-                    const noW = !withdrawalsByAnimal.has(aid);
-                    const certsOk = (lot.certificacoes_exigidas ?? []).every(c => certs.has(c));
-                    return score >= 60 && noW && certsOk;
-                  }).length;
-                  const conformPct = lotAnimals.length ? Math.round((aptCount / lotAnimals.length) * 100) : 0;
-                  const departure = lot.data_embarque ? new Date(lot.data_embarque).toLocaleDateString("en-GB") : "—";
-                  return (
-                    <tr key={lot.id}>
-                      <td style={S.td}>
-                        <p style={{ ...S.text, fontWeight: 600, fontSize: 13 }}>{lot.name}</p>
-                        {lot.numero_contrato && <p style={{ ...S.muted, fontSize: 11 }}>#{lot.numero_contrato}</p>}
-                      </td>
-                      <td style={S.td}>{lot.porto_embarque ?? "Santos, BR"}</td>
-                      <td style={S.td}>{lot.pais_destino ?? "—"}</td>
-                      <td style={S.td}>{departure}</td>
-                      <td style={S.td}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <div style={{ width: 56, height: 6, borderRadius: 999, background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
-                            <div style={{ height: "100%", width: `${conformPct}%`, background: conformPct >= 80 ? "#4ade80" : conformPct >= 50 ? "#fbbf24" : "#f87171", borderRadius: 999 }} />
-                          </div>
-                          <span style={{ fontSize: 13, fontWeight: 700, color: conformPct >= 80 ? "#4ade80" : conformPct >= 50 ? "#fbbf24" : "#f87171" }}>{conformPct}%</span>
-                        </div>
-                      </td>
-                      <td style={{ ...S.td, fontWeight: 700, ...S.emerald }}>{aptCount} / {lotAnimals.length}</td>
-                      <td style={S.td}>
-                        <Link href={`/lotes/${lot.id}`}
-                          style={{ display: "inline-block", padding: "6px 14px", borderRadius: 8, background: "rgba(201,162,39,0.12)", border: "1px solid rgba(201,162,39,0.25)", color: "#c9a227", fontSize: 12, fontWeight: 600, textDecoration: "none" }}>
-                          {t.lots.viewManifest}
-                        </Link>
-                      </td>
-                    </tr>
-                  );
-                })}
+                {lotCompliance.map(({ lot, total, eligible, pct }) => (
+                  <tr key={lot.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)", background: "transparent" }}>
+                    <td style={{ padding: "16px", fontSize: 12, fontWeight: 700, color: "#fff", fontFamily: "monospace", letterSpacing: "0.05em", whiteSpace: "nowrap" }}>
+                      {lot.name}
+                    </td>
+                    <td style={{ padding: "16px", fontSize: 11, color: "rgba(255,255,255,0.35)", fontFamily: "monospace" }}>
+                      {lot.numero_contrato ?? "—"}
+                    </td>
+                    <td style={{ padding: "16px", fontSize: 12, color: "rgba(255,255,255,0.6)" }}>
+                      {lot.porto_embarque ?? "—"}
+                    </td>
+                    <td style={{ padding: "16px", fontSize: 12, color: "rgba(255,255,255,0.6)" }}>
+                      {lot.pais_destino ?? "—"}
+                    </td>
+                    <td style={{ padding: "16px", fontSize: 12, color: "rgba(255,255,255,0.6)", whiteSpace: "nowrap" }}>
+                      {fmtDate(lot.data_embarque)}
+                    </td>
+                    <td style={{ padding: "16px", fontSize: 18, fontWeight: 700, color: "#fff", letterSpacing: "-0.03em" }}>
+                      {total}
+                    </td>
+                    <td style={{ padding: "16px 24px 16px 16px" }}>
+                      <ComplianceBar pct={pct} eligible={eligible} total={total} />
+                    </td>
+                    <td style={{ padding: "16px" }}>
+                      <span style={{
+                        display: "inline-block",
+                        fontSize: 10,
+                        fontWeight: 700,
+                        letterSpacing: "0.12em",
+                        textTransform: "uppercase",
+                        color: lot.status === "closed" ? "rgba(255,255,255,0.25)" : "#22c55e",
+                        border: `1px solid ${lot.status === "closed" ? "rgba(255,255,255,0.1)" : "rgba(34,197,94,0.3)"}`,
+                        background: lot.status === "closed" ? "transparent" : "rgba(34,197,94,0.08)",
+                        borderRadius: 6,
+                        padding: "3px 10px",
+                      }}>
+                        {lot.status ?? t.active}
+                      </span>
+                    </td>
+                    <td style={{ padding: "16px" }}>
+                      <button style={{
+                        fontSize: 11,
+                        fontWeight: 700,
+                        color: "#22c55e",
+                        background: "rgba(34,197,94,0.08)",
+                        border: "1px solid rgba(34,197,94,0.25)",
+                        borderRadius: 8,
+                        padding: "7px 14px",
+                        cursor: "pointer",
+                        whiteSpace: "nowrap",
+                        letterSpacing: "0.03em",
+                        transition: "all 0.15s",
+                      }}>
+                        {t.shipments.manifest}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
-          )}
-        </div>
+          </div>
+        </section>
 
-        {/* ── Upcoming Shipments ── */}
-        <div style={{ ...S.card, marginTop: 24, padding: "28px 32px" }}>
-          <h2 style={{ ...S.text, fontSize: 16, fontWeight: 600, letterSpacing: "-0.03em", marginBottom: 20 }}>
-            {t.shipments.title}
-          </h2>
-          {lots.filter(l => l.data_embarque).length === 0 ? (
-            <p style={S.muted}>{t.empty}</p>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {lots.filter(l => l.data_embarque).map(lot => (
-                <div key={lot.id} style={{ display: "flex", alignItems: "center", gap: 20, padding: "16px 20px", borderRadius: 14, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                  {/* Route line */}
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1 }}>
-                    <div style={{ textAlign: "center" }}>
-                      <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#4ade80", margin: "0 auto" }} />
-                      <p style={{ ...S.muted, fontSize: 10, marginTop: 4 }}>Santos</p>
-                      <p style={{ color: "#4ade80", fontSize: 11, fontWeight: 600 }}>BR</p>
-                    </div>
-                    <div style={{ flex: 1, height: 1, borderTop: "2px dashed rgba(201,162,39,0.4)", position: "relative" }}>
-                      <span style={{ position: "absolute", top: -8, left: "50%", transform: "translateX(-50%)", fontSize: 14 }}>✈</span>
-                    </div>
-                    <div style={{ textAlign: "center" }}>
-                      <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#c9a227", margin: "0 auto" }} />
-                      <p style={{ ...S.muted, fontSize: 10, marginTop: 4 }}>Jeddah</p>
-                      <p style={{ color: "#c9a227", fontSize: 11, fontWeight: 600 }}>SA</p>
-                    </div>
-                  </div>
-                  {/* Info */}
-                  <div style={{ textAlign: "right", minWidth: 160 }}>
-                    <p style={{ ...S.text, fontWeight: 700, fontSize: 14 }}>{lot.name}</p>
-                    <p style={S.muted}>{t.shipments.departure}: {new Date(lot.data_embarque!).toLocaleDateString(lang === "en" ? "en-GB" : "pt-BR")}</p>
-                  </div>
-                  {/* Status badge */}
-                  <div style={{ background: "rgba(74,222,128,0.12)", border: "1px solid rgba(74,222,128,0.25)", borderRadius: 8, padding: "6px 12px" }}>
-                    <p style={{ color: "#4ade80", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" }}>
-                      {lot.status ?? "Scheduled"}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* ── Compliance Dashboard ── */}
-        <div style={{ ...S.card, marginTop: 24, padding: "28px 32px" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-            <h2 style={{ ...S.text, fontSize: 16, fontWeight: 600, letterSpacing: "-0.03em" }}>
-              {t.compliance.title}
+        {/* ── Animal Certification Matrix ─────────────────────────────────────── */}
+        <section style={{ marginBottom: 72 }}>
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 24 }}>
+            <h2 style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: "rgba(255,255,255,0.5)", margin: 0 }}>
+              {t.matrix.title}
             </h2>
-            <div style={{ display: "flex", gap: 8 }}>
-              {[
-                { label: t.compliance.eligible, count: complianceRows.filter(r => r.status === "eligible").length, color: "#4ade80" },
-                { label: t.compliance.pending,  count: complianceRows.filter(r => r.status === "pending").length,  color: "#fbbf24" },
-                { label: t.compliance.ineligible,count: complianceRows.filter(r => r.status === "ineligible").length,color: "#f87171" },
-              ].map(b => (
-                <div key={b.label} style={{ background: "rgba(255,255,255,0.05)", borderRadius: 10, padding: "6px 14px", display: "flex", gap: 6, alignItems: "center" }}>
-                  <span style={{ width: 8, height: 8, borderRadius: "50%", background: b.color, display: "inline-block" }} />
-                  <span style={{ fontSize: 12, color: "rgba(255,255,255,0.6)" }}>{b.label}</span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: b.color }}>{b.count}</span>
-                </div>
-              ))}
-            </div>
+            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.2)" }}>{animals.length} animals</span>
           </div>
 
-          {complianceRows.length === 0 ? (
-            <p style={S.muted}>{t.empty}</p>
-          ) : (
-            <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead>
-                  <tr>
-                    {[t.compliance.animal, ...CERT_LIST, t.compliance.withdrawal, t.compliance.score, t.compliance.status].map(h => (
-                      <th key={h} style={S.th}>{h}</th>
+          <div style={{ border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, overflow: "hidden" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ background: "rgba(255,255,255,0.02)" }}>
+                  {[t.matrix.animal, t.matrix.breed, "Age", t.matrix.halal, t.matrix.mapa, t.matrix.gta, t.matrix.sif, t.matrix.withdrawal, t.matrix.score, t.matrix.status].map((h, i) => (
+                    <th key={i} style={{
+                      padding: "12px 14px",
+                      textAlign: i <= 2 ? "left" : "center",
+                      fontSize: 10,
+                      fontWeight: 700,
+                      letterSpacing: "0.18em",
+                      textTransform: "uppercase",
+                      color: "rgba(255,255,255,0.25)",
+                      borderBottom: "1px solid rgba(255,255,255,0.06)",
+                      whiteSpace: "nowrap",
+                    }}>
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {complianceRows.map(({ animal, certs, score, withdrawals, status }) => (
+                  <tr
+                    key={animal.id}
+                    onMouseEnter={() => setHoveredRow(animal.id)}
+                    onMouseLeave={() => setHoveredRow(null)}
+                    style={{
+                      borderBottom: "1px solid rgba(255,255,255,0.04)",
+                      background: hoveredRow === animal.id ? "rgba(255,255,255,0.03)" : "transparent",
+                      transition: "background 0.1s",
+                    }}
+                  >
+                    <td style={{ padding: "14px", whiteSpace: "nowrap" }}>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>
+                        {animal.nickname ?? animal.internal_code ?? animal.id.slice(0, 8)}
+                      </span>
+                    </td>
+                    <td style={{ padding: "14px", fontSize: 12, color: "rgba(255,255,255,0.4)", whiteSpace: "nowrap" }}>
+                      {animal.breed ?? "—"}
+                    </td>
+                    <td style={{ padding: "14px", fontSize: 12, color: "rgba(255,255,255,0.4)", whiteSpace: "nowrap" }}>
+                      {fmtAge(animal.birth_date)}
+                    </td>
+                    {CERT_LIST.map(cert => (
+                      <td key={cert} style={{ padding: "14px", textAlign: "center" }}>
+                        <CertCell has={certs.has(cert)} />
+                      </td>
                     ))}
+                    <td style={{ padding: "14px", textAlign: "center" }}>
+                      {withdrawals.length === 0 ? (
+                        <span style={{ fontSize: 11, fontWeight: 600, color: "#22c55e" }}>{t.clear}</span>
+                      ) : (
+                        <span style={{ fontSize: 11, fontWeight: 600, color: "#ef4444" }}>
+                          {new Date(withdrawals[0]).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}
+                        </span>
+                      )}
+                    </td>
+                    <td style={{ padding: "14px", textAlign: "center" }}>
+                      <span style={{
+                        fontSize: 15,
+                        fontWeight: 800,
+                        letterSpacing: "-0.03em",
+                        color: score >= 75 ? "#22c55e" : score >= 60 ? "#f59e0b" : "#ef4444",
+                      }}>
+                        {score > 0 ? score : "—"}
+                      </span>
+                    </td>
+                    <td style={{ padding: "14px", textAlign: "center" }}>
+                      <StatusBadge status={status} t={t} />
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {complianceRows.map(({ animal, certs, score, withdrawals, status }) => {
-                    const statusStyle = {
-                      eligible:   { bg: "rgba(74,222,128,0.12)",  color: "#4ade80",  label: t.compliance.eligible },
-                      pending:    { bg: "rgba(251,191,36,0.12)",   color: "#fbbf24",  label: t.compliance.pending },
-                      ineligible: { bg: "rgba(248,113,113,0.12)", color: "#f87171",  label: t.compliance.ineligible },
-                    }[status] ?? { bg: "rgba(156,163,175,0.12)", color: "#9ca3af", label: "N/A" };
-                    return (
-                      <tr key={animal.id}>
-                        <td style={S.td}>
-                          <Link href={`/animais/${animal.id}`} style={{ ...S.text, fontWeight: 600, textDecoration: "none" }}>
-                            {animal.nickname ?? animal.internal_code ?? animal.id.slice(0, 8)}
-                          </Link>
-                          {animal.breed && <p style={{ ...S.muted, fontSize: 11 }}>{animal.breed}</p>}
-                        </td>
-                        {CERT_LIST.map(c => (
-                          <td key={c} style={{ ...S.td, textAlign: "center" }}>{certBadge(certs.has(c))}</td>
-                        ))}
-                        <td style={{ ...S.td, textAlign: "center" }}>
-                          {withdrawals.length === 0
-                            ? <span style={{ color: "#4ade80", fontSize: 13 }}>✓</span>
-                            : <span style={{ color: "#f87171", fontSize: 11 }}>{withdrawals.join(", ")}</span>
-                          }
-                        </td>
-                        <td style={{ ...S.td, textAlign: "center" }}>
-                          <span style={{ fontWeight: 700, color: scoreColor(score), fontSize: 14 }}>{score}</span>
-                        </td>
-                        <td style={S.td}>
-                          <span style={{ background: statusStyle.bg, color: statusStyle.color, borderRadius: 8, padding: "4px 10px", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" }}>
-                            {statusStyle.label}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
 
-        {/* ── Footer ── */}
-        <div style={{ marginTop: 48, paddingTop: 24, borderTop: "1px solid rgba(255,255,255,0.06)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <p style={{ ...S.muted, fontSize: 12 }}>Powered by <span style={S.gold}>Agraas Intelligence Layer</span></p>
-          <p style={{ ...S.muted, fontSize: 12 }}>{new Date().toLocaleDateString(lang === "en" ? "en-GB" : "pt-BR", { day: "2-digit", month: "long", year: "numeric" })}</p>
-        </div>
+        {/* ── Live Tracking ───────────────────────────────────────────────────── */}
+        <section style={{ marginBottom: 72 }}>
+          <h2 style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: "rgba(255,255,255,0.5)", margin: "0 0 24px" }}>
+            {t.tracking.title}
+          </h2>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 280px", gap: 16, alignItems: "stretch" }}>
+            <div style={{ border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, overflow: "hidden", minHeight: 300 }}>
+              <ExportMapGL />
+            </div>
+            <div style={{ border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: "28px 24px", display: "flex", flexDirection: "column", gap: 28 }}>
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.25)", marginBottom: 8 }}>
+                  Route
+                </div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", lineHeight: 1.6 }}>
+                  {t.tracking.route}
+                </div>
+              </div>
+
+              {lots[0] && (
+                <>
+                  <div>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.25)", marginBottom: 8 }}>
+                      {t.tracking.nextShipment}
+                    </div>
+                    <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.04em", color: "#fff" }}>
+                      {fmtDate(lots[0].data_embarque)}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.25)", marginBottom: 8 }}>
+                      {t.tracking.daysTo}
+                    </div>
+                    <div style={{ fontSize: 44, fontWeight: 800, letterSpacing: "-0.05em", color: "#3b82f6", lineHeight: 1 }}>
+                      {daysToNext != null ? `T−${daysToNext}` : "—"}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(255,255,255,0.25)", marginBottom: 8 }}>
+                      {t.tracking.confirmed}
+                    </div>
+                    <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.04em", color: "#22c55e" }}>
+                      {animalsByLot.get(lots[0].id)?.length ?? 0}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </section>
+
+        </div>{/* end paddingTop wrapper */}
+
+        {/* ── Footer ─────────────────────────────────────────────────────────── */}
+        <footer style={{
+          borderTop: "1px solid rgba(255,255,255,0.05)",
+          paddingTop: 24,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 16,
+          flexWrap: "wrap",
+        }}>
+          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.2)", letterSpacing: "0.05em" }}>
+            {t.footer}
+          </span>
+          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.2)", fontFamily: "monospace" }}>
+            {utcTime}
+          </span>
+        </footer>
 
       </div>
     </div>
   );
 }
-
-// ─── i18n ─────────────────────────────────────────────────────────────────────
-
-const EN = {
-  welcome: "Welcome",
-  logout: "Sign out",
-  empty: "No data available yet",
-  kpi: { animals: "Animals Tracked", ready: "Export-Ready", halal: "Halal Certified", shipments: "Active Shipments" },
-  lots: { title: "Available Lots", lot: "Lot", origin: "Origin", destination: "Destination", departure: "Departure", conformance: "Conformance", eligible: "Eligible", action: "Action", viewManifest: "View Manifest" },
-  shipments: { title: "Upcoming Shipments", departure: "Departure" },
-  compliance: { title: "Compliance Dashboard", animal: "Animal", withdrawal: "Withdrawal Clear", score: "Score", status: "Status", eligible: "Eligible", pending: "Pending", ineligible: "Ineligible" },
-};
-
-const PT = {
-  welcome: "Bem-vindo",
-  logout: "Sair",
-  empty: "Nenhum dado disponível",
-  kpi: { animals: "Animais monitorados", ready: "Aptos exportação", halal: "Certificados Halal", shipments: "Embarques ativos" },
-  lots: { title: "Lotes disponíveis", lot: "Lote", origin: "Origem", destination: "Destino", departure: "Embarque", conformance: "Conformidade", eligible: "Aptos", action: "Ação", viewManifest: "Ver Manifesto" },
-  shipments: { title: "Próximos embarques", departure: "Embarque" },
-  compliance: { title: "Dashboard de conformidade", animal: "Animal", withdrawal: "Carência zerada", score: "Score", status: "Status", eligible: "Apto", pending: "Pendente", ineligible: "Inapto" },
-};
