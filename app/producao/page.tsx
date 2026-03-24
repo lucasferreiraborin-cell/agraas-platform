@@ -1,4 +1,7 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import dynamic from "next/dynamic";
+
+const WeightDist = dynamic(() => import("@/app/components/charts/WeightDist"), { ssr: false });
 
 function SectionTitle({ title, sub }: { title: string; sub?: string }) {
   return (
@@ -109,22 +112,7 @@ export default async function ProducaoPage() {
       <section className="ag-card p-6 lg:p-8">
         <SectionTitle title="Distribuição por Faixa de Peso" sub="Quantidade de animais por intervalo de peso vivo" />
         {weights.length === 0 ? <EmptyState label="Nenhum dado de pesagem registrado ainda" /> : (
-          <div className="space-y-3">
-            {weights.map(w => (
-              <div key={w.id} className="flex items-center gap-3">
-                <span className="w-32 shrink-0 text-xs text-[var(--text-secondary)]">{w.range_label}</span>
-                <div className="h-7 flex-1 overflow-hidden rounded-lg bg-[var(--surface-soft)]">
-                  <div
-                    className="h-full rounded-lg bg-[linear-gradient(90deg,#8dbc5f_0%,#5d9c44_100%)] transition-all"
-                    style={{ width: `${((w.count ?? 0) / weightMax) * 100}%` }}
-                  />
-                </div>
-                <span className="w-12 text-right text-sm font-semibold text-[var(--text-primary)]">
-                  {(w.count ?? 0).toLocaleString("pt-BR")}
-                </span>
-              </div>
-            ))}
-          </div>
+          <WeightDist rows={weights} />
         )}
       </section>
 

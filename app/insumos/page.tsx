@@ -1,4 +1,7 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import dynamic from "next/dynamic";
+
+const InsumosBar = dynamic(() => import("@/app/components/charts/InsumosBar"), { ssr: false });
 
 function SectionTitle({ title, sub }: { title: string; sub?: string }) {
   return (
@@ -144,29 +147,14 @@ export default async function InsumosPage() {
       {/* Gráfico por grupo */}
       <section className="ag-card p-6 lg:p-8">
         <SectionTitle title="Distribuição por Grupo" sub="Participação de cada categoria no valor total do estoque" />
-        {Object.keys(CATEGORY_VALUES).length === 0 ? <EmptyState label="Nenhum dado disponível" /> : (
-          <div className="space-y-3">
-            {Object.entries(CATEGORY_VALUES)
-              .sort((a, b) => b[1] - a[1])
-              .map(([cat, val]) => {
-                const pct = (val / totalCatValue) * 100;
-                const colorClass = CATEGORY_COLORS[cat] ?? "bg-gray-100 text-gray-600";
-                return (
-                  <div key={cat} className="flex items-center gap-3">
-                    <span className="w-36 shrink-0 text-xs text-[var(--text-secondary)]">{cat}</span>
-                    <div className="h-7 flex-1 overflow-hidden rounded-lg bg-[var(--surface-soft)]">
-                      <div
-                        className="h-full rounded-lg bg-[linear-gradient(90deg,#8dbc5f,#5d9c44)] transition-all"
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                    <span className="w-16 text-right text-xs font-semibold text-[var(--text-primary)]">
-                      {pct.toFixed(1)}%
-                    </span>
-                  </div>
-                );
-              })}
-          </div>
+        {totalCatValue === 0 ? <EmptyState label="Nenhum dado disponível" /> : (
+          <InsumosBar
+            rows={Object.entries(CATEGORY_VALUES).map(([category, value]) => ({
+              category,
+              value,
+              pct: Math.round((value / totalCatValue) * 1000) / 10,
+            }))}
+          />
         )}
       </section>
 

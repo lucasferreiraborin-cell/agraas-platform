@@ -1,4 +1,8 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import dynamic from "next/dynamic";
+
+const ReproGauge  = dynamic(() => import("@/app/components/charts/ReproGauge"),   { ssr: false });
+const IABreakdown = dynamic(() => import("@/app/components/charts/IABreakdown"),  { ssr: false });
 
 function KpiCard({ label, value, sub }: { label: string; value: string | number; sub: string }) {
   return (
@@ -120,72 +124,27 @@ export default async function ReprodutivoPage() {
 
           {/* Serviços de IA */}
           <section className="ag-card p-6 lg:p-8">
-            <SectionTitle title="Breakdown por Serviço de IA" sub="Resultados acumulados por repasse" />
+            <SectionTitle title="Breakdown por Serviço de IA" sub="Taxa de concepção acumulada por repasse" />
             {ia.length === 0 ? (
               <EmptyState label="Nenhum serviço de IA registrado" />
             ) : (
-              <div className="overflow-x-auto">
-                <table className="ag-table w-full">
-                  <thead>
-                    <tr>
-                      <th>Serviço</th>
-                      <th>Inseminadas</th>
-                      <th>Diagnósticos</th>
-                      <th>Gestantes</th>
-                      <th>Taxa concepção</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {ia.map(row => (
-                      <tr key={row.service_number}>
-                        <td className="font-medium text-[var(--text-primary)]">{row.service_number}ª IA</td>
-                        <td>{num(row.inseminated)}</td>
-                        <td>{num(row.diagnosed)}</td>
-                        <td>{num(row.pregnant)}</td>
-                        <td>
-                          <span className="font-semibold text-[var(--primary-hover)]">{pct(row.conception_rate)}</span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <IABreakdown rows={ia} />
             )}
           </section>
 
           {/* Gauge APTAS */}
           <section className="ag-card p-6 lg:p-8">
             <SectionTitle title="Fêmeas Aptas" sub="Percentual apto para inseminação" />
-            <div className="flex flex-col items-center gap-4">
-              <svg width="200" height="110" viewBox="0 0 180 100">
-                {/* Track */}
-                <path d={`M ${startX} ${startY} A ${r} ${r} 0 0 1 ${endX} ${endY}`}
-                  fill="none" stroke="var(--surface-soft)" strokeWidth="16" strokeLinecap="round" />
-                {/* Fill */}
-                {gaugeArc > 0 && (
-                  <path d={`M ${startX} ${startY} A ${r} ${r} 0 ${largeArc} 1 ${fillX} ${fillY}`}
-                    fill="none" stroke="#4ade80" strokeWidth="14" strokeLinecap="round" />
-                )}
-                <text x="90" y="78" textAnchor="middle" fill="var(--text-primary)" fontSize="22" fontWeight="700">
-                  {aptPct != null ? `${aptPct.toFixed(1)}%` : "—"}
-                </text>
-                <text x="90" y="95" textAnchor="middle" fill="var(--text-muted)" fontSize="10">
-                  aptas para IA
-                </text>
-              </svg>
-              <div className="grid w-full max-w-sm gap-3 sm:grid-cols-3 text-center">
-                {[
-                  ["Aptas", num(season.apt_count)],
-                  ["Inseminadas", num(season.females_inseminated)],
-                  ["A inseminar", num(season.to_inseminate)],
-                ].map(([l, v]) => (
-                  <div key={l} className="rounded-xl bg-[var(--surface-soft)] p-3">
-                    <p className="text-xs text-[var(--text-muted)]">{l}</p>
-                    <p className="mt-1 text-lg font-semibold text-[var(--text-primary)]">{v}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
+            {aptPct != null ? (
+              <ReproGauge
+                pct={aptPct}
+                apt={season.apt_count ?? 0}
+                inseminated={season.females_inseminated ?? 0}
+                toInseminate={season.to_inseminate ?? 0}
+              />
+            ) : (
+              <EmptyState label="Dados insuficientes para o gauge" />
+            )}
           </section>
 
           {/* Estoque Reprodutores */}
