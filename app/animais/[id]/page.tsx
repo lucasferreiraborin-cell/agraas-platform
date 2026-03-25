@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 import Link from "next/link";
 import {
   calculateAgraasScore,
@@ -130,6 +130,7 @@ type TimelineRow = {
 
 export default async function AnimalPassaportePage({ params }: PageProps) {
   const { id } = await params;
+  const supabase = await createSupabaseServerClient();
 
   const [
     { data: passportData, error: passportError },

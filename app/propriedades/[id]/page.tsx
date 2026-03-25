@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 import Link from "next/link";
 import TargetArrobasEditor from "@/app/components/TargetArrobasEditor";
 
@@ -52,6 +52,7 @@ type EventRow = {
 
 export default async function PropriedadeDetailPage({ params }: PageProps) {
   const { id } = await params;
+  const supabase = await createSupabaseServerClient();
 
   const { data: propertyData, error: propertyError } = await supabase
     .from("properties")
