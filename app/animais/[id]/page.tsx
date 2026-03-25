@@ -295,8 +295,8 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
   const sanitaryHistory: SanitaryHistoryRow[] = applications.map((application) => ({
     id: application.id,
     product_name: application.product_id
-      ? productMap.get(application.product_id) ?? "Produto"
-      : "Produto",
+      ? productMap.get(application.product_id) ?? application.product_name ?? "Produto"
+      : application.product_name ?? "Produto",
     batch_number: application.batch_id
       ? batchMap.get(application.batch_id) ?? "-"
       : "-",
@@ -320,8 +320,8 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
     title: "Aplicação sanitária",
     description: `${
       application.product_id
-        ? productMap.get(application.product_id) ?? "Produto"
-        : "Produto"
+        ? productMap.get(application.product_id) ?? application.product_name ?? "Produto"
+        : application.product_name ?? "Produto"
     } • lote ${application.batch_id ? batchMap.get(application.batch_id) ?? "-" : "-"} • dose ${
       application.dose ?? "-"
     }`,
