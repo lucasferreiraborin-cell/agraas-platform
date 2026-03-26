@@ -243,7 +243,7 @@ export async function POST(req: NextRequest) {
       supabase.auth.getUser(),
       req.formData(),
     ]);
-    if (!user) return new Response("Não autenticado", { status: 401 });
+    if (!user) return Response.json({ error: "Não autenticado" }, { status: 401 });
 
     // Client lookup + file parse em paralelo
     const file = formData.get("xml") as File | null;

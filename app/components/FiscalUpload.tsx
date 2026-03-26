@@ -32,9 +32,15 @@ export default function FiscalUpload() {
     try {
       const form = new FormData();
       form.append("xml", file);
-      const res  = await fetch("/api/fiscal/parse-xml", { method: "POST", body: form, signal: controller.signal });
+      const res = await fetch("/api/fiscal/parse-xml", { method: "POST", body: form, signal: controller.signal });
+      if (!res.ok) {
+        let msg = "Erro ao processar arquivo.";
+        try { const j = await res.json(); msg = j.error ?? msg; } catch { /* plain text */ }
+        setError(msg);
+        return;
+      }
       const json = await res.json();
-      if (!res.ok || json.error) { setError(json.error ?? "Erro ao processar arquivo."); return; }
+      if (json.error) { setError(json.error); return; }
       setResult(json);
       router.refresh();
     } catch (err) {
