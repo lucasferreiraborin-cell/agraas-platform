@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Upload, Loader2, CheckCircle } from "lucide-react";
 
 export default function FiscalUpload() {
   const [dragging, setDragging]   = useState(false);
@@ -36,18 +37,31 @@ export default function FiscalUpload() {
         onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
         onDragLeave={() => setDragging(false)}
         onDrop={onDrop}
-        onClick={() => inputRef.current?.click()}
-        className={`cursor-pointer rounded-2xl border-2 border-dashed px-8 py-10 text-center transition ${
-          dragging ? "border-[var(--primary)] bg-[var(--primary-soft)]" : "border-[var(--border)] hover:border-[var(--primary)] hover:bg-[var(--surface-soft)]"
+        onClick={() => !loading && inputRef.current?.click()}
+        style={{ minHeight: "160px" }}
+        className={`flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-8 text-center transition ${
+          dragging
+            ? "border-[var(--primary)] bg-[var(--primary-soft)]"
+            : loading
+              ? "cursor-default border-[var(--border)] bg-[var(--surface-soft)]"
+              : "border-[var(--primary)]/40 hover:border-[var(--primary)] hover:bg-emerald-50/60"
         }`}
       >
         <input ref={inputRef} type="file" accept=".xml" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadFile(f); }} />
         {loading ? (
-          <p className="text-sm text-[var(--text-secondary)]">Processando XML…</p>
+          <>
+            <Loader2 size={28} className="animate-spin text-[var(--primary)]" />
+            <p className="text-sm font-medium text-[var(--text-secondary)]">Processando XML…</p>
+          </>
         ) : (
           <>
-            <p className="text-[15px] font-medium text-[var(--text-primary)]">Arraste o XML da NF-e aqui</p>
-            <p className="mt-1 text-sm text-[var(--text-muted)]">ou clique para selecionar o arquivo</p>
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--primary-soft)]">
+              <Upload size={22} className="text-[var(--primary)]" />
+            </div>
+            <div>
+              <p className="text-[15px] font-semibold text-[var(--text-primary)]">Arraste o XML da NF-e aqui</p>
+              <p className="mt-0.5 text-sm text-[var(--text-muted)]">ou clique para selecionar • somente .xml</p>
+            </div>
           </>
         )}
       </div>
@@ -57,9 +71,10 @@ export default function FiscalUpload() {
       )}
 
       {result && (
-        <div className="rounded-xl border border-[var(--border)] bg-white px-5 py-4 flex items-center justify-between gap-4">
-          <div>
-            <p className="text-sm font-semibold text-[var(--text-primary)]">NF-e nº {result.numero_nota} importada</p>
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 flex items-center gap-4">
+          <CheckCircle size={20} className="shrink-0 text-emerald-600" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-[var(--text-primary)]">NF-e nº {result.numero_nota} importada com sucesso</p>
             <p className="mt-0.5 text-xs text-[var(--text-muted)]">
               {result.total_items} {result.total_items === 1 ? "item" : "itens"} •{" "}
               {result.alerts_count > 0 ? (
