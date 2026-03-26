@@ -1,8 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest } from "next/server";
-
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 // ── Helpers XML ───────────────────────────────────────────────────────────────
 
@@ -73,81 +70,59 @@ function parseXml(xml: string): { header: ParsedHeader; items: ParsedItem[] } {
   return { header, items };
 }
 
-// ── Parser PDF via Claude ─────────────────────────────────────────────────────
+// ── Parser PDF — leitura como texto bruto + regex ─────────────────────────────
+// pdf-parse usa DOMMatrix (API de browser) que não existe no Node.js serverless.
+// Alternativa: Buffer.toString('latin1') extrai texto embutido de PDFs simples.
 
-async function parsePdf(buffer: Buffer): Promise<{ header: ParsedHeader; items: ParsedItem[]; iaFailed?: boolean }> {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const pdfParse: (buf: Buffer) => Promise<{ text: string }> = require("pdf-parse");
-  const pdfData = await pdfParse(buffer);
-  const text = pdfData.text as string;
+function extractPdfText(buffer: Buffer): string {
+  // Tenta extrair streams de texto do PDF em latin1
+  const raw = buffer.toString("latin1");
 
-  // Fallback: se IA falhar por qualquer motivo, salva o texto bruto como nota pendente
-  let parsed: { numero_nota?: unknown; serie?: unknown; emitente_cnpj?: unknown; emitente_nome?: unknown; data_emissao?: unknown; valor_total?: unknown; itens?: unknown[] } = {};
-  let iaFailed = false;
-
-  try {
-    const response = await anthropic.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 2048,
-      system: `Você é um especialista em NF-e brasileira. Extraia os dados estruturados do texto de uma nota fiscal.
-Responda SOMENTE com JSON válido neste formato exato, sem markdown, sem explicações:
-{
-  "numero_nota": "string",
-  "serie": "string",
-  "emitente_cnpj": "string (somente dígitos)",
-  "emitente_nome": "string",
-  "data_emissao": "YYYY-MM-DD",
-  "valor_total": number,
-  "itens": [
-    {
-      "descricao": "string",
-      "ncm": "string (8 dígitos)",
-      "cfop": "string (4 dígitos)",
-      "quantidade": number,
-      "unidade": "string",
-      "valor_unitario": number,
-      "valor_total": number,
-      "icms_aliquota": number,
-      "icms_valor": number,
-      "ipi_valor": number
-    }
-  ]
-}
-Se um campo não existir no texto, use "" para strings e 0 para números.`,
-      messages: [{ role: "user", content: `Extraia os dados desta NF-e:\n\n${text.slice(0, 12000)}` }],
-    });
-
-    const raw = response.content[0].type === "text" ? response.content[0].text : "{}";
-    const jsonMatch = raw.match(/\{[\s\S]*\}/);
-    parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : {};
-  } catch {
-    iaFailed = true;
+  // Coleta conteúdo entre operadores BT/ET (Begin Text / End Text do PDF)
+  const textBlocks: string[] = [];
+  const btEt = /BT([\s\S]*?)ET/g;
+  let m;
+  while ((m = btEt.exec(raw)) !== null) {
+    // Extrai strings entre parênteses dentro do bloco
+    const strings = m[1].match(/\(([^)]*)\)/g) ?? [];
+    const line = strings.map(s => s.slice(1, -1)).join(" ").trim();
+    if (line) textBlocks.push(line);
   }
+  return textBlocks.join("\n");
+}
 
-  const header: ParsedHeader = {
-    numeroNota:   String(parsed.numero_nota   ?? "PDF importado"),
-    serie:        String(parsed.serie         ?? "-"),
-    emitenteCnpj: String(parsed.emitente_cnpj ?? ""),
-    emitenteNome: String(parsed.emitente_nome ?? ""),
-    dataEmissao:  String(parsed.data_emissao  ?? ""),
-    valorTotal:   Number(parsed.valor_total   ?? 0),
-    rawContent:   text,
+function parsePdfText(text: string, rawBuffer: Buffer): { header: ParsedHeader; items: ParsedItem[]; iaFailed: boolean } {
+  // Regex para campos comuns de NF-e em PDF
+  const cnpj    = text.match(/(\d{2}[.\s]?\d{3}[.\s]?\d{3}[/\s]?\d{4}[-\s]?\d{2})/)?.[1]?.replace(/\D/g, "") ?? "";
+  const numero  = text.match(/N[º°ú]\s*[:\s]?\s*(\d{6,9})/i)?.[1] ?? "";
+  const serie   = text.match(/[Ss][eé]rie\s*[:\s]?\s*(\d+)/i)?.[1] ?? "";
+  const data    = text.match(/(\d{2}\/\d{2}\/\d{4})/)?.[1]
+                    ?.split("/").reverse().join("-") ?? "";
+  const valor   = parseFloat(
+    text.match(/[Vv]alor\s*[Tt]otal\s*[:\s]?\s*R?\$?\s*([\d.,]+)/)?.[1]
+      ?.replace(/\./g, "").replace(",", ".") ?? "0"
+  );
+
+  // Nome do emitente: primeira linha longa antes do CNPJ
+  const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
+  const cnpjIdx = lines.findIndex(l => l.replace(/\D/g, "").includes(cnpj.slice(0, 8)));
+  const nome = cnpjIdx > 0 ? lines[cnpjIdx - 1] : "";
+
+  const iaFailed = !numero && !cnpj && !valor;
+
+  return {
+    header: {
+      numeroNota:   numero || "PDF importado",
+      serie:        serie  || "-",
+      emitenteCnpj: cnpj,
+      emitenteNome: nome,
+      dataEmissao:  data,
+      valorTotal:   valor,
+      rawContent:   rawBuffer.toString("base64").slice(0, 500) + "…[PDF]",
+    },
+    items: [],
+    iaFailed,
   };
-
-  const items: ParsedItem[] = ((parsed.itens ?? []) as Record<string, unknown>[]).map((it) => ({
-    descricao:     String(it.descricao     ?? ""),
-    ncm:           String(it.ncm           ?? ""),
-    cfop:          String(it.cfop          ?? ""),
-    quantidade:    Number(it.quantidade    ?? 0),
-    unidade:       String(it.unidade       ?? ""),
-    valorUnitario: Number(it.valor_unitario ?? 0),
-    valorTotal:    Number(it.valor_total   ?? 0),
-    icmsAliq:      Number(it.icms_aliquota ?? 0),
-    icmsValor:     Number(it.icms_valor    ?? 0),
-    ipiValor:      Number(it.ipi_valor     ?? 0),
-  }));
-
-  return { header, items, iaFailed };
 }
 
 // ── Save ao banco + geração de alertas ───────────────────────────────────────
@@ -212,8 +187,8 @@ async function saveNote(
   if (iaFailed) {
     alerts.push({
       note_id: noteId, client_id: clientId,
-      tipo: "ia_indisponivel",
-      descricao: "Análise IA não concluída (serviço indisponível). Os campos da nota foram salvos com texto bruto. Use 'Analisar com IA' quando o serviço estiver disponível.",
+      tipo: "pdf_revisao_manual",
+      descricao: "PDF importado sem extração completa dos dados. Verifique e preencha os campos manualmente.",
       severidade: "aviso",
     });
   }
@@ -243,7 +218,6 @@ export async function POST(req: NextRequest) {
     ]);
     if (!user) return Response.json({ error: "Não autenticado" }, { status: 401 });
 
-    // Client lookup + file parse em paralelo
     const file = formData.get("xml") as File | null;
     if (!file) return Response.json({ error: "Arquivo não enviado" }, { status: 400 });
 
@@ -256,12 +230,16 @@ export async function POST(req: NextRequest) {
     const [clientResult, parsed] = await Promise.all([
       supabase.from("clients").select("id").eq("auth_user_id", user.id).single(),
       isPdf
-        ? file.arrayBuffer().then(buf => parsePdf(Buffer.from(buf)))
+        ? file.arrayBuffer().then(buf => {
+            const buffer = Buffer.from(buf);
+            const text   = extractPdfText(buffer);
+            return parsePdfText(text, buffer);
+          })
         : file.text().then(xml => parseXml(xml)),
     ]);
 
     const clientData = clientResult.data;
-    if (!clientData) return new Response("Cliente não encontrado", { status: 404 });
+    if (!clientData) return Response.json({ error: "Cliente não encontrado" }, { status: 404 });
 
     const { header, items, iaFailed } = parsed as { header: ParsedHeader; items: ParsedItem[]; iaFailed?: boolean };
 
