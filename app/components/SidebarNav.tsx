@@ -30,6 +30,8 @@ import {
   BarChart3,
   Boxes,
   ClipboardCheck,
+  Receipt,
+  FileSpreadsheet,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -97,6 +99,8 @@ const menuGroups: NavGroup[] = [
       { href: "/custos/historico", label: "Histórico Custos", icon: DollarSign,  sub: true },
       { href: "/vendas",           label: "Vendas",           icon: ArrowUpRight },
       { href: "/abates",           label: "Abates",           icon: Scissors },
+      { href: "/fiscal",           label: "Fiscal",           icon: Receipt },
+      { href: "/fiscal/relatorio", label: "Relatório Fiscal",  icon: FileSpreadsheet, sub: true },
     ],
   },
   {
