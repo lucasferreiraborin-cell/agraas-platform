@@ -38,10 +38,12 @@ export default function FiscalNoteActions({ noteId, status, items }: Props) {
     setAnalyzing(true); setError(""); setAiResult(null);
     try {
       const res  = await fetch("/api/fiscal/analyze", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ note_id: noteId }) });
-      const json = await res.json();
-      if (json.error) { setError(json.error); return; }
+      const json = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+      if (!res.ok || json.error) { setError(json.error ?? "Erro ao analisar."); return; }
       setAiResult(json.resumo ?? `Risco geral: ${json.overall_risk}. ${json.suggestions?.join(" ") ?? ""}`);
       router.refresh();
+    } catch (e) {
+      setError((e as Error)?.message ?? "Erro inesperado.");
     } finally {
       setAnalyzing(false);
     }
@@ -51,9 +53,11 @@ export default function FiscalNoteActions({ noteId, status, items }: Props) {
     setApplying(true); setError(""); setShowPreview(false);
     try {
       const res  = await fetch("/api/fiscal/apply-stock", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ note_id: noteId }) });
-      const json = await res.json();
-      if (json.error) { setError(json.error); return; }
+      const json = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+      if (!res.ok || json.error) { setError(json.error ?? "Erro ao aplicar."); return; }
       router.refresh();
+    } catch (e) {
+      setError((e as Error)?.message ?? "Erro inesperado.");
     } finally {
       setApplying(false);
     }

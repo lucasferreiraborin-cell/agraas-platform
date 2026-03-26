@@ -14,12 +14,12 @@ export async function POST(req: NextRequest) {
   try {
     const supabase = await createSupabaseServerClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return new Response("Não autenticado", { status: 401 });
+    if (!user) return Response.json({ error: "Não autenticado" }, { status: 401 });
 
     const { note_id } = await req.json();
 
     const { data: clientData } = await supabase.from("clients").select("id").eq("auth_user_id", user.id).single();
-    if (!clientData) return new Response("Cliente não encontrado", { status: 404 });
+    if (!clientData) return Response.json({ error: "Cliente não encontrado" }, { status: 404 });
 
     const { data: note } = await supabase
       .from("fiscal_notes").select("valor_total, data_emissao, status").eq("id", note_id).single();

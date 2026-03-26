@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
   try {
     const supabase = await createSupabaseServerClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return new Response("Não autenticado", { status: 401 });
+    if (!user) return Response.json({ error: "Não autenticado" }, { status: 401 });
 
     const { note_id } = await req.json();
 
