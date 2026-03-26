@@ -202,8 +202,11 @@ async function saveNote(
       severidade: "aviso" });
   }
 
-  if (dbItems.length > 0) await supabase.from("fiscal_note_items").insert(dbItems);
-  if (alerts.length  > 0) await supabase.from("fiscal_alerts").insert(alerts);
+  // Insere itens e alertas em paralelo
+  await Promise.all([
+    dbItems.length > 0 ? supabase.from("fiscal_note_items").insert(dbItems) : Promise.resolve(),
+    alerts.length  > 0 ? supabase.from("fiscal_alerts").insert(alerts)      : Promise.resolve(),
+  ]);
 
   const hasCritical = alerts.some(a => a.severidade === "critico");
   if (hasCritical) await supabase.from("fiscal_notes").update({ status: "erro" }).eq("id", noteId);
@@ -216,14 +219,15 @@ async function saveNote(
 export async function POST(req: NextRequest) {
   try {
     const supabase = await createSupabaseServerClient();
-    const { data: { user } } = await supabase.auth.getUser();
+
+    // Auth + formData em paralelo
+    const [{ data: { user } }, formData] = await Promise.all([
+      supabase.auth.getUser(),
+      req.formData(),
+    ]);
     if (!user) return new Response("Não autenticado", { status: 401 });
 
-    const { data: clientData } = await supabase
-      .from("clients").select("id").eq("auth_user_id", user.id).single();
-    if (!clientData) return new Response("Cliente não encontrado", { status: 404 });
-
-    const formData = await req.formData();
+    // Client lookup + file parse em paralelo
     const file = formData.get("xml") as File | null;
     if (!file) return Response.json({ error: "Arquivo não enviado" }, { status: 400 });
 
@@ -233,16 +237,17 @@ export async function POST(req: NextRequest) {
       return Response.json({ error: "Formato não suportado. Envie .xml ou .pdf" }, { status: 400 });
     }
 
-    let header: ParsedHeader;
-    let items:  ParsedItem[];
+    const [clientResult, parsed] = await Promise.all([
+      supabase.from("clients").select("id").eq("auth_user_id", user.id).single(),
+      isPdf
+        ? file.arrayBuffer().then(buf => parsePdf(Buffer.from(buf)))
+        : file.text().then(xml => parseXml(xml)),
+    ]);
 
-    if (isPdf) {
-      const buffer = Buffer.from(await file.arrayBuffer());
-      ({ header, items } = await parsePdf(buffer));
-    } else {
-      const xml = await file.text();
-      ({ header, items } = parseXml(xml));
-    }
+    const clientData = clientResult.data;
+    if (!clientData) return new Response("Cliente não encontrado", { status: 404 });
+
+    const { header, items } = parsed;
 
     const { noteId, alerts, hasCritical } = await saveNote(supabase, clientData.id, header, items);
 

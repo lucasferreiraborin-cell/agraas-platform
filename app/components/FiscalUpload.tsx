@@ -2,16 +2,16 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Upload, Loader2, CheckCircle } from "lucide-react";
+import { Upload, Loader2, CheckCircle, FileX } from "lucide-react";
 
 export default function FiscalUpload() {
-  const [dragging, setDragging]     = useState(false);
-  const [loading, setLoading]       = useState(false);
+  const [dragging, setDragging]       = useState(false);
+  const [loading, setLoading]         = useState(false);
   const [currentFile, setCurrentFile] = useState<string | null>(null);
-  const [result, setResult]         = useState<{ note_id: string; numero_nota: string; total_items: number; alerts_count: number; status: string } | null>(null);
-  const [error, setError]           = useState("");
+  const [result, setResult]           = useState<{ note_id: string; numero_nota: string; total_items: number; alerts_count: number; status: string } | null>(null);
+  const [error, setError]             = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
-  const router = useRouter();
+  const router   = useRouter();
 
   async function uploadFile(file: File) {
     const name = file.name.toLowerCase();
@@ -19,15 +19,34 @@ export default function FiscalUpload() {
       setError("Formato não suportado. Envie um arquivo .xml ou .pdf.");
       return;
     }
-    setLoading(true); setError(""); setResult(null); setCurrentFile(file.name);
-    const form = new FormData();
-    form.append("xml", file);
-    const res = await fetch("/api/fiscal/parse-xml", { method: "POST", body: form });
-    const json = await res.json();
-    setLoading(false);
-    if (!res.ok || json.error) { setError(json.error ?? "Erro ao processar XML."); return; }
-    setResult(json);
-    router.refresh();
+
+    // Feedback imediato — antes mesmo do fetch iniciar
+    setLoading(true);
+    setError("");
+    setResult(null);
+    setCurrentFile(file.name);
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30_000);
+
+    try {
+      const form = new FormData();
+      form.append("xml", file);
+      const res  = await fetch("/api/fiscal/parse-xml", { method: "POST", body: form, signal: controller.signal });
+      const json = await res.json();
+      if (!res.ok || json.error) { setError(json.error ?? "Erro ao processar arquivo."); return; }
+      setResult(json);
+      router.refresh();
+    } catch (err) {
+      if ((err as { name?: string }).name === "AbortError") {
+        setError("Tempo limite excedido (30s). Tente novamente.");
+      } else {
+        setError("Erro de conexão. Verifique sua rede e tente novamente.");
+      }
+    } finally {
+      clearTimeout(timeout);
+      setLoading(false);
+    }
   }
 
   function onDrop(e: React.DragEvent) {
@@ -35,6 +54,8 @@ export default function FiscalUpload() {
     const file = e.dataTransfer.files[0];
     if (file) uploadFile(file);
   }
+
+  const isPdf = currentFile?.toLowerCase().endsWith(".pdf");
 
   return (
     <div className="space-y-4">
@@ -52,15 +73,25 @@ export default function FiscalUpload() {
               : "border-[var(--primary)]/40 hover:border-[var(--primary)] hover:bg-emerald-50/60"
         }`}
       >
-        <input ref={inputRef} type="file" accept=".xml,.pdf" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadFile(f); }} />
+        <input
+          ref={inputRef}
+          type="file"
+          accept=".xml,.pdf"
+          className="hidden"
+          onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadFile(f); }}
+        />
+
         {loading ? (
           <>
             <Loader2 size={28} className="animate-spin text-[var(--primary)]" />
-            <p className="text-sm font-medium text-[var(--text-secondary)]">
-              {currentFile?.toLowerCase().endsWith(".pdf")
-                ? "Extraindo dados do PDF com IA…"
-                : "Processando XML…"}
-            </p>
+            <div>
+              <p className="text-sm font-medium text-[var(--text-primary)]">
+                {isPdf ? "Extraindo dados do PDF com IA…" : "Processando XML…"}
+              </p>
+              {currentFile && (
+                <p className="mt-0.5 text-xs text-[var(--text-muted)] truncate max-w-[240px]">{currentFile}</p>
+              )}
+            </div>
           </>
         ) : (
           <>
@@ -76,14 +107,19 @@ export default function FiscalUpload() {
       </div>
 
       {error && (
-        <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>
+        <div className="flex items-start gap-3 rounded-xl bg-red-50 border border-red-200 px-4 py-3">
+          <FileX size={16} className="mt-0.5 shrink-0 text-red-500" />
+          <p className="text-sm text-red-700">{error}</p>
+        </div>
       )}
 
       {result && (
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 flex items-center gap-4">
           <CheckCircle size={20} className="shrink-0 text-emerald-600" />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-[var(--text-primary)]">NF-e nº {result.numero_nota} importada com sucesso</p>
+            <p className="text-sm font-semibold text-[var(--text-primary)]">
+              NF-e nº {result.numero_nota} importada com sucesso
+            </p>
             <p className="mt-0.5 text-xs text-[var(--text-muted)]">
               {result.total_items} {result.total_items === 1 ? "item" : "itens"} •{" "}
               {result.alerts_count > 0 ? (
@@ -93,10 +129,7 @@ export default function FiscalUpload() {
               )}
             </p>
           </div>
-          <button
-            onClick={() => router.push(`/fiscal/${result.note_id}`)}
-            className="ag-button-primary shrink-0"
-          >
+          <button onClick={() => router.push(`/fiscal/${result.note_id}`)} className="ag-button-primary shrink-0">
             Ver nota
           </button>
         </div>
