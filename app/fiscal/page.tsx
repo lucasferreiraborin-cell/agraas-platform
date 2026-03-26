@@ -2,6 +2,7 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import Link from "next/link";
 import { FileText, AlertTriangle, CheckCircle, DollarSign } from "lucide-react";
 import FiscalUpload from "@/app/components/FiscalUpload";
+import FiscalDeleteButton from "@/app/components/FiscalDeleteButton";
 
 export default async function FiscalPage() {
   const supabase = await createSupabaseServerClient();
@@ -162,7 +163,7 @@ export default async function FiscalPage() {
                 {noteList.map(note => {
                   const count = alertsByNote.get(note.id) ?? 0;
                   return (
-                    <tr key={note.id}>
+                    <tr key={note.id} className="group">
                       <td className="font-medium tabular-nums">
                         {note.numero_nota}
                         {note.serie ? <span className="text-[var(--text-muted)]">-{note.serie}</span> : ""}
@@ -189,12 +190,15 @@ export default async function FiscalPage() {
                         <span className={statusCls(note.status)}>{statusLabel(note.status)}</span>
                       </td>
                       <td>
-                        <Link
-                          href={`/fiscal/${note.id}`}
-                          className="text-xs font-medium text-[var(--primary)] hover:underline"
-                        >
-                          Ver detalhes →
-                        </Link>
+                        <div className="flex items-center justify-end gap-1">
+                          <Link
+                            href={`/fiscal/${note.id}`}
+                            className="text-xs font-medium text-[var(--primary)] opacity-0 group-hover:opacity-100 transition hover:underline"
+                          >
+                            Ver →
+                          </Link>
+                          <FiscalDeleteButton noteId={note.id} />
+                        </div>
                       </td>
                     </tr>
                   );
