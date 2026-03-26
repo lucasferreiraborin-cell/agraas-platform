@@ -2,9 +2,9 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest } from "next/server";
 
-// ── pdf-parse: importa do lib direto para evitar bug do Next.js com arquivo de teste
+// pdf-parse é CJS — serverExternalPackages garante que não é bundled pelo Next.js
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const pdfParse = require("pdf-parse/lib/pdf-parse.js");
+const pdfParse: (buf: Buffer) => Promise<{ text: string }> = require("pdf-parse");
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
