@@ -1,193 +1,278 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { createBrowserClient } from "@supabase/ssr";
+import { Beef, Weight, Building2, Percent, CheckCircle, Loader2 } from "lucide-react";
 
-type Animal = {
+const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
+);
+
+type Animal        = { id: string; internal_code: string | null };
+type Slaughterhouse= { id: string; name: string | null };
+type SlaughterRecord = {
   id: string;
-  internal_code: string | null;
+  animal_id: string | null;
+  slaughterhouse_id: string | null;
+  slaughter_date: string | null;
+  carcass_weight: number | null;
+  classification: string | null;
 };
 
-type Slaughterhouse = {
-  id: string;
-  name: string | null;
-};
+export default function AbatesPage() {
+  const [animals,        setAnimals]        = useState<Animal[]>([]);
+  const [slaughterhouses,setSlaughterhouses] = useState<Slaughterhouse[]>([]);
+  const [records,        setRecords]        = useState<SlaughterRecord[]>([]);
+  const [loading,        setLoading]        = useState(true);
+  const [submitting,     setSubmitting]     = useState(false);
+  const [success,        setSuccess]        = useState("");
+  const [error,          setError]          = useState("");
 
-export default function RegistrarAbatePage() {
-  const [animals, setAnimals] = useState<Animal[]>([]);
-  const [slaughterhouses, setSlaughterhouses] = useState<Slaughterhouse[]>([]);
-
-  const [animalId, setAnimalId] = useState("");
-  const [slaughterhouseId, setSlaughterhouseId] = useState("");
-  const [slaughterDate, setSlaughterDate] = useState("");
-  const [carcassWeight, setCarcassWeight] = useState("");
-  const [classification, setClassification] = useState("");
-
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
-
-  const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const [animalId,      setAnimalId]      = useState("");
+  const [frigorificoId, setFrigorificoId] = useState("");
+  const [slaughterDate, setSlaughterDate] = useState(new Date().toISOString().slice(0, 10));
+  const [pesoVivo,      setPesoVivo]      = useState("");
+  const [pesoCarcaca,   setPesoCarcaca]   = useState("");
+  const [classification,setClassification]= useState("");
 
   useEffect(() => {
-    async function loadData() {
-      const [animalsRes, slaughterhousesRes] = await Promise.all([
-        supabase
-          .from("animals")
-          .select("id, internal_code")
-          .order("created_at", { ascending: false }),
-
-        supabase
-          .from("slaughterhouses")
-          .select("id, name")
-          .order("name", { ascending: true }),
+    (async () => {
+      setLoading(true);
+      const [ar, sr, rr] = await Promise.all([
+        supabase.from("animals").select("id, internal_code").order("created_at", { ascending: false }),
+        supabase.from("slaughterhouses").select("id, name").order("name"),
+        supabase.from("slaughter_records").select("*").order("slaughter_date", { ascending: false }).limit(50),
       ]);
-
-      if (!animalsRes.error && animalsRes.data) setAnimals(animalsRes.data);
-      if (!slaughterhousesRes.error && slaughterhousesRes.data)
-        setSlaughterhouses(slaughterhousesRes.data);
-    }
-
-    loadData();
+      setAnimals(ar.data ?? []);
+      setSlaughterhouses(sr.data ?? []);
+      setRecords(rr.data ?? []);
+      setLoading(false);
+    })();
   }, []);
 
-  useEffect(() => {
-    if (!slaughterDate) setSlaughterDate(today);
-  }, [slaughterDate, today]);
+  const animalMap = useMemo(() => new Map(animals.map(a => [a.id, a.internal_code ?? a.id])), [animals]);
+  const frigMap   = useMemo(() => new Map(slaughterhouses.map(s => [s.id, s.name ?? s.id])), [slaughterhouses]);
 
-  async function registrarAbate(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
-    setMessage("");
+  const rendimentoLive = pesoVivo && pesoCarcaca
+    ? ((Number(pesoCarcaca) / Number(pesoVivo)) * 100).toFixed(1)
+    : null;
 
-    const { error } = await supabase.from("slaughter_records").insert({
-      animal_id: animalId || null,
-      slaughterhouse_id: slaughterhouseId || null,
-      slaughter_date: slaughterDate || null,
-      carcass_weight: carcassWeight ? Number(carcassWeight) : null,
-      classification: classification || null,
+  // KPIs
+  const kpis = useMemo(() => {
+    const total    = records.length;
+    const withW    = records.filter(r => r.carcass_weight);
+    const avgCarcaca = withW.length > 0 ? Math.round(withW.reduce((s, r) => s + Number(r.carcass_weight), 0) / withW.length) : 0;
+    // Frigorífico mais usado
+    const frigCount: Record<string, number> = {};
+    records.forEach(r => { if (r.slaughterhouse_id) frigCount[r.slaughterhouse_id] = (frigCount[r.slaughterhouse_id] ?? 0) + 1; });
+    const topFrigId = Object.entries(frigCount).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+    return { total, avgCarcaca, topFrig: topFrigId ? frigMap.get(topFrigId) ?? "—" : "—" };
+  }, [records, frigMap]);
+
+  // Breakdown por frigorífico
+  const frigBreakdown = useMemo(() => {
+    const map: Record<string, { count: number; totalCarcaca: number; withW: number }> = {};
+    records.forEach(r => {
+      const id = r.slaughterhouse_id ?? "__sem__";
+      if (!map[id]) map[id] = { count: 0, totalCarcaca: 0, withW: 0 };
+      map[id].count++;
+      if (r.carcass_weight) { map[id].totalCarcaca += Number(r.carcass_weight); map[id].withW++; }
     });
+    return Object.entries(map).map(([id, v]) => ({
+      nome: id === "__sem__" ? "Sem frigorífico" : frigMap.get(id) ?? id,
+      count: v.count,
+      avgCarcaca: v.withW > 0 ? Math.round(v.totalCarcaca / v.withW) : null,
+    })).sort((a, b) => b.count - a.count);
+  }, [records, frigMap]);
 
-    if (error) {
-      setMessage(`Erro ao registrar abate: ${error.message}`);
-      setLoading(false);
-      return;
-    }
-
-    setMessage("Abate registrado com sucesso.");
-    setAnimalId("");
-    setSlaughterhouseId("");
-    setCarcassWeight("");
-    setClassification("");
-    setSlaughterDate(today);
-    setLoading(false);
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setSubmitting(true); setError(""); setSuccess("");
+    const { error: err } = await supabase.from("slaughter_records").insert({
+      animal_id:         animalId || null,
+      slaughterhouse_id: frigorificoId || null,
+      slaughter_date:    slaughterDate || null,
+      carcass_weight:    pesoCarcaca ? Number(pesoCarcaca) : null,
+      classification:    classification || null,
+    });
+    if (err) { setError(err.message); setSubmitting(false); return; }
+    setSuccess("Abate registrado com sucesso.");
+    const { data: newR } = await supabase.from("slaughter_records").select("*")
+      .order("slaughter_date", { ascending: false }).limit(50);
+    setRecords(newR ?? []);
+    setAnimalId(""); setFrigorificoId(""); setPesoVivo(""); setPesoCarcaca(""); setClassification("");
+    setSlaughterDate(new Date().toISOString().slice(0, 10));
+    setSubmitting(false);
   }
 
+  const inputCls = "w-full rounded-xl border border-[var(--border)] bg-white px-3 py-2.5 text-sm outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/10";
+  const labelCls = "mb-1.5 block text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]";
+
   return (
-    <main className="min-h-screen bg-[#F5F7F4] text-[#1F2A1F]">
-      <div className="mx-auto max-w-3xl px-6 py-8">
-        <header className="mb-8">
-          <h1 className="text-3xl font-semibold tracking-tight">
-            Registrar abate
-          </h1>
-          <p className="mt-2 text-sm text-[#5F6B5F]">
-            Registre o abate do animal e os dados do frigorífico.
-          </p>
-        </header>
+    <main className="space-y-8">
 
-        <section className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-black/5">
-          <form onSubmit={registrarAbate} className="space-y-5">
-            <div>
-              <label className="mb-2 block text-sm font-medium">Animal</label>
-              <select
-                value={animalId}
-                onChange={(e) => setAnimalId(e.target.value)}
-                className="w-full rounded-lg border border-black/10 bg-white px-4 py-3 outline-none focus:border-[#4A7C3A]"
-                required
-              >
-                <option value="">Selecione um animal</option>
-                {animals.map((animal) => (
-                  <option key={animal.id} value={animal.id}>
-                    {animal.internal_code ?? animal.id}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium">
-                Frigorífico
-              </label>
-              <select
-                value={slaughterhouseId}
-                onChange={(e) => setSlaughterhouseId(e.target.value)}
-                className="w-full rounded-lg border border-black/10 bg-white px-4 py-3 outline-none focus:border-[#4A7C3A]"
-                required
-              >
-                <option value="">Selecione um frigorífico</option>
-                {slaughterhouses.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.name ?? item.id}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium">
-                Data do abate
-              </label>
-              <input
-                type="date"
-                value={slaughterDate}
-                onChange={(e) => setSlaughterDate(e.target.value)}
-                className="w-full rounded-lg border border-black/10 bg-white px-4 py-3 outline-none focus:border-[#4A7C3A]"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium">
-                Peso de carcaça
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                value={carcassWeight}
-                onChange={(e) => setCarcassWeight(e.target.value)}
-                className="w-full rounded-lg border border-black/10 bg-white px-4 py-3 outline-none focus:border-[#4A7C3A]"
-                placeholder="Ex.: 280"
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium">
-                Classificação
-              </label>
-              <input
-                type="text"
-                value={classification}
-                onChange={(e) => setClassification(e.target.value)}
-                className="w-full rounded-lg border border-black/10 bg-white px-4 py-3 outline-none focus:border-[#4A7C3A]"
-                placeholder="Ex.: A"
-              />
-            </div>
-
-            {message ? (
-              <div className="rounded-lg bg-[#F5F7F4] px-4 py-3 text-sm text-[#1F2A1F]">
-                {message}
+      {/* ── Hero ─────────────────────────────────────────────────────────── */}
+      <section className="ag-card-strong overflow-hidden">
+        <div className="grid gap-0 xl:grid-cols-[1.1fr_0.9fr]">
+          <div className="relative p-8 lg:p-10">
+            <div className="pointer-events-none absolute right-0 top-0 h-48 w-48 rounded-full bg-[radial-gradient(circle,rgba(122,168,76,0.12)_0%,rgba(122,168,76,0)_70%)]" />
+            <span className="ag-badge ag-badge-green">Rastreabilidade</span>
+            <h1 className="ag-page-title">Registro de Abates</h1>
+            <p className="mt-4 max-w-lg text-[1rem] leading-7 text-[var(--text-secondary)]">
+              Registre abates com peso de carcaça e frigorífico. Acompanhe rendimento médio e histórico por casa.
+            </p>
+          </div>
+          <div className="ag-hero-panel">
+            {loading ? (
+              <div className="flex items-center gap-2 text-sm text-[var(--text-muted)]"><Loader2 size={14} className="animate-spin" />Carregando…</div>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-3">
+                {[
+                  { label: "Total abates",  value: kpis.total,               sub: "registrados",         icon: Beef,     bg: "bg-[var(--primary-soft)]", cl: "text-[var(--primary)]" },
+                  { label: "Peso médio",    value: kpis.avgCarcaca > 0 ? `${kpis.avgCarcaca} kg` : "—", sub: "carcaça média", icon: Weight, bg: "bg-blue-50", cl: "text-blue-600" },
+                  { label: "Frigorífico",   value: kpis.topFrig,             sub: "mais utilizado",      icon: Building2, bg: "bg-amber-50", cl: "text-amber-600" },
+                ].map(k => {
+                  const Icon = k.icon;
+                  return (
+                    <div key={k.label} className="ag-kpi-card">
+                      <div className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${k.bg}`}>
+                        <Icon size={17} className={k.cl} />
+                      </div>
+                      <p className="mt-3 ag-kpi-label">{k.label}</p>
+                      <p className="ag-kpi-value truncate">{k.value}</p>
+                      <p className="sub">{k.sub}</p>
+                    </div>
+                  );
+                })}
               </div>
-            ) : null}
+            )}
+          </div>
+        </div>
+      </section>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="rounded-lg bg-[#4A7C3A] px-6 py-3 text-sm font-medium text-white hover:bg-[#3B6B2E] disabled:opacity-60"
-            >
-              {loading ? "Registrando..." : "Registrar abate"}
+      {/* ── Formulário ───────────────────────────────────────────────────── */}
+      <section className="ag-card-strong p-8 space-y-6">
+        <h2 className="ag-section-title">Registrar abate</h2>
+        <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div>
+            <label className={labelCls}>Animal *</label>
+            <select value={animalId} onChange={e => setAnimalId(e.target.value)} className={inputCls} required>
+              <option value="">Selecione um animal</option>
+              {animals.map(a => <option key={a.id} value={a.id}>{a.internal_code ?? a.id}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className={labelCls}>Frigorífico *</label>
+            <select value={frigorificoId} onChange={e => setFrigorificoId(e.target.value)} className={inputCls} required>
+              <option value="">Selecione um frigorífico</option>
+              {slaughterhouses.map(s => <option key={s.id} value={s.id}>{s.name ?? s.id}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className={labelCls}>Data do abate *</label>
+            <input type="date" value={slaughterDate} onChange={e => setSlaughterDate(e.target.value)} className={inputCls} required />
+          </div>
+          <div>
+            <label className={labelCls}>Peso vivo (kg)</label>
+            <input type="number" step="0.1" min="0" value={pesoVivo} onChange={e => setPesoVivo(e.target.value)} placeholder="Ex: 500" className={inputCls} />
+          </div>
+          <div>
+            <label className={labelCls}>Peso carcaça (kg)</label>
+            <input type="number" step="0.1" min="0" value={pesoCarcaca} onChange={e => setPesoCarcaca(e.target.value)} placeholder="Ex: 280" className={inputCls} />
+          </div>
+          <div>
+            <label className={labelCls}>Classificação</label>
+            <input type="text" value={classification} onChange={e => setClassification(e.target.value)} placeholder="Ex: A, B, Precoce" className={inputCls} />
+          </div>
+
+          {rendimentoLive && (
+            <div className="sm:col-span-2 lg:col-span-3">
+              <div className="flex items-center gap-3 rounded-xl bg-[var(--primary-soft)] border border-[var(--primary)]/20 px-4 py-3">
+                <Percent size={16} className="text-[var(--primary)]" />
+                <span className="text-sm font-semibold text-[var(--primary)]">
+                  Rendimento calculado: {rendimentoLive}%
+                </span>
+                <span className="text-xs text-[var(--text-secondary)]">
+                  ({pesoCarcaca} kg ÷ {pesoVivo} kg × 100)
+                </span>
+              </div>
+            </div>
+          )}
+
+          <div className="sm:col-span-2 lg:col-span-3 flex items-center gap-4 pt-2">
+            <button type="submit" disabled={submitting}
+              className="ag-button-primary flex items-center gap-2 disabled:opacity-60">
+              {submitting ? <><Loader2 size={14} className="animate-spin" />Registrando…</> : "Registrar abate"}
             </button>
-          </form>
+            {success && <div className="flex items-center gap-2 text-sm text-emerald-700"><CheckCircle size={14} />{success}</div>}
+            {error && <p className="text-sm text-red-600">{error}</p>}
+          </div>
+        </form>
+      </section>
+
+      {/* ── Breakdown por frigorífico ─────────────────────────────────────── */}
+      {frigBreakdown.length > 0 && (
+        <section className="ag-card-strong p-8 space-y-5">
+          <h2 className="ag-section-title">Por frigorífico</h2>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {frigBreakdown.map(f => (
+              <div key={f.nome} className="ag-kpi-card">
+                <p className="font-semibold text-[var(--text-primary)] truncate">{f.nome}</p>
+                <p className="mt-2 text-2xl font-bold text-[var(--primary)] tracking-tight">{f.count}</p>
+                <p className="ag-kpi-label">abates</p>
+                {f.avgCarcaca && <p className="mt-1 text-xs text-[var(--text-muted)]">Carcaça média: {f.avgCarcaca} kg</p>}
+              </div>
+            ))}
+          </div>
         </section>
-      </div>
+      )}
+
+      {/* ── Histórico ────────────────────────────────────────────────────── */}
+      <section className="ag-card-strong p-8 space-y-5">
+        <div className="flex items-center justify-between">
+          <h2 className="ag-section-title">Histórico de abates</h2>
+          <span className="ag-badge">{records.length} registros</span>
+        </div>
+        {loading ? (
+          <div className="flex items-center gap-2 py-8 text-sm text-[var(--text-muted)]"><Loader2 size={14} className="animate-spin" />Carregando…</div>
+        ) : records.length === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-[var(--border)] py-12 text-center">
+            <p className="text-sm text-[var(--text-muted)]">Nenhum abate registrado ainda.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="ag-table w-full">
+              <thead>
+                <tr>
+                  <th className="text-left">Data</th>
+                  <th className="text-left">Animal</th>
+                  <th className="text-left">Frigorífico</th>
+                  <th className="text-right">Carcaça (kg)</th>
+                  <th className="text-center">Classificação</th>
+                </tr>
+              </thead>
+              <tbody>
+                {records.map(r => (
+                  <tr key={r.id}>
+                    <td className="tabular-nums text-[var(--text-secondary)]">
+                      {r.slaughter_date ? new Date(r.slaughter_date).toLocaleDateString("pt-BR") : "—"}
+                    </td>
+                    <td className="font-medium">{r.animal_id ? (animalMap.get(r.animal_id) ?? r.animal_id) : "—"}</td>
+                    <td className="text-[var(--text-secondary)]">{r.slaughterhouse_id ? (frigMap.get(r.slaughterhouse_id) ?? r.slaughterhouse_id) : "—"}</td>
+                    <td className="text-right tabular-nums font-medium">
+                      {r.carcass_weight != null ? Number(r.carcass_weight).toLocaleString("pt-BR") : "—"}
+                    </td>
+                    <td className="text-center">
+                      {r.classification ? <span className="ag-badge">{r.classification}</span> : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
     </main>
   );
 }

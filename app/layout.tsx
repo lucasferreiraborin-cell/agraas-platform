@@ -22,6 +22,17 @@ export default async function RootLayout({
       ? "Fase 1 entregue"
       : "Fase 1 em consolidação final";
 
+  // Login e páginas de auth: layout sem sidebar/header
+  if (!user) {
+    return (
+      <html lang="pt-BR">
+        <body className="min-h-screen bg-[var(--bg)] text-[var(--text-primary)]">
+          {children}
+        </body>
+      </html>
+    );
+  }
+
   return (
     <html lang="pt-BR">
       <body>
