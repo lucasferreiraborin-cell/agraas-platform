@@ -79,14 +79,19 @@ function parseXml(xml: string): { header: ParsedHeader; items: ParsedItem[] } {
 
 // ── Parser PDF via Claude ─────────────────────────────────────────────────────
 
-async function parsePdf(buffer: Buffer): Promise<{ header: ParsedHeader; items: ParsedItem[] }> {
+async function parsePdf(buffer: Buffer): Promise<{ header: ParsedHeader; items: ParsedItem[]; iaFailed?: boolean }> {
   const pdfData = await pdfParse(buffer);
   const text = pdfData.text as string;
 
-  const response = await anthropic.messages.create({
-    model: "claude-sonnet-4-6",
-    max_tokens: 2048,
-    system: `Você é um especialista em NF-e brasileira. Extraia os dados estruturados do texto de uma nota fiscal.
+  // Fallback: se IA falhar por qualquer motivo, salva o texto bruto como nota pendente
+  let parsed: { numero_nota?: unknown; serie?: unknown; emitente_cnpj?: unknown; emitente_nome?: unknown; data_emissao?: unknown; valor_total?: unknown; itens?: unknown[] } = {};
+  let iaFailed = false;
+
+  try {
+    const response = await anthropic.messages.create({
+      model: "claude-sonnet-4-6",
+      max_tokens: 2048,
+      system: `Você é um especialista em NF-e brasileira. Extraia os dados estruturados do texto de uma nota fiscal.
 Responda SOMENTE com JSON válido neste formato exato, sem markdown, sem explicações:
 {
   "numero_nota": "string",
@@ -111,15 +116,18 @@ Responda SOMENTE com JSON válido neste formato exato, sem markdown, sem explica
   ]
 }
 Se um campo não existir no texto, use "" para strings e 0 para números.`,
-    messages: [{ role: "user", content: `Extraia os dados desta NF-e:\n\n${text.slice(0, 12000)}` }],
-  });
+      messages: [{ role: "user", content: `Extraia os dados desta NF-e:\n\n${text.slice(0, 12000)}` }],
+    });
 
-  const raw = response.content[0].type === "text" ? response.content[0].text : "{}";
-  const jsonMatch = raw.match(/\{[\s\S]*\}/);
-  const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : {};
+    const raw = response.content[0].type === "text" ? response.content[0].text : "{}";
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : {};
+  } catch {
+    iaFailed = true;
+  }
 
   const header: ParsedHeader = {
-    numeroNota:   String(parsed.numero_nota   ?? "S/N"),
+    numeroNota:   String(parsed.numero_nota   ?? "PDF importado"),
     serie:        String(parsed.serie         ?? "-"),
     emitenteCnpj: String(parsed.emitente_cnpj ?? ""),
     emitenteNome: String(parsed.emitente_nome ?? ""),
@@ -128,7 +136,7 @@ Se um campo não existir no texto, use "" para strings e 0 para números.`,
     rawContent:   text,
   };
 
-  const items: ParsedItem[] = (parsed.itens ?? []).map((it: Record<string, unknown>) => ({
+  const items: ParsedItem[] = ((parsed.itens ?? []) as Record<string, unknown>[]).map((it) => ({
     descricao:     String(it.descricao     ?? ""),
     ncm:           String(it.ncm           ?? ""),
     cfop:          String(it.cfop          ?? ""),
@@ -141,7 +149,7 @@ Se um campo não existir no texto, use "" para strings e 0 para números.`,
     ipiValor:      Number(it.ipi_valor     ?? 0),
   }));
 
-  return { header, items };
+  return { header, items, iaFailed };
 }
 
 // ── Save ao banco + geração de alertas ───────────────────────────────────────
@@ -151,6 +159,7 @@ async function saveNote(
   clientId: string,
   header: ParsedHeader,
   items: ParsedItem[],
+  iaFailed = false,
 ) {
   const { data: noteData, error: noteError } = await supabase
     .from("fiscal_notes")
@@ -202,6 +211,15 @@ async function saveNote(
       severidade: "aviso" });
   }
 
+  if (iaFailed) {
+    alerts.push({
+      note_id: noteId, client_id: clientId,
+      tipo: "ia_indisponivel",
+      descricao: "Análise IA não concluída (serviço indisponível). Os campos da nota foram salvos com texto bruto. Use 'Analisar com IA' quando o serviço estiver disponível.",
+      severidade: "aviso",
+    });
+  }
+
   // Insere itens e alertas em paralelo
   await Promise.all([
     dbItems.length > 0 ? supabase.from("fiscal_note_items").insert(dbItems) : Promise.resolve(),
@@ -247,9 +265,9 @@ export async function POST(req: NextRequest) {
     const clientData = clientResult.data;
     if (!clientData) return new Response("Cliente não encontrado", { status: 404 });
 
-    const { header, items } = parsed;
+    const { header, items, iaFailed } = parsed as { header: ParsedHeader; items: ParsedItem[]; iaFailed?: boolean };
 
-    const { noteId, alerts, hasCritical } = await saveNote(supabase, clientData.id, header, items);
+    const { noteId, alerts, hasCritical } = await saveNote(supabase, clientData.id, header, items, iaFailed ?? false);
 
     return Response.json({
       note_id:      noteId,
