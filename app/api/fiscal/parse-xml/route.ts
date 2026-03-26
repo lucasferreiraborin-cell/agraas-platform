@@ -2,10 +2,6 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest } from "next/server";
 
-// pdf-parse é CJS — serverExternalPackages garante que não é bundled pelo Next.js
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const pdfParse: (buf: Buffer) => Promise<{ text: string }> = require("pdf-parse");
-
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 // ── Helpers XML ───────────────────────────────────────────────────────────────
@@ -80,6 +76,8 @@ function parseXml(xml: string): { header: ParsedHeader; items: ParsedItem[] } {
 // ── Parser PDF via Claude ─────────────────────────────────────────────────────
 
 async function parsePdf(buffer: Buffer): Promise<{ header: ParsedHeader; items: ParsedItem[]; iaFailed?: boolean }> {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const pdfParse: (buf: Buffer) => Promise<{ text: string }> = require("pdf-parse");
   const pdfData = await pdfParse(buffer);
   const text = pdfData.text as string;
 

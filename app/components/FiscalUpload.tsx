@@ -47,7 +47,8 @@ export default function FiscalUpload() {
       if ((err as { name?: string }).name === "AbortError") {
         setError("Tempo limite excedido (30s). Tente novamente.");
       } else {
-        setError("Erro de conexão. Verifique sua rede e tente novamente.");
+        const msg = (err as Error)?.message ?? String(err);
+        setError(`Erro: ${msg}`);
       }
     } finally {
       clearTimeout(timeout);
