@@ -1,5 +1,14 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest } from "next/server";
+
+// ── pdf-parse: importa do lib direto para evitar bug do Next.js com arquivo de teste
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const pdfParse = require("pdf-parse/lib/pdf-parse.js");
+
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+// ── Helpers XML ───────────────────────────────────────────────────────────────
 
 function extractTag(xml: string, tag: string): string {
   const m = xml.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i"));
@@ -14,6 +23,196 @@ function extractBlock(xml: string, tag: string): string[] {
   return results;
 }
 
+// ── Tipos internos ────────────────────────────────────────────────────────────
+
+type ParsedHeader = {
+  numeroNota:   string;
+  serie:        string;
+  emitenteCnpj: string;
+  emitenteNome: string;
+  dataEmissao:  string;
+  valorTotal:   number;
+  rawContent:   string;
+};
+
+type ParsedItem = {
+  descricao:     string;
+  ncm:           string;
+  cfop:          string;
+  quantidade:    number;
+  unidade:       string;
+  valorUnitario: number;
+  valorTotal:    number;
+  icmsAliq:      number;
+  icmsValor:     number;
+  ipiValor:      number;
+};
+
+// ── Parser XML ────────────────────────────────────────────────────────────────
+
+function parseXml(xml: string): { header: ParsedHeader; items: ParsedItem[] } {
+  const header: ParsedHeader = {
+    numeroNota:   extractTag(xml, "nNF"),
+    serie:        extractTag(xml, "serie"),
+    emitenteCnpj: extractTag(xml, "CNPJ"),
+    emitenteNome: extractTag(xml, "xNome") || extractTag(xml, "xFant"),
+    dataEmissao:  (extractTag(xml, "dhEmi") || extractTag(xml, "dEmi")).slice(0, 10),
+    valorTotal:   parseFloat(extractTag(xml, "vNF") || "0"),
+    rawContent:   xml,
+  };
+
+  const items: ParsedItem[] = extractBlock(xml, "det").map((det) => ({
+    descricao:     extractTag(det, "xProd"),
+    ncm:           extractTag(det, "NCM"),
+    cfop:          extractTag(det, "CFOP"),
+    quantidade:    parseFloat(extractTag(det, "qCom")   || "0"),
+    unidade:       extractTag(det, "uCom"),
+    valorUnitario: parseFloat(extractTag(det, "vUnCom") || "0"),
+    valorTotal:    parseFloat(extractTag(det, "vProd")  || "0"),
+    icmsAliq:      parseFloat(extractTag(det, "pICMS")  || "0"),
+    icmsValor:     parseFloat(extractTag(det, "vICMS")  || "0"),
+    ipiValor:      parseFloat(extractTag(det, "vIPI")   || "0"),
+  }));
+
+  return { header, items };
+}
+
+// ── Parser PDF via Claude ─────────────────────────────────────────────────────
+
+async function parsePdf(buffer: Buffer): Promise<{ header: ParsedHeader; items: ParsedItem[] }> {
+  const pdfData = await pdfParse(buffer);
+  const text = pdfData.text as string;
+
+  const response = await anthropic.messages.create({
+    model: "claude-sonnet-4-6",
+    max_tokens: 2048,
+    system: `Você é um especialista em NF-e brasileira. Extraia os dados estruturados do texto de uma nota fiscal.
+Responda SOMENTE com JSON válido neste formato exato, sem markdown, sem explicações:
+{
+  "numero_nota": "string",
+  "serie": "string",
+  "emitente_cnpj": "string (somente dígitos)",
+  "emitente_nome": "string",
+  "data_emissao": "YYYY-MM-DD",
+  "valor_total": number,
+  "itens": [
+    {
+      "descricao": "string",
+      "ncm": "string (8 dígitos)",
+      "cfop": "string (4 dígitos)",
+      "quantidade": number,
+      "unidade": "string",
+      "valor_unitario": number,
+      "valor_total": number,
+      "icms_aliquota": number,
+      "icms_valor": number,
+      "ipi_valor": number
+    }
+  ]
+}
+Se um campo não existir no texto, use "" para strings e 0 para números.`,
+    messages: [{ role: "user", content: `Extraia os dados desta NF-e:\n\n${text.slice(0, 12000)}` }],
+  });
+
+  const raw = response.content[0].type === "text" ? response.content[0].text : "{}";
+  const jsonMatch = raw.match(/\{[\s\S]*\}/);
+  const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : {};
+
+  const header: ParsedHeader = {
+    numeroNota:   String(parsed.numero_nota   ?? "S/N"),
+    serie:        String(parsed.serie         ?? "-"),
+    emitenteCnpj: String(parsed.emitente_cnpj ?? ""),
+    emitenteNome: String(parsed.emitente_nome ?? ""),
+    dataEmissao:  String(parsed.data_emissao  ?? ""),
+    valorTotal:   Number(parsed.valor_total   ?? 0),
+    rawContent:   text,
+  };
+
+  const items: ParsedItem[] = (parsed.itens ?? []).map((it: Record<string, unknown>) => ({
+    descricao:     String(it.descricao     ?? ""),
+    ncm:           String(it.ncm           ?? ""),
+    cfop:          String(it.cfop          ?? ""),
+    quantidade:    Number(it.quantidade    ?? 0),
+    unidade:       String(it.unidade       ?? ""),
+    valorUnitario: Number(it.valor_unitario ?? 0),
+    valorTotal:    Number(it.valor_total   ?? 0),
+    icmsAliq:      Number(it.icms_aliquota ?? 0),
+    icmsValor:     Number(it.icms_valor    ?? 0),
+    ipiValor:      Number(it.ipi_valor     ?? 0),
+  }));
+
+  return { header, items };
+}
+
+// ── Save ao banco + geração de alertas ───────────────────────────────────────
+
+async function saveNote(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  clientId: string,
+  header: ParsedHeader,
+  items: ParsedItem[],
+) {
+  const { data: noteData, error: noteError } = await supabase
+    .from("fiscal_notes")
+    .insert({
+      client_id:     clientId,
+      xml_content:   header.rawContent,
+      numero_nota:   header.numeroNota || "S/N",
+      serie:         header.serie      || "-",
+      emitente_cnpj: header.emitenteCnpj,
+      emitente_nome: header.emitenteNome,
+      data_emissao:  header.dataEmissao || null,
+      valor_total:   header.valorTotal  || null,
+      status:        "pendente",
+    })
+    .select("id")
+    .single();
+
+  if (noteError || !noteData) throw new Error("Erro ao salvar nota: " + noteError?.message);
+
+  const noteId = noteData.id;
+  const alerts: { note_id: string; client_id: string; tipo: string; descricao: string; severidade: string }[] = [];
+
+  const dbItems = items.map((it) => {
+    if (!/^\d{8}$/.test(it.ncm)) {
+      alerts.push({ note_id: noteId, client_id: clientId, tipo: "ncm_incorreto",
+        descricao: `Item "${it.descricao}": NCM "${it.ncm}" deve ter 8 dígitos numéricos.`, severidade: "critico" });
+    }
+    if (it.cfop && !/^[1-37]/.test(it.cfop)) {
+      alerts.push({ note_id: noteId, client_id: clientId, tipo: "cfop_divergente",
+        descricao: `Item "${it.descricao}": CFOP "${it.cfop}" não é válido para operação fiscal.`, severidade: "critico" });
+    }
+    if (!it.descricao) {
+      alerts.push({ note_id: noteId, client_id: clientId, tipo: "item_incompleto",
+        descricao: "Item sem descrição encontrado na nota.", severidade: "info" });
+    }
+    return {
+      note_id: noteId, client_id: clientId,
+      descricao: it.descricao, ncm: it.ncm, cfop: it.cfop,
+      quantidade: it.quantidade, unidade: it.unidade,
+      valor_unitario: it.valorUnitario, valor_total: it.valorTotal,
+      icms_aliquota: it.icmsAliq, icms_valor: it.icmsValor, ipi_valor: it.ipiValor,
+    };
+  });
+
+  const somaItens = items.reduce((s, i) => s + i.valorTotal, 0);
+  if (header.valorTotal > 0 && Math.abs(header.valorTotal - somaItens) > 0.02) {
+    alerts.push({ note_id: noteId, client_id: clientId, tipo: "valor_divergente",
+      descricao: `Valor da nota (R$${header.valorTotal.toFixed(2)}) difere da soma dos itens (R$${somaItens.toFixed(2)}).`,
+      severidade: "aviso" });
+  }
+
+  if (dbItems.length > 0) await supabase.from("fiscal_note_items").insert(dbItems);
+  if (alerts.length  > 0) await supabase.from("fiscal_alerts").insert(alerts);
+
+  const hasCritical = alerts.some(a => a.severidade === "critico");
+  if (hasCritical) await supabase.from("fiscal_notes").update({ status: "erro" }).eq("id", noteId);
+
+  return { noteId, alerts, hasCritical };
+}
+
+// ── Handler principal ─────────────────────────────────────────────────────────
+
 export async function POST(req: NextRequest) {
   try {
     const supabase = await createSupabaseServerClient();
@@ -26,108 +225,30 @@ export async function POST(req: NextRequest) {
 
     const formData = await req.formData();
     const file = formData.get("xml") as File | null;
-    if (!file) return Response.json({ error: "XML não enviado" }, { status: 400 });
+    if (!file) return Response.json({ error: "Arquivo não enviado" }, { status: 400 });
 
-    const xml = await file.text();
-
-    // Extrai cabeçalho
-    const numeroNota   = extractTag(xml, "nNF");
-    const serie        = extractTag(xml, "serie");
-    const dataEmissao  = extractTag(xml, "dhEmi") || extractTag(xml, "dEmi");
-    const valorTotal   = extractTag(xml, "vNF");
-    const emitenteCnpj = extractTag(xml, "CNPJ");
-    const emitenteNome = extractTag(xml, "xNome") || extractTag(xml, "xFant");
-
-    // Insere nota
-    const { data: noteData, error: noteError } = await supabase
-      .from("fiscal_notes")
-      .insert({
-        client_id:     clientData.id,
-        xml_content:   xml,
-        numero_nota:   numeroNota || "S/N",
-        serie:         serie || "-",
-        emitente_cnpj: emitenteCnpj,
-        emitente_nome: emitenteNome,
-        data_emissao:  dataEmissao ? dataEmissao.slice(0, 10) : null,
-        valor_total:   valorTotal ? parseFloat(valorTotal) : null,
-        status:        "pendente",
-      })
-      .select("id")
-      .single();
-
-    if (noteError || !noteData) {
-      return Response.json({ error: "Erro ao salvar nota: " + noteError?.message }, { status: 500 });
+    const isPdf = file.name.toLowerCase().endsWith(".pdf");
+    const isXml = file.name.toLowerCase().endsWith(".xml");
+    if (!isPdf && !isXml) {
+      return Response.json({ error: "Formato não suportado. Envie .xml ou .pdf" }, { status: 400 });
     }
 
-    const noteId = noteData.id;
-    const alerts: { note_id: string; client_id: string; tipo: string; descricao: string; severidade: string }[] = [];
+    let header: ParsedHeader;
+    let items:  ParsedItem[];
 
-    // Extrai itens (blocos <det>)
-    const detBlocks = extractBlock(xml, "det");
-    const items = detBlocks.map((det) => {
-      const descricao     = extractTag(det, "xProd");
-      const ncm           = extractTag(det, "NCM");
-      const cfop          = extractTag(det, "CFOP");
-      const quantidade    = parseFloat(extractTag(det, "qCom") || "0");
-      const unidade       = extractTag(det, "uCom");
-      const valorUnitario = parseFloat(extractTag(det, "vUnCom") || "0");
-      const valorTotalItem = parseFloat(extractTag(det, "vProd") || "0");
-      const icmsAliq      = parseFloat(extractTag(det, "pICMS") || "0");
-      const icmsValor     = parseFloat(extractTag(det, "vICMS") || "0");
-      const ipiValor      = parseFloat(extractTag(det, "vIPI") || "0");
-
-      // Validações
-      if (!/^\d{8}$/.test(ncm)) {
-        alerts.push({
-          note_id: noteId, client_id: clientData.id,
-          tipo: "ncm_incorreto",
-          descricao: `Item "${descricao}": NCM "${ncm}" deve ter 8 dígitos numéricos.`,
-          severidade: "critico",
-        });
-      }
-      if (cfop && !/^[1-37]/.test(cfop)) {
-        alerts.push({
-          note_id: noteId, client_id: clientData.id,
-          tipo: "cfop_divergente",
-          descricao: `Item "${descricao}": CFOP "${cfop}" não é válido para operação fiscal.`,
-          severidade: "critico",
-        });
-      }
-      if (!descricao) {
-        alerts.push({
-          note_id: noteId, client_id: clientData.id,
-          tipo: "item_incompleto",
-          descricao: `Item sem descrição encontrado na nota.`,
-          severidade: "info",
-        });
-      }
-
-      return { note_id: noteId, client_id: clientData.id, descricao, ncm, cfop, quantidade, unidade, valor_unitario: valorUnitario, valor_total: valorTotalItem, icms_aliquota: icmsAliq, icms_valor: icmsValor, ipi_valor: ipiValor };
-    });
-
-    // Valida valor total
-    const somaItens = items.reduce((s, i) => s + (i.valor_total || 0), 0);
-    const vNF = valorTotal ? parseFloat(valorTotal) : 0;
-    if (vNF > 0 && Math.abs(vNF - somaItens) > 0.02) {
-      alerts.push({
-        note_id: noteId, client_id: clientData.id,
-        tipo: "valor_divergente",
-        descricao: `Valor da nota (R$${vNF.toFixed(2)}) difere da soma dos itens (R$${somaItens.toFixed(2)}).`,
-        severidade: "aviso",
-      });
+    if (isPdf) {
+      const buffer = Buffer.from(await file.arrayBuffer());
+      ({ header, items } = await parsePdf(buffer));
+    } else {
+      const xml = await file.text();
+      ({ header, items } = parseXml(xml));
     }
 
-    if (items.length > 0) await supabase.from("fiscal_note_items").insert(items);
-    if (alerts.length > 0) await supabase.from("fiscal_alerts").insert(alerts);
-
-    const hasCritical = alerts.some(a => a.severidade === "critico");
-    if (hasCritical) {
-      await supabase.from("fiscal_notes").update({ status: "erro" }).eq("id", noteId);
-    }
+    const { noteId, alerts, hasCritical } = await saveNote(supabase, clientData.id, header, items);
 
     return Response.json({
       note_id:      noteId,
-      numero_nota:  numeroNota,
+      numero_nota:  header.numeroNota,
       total_items:  items.length,
       alerts_count: alerts.length,
       status:       hasCritical ? "erro" : "pendente",

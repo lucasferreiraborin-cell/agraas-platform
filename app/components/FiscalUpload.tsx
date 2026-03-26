@@ -5,16 +5,21 @@ import { useRouter } from "next/navigation";
 import { Upload, Loader2, CheckCircle } from "lucide-react";
 
 export default function FiscalUpload() {
-  const [dragging, setDragging]   = useState(false);
-  const [loading, setLoading]     = useState(false);
-  const [result, setResult]       = useState<{ note_id: string; numero_nota: string; total_items: number; alerts_count: number; status: string } | null>(null);
-  const [error, setError]         = useState("");
+  const [dragging, setDragging]     = useState(false);
+  const [loading, setLoading]       = useState(false);
+  const [currentFile, setCurrentFile] = useState<string | null>(null);
+  const [result, setResult]         = useState<{ note_id: string; numero_nota: string; total_items: number; alerts_count: number; status: string } | null>(null);
+  const [error, setError]           = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
   async function uploadFile(file: File) {
-    if (!file.name.endsWith(".xml")) { setError("Apenas arquivos .xml são aceitos."); return; }
-    setLoading(true); setError(""); setResult(null);
+    const name = file.name.toLowerCase();
+    if (!name.endsWith(".xml") && !name.endsWith(".pdf")) {
+      setError("Formato não suportado. Envie um arquivo .xml ou .pdf.");
+      return;
+    }
+    setLoading(true); setError(""); setResult(null); setCurrentFile(file.name);
     const form = new FormData();
     form.append("xml", file);
     const res = await fetch("/api/fiscal/parse-xml", { method: "POST", body: form });
@@ -47,11 +52,15 @@ export default function FiscalUpload() {
               : "border-[var(--primary)]/40 hover:border-[var(--primary)] hover:bg-emerald-50/60"
         }`}
       >
-        <input ref={inputRef} type="file" accept=".xml" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadFile(f); }} />
+        <input ref={inputRef} type="file" accept=".xml,.pdf" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadFile(f); }} />
         {loading ? (
           <>
             <Loader2 size={28} className="animate-spin text-[var(--primary)]" />
-            <p className="text-sm font-medium text-[var(--text-secondary)]">Processando XML…</p>
+            <p className="text-sm font-medium text-[var(--text-secondary)]">
+              {currentFile?.toLowerCase().endsWith(".pdf")
+                ? "Extraindo dados do PDF com IA…"
+                : "Processando XML…"}
+            </p>
           </>
         ) : (
           <>
@@ -59,8 +68,8 @@ export default function FiscalUpload() {
               <Upload size={22} className="text-[var(--primary)]" />
             </div>
             <div>
-              <p className="text-[15px] font-semibold text-[var(--text-primary)]">Arraste o XML da NF-e aqui</p>
-              <p className="mt-0.5 text-sm text-[var(--text-muted)]">ou clique para selecionar • somente .xml</p>
+              <p className="text-[15px] font-semibold text-[var(--text-primary)]">Arraste o XML ou PDF da NF-e aqui</p>
+              <p className="mt-0.5 text-sm text-[var(--text-muted)]">ou clique para selecionar • aceita .xml e .pdf</p>
             </div>
           </>
         )}
