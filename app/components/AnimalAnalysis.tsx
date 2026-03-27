@@ -63,11 +63,11 @@ export default function AnimalAnalysis({ animalId }: { animalId: string }) {
         body: JSON.stringify({ animalId }),
       });
       const data = await res.json();
-      if (!data.ok) { setError("Análise indisponível. Tente novamente."); setLoading(false); return; }
+      if (!data.ok) { setError("🚧 Funcionalidade em construção — disponível em breve."); setLoading(false); return; }
       setAnalise(data.analise as Analise);
       setMeta(data.meta as Meta);
     } catch {
-      setError("Erro de conexão. Tente novamente.");
+      setError("🚧 Funcionalidade em construção — disponível em breve.");
     }
     setLoading(false);
   }

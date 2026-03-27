@@ -43,10 +43,11 @@ export default function AgroAssistant() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: userMsg, history }),
       });
-      const { reply } = await res.json();
+      const json = await res.json();
+      const reply: string = json.reply ?? "🚧 Funcionalidade em construção — disponível em breve.";
       setMessages(prev => [...prev, { role: "assistant", content: reply }]);
     } catch {
-      setMessages(prev => [...prev, { role: "assistant", content: "Erro ao conectar com o assistente. Tente novamente." }]);
+      setMessages(prev => [...prev, { role: "assistant", content: "🚧 Funcionalidade em construção — disponível em breve." }]);
     }
     setLoading(false);
   }

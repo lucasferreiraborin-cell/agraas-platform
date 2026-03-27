@@ -39,11 +39,11 @@ export default function FiscalNoteActions({ noteId, status, items }: Props) {
     try {
       const res  = await fetch("/api/fiscal/analyze", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ note_id: noteId }) });
       const json = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
-      if (!res.ok || json.error) { setError(json.error ?? "Erro ao analisar."); return; }
+      if (!res.ok || json.error) { setError("🚧 Funcionalidade em construção — disponível em breve."); return; }
       setAiResult(json.resumo ?? `Risco geral: ${json.overall_risk}. ${json.suggestions?.join(" ") ?? ""}`);
       router.refresh();
-    } catch (e) {
-      setError((e as Error)?.message ?? "Erro inesperado.");
+    } catch {
+      setError("🚧 Funcionalidade em construção — disponível em breve.");
     } finally {
       setAnalyzing(false);
     }
