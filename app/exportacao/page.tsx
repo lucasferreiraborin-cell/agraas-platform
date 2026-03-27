@@ -228,21 +228,18 @@ export default function ExportacaoPage() {
   return (
     <main className="space-y-8">
       {/* ── Hero ── */}
-      <section className="overflow-hidden rounded-3xl border border-[rgba(255,255,255,0.06)] bg-[linear-gradient(135deg,#0f0f1a_0%,#1a1a2e_60%,#0d2137_100%)] shadow-2xl">
-        <div className="p-8 lg:p-10">
+      <section className="ag-card-strong overflow-hidden">
+        <div className="relative p-8 lg:p-10">
+          <div className="pointer-events-none absolute right-0 top-0 h-48 w-48 rounded-full bg-[radial-gradient(circle,rgba(122,168,76,0.1)_0%,rgba(122,168,76,0)_70%)]" />
           <div className="flex flex-wrap items-start gap-3">
-            <span className="rounded-full border border-emerald-500/30 bg-emerald-500/15 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-400">
-              ✈ Exportação
-            </span>
-            <span className="flex items-center gap-1.5 rounded-full border border-red-500/30 bg-red-500/15 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-red-400">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-400" />
+            <span className="ag-badge ag-badge-green">✈ Exportação</span>
+            <span className="flex items-center gap-1.5 rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-700">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
               LIVE
             </span>
           </div>
-          <h1 className="mt-4 text-4xl font-semibold tracking-[-0.05em] text-white">
-            Central de Exportação
-          </h1>
-          <p className="mt-2 text-sm text-white/40">
+          <h1 className="ag-page-title mt-4">Central de Exportação</h1>
+          <p className="mt-2 text-sm text-[var(--text-secondary)]">
             Monitoramento em tempo real de todos os lotes de exportação
           </p>
 
@@ -487,15 +484,15 @@ function HeroKPI({
   color?: "emerald" | "amber" | "red";
 }) {
   const valueColor =
-    color === "emerald" ? "text-emerald-400"
-    : color === "amber" ? "text-amber-400"
-    : color === "red" ? "text-red-400"
-    : "text-white";
+    color === "emerald" ? "text-emerald-600"
+    : color === "amber" ? "text-amber-600"
+    : color === "red" ? "text-red-600"
+    : "text-[var(--text-primary)]";
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-4">
-      <p className="text-xs text-white/40">{label}</p>
-      <p className={`mt-2 text-2xl font-semibold tracking-[-0.04em] ${valueColor}`}>{value}</p>
-      <p className="mt-1 text-xs text-white/35">{sub}</p>
+    <div className="rounded-2xl border border-[var(--border)] bg-white px-5 py-4">
+      <p className="text-xs font-medium uppercase tracking-[0.14em] text-[var(--text-muted)]">{label}</p>
+      <p className={`mt-2 text-2xl font-bold tracking-[-0.04em] ${valueColor}`}>{value}</p>
+      <p className="mt-1 text-xs text-[var(--text-muted)]">{sub}</p>
     </div>
   );
 }

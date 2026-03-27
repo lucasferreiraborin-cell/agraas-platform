@@ -42,12 +42,12 @@ function portIcon(label: string, sub: string) {
   return L.divIcon({
     html: `
       <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
-        <div style="width:30px;height:30px;border-radius:50%;background:#0f2d1a;border:2px solid #4ade80;display:flex;align-items:center;justify-content:center;box-shadow:0 0 10px rgba(74,222,128,0.4)">
-          <div style="width:8px;height:8px;border-radius:50%;background:#4ade80"></div>
+        <div style="width:30px;height:30px;border-radius:50%;background:#fff;border:2px solid #2d6a27;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,0.18)">
+          <div style="width:8px;height:8px;border-radius:50%;background:#2d6a27"></div>
         </div>
         <div style="text-align:center;line-height:1.2">
-          <p style="color:#4ade80;font-size:9px;font-weight:700;letter-spacing:0.8px;margin:0">${label}</p>
-          <p style="color:rgba(255,255,255,0.45);font-size:8px;margin:0">${sub}</p>
+          <p style="color:#1a4a17;font-size:9px;font-weight:700;letter-spacing:0.8px;margin:0">${label}</p>
+          <p style="color:#666;font-size:8px;margin:0">${sub}</p>
         </div>
       </div>`,
     iconSize: [60, 52],
@@ -62,24 +62,24 @@ export default function ExportMapGL() {
       <MapContainer
         center={[-7, -4]}
         zoom={2}
-        style={{ width: "100%", height: "100%", background: "#111827" }}
+        style={{ width: "100%", height: "100%", background: "#f0f3f0" }}
         zoomControl={false}
         attributionControl={false}
       >
         <FitRoute />
         <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
           attribution=""
         />
-        {/* Glow */}
+        {/* Shadow */}
         <Polyline
           positions={MARITIME_ROUTE}
-          pathOptions={{ color: "#4ade80", weight: 8, opacity: 0.12 }}
+          pathOptions={{ color: "#2d6a27", weight: 6, opacity: 0.15 }}
         />
         {/* Main route line */}
         <Polyline
           positions={MARITIME_ROUTE}
-          pathOptions={{ color: "#4ade80", weight: 2.5, opacity: 0.9, dashArray: "8 4" }}
+          pathOptions={{ color: "#3d7a33", weight: 2.5, opacity: 0.85, dashArray: "8 4" }}
         />
         <Marker position={SANTOS} icon={portIcon("SANTOS", "Brasil")} />
         <Marker position={JEDDAH} icon={portIcon("JEDDAH", "Arábia Saudita")} />
