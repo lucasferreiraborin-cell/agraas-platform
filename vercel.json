@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/cotacao",
+      "schedule": "0 11 * * *"
+    }
+  ]
+}

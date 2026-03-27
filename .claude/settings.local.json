@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(npx supabase:*)",
+      "Bash(SUPABASE_ACCESS_TOKEN=sbp_8c9fb20d40b3f3d6dab4d40852bdb8ce939d5de6 npx supabase link --project-ref ixuxawcgwhrrrnwendxr)",
+      "Bash(SUPABASE_ACCESS_TOKEN=sbp_8c9fb20d40b3f3d6dab4d40852bdb8ce939d5de6 npx supabase db push)",
+      "Bash(SUPABASE_ACCESS_TOKEN=sbp_8c9fb20d40b3f3d6dab4d40852bdb8ce939d5de6 npx supabase db push --include-all)",
+      "Bash(npm install:*)",
+      "Bash(SUPABASE_ACCESS_TOKEN=sbp_bb2d3572cacb68625ed906f058b126a710370785 npx supabase projects list)"
+    ]
+  }
+}

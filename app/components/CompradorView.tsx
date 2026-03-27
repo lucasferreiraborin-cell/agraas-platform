@@ -41,24 +41,24 @@ const CERT_LIST = ["Halal", "MAPA", "GTA", "SIF"];
 
 const T = {
   en: {
-    portal: "PIF Procurement Portal", pif: "PIF · Programa Integrado de Fidelização",
+    portal: "PIF Procurement Portal", pif: "PIF · Public Investment Fund · Saudi Arabia",
     hero: { title: "Brazilian Livestock · Export Intelligence", sub: "End-to-end traceability from farm to port" },
     kpi: { total: "Total Animals", eligible: "Export Eligible", halal: "Halal Certified", shipments: "Active Shipments", departure: "Next Departure", survival: "Survival Rate" },
     shipments: { title: "Active Shipments", lotId: "Lot ID", origin: "Origin", dest: "Destination", dep: "Departure", animals: "Animals", compliance: "Compliance", status: "Status", details: "View Details" },
     tracking: { title: "Live Shipment Tracking", noData: "No tracking data available yet.", animalsConf: "animals confirmed", loss: "loss", losses: "losses" },
     matrix: { title: "Animal Certification Matrix", all: "All", eligible: "Eligible", pending: "Pending", ineligible: "Ineligible", animal: "Animal", breed: "Breed", age: "Age", withdrawal: "Withdrawal", score: "Score", status: "Status", clear: "Clear", labelEligible: "ELIGIBLE", labelPending: "PENDING", labelIneligible: "INELIGIBLE" },
-    risk: { title: "Risk Intelligence", sanitary: "Sanitary Risk", compliance: "Compliance Risk", delivery: "Delivery Risk", low: "LOW", medium: "MEDIUM", high: "HIGH", withWithdrawal: "animals with active withdrawal", ineligible: "ineligible animals", lostInTransit: "animals lost in transit" },
+    risk: { title: "Risk Intelligence", sanitary: "Sanitary Risk", compliance: "Compliance Risk", delivery: "Delivery Risk", low: "ON TRACK", medium: "MONITORED", high: "ACTION REQUIRED", withWithdrawal: "animals with active withdrawal", ineligible: "ineligible animals", lostInTransit: "animals lost in transit" },
     footer: "Powered by Agraas Intelligence Layer · Certified by MAPA · Real-time data",
     signOut: "Sign Out",
   },
   pt: {
-    portal: "Portal de Compras PIF", pif: "PIF · Programa Integrado de Fidelização",
+    portal: "Portal de Compras PIF", pif: "PIF · Public Investment Fund · Saudi Arabia",
     hero: { title: "Pecuária Brasileira · Inteligência de Exportação", sub: "Rastreabilidade completa da fazenda ao porto" },
     kpi: { total: "Total de Animais", eligible: "Aptos para Exportação", halal: "Certificados Halal", shipments: "Embarques Ativos", departure: "Próximo Embarque", survival: "Taxa de Sobrevivência" },
     shipments: { title: "Embarques Ativos", lotId: "ID do Lote", origin: "Origem", dest: "Destino", dep: "Embarque", animals: "Animais", compliance: "Conformidade", status: "Status", details: "Ver Detalhes" },
     tracking: { title: "Rastreio de Embarques ao Vivo", noData: "Nenhum dado de rastreio disponível ainda.", animalsConf: "animais confirmados", loss: "perda", losses: "perdas" },
     matrix: { title: "Matriz de Certificações Animais", all: "Todos", eligible: "Aptos", pending: "Pendentes", ineligible: "Inaptos", animal: "Animal", breed: "Raça", age: "Idade", withdrawal: "Carência", score: "Score", status: "Status", clear: "Livre", labelEligible: "APTO", labelPending: "PENDENTE", labelIneligible: "INAPTO" },
-    risk: { title: "Inteligência de Risco", sanitary: "Risco Sanitário", compliance: "Risco de Conformidade", delivery: "Risco de Entrega", low: "BAIXO", medium: "MÉDIO", high: "ALTO", withWithdrawal: "animais com carência ativa", ineligible: "animais inaptos", lostInTransit: "animais perdidos em trânsito" },
+    risk: { title: "Inteligência de Risco", sanitary: "Risco Sanitário", compliance: "Risco de Conformidade", delivery: "Risco de Entrega", low: "EM DIA", medium: "MONITORADO", high: "AÇÃO NECESSÁRIA", withWithdrawal: "animais com carência ativa", ineligible: "animais inaptos", lostInTransit: "animais perdidos em trânsito" },
     footer: "Powered by Agraas Intelligence Layer · Certificado pelo MAPA · Dados em tempo real",
     signOut: "Sair",
   },
@@ -190,6 +190,41 @@ export default function CompradorView({
     return { score: pct, level: (pct === 0 ? "low" : pct < 2 ? "medium" : "high") as "low"|"medium"|"high", count: totalLost };
   }, [trackingCheckpoints, totalAnimals]);
 
+  // ── Contextual risk messages ──────────────────────────────────────────────────
+
+  const sanitaryMessage = useMemo(() => {
+    const n = activeWithdrawals.length;
+    if (n === 0) return lang === "en" ? "On track — No active withdrawal periods" : "Em dia — Sem carências ativas";
+    const dates = activeWithdrawals.map(w => w.withdrawal_date).filter(Boolean) as string[];
+    const latest = dates.sort().pop()!;
+    const clearDate = new Date(latest).toLocaleDateString(lang === "en" ? "en-GB" : "pt-BR", { day: "2-digit", month: "short" });
+    return lang === "en"
+      ? `Under control — ${n} animal${n > 1 ? "s" : ""} in withdrawal period, clears ${clearDate}`
+      : `Monitorado — ${n} animal${n > 1 ? "is" : ""} em carência, termina ${clearDate}`;
+  }, [activeWithdrawals, lang]);
+
+  const complianceMessage = useMemo(() => {
+    const pending    = complianceRows.filter(r => r.status === "pending").length;
+    const ineligible = complianceRows.filter(r => r.status === "ineligible").length;
+    if (pending === 0 && ineligible === 0)
+      return lang === "en" ? "On track — All animals compliant" : "Em dia — Todos os animais conformes";
+    if (pending > 0)
+      return lang === "en"
+        ? `Action required — ${pending} animal${pending > 1 ? "s" : ""} pending certification`
+        : `Ação necessária — ${pending} animal${pending > 1 ? "is" : ""} com certificação pendente`;
+    return lang === "en"
+      ? `Under review — ${ineligible} animal${ineligible > 1 ? "s" : ""} ineligible`
+      : `Em revisão — ${ineligible} animal${ineligible > 1 ? "is" : ""} inapto${ineligible > 1 ? "s" : ""}`;
+  }, [complianceRows, lang]);
+
+  const deliveryMessage = useMemo(() => {
+    const totalLost = deliveryRisk.count;
+    if (totalLost === 0) return lang === "en" ? "On track — 0 losses in transit" : "Em dia — 0 perdas em trânsito";
+    return lang === "en"
+      ? `Monitored — ${totalLost} loss${totalLost > 1 ? "es" : ""} recorded, within acceptable range`
+      : `Monitorado — ${totalLost} perda${totalLost > 1 ? "s" : ""} registrada${totalLost > 1 ? "s" : ""}`;
+  }, [deliveryRisk.count, lang]);
+
   // ── Auth ──────────────────────────────────────────────────────────────────────
 
   async function handleSignOut() {
@@ -203,13 +238,13 @@ export default function CompradorView({
 
   // ── Risk style helpers ────────────────────────────────────────────────────────
 
-  const riskBorderColor = { low: "#22c55e", medium: "#f59e0b", high: "#ef4444" } as const;
+  const riskBorderColor = { low: "#22c55e", medium: "#f59e0b", high: "#f59e0b" } as const;
   const riskBadgeCls    = {
     low:    "border-emerald-200 bg-emerald-50 text-emerald-700",
     medium: "border-amber-200 bg-amber-50 text-amber-700",
-    high:   "border-red-200 bg-red-50 text-red-700",
+    high:   "border-amber-200 bg-amber-50 text-amber-700",
   } as const;
-  const riskValueCls    = { low: "text-emerald-600", medium: "text-amber-600", high: "text-red-600" } as const;
+  const riskValueCls    = { low: "text-emerald-600", medium: "text-amber-600", high: "text-amber-600" } as const;
 
   // ─────────────────────────────────────────────────────────────────────────────
 
@@ -522,10 +557,10 @@ export default function CompradorView({
         <h2 className="ag-section-title mb-5">{t.risk.title}</h2>
         <div className="grid gap-4 sm:grid-cols-3">
           {[
-            { label: t.risk.sanitary,   data: sanitaryRisk,   detail: `${sanitaryRisk.count} ${t.risk.withWithdrawal}`,   icon: ShieldAlert },
-            { label: t.risk.compliance, data: complianceRisk, detail: `${complianceRisk.count} ${t.risk.ineligible}`,     icon: ShieldCheck },
-            { label: t.risk.delivery,   data: deliveryRisk,   detail: `${deliveryRisk.count} ${t.risk.lostInTransit}`,    icon: Truck },
-          ].map(({ label, data, detail, icon: Icon }) => {
+            { label: t.risk.sanitary,   data: sanitaryRisk,   message: sanitaryMessage,   icon: ShieldAlert },
+            { label: t.risk.compliance, data: complianceRisk, message: complianceMessage, icon: ShieldCheck },
+            { label: t.risk.delivery,   data: deliveryRisk,   message: deliveryMessage,   icon: Truck },
+          ].map(({ label, data, message, icon: Icon }) => {
             const rl     = data.level === "low" ? t.risk.low : data.level === "medium" ? t.risk.medium : t.risk.high;
             const border = riskBorderColor[data.level];
             const badge  = riskBadgeCls[data.level];
@@ -540,8 +575,8 @@ export default function CompradorView({
                   </div>
                   <span className={`rounded-full border px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.16em] ${badge}`}>{rl}</span>
                 </div>
-                <p className={`mt-4 text-5xl font-bold tracking-tight ${valCls}`}>{data.score}%</p>
-                <p className="mt-2 text-sm text-[var(--text-muted)]">{detail}</p>
+                <p className={`mt-4 text-sm font-semibold leading-snug ${valCls}`}>{message}</p>
+                <p className="mt-2 font-mono text-[10px] text-[var(--text-muted)]">{data.score}% risk index</p>
               </div>
             );
           })}
