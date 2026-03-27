@@ -26,6 +26,7 @@ type Animal = { id: string; internal_code: string | null; nickname: string | nul
 type Cert = { animal_id: string; certification_name: string; status: string; expires_at: string | null };
 type Withdrawal = { animal_id: string; product_name: string | null; withdrawal_date: string | null };
 type Score = { animal_id: string; score_json: Record<string, unknown> | null };
+type TrackingCheckpoint = { lot_id: string; stage: string; timestamp: string; animals_confirmed: number | null; animals_lost: number; loss_cause: string | null; location_name: string | null };
 
 // ─── i18n ─────────────────────────────────────────────────────────────────────
 
@@ -36,6 +37,7 @@ const EN = {
   shipments: { title: "Active Shipments", lotId: "Lot ID", contract: "Contract", origin: "Origin", dest: "Destination", dep: "Departure", animals: "Animals", compliance: "Compliance", status: "Status", manifest: "View Full Manifest" },
   matrix: { title: "Animal Certification Matrix", animal: "Animal", breed: "Breed", halal: "Halal", mapa: "MAPA", gta: "GTA", sif: "SIF", withdrawal: "Withdrawal", score: "Score", status: "Status" },
   tracking: { title: "Live Route Tracking", route: "Santos → Cape of Good Hope → Red Sea → Jeddah", nextShipment: "Next Shipment", daysTo: "Days to Departure", confirmed: "Animals Confirmed" },
+  shipTracking: { title: "Live Shipment Tracking", noData: "No tracking data yet", losses: "losses", animals: "animals confirmed", current: "CURRENT", done: "DONE" },
   footer: "Powered by Agraas Intelligence Layer · Certified by MAPA · Real-time data",
   signOut: "Sign Out",
   eligible: "ELIGIBLE",
@@ -53,6 +55,7 @@ const PT = {
   shipments: { title: "Embarques Ativos", lotId: "ID do Lote", contract: "Contrato", origin: "Origem", dest: "Destino", dep: "Embarque", animals: "Animais", compliance: "Conformidade", status: "Status", manifest: "Ver Manifesto Completo" },
   matrix: { title: "Matriz de Certificações", animal: "Animal", breed: "Raça", halal: "Halal", mapa: "MAPA", gta: "GTA", sif: "SIF", withdrawal: "Carência", score: "Score", status: "Status" },
   tracking: { title: "Rastreamento da Rota", route: "Santos → Cabo da Boa Esperança → Mar Vermelho → Jeddah", nextShipment: "Próximo Embarque", daysTo: "Dias para Embarque", confirmed: "Animais Confirmados" },
+  shipTracking: { title: "Rastreio de Embarque ao Vivo", noData: "Nenhum dado de rastreio ainda", losses: "perdas", animals: "animais confirmados", current: "ATUAL", done: "CONCLUÍDO" },
   footer: "Powered by Agraas Intelligence Layer · Certificado pelo MAPA · Dados em tempo real",
   signOut: "Sair",
   eligible: "APTO",
@@ -144,6 +147,16 @@ function StatusBadge({ status, t }: { status: "eligible" | "pending" | "ineligib
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
+const TRACKING_STAGES = [
+  { key: "fazenda",       label: "Farm",          labelPt: "Fazenda" },
+  { key: "concentracao",  label: "Staging",       labelPt: "Concentração" },
+  { key: "transporte",    label: "Transport",     labelPt: "Transporte" },
+  { key: "porto_origem",  label: "Origin Port",   labelPt: "Porto Origem" },
+  { key: "navio",         label: "At Sea",        labelPt: "Navio" },
+  { key: "porto_destino", label: "Dest. Port",    labelPt: "Porto Destino" },
+  { key: "entregue",      label: "Delivered",     labelPt: "Entregue" },
+];
+
 export default function CompradorView({
   buyerName,
   lots,
@@ -152,6 +165,7 @@ export default function CompradorView({
   certifications,
   activeWithdrawals,
   scores,
+  trackingCheckpoints,
 }: {
   buyerName: string;
   lots: Lot[];
@@ -160,6 +174,7 @@ export default function CompradorView({
   certifications: Cert[];
   activeWithdrawals: Withdrawal[];
   scores: Score[];
+  trackingCheckpoints: TrackingCheckpoint[];
 }) {
   const [lang, setLang] = useState<"en" | "pt">("en");
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
@@ -584,6 +599,124 @@ export default function CompradorView({
               </tbody>
             </table>
           </div>
+        </section>
+
+        {/* ── Live Shipment Tracking ─────────────────────────────────────────── */}
+        <section style={{ marginBottom: 72 }}>
+          <h2 style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: "rgba(255,255,255,0.5)", margin: "0 0 24px" }}>
+            {t.shipTracking.title}
+          </h2>
+          {lots.length === 0 || trackingCheckpoints.length === 0 ? (
+            <div style={{ border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: "40px 32px", textAlign: "center", color: "rgba(255,255,255,0.2)", fontSize: 13 }}>
+              {t.shipTracking.noData}
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              {lots.map(lot => {
+                const cps = trackingCheckpoints.filter(c => c.lot_id === lot.id);
+                const completedStages = new Set(cps.map(c => c.stage));
+                const currentIdx = TRACKING_STAGES.findIndex(s => !completedStages.has(s.key));
+                const lastCp = cps.length > 0 ? cps[cps.length - 1] : null;
+                const totalLost = cps.reduce((s, c) => s + (c.animals_lost ?? 0), 0);
+
+                return (
+                  <div key={lot.id} style={{ border: "1px solid rgba(255,255,255,0.07)", borderRadius: 12, padding: "24px 28px" }}>
+                    <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 20 }}>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: "#fff", fontFamily: "monospace", letterSpacing: "0.05em" }}>{lot.name}</span>
+                      <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+                        {lastCp?.animals_confirmed != null && (
+                          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>
+                            <span style={{ fontWeight: 700, color: "#22c55e" }}>{lastCp.animals_confirmed}</span> {t.shipTracking.animals}
+                          </span>
+                        )}
+                        {totalLost > 0 && (
+                          <span style={{ fontSize: 11, fontWeight: 700, color: "#ef4444", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 6, padding: "2px 10px" }}>
+                            ⚠ {totalLost} {t.shipTracking.losses}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Horizontal stage bar */}
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: 0 }}>
+                      {TRACKING_STAGES.map((stage, i) => {
+                        const isDone = completedStages.has(stage.key);
+                        const isCurrent = currentIdx === i;
+                        const cp = cps.find(c => c.stage === stage.key);
+                        const isLast = i === TRACKING_STAGES.length - 1;
+
+                        const dotColor = isDone ? "#22c55e" : isCurrent ? "#3b82f6" : "rgba(255,255,255,0.12)";
+                        const lineColor = isDone ? "#22c55e" : "rgba(255,255,255,0.08)";
+                        const labelColor = isDone ? "#22c55e" : isCurrent ? "#3b82f6" : "rgba(255,255,255,0.25)";
+
+                        return (
+                          <div key={stage.key} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", position: "relative" }}>
+                            {/* Connector line */}
+                            {!isLast && (
+                              <div style={{
+                                position: "absolute",
+                                top: 9,
+                                left: "50%",
+                                width: "100%",
+                                height: 2,
+                                background: lineColor,
+                                zIndex: 0,
+                              }} />
+                            )}
+
+                            {/* Dot */}
+                            <div style={{
+                              width: 20,
+                              height: 20,
+                              borderRadius: "50%",
+                              background: isDone ? "#22c55e" : isCurrent ? "#3b82f6" : "rgba(255,255,255,0.06)",
+                              border: `2px solid ${dotColor}`,
+                              zIndex: 1,
+                              position: "relative",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              flexShrink: 0,
+                              boxShadow: isCurrent ? "0 0 10px rgba(59,130,246,0.5)" : "none",
+                            }}>
+                              {isDone && <span style={{ color: "#000", fontSize: 10, fontWeight: 900 }}>✓</span>}
+                              {isCurrent && <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#fff", display: "block" }} />}
+                            </div>
+
+                            {/* Stage label */}
+                            <div style={{ marginTop: 8, textAlign: "center", fontSize: 9, fontWeight: isCurrent ? 800 : isDone ? 700 : 600, letterSpacing: "0.06em", textTransform: "uppercase", color: labelColor, lineHeight: 1.3 }}>
+                              {lang === "en" ? stage.label : stage.labelPt}
+                            </div>
+
+                            {/* Status badge */}
+                            {(isDone || isCurrent) && (
+                              <div style={{ marginTop: 4, fontSize: 8, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: isDone ? "#22c55e" : "#3b82f6" }}>
+                                {isDone ? t.shipTracking.done : t.shipTracking.current}
+                              </div>
+                            )}
+
+                            {/* Loss indicator */}
+                            {cp && cp.animals_lost > 0 && (
+                              <div style={{ marginTop: 4, fontSize: 9, fontWeight: 700, color: "#ef4444" }}>
+                                −{cp.animals_lost}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Last known location */}
+                    {lastCp?.location_name && (
+                      <div style={{ marginTop: 16, fontSize: 11, color: "rgba(255,255,255,0.3)" }}>
+                        📍 {lastCp.location_name} · {new Date(lastCp.timestamp).toLocaleDateString(lang === "en" ? "en-GB" : "pt-BR", { day: "2-digit", month: "short", year: "numeric" })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </section>
 
         {/* ── Live Tracking ───────────────────────────────────────────────────── */}

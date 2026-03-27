@@ -7,6 +7,8 @@ import { use } from "react";
 import { calculateAgraasScore, calculateAgeInMonths, calculateDailyGain } from "@/lib/agraas-analytics";
 import ExportConformityReport from "@/app/components/ExportConformityReport";
 import ExportRouteMap from "@/app/components/ExportRouteMap";
+import TrackingTimeline from "@/app/components/TrackingTimeline";
+import { FileText, Upload } from "lucide-react";
 
 const SCORE_MINIMO_EXPORT = 60;
 
@@ -16,6 +18,7 @@ type LotRow = {
   target_weight: number | null; status: string | null; property_id: string | null;
   pais_destino: string | null; porto_embarque: string | null; data_embarque: string | null;
   certificacoes_exigidas: string[] | null; numero_contrato: string | null;
+  client_id: string | null;
 };
 type AnimalInLot = {
   id: string; internal_code: string | null; nickname: string | null;
@@ -28,6 +31,22 @@ type WeightRow = { animal_id: string; weight: number; weighing_date: string | nu
 type ApplicationRow = { animal_id: string; withdrawal_date: string | null; product_name: string | null };
 type CertRow = { animal_id: string; certification_name: string; status: string; expires_at: string | null };
 type PassportCacheRow = { animal_id: string; score_json: Record<string, unknown> | null };
+type TrackingCheckpoint = {
+  id: string; stage: string; timestamp: string;
+  animals_confirmed: number | null; animals_lost: number;
+  loss_cause: string | null; location_name: string | null;
+  location_lat: number | null; location_lng: number | null;
+  responsible_name: string | null; notes: string | null;
+};
+
+type Tab = "overview" | "animals" | "tracking" | "documents";
+
+const TABS: { key: Tab; label: string }[] = [
+  { key: "overview",   label: "Visão Geral" },
+  { key: "animals",    label: "Animais & Compliance" },
+  { key: "tracking",   label: "Tracking" },
+  { key: "documents",  label: "Documentos" },
+];
 
 export default function LoteDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -37,35 +56,57 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
   const [applications, setApplications] = useState<ApplicationRow[]>([]);
   const [certifications, setCertifications] = useState<CertRow[]>([]);
   const [passportScores, setPassportScores] = useState<PassportCacheRow[]>([]);
+  const [trackingCheckpoints, setTrackingCheckpoints] = useState<TrackingCheckpoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchAnimal[]>([]);
   const [adding, setAdding] = useState(false);
+  const [activeTab, setActiveTab] = useState<Tab>("overview");
+
+  // Read initial tab from URL on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const tab = new URL(window.location.href).searchParams.get("tab") as Tab | null;
+      if (tab && TABS.some(t => t.key === tab)) setActiveTab(tab);
+    }
+  }, []);
 
   async function loadData() {
-    // Step 1 — lot + assignments em paralelo
     const [{ data: lotData }, { data: assignData }] = await Promise.all([
       supabase.from("lots")
-        .select("id, name, description, objective, start_date, target_weight, status, property_id, pais_destino, porto_embarque, data_embarque, certificacoes_exigidas, numero_contrato")
+        .select("id, name, description, objective, start_date, target_weight, status, property_id, pais_destino, porto_embarque, data_embarque, certificacoes_exigidas, numero_contrato, client_id")
         .eq("id", id).single(),
       supabase.from("animal_lot_assignments")
         .select("id, animal_id")
         .eq("lot_id", id).is("exit_date", null),
     ]);
-    setLot((lotData as LotRow) ?? null);
+    const lotRow = (lotData as LotRow) ?? null;
+    setLot(lotRow);
 
     const assignments = (assignData ?? []) as { id: string; animal_id: string }[];
     const animalIds = assignments.map((a) => a.animal_id);
 
-    if (animalIds.length === 0) { setLoading(false); return; }
+    // Fetch tracking in parallel with animal data
+    const trackingPromise = supabase
+      .from("shipment_tracking")
+      .select("id, stage, timestamp, animals_confirmed, animals_lost, loss_cause, location_name, location_lat, location_lng, responsible_name, notes")
+      .eq("lot_id", id)
+      .order("timestamp", { ascending: true });
 
-    // Step 2 — todos os dados dependentes dos animalIds em paralelo
+    if (animalIds.length === 0) {
+      const { data: tData } = await trackingPromise;
+      setTrackingCheckpoints((tData ?? []) as TrackingCheckpoint[]);
+      setLoading(false);
+      return;
+    }
+
     const [
       { data: animalsData },
       { data: wData },
       { data: appData },
       { data: certData },
       { data: cacheData },
+      { data: tData },
     ] = await Promise.all([
       supabase.from("animals")
         .select("id, internal_code, nickname, sex, breed, birth_date, blood_type, sire_animal_id, dam_animal_id")
@@ -84,6 +125,7 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
       supabase.from("agraas_master_passport_cache")
         .select("animal_id, score_json")
         .in("animal_id", animalIds),
+      trackingPromise,
     ]);
 
     const assignmentIdByAnimal = new Map(assignments.map((a) => [a.animal_id, a.id]));
@@ -97,6 +139,7 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
     setApplications((appData as ApplicationRow[]) ?? []);
     setCertifications((certData as CertRow[]) ?? []);
     setPassportScores((cacheData as PassportCacheRow[]) ?? []);
+    setTrackingCheckpoints((tData ?? []) as TrackingCheckpoint[]);
     setLoading(false);
   }
 
@@ -134,7 +177,6 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
   const isExportLot = lot?.objective === "Exportação";
   const today = new Date();
 
-  // Índices por animal
   const weightByAnimal = useMemo(() => {
     const map = new Map<string, WeightRow[]>();
     for (const w of weights) {
@@ -169,7 +211,6 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
     return map;
   }, [certifications]);
 
-  // Scores do cache — fonte de verdade para a demo PIF
   const scoreByAnimal = useMemo(() => {
     const map = new Map<string, number>();
     for (const p of passportScores) {
@@ -183,7 +224,6 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
     let totalGmd = 0; let gmdCount = 0;
     let totalScore = 0; let atMeta = 0;
     const avgWeights: number[] = [];
-
     for (const animal of animals) {
       const aw = weightByAnimal.get(animal.id) ?? [];
       const last = aw[0] ? Number(aw[0].weight) : null;
@@ -203,7 +243,6 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
     const avgGmd = gmdCount > 0 ? (totalGmd / gmdCount).toFixed(3) : null;
     const avgScore = animals.length > 0 ? Math.round(totalScore / animals.length) : null;
     const avgWeight = avgWeights.length > 0 ? avgWeights.reduce((s, w) => s + w, 0) / avgWeights.length : 0;
-
     let previsaoSaida: string | null = null;
     if (lot?.target_weight && avgGmd && Number(avgGmd) > 0 && avgWeight < lot.target_weight) {
       const dias = Math.round((lot.target_weight - avgWeight) / Number(avgGmd));
@@ -213,7 +252,6 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
     return { avgGmd, avgScore, atMeta, previsaoSaida };
   }, [animals, weightByAnimal, lot, scoreByAnimal]);
 
-  // Aptidão por animal para lotes de exportação
   const exportAptidao = useMemo(() => {
     if (!isExportLot) return null;
     const certRequired: string[] = lot?.certificacoes_exigidas ?? [];
@@ -229,17 +267,14 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
       const carencias = activeCarenciasByAnimal.get(animal.id) ?? [];
       const certs = certsByAnimal.get(animal.id) ?? [];
       const certsFaltando = certRequired.filter(c => !certs.includes(c));
-
       const pendencias: string[] = [];
       if (score < SCORE_MINIMO_EXPORT) pendencias.push(`Score ${score} < ${SCORE_MINIMO_EXPORT}`);
       if (carencias.length > 0) pendencias.push(`Carência: ${carencias.join(", ")}`);
       if (certsFaltando.length > 0) pendencias.push(`Cert faltando: ${certsFaltando.join(", ")}`);
-
       const status: "apto" | "pendencias" | "inapto" =
         pendencias.length === 0 ? "apto"
         : score < SCORE_MINIMO_EXPORT || carencias.length > 0 ? "inapto"
         : "pendencias";
-
       return { animal, score, last, carencias, certs, certsFaltando, pendencias, status };
     });
   }, [isExportLot, animals, weightByAnimal, activeCarenciasByAnimal, certsByAnimal, lot, scoreByAnimal]);
@@ -270,7 +305,7 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
     <main className="space-y-8">
       <Link href="/lotes" className="text-sm font-medium text-[var(--primary-hover)] hover:underline">← Lotes</Link>
 
-      {/* Hero — visual diferenciado para exportação */}
+      {/* ── Hero — visual diferenciado para exportação ── */}
       {isExportLot ? (
         <section className="overflow-hidden rounded-3xl border border-[rgba(255,255,255,0.06)] bg-[linear-gradient(135deg,#0f0f1a_0%,#1a1a2e_60%,#0d2137_100%)] shadow-2xl">
           <div className="p-8 lg:p-10">
@@ -313,16 +348,12 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
                 </div>
               )}
             </div>
-
-            {/* KPIs exportação */}
             <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <ExportKPI label="Total no lote" value={animals.length} sub="animais" />
               <ExportKPI label="Aptos" value={exportStats?.aptos ?? "—"} sub="prontos para embarque" green />
               <ExportKPI label="Pendências" value={exportStats?.pendencias ?? "—"} sub="sanáveis" amber />
               <ExportKPI label="Inaptos" value={exportStats?.inaptos ?? "—"} sub="fora do critério" red />
             </div>
-
-            {/* Barra de conformidade */}
             {exportStats && animals.length > 0 && (
               <div className="mt-6">
                 <div className="mb-2 flex justify-between text-xs text-white/40">
@@ -358,144 +389,223 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
         </section>
       )}
 
-      {/* Mapa de rota de exportação */}
-      {isExportLot && exportAptidao && exportStats && (
-        <ExportRouteMap
-          lot={lot}
-          exportAptidao={exportAptidao}
-          exportStats={exportStats}
-          totalAnimals={animals.length}
-        />
-      )}
+      {/* ── Tabs ── */}
+      <div>
+        {/* Tab bar */}
+        <div className="flex gap-1 border-b border-[var(--border)]">
+          {TABS.map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`px-5 py-3 text-sm font-medium transition-all border-b-2 -mb-px ${
+                activeTab === tab.key
+                  ? "border-[var(--primary)] text-[var(--primary)]"
+                  : "border-transparent text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+              }`}
+            >
+              {tab.label}
+              {tab.key === "tracking" && trackingCheckpoints.length > 0 && (
+                <span className="ml-2 rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-bold text-blue-700">
+                  {trackingCheckpoints.length}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
 
-      {/* Tabela de aptidão — exclusiva para lotes de exportação */}
-      {isExportLot && exportAptidao && (
-        <section className="overflow-hidden rounded-3xl border border-[rgba(26,26,46,0.15)] bg-white">
-          <div className="flex items-center justify-between px-8 py-6 border-b border-[var(--border)]">
-            <div>
-              <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--text-primary)]">Status de aptidão por animal</h2>
-              <p className="mt-1 text-sm text-[var(--text-muted)]">Score mínimo: {SCORE_MINIMO_EXPORT} · Carências zeradas · Certificações exigidas</p>
-            </div>
-            <span className="ag-badge ag-badge-dark">{animals.length} animais</span>
+        {/* ── Tab: Visão Geral ── */}
+        {activeTab === "overview" && (
+          <div className="mt-8 space-y-8">
+            {isExportLot && exportAptidao && exportStats && (
+              <ExportRouteMap
+                lot={lot}
+                exportAptidao={exportAptidao}
+                exportStats={exportStats}
+                totalAnimals={animals.length}
+              />
+            )}
+            {isExportLot && (
+              <section className="ag-card p-8">
+                <ExportConformityReport lotId={id} lotName={lot.name} />
+              </section>
+            )}
+            {/* Adicionar animal */}
+            <section className="ag-card p-8">
+              <h2 className="ag-section-title">Adicionar animal ao lote</h2>
+              <div className="relative mt-5 max-w-md">
+                <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                  className="w-full rounded-xl border border-black/10 px-4 py-3 text-sm outline-none focus:border-[#4A7C3A]"
+                  placeholder="Buscar por código interno..." />
+                {searchResults.length > 0 && (
+                  <div className="absolute z-10 mt-1 w-full rounded-xl border border-black/10 bg-white shadow-lg">
+                    {searchResults.map(a => (
+                      <button key={a.id} type="button" disabled={adding} onClick={() => addAnimal(a.id)}
+                        className="w-full px-4 py-3 text-left text-sm hover:bg-[var(--primary-soft)]">
+                        <span className="font-medium">{a.internal_code}</span>
+                        {a.nickname && <span className="ml-2 text-[var(--text-muted)]">({a.nickname})</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </section>
           </div>
-          <div className="divide-y divide-[var(--border)]">
-            {exportAptidao.map(({ animal, score, last, pendencias, status, certs }) => {
-              const cfg = STATUS_STYLES[status];
-              return (
-                <div key={animal.id} className={`flex items-start gap-4 px-8 py-5 ${cfg.bg}`}>
-                  <span className={`mt-1 h-3 w-3 shrink-0 rounded-full ${cfg.dot}`} />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-3">
-                      <p className="font-semibold text-[var(--text-primary)]">
-                        {animal.nickname ?? animal.internal_code ?? animal.id.slice(0, 8)}
-                      </p>
-                      <span className="text-xs text-[var(--text-muted)]">{animal.breed ?? "—"} · {sexLabel(animal.sex)}</span>
-                      <span className="text-xs font-medium text-[var(--text-secondary)]">Score {score}</span>
-                      {last && <span className="text-xs text-[var(--text-muted)]">{last} kg</span>}
-                      {certs.length > 0 && certs.map(c => (
-                        <span key={c} className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${c === "Halal" ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-600"}`}>{c}</span>
-                      ))}
-                    </div>
-                    {pendencias.length > 0 && (
-                      <p className="mt-1.5 text-xs text-amber-700">{pendencias.join(" · ")}</p>
-                    )}
+        )}
+
+        {/* ── Tab: Animais & Compliance ── */}
+        {activeTab === "animals" && (
+          <div className="mt-8 space-y-8">
+            {/* Tabela de aptidão — lotes de exportação */}
+            {isExportLot && exportAptidao && (
+              <section className="overflow-hidden rounded-3xl border border-[rgba(26,26,46,0.15)] bg-white">
+                <div className="flex items-center justify-between px-8 py-6 border-b border-[var(--border)]">
+                  <div>
+                    <h2 className="text-lg font-semibold tracking-[-0.03em] text-[var(--text-primary)]">Status de aptidão por animal</h2>
+                    <p className="mt-1 text-sm text-[var(--text-muted)]">Score mínimo: {SCORE_MINIMO_EXPORT} · Carências zeradas · Certificações exigidas</p>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${cfg.badge}`}>
-                      {cfg.label}
-                    </span>
-                    <Link href={`/animais/${animal.id}`} className="text-xs font-medium text-[var(--primary-hover)] hover:underline">
-                      Passaporte →
-                    </Link>
-                  </div>
+                  <span className="ag-badge ag-badge-dark">{animals.length} animais</span>
                 </div>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {/* Relatório de conformidade por IA */}
-      {isExportLot && (
-        <section className="ag-card p-8">
-          <ExportConformityReport lotId={id} lotName={lot.name} />
-        </section>
-      )}
-
-      {/* Adicionar animal */}
-      <section className="ag-card p-8">
-        <h2 className="ag-section-title">Adicionar animal ao lote</h2>
-        <div className="relative mt-5 max-w-md">
-          <input type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-            className="w-full rounded-xl border border-black/10 px-4 py-3 text-sm outline-none focus:border-[#4A7C3A]"
-            placeholder="Buscar por código interno..." />
-          {searchResults.length > 0 && (
-            <div className="absolute z-10 mt-1 w-full rounded-xl border border-black/10 bg-white shadow-lg">
-              {searchResults.map(a => (
-                <button key={a.id} type="button" disabled={adding} onClick={() => addAnimal(a.id)}
-                  className="w-full px-4 py-3 text-left text-sm hover:bg-[var(--primary-soft)]">
-                  <span className="font-medium">{a.internal_code}</span>
-                  {a.nickname && <span className="ml-2 text-[var(--text-muted)]">({a.nickname})</span>}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Tabela de animais */}
-      <section className="ag-card p-8">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h2 className="ag-section-title">Animais no lote</h2>
-            <p className="ag-section-subtitle">
-              {animals.length} animal{animals.length !== 1 ? "is" : ""}
-              {lot.target_weight && stats.atMeta > 0 ? ` · ${stats.atMeta} atingiram ${lot.target_weight} kg` : ""}
-            </p>
-          </div>
-          <span className="ag-badge ag-badge-dark">{animals.length}</span>
-        </div>
-        <div className="mt-6">
-          {animals.length === 0 ? (
-            <div className="rounded-3xl bg-[var(--surface-soft)] p-6 text-sm text-[var(--text-muted)]">
-              Nenhum animal neste lote. Use a busca acima para adicionar.
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="ag-table">
-                <thead>
-                  <tr>
-                    <th>Animal</th><th>Score</th><th>Sexo</th><th>Raça</th>
-                    {isExportLot && <th>Aptidão</th>}
-                    <th>Passaporte</th><th>Remover</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {animals.map(a => {
-                    const apt = exportAptidao?.find(e => e.animal.id === a.id);
-                    const cfg = apt ? STATUS_STYLES[apt.status] : null;
+                <div className="divide-y divide-[var(--border)]">
+                  {exportAptidao.map(({ animal, score, last, pendencias, status, certs }) => {
+                    const cfg = STATUS_STYLES[status];
                     return (
-                      <tr key={a.id}>
-                        <td className="font-medium text-[var(--text-primary)]">{a.nickname ?? a.internal_code ?? a.id.slice(0, 8)}</td>
-                        <td className="font-semibold text-[var(--primary-hover)]">{scoreByAnimal.get(a.id) ?? "—"}</td>
-                        <td>{sexLabel(a.sex)}</td>
-                        <td>{a.breed ?? "—"}</td>
-                        {isExportLot && cfg && (
-                          <td>
-                            <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${cfg.badge}`}>{cfg.label}</span>
-                          </td>
-                        )}
-                        <td><Link href={`/animais/${a.id}`} className="text-sm font-medium text-[var(--primary-hover)] hover:underline">Ver →</Link></td>
-                        <td><button type="button" onClick={() => removeAnimal(a.assignment_id)} className="text-sm text-[var(--danger)] hover:underline">Remover</button></td>
-                      </tr>
+                      <div key={animal.id} className={`flex items-start gap-4 px-8 py-5 ${cfg.bg}`}>
+                        <span className={`mt-1 h-3 w-3 shrink-0 rounded-full ${cfg.dot}`} />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-3">
+                            <p className="font-semibold text-[var(--text-primary)]">
+                              {animal.nickname ?? animal.internal_code ?? animal.id.slice(0, 8)}
+                            </p>
+                            <span className="text-xs text-[var(--text-muted)]">{animal.breed ?? "—"} · {sexLabel(animal.sex)}</span>
+                            <span className="text-xs font-medium text-[var(--text-secondary)]">Score {score}</span>
+                            {last && <span className="text-xs text-[var(--text-muted)]">{last} kg</span>}
+                            {certs.length > 0 && certs.map(c => (
+                              <span key={c} className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${c === "Halal" ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-600"}`}>{c}</span>
+                            ))}
+                          </div>
+                          {pendencias.length > 0 && (
+                            <p className="mt-1.5 text-xs text-amber-700">{pendencias.join(" · ")}</p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${cfg.badge}`}>
+                            {cfg.label}
+                          </span>
+                          <Link href={`/animais/${animal.id}`} className="text-xs font-medium text-[var(--primary-hover)] hover:underline">
+                            Passaporte →
+                          </Link>
+                        </div>
+                      </div>
                     );
                   })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      </section>
+                </div>
+              </section>
+            )}
+
+            {/* Tabela de animais */}
+            <section className="ag-card p-8">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="ag-section-title">Animais no lote</h2>
+                  <p className="ag-section-subtitle">
+                    {animals.length} animal{animals.length !== 1 ? "is" : ""}
+                    {lot.target_weight && stats.atMeta > 0 ? ` · ${stats.atMeta} atingiram ${lot.target_weight} kg` : ""}
+                  </p>
+                </div>
+                <span className="ag-badge ag-badge-dark">{animals.length}</span>
+              </div>
+              <div className="mt-6">
+                {animals.length === 0 ? (
+                  <div className="rounded-3xl bg-[var(--surface-soft)] p-6 text-sm text-[var(--text-muted)]">
+                    Nenhum animal neste lote.
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="ag-table">
+                      <thead>
+                        <tr>
+                          <th>Animal</th><th>Score</th><th>Sexo</th><th>Raça</th>
+                          {isExportLot && <th>Aptidão</th>}
+                          <th>Passaporte</th><th>Remover</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {animals.map(a => {
+                          const apt = exportAptidao?.find(e => e.animal.id === a.id);
+                          const cfg = apt ? STATUS_STYLES[apt.status] : null;
+                          return (
+                            <tr key={a.id}>
+                              <td className="font-medium text-[var(--text-primary)]">{a.nickname ?? a.internal_code ?? a.id.slice(0, 8)}</td>
+                              <td className="font-semibold text-[var(--primary-hover)]">{scoreByAnimal.get(a.id) ?? "—"}</td>
+                              <td>{sexLabel(a.sex)}</td>
+                              <td>{a.breed ?? "—"}</td>
+                              {isExportLot && cfg && (
+                                <td>
+                                  <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${cfg.badge}`}>{cfg.label}</span>
+                                </td>
+                              )}
+                              <td><Link href={`/animais/${a.id}`} className="text-sm font-medium text-[var(--primary-hover)] hover:underline">Ver →</Link></td>
+                              <td><button type="button" onClick={() => removeAnimal(a.assignment_id)} className="text-sm text-[var(--danger)] hover:underline">Remover</button></td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </section>
+          </div>
+        )}
+
+        {/* ── Tab: Tracking ── */}
+        {activeTab === "tracking" && (
+          <div className="mt-8">
+            <section className="ag-card-strong p-8">
+              <div className="mb-6">
+                <h2 className="ag-section-title">Timeline de rastreio</h2>
+                <p className="ag-section-subtitle">7 etapas fixas · Fazenda → Entrega no destino</p>
+              </div>
+              <TrackingTimeline
+                lotId={id}
+                clientId={lot.client_id ?? null}
+                initialCheckpoints={trackingCheckpoints}
+              />
+            </section>
+          </div>
+        )}
+
+        {/* ── Tab: Documentos ── */}
+        {activeTab === "documents" && (
+          <div className="mt-8">
+            <section className="ag-card-strong p-8 space-y-6">
+              <div>
+                <h2 className="ag-section-title">Documentos do lote</h2>
+                <p className="ag-section-subtitle">GTA, certificados sanitários, manifesto de carga e demais anexos</p>
+              </div>
+              <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[var(--border)] py-14 text-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--primary-soft)]">
+                  <Upload size={20} className="text-[var(--primary)]" />
+                </div>
+                <div>
+                  <p className="font-medium text-[var(--text-primary)]">Upload de documentos</p>
+                  <p className="mt-1 text-sm text-[var(--text-muted)]">Funcionalidade disponível em breve</p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">Documentos esperados</p>
+                {["GTA — Guia de Trânsito Animal", "Certificado Sanitário Internacional", "Manifesto de Carga", "Certificado Halal", "Laudo de Pesagem"].map(doc => (
+                  <div key={doc} className="flex items-center gap-3 rounded-xl border border-[var(--border)] px-4 py-3">
+                    <FileText size={14} className="text-[var(--text-muted)]" />
+                    <span className="text-sm text-[var(--text-secondary)]">{doc}</span>
+                    <span className="ml-auto rounded-full bg-[var(--surface-soft)] border border-[var(--border)] px-2 py-0.5 text-[10px] text-[var(--text-muted)]">Pendente</span>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </div>
+        )}
+      </div>
     </main>
   );
 }

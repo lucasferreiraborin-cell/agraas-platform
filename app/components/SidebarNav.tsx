@@ -12,6 +12,7 @@ import {
   BarChart2,
   TrendingUp,
   Plane,
+  Truck,
   Syringe,
   Scale,
   Warehouse,
@@ -52,9 +53,9 @@ const menuGroups: NavGroup[] = [
   {
     label: null,
     items: [
-      { href: "/",             label: "Painel",              icon: Home },
-      { href: "/dashboard",   label: "Dashboard Executivo",  icon: LayoutDashboard },
-      { href: "/inteligencia",label: "Inteligência",         icon: Brain },
+      { href: "/",              label: "Painel",             icon: Home },
+      { href: "/dashboard",    label: "Dashboard Executivo", icon: LayoutDashboard },
+      { href: "/inteligencia", label: "Inteligência",        icon: Brain },
     ],
   },
   {
@@ -65,27 +66,27 @@ const menuGroups: NavGroup[] = [
       { href: "/lotes",        label: "Lotes",        icon: Package },
       { href: "/reprodutivo",  label: "Reprodutivo",  icon: HeartPulse },
       { href: "/scores",       label: "Scores",       icon: BarChart2 },
-      { href: "/market",       label: "Market",       icon: TrendingUp },
     ],
   },
   {
-    label: null,
+    label: "Exportação",
     items: [
-      { href: "/exportacao", label: "Exportação", icon: Plane, highlight: true },
+      { href: "/exportacao", label: "Central de Exportação", icon: Plane, highlight: true },
+      { href: "/tracking",   label: "Rastreio",              icon: Truck, highlight: true },
     ],
   },
   {
     label: "Operações",
     items: [
+      { href: "/aplicacoes",              label: "Aplicações",              icon: Syringe },
+      { href: "/aplicacoes/historico",    label: "Histórico Aplicações",    icon: Syringe,        sub: true },
+      { href: "/pesagens",                label: "Pesagens",                icon: Scale },
+      { href: "/pesagens/historico",      label: "Histórico Pesagens",      icon: Scale,          sub: true },
+      { href: "/estoque",                 label: "Estoque",                 icon: Warehouse },
+      { href: "/estoque/dashboard",       label: "Dashboard Sanitário",     icon: Warehouse,      sub: true },
+      { href: "/estoque/historico",       label: "Histórico Estoque",       icon: Warehouse,      sub: true },
       { href: "/producao",                label: "Produção",                icon: BarChart3 },
       { href: "/insumos",                 label: "Insumos",                 icon: Boxes },
-      { href: "/aplicacoes",              label: "Aplicações",              icon: Syringe },
-      { href: "/aplicacoes/historico",    label: "Histórico Aplicações",    icon: Syringe,       sub: true },
-      { href: "/pesagens",                label: "Pesagens",                icon: Scale },
-      { href: "/pesagens/historico",      label: "Histórico Pesagens",      icon: Scale,         sub: true },
-      { href: "/estoque",                 label: "Estoque",                 icon: Warehouse },
-      { href: "/estoque/dashboard",       label: "Dashboard Sanitário",     icon: Warehouse,     sub: true },
-      { href: "/estoque/historico",       label: "Histórico Estoque",       icon: Warehouse,     sub: true },
       { href: "/eventos",                 label: "Eventos",                 icon: Activity },
       { href: "/movimentacoes",           label: "Movimentações",           icon: ArrowLeftRight },
       { href: "/movimentacoes/historico", label: "Histórico Movimentações", icon: ArrowLeftRight, sub: true },
@@ -96,16 +97,17 @@ const menuGroups: NavGroup[] = [
     label: "Financeiro",
     items: [
       { href: "/custos",           label: "Custos",           icon: DollarSign },
-      { href: "/custos/historico", label: "Histórico Custos", icon: DollarSign,  sub: true },
+      { href: "/custos/historico", label: "Histórico Custos", icon: DollarSign,      sub: true },
       { href: "/vendas",           label: "Vendas",           icon: ArrowUpRight },
       { href: "/abates",           label: "Abates",           icon: Scissors },
       { href: "/fiscal",           label: "Fiscal",           icon: Receipt },
-      { href: "/fiscal/relatorio", label: "Relatório Fiscal",  icon: FileSpreadsheet, sub: true },
+      { href: "/fiscal/relatorio", label: "Relatório Fiscal", icon: FileSpreadsheet, sub: true },
     ],
   },
   {
     label: "Relatórios",
     items: [
+      { href: "/market",        label: "Market",        icon: TrendingUp },
       { href: "/relatorios",    label: "Relatórios",    icon: FileText },
       { href: "/auditoria",     label: "Auditoria",     icon: ClipboardCheck },
       { href: "/alertas",       label: "Alertas",       icon: Bell },
@@ -167,7 +169,7 @@ export default function SidebarNav() {
                 );
               }
 
-              /* ── Item de destaque (Exportação) ── */
+              /* ── Item de destaque (grupo Exportação) ── */
               if (item.highlight) {
                 return (
                   <Link

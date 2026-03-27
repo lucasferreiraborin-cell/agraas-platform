@@ -82,6 +82,15 @@ export default async function CompradorPage() {
         .in("animal_id", animalIds)
     : { data: [] };
 
+  // ── Shipment tracking ─────────────────────────────────────────────────────
+  const { data: trackingData } = lotIds.length
+    ? await db
+        .from("shipment_tracking")
+        .select("lot_id, stage, timestamp, animals_confirmed, animals_lost, loss_cause, location_name")
+        .in("lot_id", lotIds)
+        .order("timestamp", { ascending: true })
+    : { data: [] };
+
   return (
     <CompradorView
       buyerName={clientData.name}
@@ -91,6 +100,7 @@ export default async function CompradorPage() {
       certifications={certsData ?? []}
       activeWithdrawals={appsData ?? []}
       scores={scoresData ?? []}
+      trackingCheckpoints={trackingData ?? []}
     />
   );
 }
