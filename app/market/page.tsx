@@ -51,7 +51,8 @@ export default async function MarketPage() {
 
   const animals: MarketAnimalRow[] = (data as MarketAnimalRow[] | null) ?? [];
   const totalAnimals   = animals.length;
-  const avgScore       = totalAnimals > 0 ? Math.round(animals.reduce((a, r) => a + Number(r.total_score ?? 0), 0) / totalAnimals) : 0;
+  const withScore      = animals.filter(a => Number(a.total_score ?? 0) > 0);
+  const avgScore       = withScore.length > 0 ? Math.round(withScore.reduce((a, r) => a + Number(r.total_score), 0) / withScore.length) : 0;
   const avgWeight      = totalAnimals > 0 ? Math.round(animals.reduce((a, r) => a + Number(r.last_weight ?? 0), 0) / totalAnimals) : 0;
   const certifiedCount = animals.filter(a => Array.isArray(a.certifications) && a.certifications.length > 0).length;
   const pctCert        = totalAnimals > 0 ? Math.round((certifiedCount / totalAnimals) * 100) : 0;

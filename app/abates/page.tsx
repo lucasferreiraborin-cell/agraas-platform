@@ -140,7 +140,7 @@ export default function AbatesPage() {
                         <Icon size={17} className={k.cl} />
                       </div>
                       <p className="mt-3 ag-kpi-label">{k.label}</p>
-                      <p className="ag-kpi-value truncate">{k.value}</p>
+                      <p className={`font-bold leading-tight mt-1 ${String(k.value).length > 10 ? 'text-sm break-words' : 'ag-kpi-value'}`}>{k.value}</p>
                       <p className="sub">{k.sub}</p>
                     </div>
                   );
