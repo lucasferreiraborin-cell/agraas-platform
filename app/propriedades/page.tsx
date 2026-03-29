@@ -37,6 +37,7 @@ export default function PropriedadesPage() {
 
   useEffect(() => {
     async function load() {
+      try {
       const [{ data: clientsData }, { data: propertiesData }, { data: animalsData }, { data: lotsData }] =
         await Promise.all([
           supabase.from("clients").select("id, name").order("name"),
@@ -82,7 +83,11 @@ export default function PropriedadesPage() {
 
       setClients((clientsData as ClientRow[] | null) ?? []);
       setProperties(propertiesWithCounts);
-      setLoading(false);
+      } catch (err) {
+        console.error("Erro ao carregar propriedades:", err);
+      } finally {
+        setLoading(false);
+      }
     }
 
     load();
