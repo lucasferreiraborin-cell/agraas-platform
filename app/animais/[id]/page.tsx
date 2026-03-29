@@ -1,7 +1,6 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import Link from "next/link";
 import {
-  calculateAgraasScore,
   getPassportConfidenceText,
   getPassportClassification,
   getMarketPotential,
@@ -392,33 +391,11 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
 
   const displayLot = trace.current_lot_code ?? "-";
 
-  const calculatedSanitaryScore =
-    score.sanitary_score ?? calculateSanitaryScore(applications.length);
-
-  const calculatedOperationalScore =
-    score.operational_score ??
-    calculateOperationalScore(movements.length, events.length);
-
-  const calculatedContinuityScore =
-    score.continuity_score ??
-    calculateContinuityScore(
-      weights.length,
-      Boolean(birthDate),
-      Boolean(animal.agraas_id)
-    );
-
-  const calculatedAgraasScore =
-    Number(score.total_score ?? 0) > 0
-      ? Number(score.total_score)
-      : calculateAgraasScore({
-          lastWeight: latestWeight,
-          ageMonths,
-          hasBloodType: Boolean(animal.blood_type),
-          hasGenealogy: Boolean(animal.sire_animal_id || animal.dam_animal_id),
-          sanitaryScore: Number(calculatedSanitaryScore ?? 0),
-          operationalScore: Number(calculatedOperationalScore ?? 0),
-          continuityScore: Number(calculatedContinuityScore ?? 0),
-        });
+  // Sub-scores sempre vêm do banco (calculate_agraas_score SQL é a fonte de verdade)
+  const calculatedSanitaryScore    = Number(score.sanitary_score    ?? 0);
+  const calculatedOperationalScore = Number(score.operational_score ?? 0);
+  const calculatedContinuityScore  = Number(score.continuity_score  ?? 0);
+  const calculatedAgraasScore      = Number(score.total_score       ?? 0);
 
 
   return (
@@ -1041,25 +1018,6 @@ function calculateAgeInMonths(birthDate: string) {
   return Math.max(0, months);
 }
 
-function calculateSanitaryScore(applicationsCount: number) {
-  return Math.min(100, 50 + applicationsCount * 8);
-}
-
-function calculateOperationalScore(movementsCount: number, eventsCount: number) {
-  return Math.min(100, 45 + movementsCount * 6 + eventsCount * 2);
-}
-
-function calculateContinuityScore(
-  weightsCount: number,
-  hasBirthDate: boolean,
-  hasAgraasId: boolean
-) {
-  let scoreValue = 40;
-  scoreValue += Math.min(30, weightsCount * 8);
-  if (hasBirthDate) scoreValue += 15;
-  if (hasAgraasId) scoreValue += 15;
-  return Math.min(100, scoreValue);
-}
 
 function formatDate(value: string | null | undefined) {
   if (!value) return "-";

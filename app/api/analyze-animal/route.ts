@@ -1,7 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { NextRequest } from "next/server";
-import { calculateAgraasScore, calculateAgeInMonths, calculateDailyGain } from "@/lib/agraas-analytics";
+import { calculateAgeInMonths, calculateDailyGain } from "@/lib/agraas-analytics";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -20,6 +20,7 @@ export async function POST(req: NextRequest) {
     { data: applications },
     { data: events },
     { data: cotacaoData },
+    { data: scoreData },
   ] = await Promise.all([
     supabase.from("animals")
       .select("id, internal_code, nickname, sex, breed, birth_date, blood_type, sire_animal_id, dam_animal_id, status")
@@ -40,6 +41,7 @@ export async function POST(req: NextRequest) {
       .order("event_date", { ascending: false })
       .limit(10),
     supabase.from("platform_settings").select("value").eq("key", "cotacao_arroba").single(),
+    supabase.from("animal_scores").select("total_score").eq("animal_id", animalId).maybeSingle(),
   ]);
 
   if (!animal) return new Response("Animal não encontrado", { status: 404 });
@@ -54,24 +56,7 @@ export async function POST(req: NextRequest) {
   const valorEstimado = arrobas ? arrobas * cotacao : null;
 
   const appCount = applications?.length ?? 0;
-  const evtCount = events?.length ?? 0;
-  const recentWeighings = (weights ?? []).filter(w => {
-    if (!w.weighing_date) return false;
-    return (Date.now() - new Date(w.weighing_date).getTime()) < 90 * 24 * 60 * 60 * 1000;
-  }).length;
-  const sanitaryScore = Math.min(100, 50 + appCount * 5);
-  const operationalScore = Math.min(100, 40 + evtCount * 3);
-  const continuityScore = Math.min(100, 40 + recentWeighings * 15);
-
-  const score = calculateAgraasScore({
-    lastWeight,
-    ageMonths,
-    sanitaryScore,
-    operationalScore,
-    continuityScore,
-    hasBloodType: Boolean(animal.blood_type),
-    hasGenealogy: Boolean(animal.sire_animal_id || animal.dam_animal_id),
-  });
+  const score = Number(scoreData?.total_score ?? 0);
 
   const hoje = new Date().toLocaleDateString("pt-BR");
   const carenciasAtivas = (applications ?? []).filter(a =>

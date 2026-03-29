@@ -69,6 +69,7 @@ export default async function ProdutivoPage() {
     { data: movementsData, error: movementsError },
     { data: applicationsData, error: applicationsError },
     { data: eventsData, error: eventsError },
+    { data: scoresData },
   ] = await Promise.all([
     supabase
       .from("weights")
@@ -100,6 +101,10 @@ export default async function ProdutivoPage() {
     supabase
       .from("events")
       .select("animal_id"),
+
+    supabase
+      .from("animal_scores")
+      .select("animal_id, total_score"),
   ]);
 
   if (weightsError) console.error("Erro ao buscar pesagens:", weightsError);
@@ -121,6 +126,9 @@ export default async function ProdutivoPage() {
   const animalMap = new Map<string, AnimalRow>();
   animals.forEach((animal) => animalMap.set(animal.id, animal));
 
+  const scoreByAnimal = new Map<string, number>();
+  for (const s of (scoresData ?? [])) scoreByAnimal.set(s.animal_id, Number(s.total_score ?? 0));
+
   const latestWeightByAnimal = new Map<string, WeightRow>();
   const previousWeightByAnimal = new Map<string, WeightRow>();
 
@@ -132,22 +140,6 @@ export default async function ProdutivoPage() {
     }
   }
 
-  const applicationsCountByAnimal = new Map<string, number>();
-  for (const row of applications) {
-    applicationsCountByAnimal.set(
-      row.animal_id,
-      (applicationsCountByAnimal.get(row.animal_id) ?? 0) + 1
-    );
-  }
-
-  const eventsCountByAnimal = new Map<string, number>();
-  for (const row of events) {
-    if (!row.animal_id) continue;
-    eventsCountByAnimal.set(
-      row.animal_id,
-      (eventsCountByAnimal.get(row.animal_id) ?? 0) + 1
-    );
-  }
 
   const latestWeights = Array.from(latestWeightByAnimal.values());
   const averageWeight =
@@ -172,34 +164,16 @@ export default async function ProdutivoPage() {
     const delta = previous !== null ? current - previous : null;
 
     const ageMonths = animal?.birth_date
-      ? calculateAgeInMonths(animal.birth_date)
+      ? (() => {
+          const b = new Date(animal.birth_date), n = new Date();
+          let m = (n.getFullYear() - b.getFullYear()) * 12 + (n.getMonth() - b.getMonth());
+          if (n.getDate() < b.getDate()) m -= 1;
+          return Math.max(0, m);
+        })()
       : null;
 
-    const sanitaryScore = calculateSanitaryScore(
-      applicationsCountByAnimal.get(item.animal_id) ?? 0
-    );
-
-    const operationalScore = calculateOperationalScore(
-      movements.filter((m) => m.animal_id === item.animal_id).length,
-      eventsCountByAnimal.get(item.animal_id) ?? 0
-    );
-
-    const continuityScore = calculateContinuityScore(
-      weights.filter((w) => w.animal_id === item.animal_id).length,
-      Boolean(animal?.birth_date),
-      Boolean(animal?.agraas_id)
-    );
-
-    const score = calculateAgraasScore({
-      lastWeight: current,
-      applicationsCount: applicationsCountByAnimal.get(item.animal_id) ?? 0,
-      eventsCount: eventsCountByAnimal.get(item.animal_id) ?? 0,
-      weightsCount: weights.filter((w) => w.animal_id === item.animal_id).length,
-      ageMonths,
-      sanitaryScore,
-      operationalScore,
-      continuityScore,
-    });
+    // Score from DB — calculate_agraas_score SQL is the single source of truth
+    const score = scoreByAnimal.get(item.animal_id) ?? 0;
 
     return {
       animal_id: item.animal_id,
@@ -602,79 +576,6 @@ function HeroMetric({
   );
 }
 
-function calculateAgeInMonths(birthDate: string) {
-  const birth = new Date(birthDate);
-  const now = new Date();
-
-  let months =
-    (now.getFullYear() - birth.getFullYear()) * 12 +
-    (now.getMonth() - birth.getMonth());
-
-  if (now.getDate() < birth.getDate()) {
-    months -= 1;
-  }
-
-  return Math.max(0, months);
-}
-
-function calculateSanitaryScore(applicationsCount: number) {
-  return Math.min(100, 50 + applicationsCount * 8);
-}
-
-function calculateOperationalScore(movementsCount: number, eventsCount: number) {
-  return Math.min(100, 45 + movementsCount * 6 + eventsCount * 2);
-}
-
-function calculateContinuityScore(
-  weightsCount: number,
-  hasBirthDate: boolean,
-  hasAgraasId: boolean
-) {
-  let score = 40;
-  score += Math.min(30, weightsCount * 8);
-  if (hasBirthDate) score += 15;
-  if (hasAgraasId) score += 15;
-  return Math.min(100, score);
-}
-
-function calculateAgraasScore({
-  lastWeight,
-  applicationsCount,
-  eventsCount,
-  weightsCount,
-  ageMonths,
-  sanitaryScore,
-  operationalScore,
-  continuityScore,
-}: {
-  lastWeight: number | null;
-  applicationsCount: number;
-  eventsCount: number;
-  weightsCount: number;
-  ageMonths: number | null;
-  sanitaryScore: number;
-  operationalScore: number;
-  continuityScore: number;
-}) {
-  const productive =
-    lastWeight && lastWeight > 0
-      ? Math.min(100, 35 + Math.round(lastWeight / 10))
-      : 35;
-
-  const ageFactor =
-    ageMonths !== null ? Math.min(100, 40 + Math.round(ageMonths / 2)) : 50;
-
-  return Math.min(
-    100,
-    Math.round(
-      productive * 0.30 +
-        sanitaryScore * 0.24 +
-        operationalScore * 0.18 +
-        continuityScore * 0.18 +
-        ageFactor * 0.10
-    )
-  );
-}
 
 function formatDate(value: string | null | undefined) {
   if (!value) return "-";

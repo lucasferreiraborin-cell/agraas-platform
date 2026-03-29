@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { use } from "react";
-import { calculateAgraasScore, calculateAgeInMonths, calculateDailyGain } from "@/lib/agraas-analytics";
+import { calculateDailyGain } from "@/lib/agraas-analytics";
 import ExportConformityReport from "@/app/components/ExportConformityReport";
 import ExportRouteMap from "@/app/components/ExportRouteMap";
 import TrackingTimeline from "@/app/components/TrackingTimeline";
@@ -232,12 +232,7 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
       if (gmd !== null) { totalGmd += gmd; gmdCount++; }
       if (lot?.target_weight && last && last >= lot.target_weight) atMeta++;
       if (last) avgWeights.push(last);
-      const score = scoreByAnimal.get(animal.id) ?? calculateAgraasScore({
-        lastWeight: last, ageMonths: calculateAgeInMonths(animal.birth_date),
-        sanitaryScore: 60, operationalScore: 60, continuityScore: 60,
-        hasBloodType: Boolean(animal.blood_type),
-        hasGenealogy: Boolean(animal.sire_animal_id || animal.dam_animal_id),
-      });
+      const score = scoreByAnimal.get(animal.id) ?? 0;
       totalScore += score;
     }
     const avgGmd = gmdCount > 0 ? (totalGmd / gmdCount).toFixed(3) : null;
@@ -258,12 +253,7 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
     return animals.map(animal => {
       const aw = weightByAnimal.get(animal.id) ?? [];
       const last = aw[0] ? Number(aw[0].weight) : null;
-      const score = scoreByAnimal.get(animal.id) ?? calculateAgraasScore({
-        lastWeight: last, ageMonths: calculateAgeInMonths(animal.birth_date),
-        sanitaryScore: 60, operationalScore: 60, continuityScore: 60,
-        hasBloodType: Boolean(animal.blood_type),
-        hasGenealogy: Boolean(animal.sire_animal_id || animal.dam_animal_id),
-      });
+      const score = scoreByAnimal.get(animal.id) ?? 0;
       const carencias = activeCarenciasByAnimal.get(animal.id) ?? [];
       const certs = certsByAnimal.get(animal.id) ?? [];
       const certsFaltando = certRequired.filter(c => !certs.includes(c));

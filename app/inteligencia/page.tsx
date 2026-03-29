@@ -1,8 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import {
-  calculateAgeInMonths,
-  calculateAgraasScore,
   calculateDailyGain,
   getProductiveRiskLabel,
   getRiskBadgeClass,
@@ -134,37 +132,18 @@ export default async function InteligenciaPage() {
         ? Number((currentWeight - previousWeight).toFixed(1))
         : null;
 
-    const ageMonths = calculateAgeInMonths(animal.birth_date);
+    const ageMonths = animal.birth_date
+      ? (() => {
+          const b = new Date(animal.birth_date), n = new Date();
+          let m = (n.getFullYear() - b.getFullYear()) * 12 + (n.getMonth() - b.getMonth());
+          if (n.getDate() < b.getDate()) m -= 1;
+          return Math.max(0, m);
+        })()
+      : null;
 
+    // Score always comes from the DB (calculate_agraas_score SQL function)
     const scoreJson = passportMap.get(animal.id);
-
-    const sanitaryScore =
-      scoreJson?.sanitary_score ??
-      Math.min(100, 50 + (applicationsCountByAnimal.get(animal.id) ?? 0) * 8);
-
-    const operationalScore =
-      scoreJson?.operational_score ??
-      Math.min(100, 45 + (eventsCountByAnimal.get(animal.id) ?? 0) * 4);
-
-    const continuityScore =
-      scoreJson?.continuity_score ??
-      Math.min(
-        100,
-        40 +
-          Math.min(30, animalWeights.length * 8) +
-          (animal.birth_date ? 15 : 0) +
-          (animal.agraas_id ? 15 : 0)
-      );
-
-    const score =
-      scoreJson?.total_score ??
-      calculateAgraasScore({
-        lastWeight: currentWeight,
-        ageMonths,
-        sanitaryScore,
-        operationalScore,
-        continuityScore,
-      });
+    const score     = Number(scoreJson?.total_score ?? 0);
 
     const gmd = calculateDailyGain(
       currentWeight,

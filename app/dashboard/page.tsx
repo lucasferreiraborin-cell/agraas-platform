@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
-import { calculateAgraasScore, calculateAgeInMonths } from "@/lib/agraas-analytics";
+// scores are computed server-side via calculate_agraas_score SQL function
 
 const KG_POR_ARROBA = 15;
 
@@ -27,8 +27,7 @@ type WeightRow = {
   weighing_date: string | null;
 };
 
-type ApplicationRow = { animal_id: string; withdrawal_date?: string | null };
-type EventRow = { animal_id: string | null };
+type ScoreRow = { animal_id: string; total_score: number | null };
 
 type DashboardRow = {
   id: string;
@@ -43,8 +42,7 @@ type DashboardRow = {
 export default function DashboardPage() {
   const [animals, setAnimals] = useState<AnimalRow[]>([]);
   const [weights, setWeights] = useState<WeightRow[]>([]);
-  const [applications, setApplications] = useState<ApplicationRow[]>([]);
-  const [events, setEvents] = useState<EventRow[]>([]);
+  const [scores, setScores] = useState<ScoreRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [cotacao, setCotacao] = useState(330);
   const [cotacaoMeta, setCotacaoMeta] = useState<{ fonte: string; updated_at: string | null }>({ fonte: "cache", updated_at: null });
@@ -58,8 +56,7 @@ export default function DashboardPage() {
       const [
         { data: animalsData },
         { data: weightsData },
-        { data: applicationsData },
-        { data: eventsData },
+        { data: scoresData },
         cotacaoRes,
         { data: { user } },
       ] = await Promise.all([
@@ -68,15 +65,13 @@ export default function DashboardPage() {
         ).order("internal_code"),
         supabase.from("weights").select("id, animal_id, weight, weighing_date")
           .order("weighing_date", { ascending: false }),
-        supabase.from("applications").select("animal_id, withdrawal_date"),
-        supabase.from("events").select("animal_id"),
+        supabase.from("animal_scores").select("animal_id, total_score"),
         fetch("/api/cotacao").then(r => r.json()).catch(() => ({ cotacao: 330, fonte: "fallback", updated_at: null })),
         supabase.auth.getUser(),
       ]);
       setAnimals((animalsData as AnimalRow[]) ?? []);
       setWeights((weightsData as WeightRow[]) ?? []);
-      setApplications((applicationsData as ApplicationRow[]) ?? []);
-      setEvents((eventsData as EventRow[]) ?? []);
+      setScores((scoresData as ScoreRow[]) ?? []);
       setCotacao(cotacaoRes.cotacao ?? 330);
       setCotacaoMeta({ fonte: cotacaoRes.fonte ?? "cache", updated_at: cotacaoRes.updated_at ?? null });
 
@@ -126,20 +121,19 @@ export default function DashboardPage() {
     );
   }
 
-  return <DashboardContent animals={animals} weights={weights} applications={applications} events={events} loading={loading}
+  return <DashboardContent animals={animals} weights={weights} scores={scores} loading={loading}
     cotacao={cotacao} cotacaoMeta={cotacaoMeta} isAdmin={isAdmin}
     cotacaoInput={cotacaoInput} setCotacaoInput={setCotacaoInput}
     updatingCotacao={updatingCotacao} onAtualizarCotacao={atualizarCotacao} />;
 }
 
 function DashboardContent({
-  animals, weights, applications, events, loading,
+  animals, weights, scores, loading,
   cotacao, cotacaoMeta, isAdmin, cotacaoInput, setCotacaoInput, updatingCotacao, onAtualizarCotacao,
 }: {
   animals: AnimalRow[];
   weights: WeightRow[];
-  applications: ApplicationRow[];
-  events: EventRow[];
+  scores: ScoreRow[];
   loading: boolean;
   cotacao: number;
   cotacaoMeta: { fonte: string; updated_at: string | null };
@@ -164,38 +158,18 @@ function DashboardContent({
     return map;
   }, [weights]);
 
-  const appCountByAnimal = useMemo(() => {
+  const scoreByAnimal = useMemo(() => {
     const map = new Map<string, number>();
-    for (const a of applications) map.set(a.animal_id, (map.get(a.animal_id) ?? 0) + 1);
+    for (const s of scores) map.set(s.animal_id, Number(s.total_score ?? 0));
     return map;
-  }, [applications]);
+  }, [scores]);
 
-  const eventCountByAnimal = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const e of events) {
-      if (e.animal_id) map.set(e.animal_id, (map.get(e.animal_id) ?? 0) + 1);
-    }
-    return map;
-  }, [events]);
-
-  // Calcular rows do dashboard
+  // Rows do dashboard — score vem do banco (calculate_agraas_score SQL)
   const rows: DashboardRow[] = useMemo(() => animals.map(animal => {
     const animalWeights = weightsByAnimal.get(animal.id) ?? [];
     const lastWeight = animalWeights[0] ? Number(animalWeights[0].weight) : null;
     const lastWeighDate = animalWeights[0]?.weighing_date ?? null;
-    const ageMonths = calculateAgeInMonths(animal.birth_date);
-    const sanitaryScore = Math.min(100, 50 + (appCountByAnimal.get(animal.id) ?? 0) * 8);
-    const operationalScore = Math.min(100, 45 + (eventCountByAnimal.get(animal.id) ?? 0) * 2);
-    const continuityScore = Math.min(100,
-      40 + Math.min(30, animalWeights.length * 8)
-        + (animal.birth_date ? 15 : 0)
-        + (animal.agraas_id ? 15 : 0)
-    );
-    const score = calculateAgraasScore({
-      lastWeight, ageMonths, sanitaryScore, operationalScore, continuityScore,
-      hasBloodType: Boolean(animal.blood_type),
-      hasGenealogy: Boolean(animal.sire_animal_id || animal.dam_animal_id),
-    });
+    const score = scoreByAnimal.get(animal.id) ?? 0;
     const arrobas = lastWeight ? lastWeight / KG_POR_ARROBA : null;
     const estimatedValue = arrobas ? arrobas * cotacao : null;
     return {
@@ -207,7 +181,7 @@ function DashboardContent({
       arrobas,
       estimatedValue,
     };
-  }), [animals, weightsByAnimal, appCountByAnimal, eventCountByAnimal]);
+  }), [animals, weightsByAnimal, scoreByAnimal, cotacao]);
 
   // KPIs
   const totalAnimais = rows.length;
@@ -224,29 +198,15 @@ function DashboardContent({
   // Top 5 por score
   const top5 = [...rows].sort((a, b) => b.score - a.score).slice(0, 5);
 
-  // Gráfico score evolução — média semanal, máx 12 semanas
+  // Gráfico score evolução — agrupa pesagens por semana, usa score DB do animal
   const chartData = useMemo(() => {
     const weekMap = new Map<string, number[]>();
     for (const w of weights) {
       if (!w.weighing_date) continue;
       const d = new Date(w.weighing_date);
       if (d < ninetyDaysAgo) continue;
-      const animal = animals.find(a => a.id === w.animal_id);
-      if (!animal) continue;
-      const animalWeights = weightsByAnimal.get(w.animal_id) ?? [];
-      const appCount = appCountByAnimal.get(w.animal_id) ?? 0;
-      const evtCount = eventCountByAnimal.get(w.animal_id) ?? 0;
-      const ageMonths = calculateAgeInMonths(animal.birth_date);
-      const score = calculateAgraasScore({
-        lastWeight: Number(w.weight),
-        ageMonths,
-        sanitaryScore: Math.min(100, 50 + appCount * 8),
-        operationalScore: Math.min(100, 45 + evtCount * 2),
-        continuityScore: Math.min(100, 40 + Math.min(30, animalWeights.length * 8) + (animal.birth_date ? 15 : 0) + (animal.agraas_id ? 15 : 0)),
-        hasBloodType: Boolean(animal.blood_type),
-        hasGenealogy: Boolean(animal.sire_animal_id || animal.dam_animal_id),
-      });
-      // Chave da semana: ano + número da semana ISO
+      const score = scoreByAnimal.get(w.animal_id);
+      if (score === undefined) continue;
       const dayOfYear = Math.floor((d.getTime() - new Date(d.getFullYear(), 0, 0).getTime()) / 86400000);
       const weekNum = Math.ceil(dayOfYear / 7);
       const key = `${d.getFullYear()}-W${String(weekNum).padStart(2, "0")}`;
@@ -257,12 +217,12 @@ function DashboardContent({
     return Array.from(weekMap.entries())
       .sort(([a], [b]) => a.localeCompare(b))
       .slice(-12)
-      .map(([key, scores]) => ({
+      .map(([key, sc]) => ({
         week: key,
-        score: Math.round(scores.reduce((s, v) => s + v, 0) / scores.length),
-        label: key.replace(/^\d{4}-/, ""), // ex: "W12"
+        score: Math.round(sc.reduce((s, v) => s + v, 0) / sc.length),
+        label: key.replace(/^\d{4}-/, ""),
       }));
-  }, [weights, animals, weightsByAnimal, appCountByAnimal, eventCountByAnimal, ninetyDaysAgo]);
+  }, [weights, scoreByAnimal, ninetyDaysAgo]);
 
   return (
     <main className="space-y-8">

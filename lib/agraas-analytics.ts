@@ -1,13 +1,3 @@
-export type ScoreInput = {
-  lastWeight: number | null;
-  ageMonths: number | null;
-  sanitaryScore: number;
-  operationalScore: number;
-  continuityScore: number;
-  hasBloodType?: boolean;
-  hasGenealogy?: boolean;
-};
-
 export function calculateAgeInMonths(birthDate: string | null | undefined) {
   if (!birthDate) return null;
 
@@ -25,39 +15,6 @@ export function calculateAgeInMonths(birthDate: string | null | undefined) {
   return Math.max(0, months);
 }
 
-export function calculateAgraasScore({
-  lastWeight,
-  ageMonths,
-  sanitaryScore,
-  operationalScore,
-  continuityScore,
-  hasBloodType = false,
-  hasGenealogy = false,
-}: ScoreInput) {
-  const productive =
-    lastWeight && lastWeight > 0
-      ? Math.min(100, 35 + Math.round(lastWeight / 10))
-      : 35;
-
-  const ageFactor =
-    ageMonths !== null && ageMonths !== undefined
-      ? Math.min(100, 40 + Math.round(ageMonths / 2))
-      : 50;
-
-  const traceabilityBonus = (hasBloodType ? 3 : 0) + (hasGenealogy ? 4 : 0);
-
-  return Math.min(
-    100,
-    Math.round(
-      productive * 0.28 +
-        sanitaryScore * 0.24 +
-        operationalScore * 0.18 +
-        continuityScore * 0.2 +
-        ageFactor * 0.1 +
-        traceabilityBonus
-    )
-  );
-}
 
 export function getPassportConfidenceText(score: number): string {
   if (score >= 80) return "Animal com alto nível de rastreabilidade e confiabilidade operacional";
