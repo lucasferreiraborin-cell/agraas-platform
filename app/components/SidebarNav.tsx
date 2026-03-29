@@ -33,6 +33,7 @@ import {
   ClipboardCheck,
   Receipt,
   FileSpreadsheet,
+  FileUp,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -102,6 +103,12 @@ const menuGroups: NavGroup[] = [
       { href: "/abates",           label: "Abates",           icon: Scissors },
       { href: "/fiscal",           label: "Fiscal",           icon: Receipt },
       { href: "/fiscal/relatorio", label: "Relatório Fiscal", icon: FileSpreadsheet, sub: true },
+    ],
+  },
+  {
+    label: "Ferramentas",
+    items: [
+      { href: "/migrar-dados", label: "Migrar meus dados", icon: FileUp },
     ],
   },
   {
