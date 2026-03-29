@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { checkRateLimit, tooManyRequests } from "@/lib/rate-limit";
 import { createClient } from "@supabase/supabase-js";
 
 // Vercel calls this route daily at 11:00 UTC (08:00 BRT)
@@ -39,6 +40,9 @@ async function fetchCepeaPrice(indicatorId: number): Promise<number | null> {
 }
 
 export async function GET(req: Request) {
+  const rl = checkRateLimit(req, 100, 60_000);
+  if (!rl.allowed) return tooManyRequests(rl.retryAfter);
+
   // Verify Vercel cron secret
   const authHeader = req.headers.get("authorization");
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {

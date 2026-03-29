@@ -1,10 +1,14 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { NextRequest } from "next/server";
+import { checkRateLimit, tooManyRequests } from "@/lib/rate-limit";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 export async function POST(req: NextRequest) {
+  const rl = checkRateLimit(req, 100, 60_000);
+  if (!rl.allowed) return tooManyRequests(rl.retryAfter);
+
   try {
     const supabase = await createSupabaseServerClient();
     const { data: { user } } = await supabase.auth.getUser();

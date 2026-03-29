@@ -1,5 +1,6 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { NextRequest } from "next/server";
+import { checkRateLimit, tooManyRequests } from "@/lib/rate-limit";
 
 const CEPEA_URL = "https://www.cepea.esalq.usp.br/br/indicador/boi-gordo.aspx";
 const REVALIDATE_SECONDS = 6 * 60 * 60; // 6h
@@ -27,7 +28,10 @@ async function fetchCepeaCotacao(): Promise<number | null> {
   }
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const rl = checkRateLimit(req, 100, 60_000);
+  if (!rl.allowed) return tooManyRequests(rl.retryAfter);
+
   const supabase = await createSupabaseServerClient();
 
   // Lê valor atual do banco
@@ -63,6 +67,9 @@ export async function GET() {
 
 // POST: atualização manual pelo admin
 export async function POST(req: NextRequest) {
+  const rl = checkRateLimit(req, 100, 60_000);
+  if (!rl.allowed) return tooManyRequests(rl.retryAfter);
+
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return new Response("Não autenticado", { status: 401 });

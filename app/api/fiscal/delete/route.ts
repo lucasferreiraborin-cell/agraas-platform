@@ -1,7 +1,11 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { NextRequest } from "next/server";
+import { checkRateLimit, tooManyRequests } from "@/lib/rate-limit";
 
 export async function DELETE(req: NextRequest) {
+  const rl = checkRateLimit(req, 100, 60_000);
+  if (!rl.allowed) return tooManyRequests(rl.retryAfter);
+
   try {
     const supabase = await createSupabaseServerClient();
     const { data: { user } } = await supabase.auth.getUser();

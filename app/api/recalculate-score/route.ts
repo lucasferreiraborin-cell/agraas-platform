@@ -1,7 +1,11 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { NextRequest } from "next/server";
+import { checkRateLimit, tooManyRequests } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
+  const rl = checkRateLimit(req, 50, 60_000);
+  if (!rl.allowed) return tooManyRequests(rl.retryAfter);
+
   const { animalId } = await req.json();
   if (!animalId) return new Response("animalId obrigatório", { status: 400 });
 

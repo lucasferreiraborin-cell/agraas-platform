@@ -1,5 +1,6 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { NextRequest } from "next/server";
+import { checkRateLimit, tooManyRequests } from "@/lib/rate-limit";
 
 // ── Helpers XML ───────────────────────────────────────────────────────────────
 
@@ -208,6 +209,9 @@ async function saveNote(
 // ── Handler principal ─────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
+  const rl = checkRateLimit(req, 20, 60_000);
+  if (!rl.allowed) return tooManyRequests(rl.retryAfter);
+
   try {
     const supabase = await createSupabaseServerClient();
 
