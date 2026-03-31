@@ -7,6 +7,7 @@ import {
   Beef, CheckCircle2, Clock, AlertTriangle, ShieldCheck,
   ShieldAlert, Truck, MapPin, Users, Activity,
 } from "lucide-react";
+import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -527,9 +528,15 @@ export default function CompradorView({
                     <td className="px-4 py-3 text-[var(--text-secondary)] whitespace-nowrap">{fmtAge(animal.birth_date)}</td>
                     {CERT_LIST.map(cert => (
                       <td key={cert} className="px-4 py-3 text-center">
-                        <span className={`inline-flex h-6 w-6 items-center justify-center rounded-md border text-[10px] font-bold ${certs.has(cert) ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-[var(--border)] bg-[var(--surface-soft)] text-[var(--text-muted)]"}`}>
-                          {certs.has(cert) ? "✓" : "—"}
-                        </span>
+                        {cert === "Halal" && certs.has(cert) && status === "eligible" ? (
+                          <div className="flex justify-center">
+                            <HalalBadgeSVG size={40} />
+                          </div>
+                        ) : (
+                          <span className={`inline-flex h-6 w-6 items-center justify-center rounded-md border text-[10px] font-bold ${certs.has(cert) ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-[var(--border)] bg-[var(--surface-soft)] text-[var(--text-muted)]"}`}>
+                            {certs.has(cert) ? "✓" : "—"}
+                          </span>
+                        )}
                       </td>
                     ))}
                     <td className="px-4 py-3 text-center">

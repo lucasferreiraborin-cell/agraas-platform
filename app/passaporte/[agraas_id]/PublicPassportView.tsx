@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
 
 type Cert = { certification_name: string | null; issued_at: string | null; expires_at: string | null; status: string | null };
 type SanitaryEntry = { product_name: string; application_date: string | null };
@@ -168,21 +169,19 @@ export default function PublicPassportView({ animal, property, score, certificat
             <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#9ca3af]">
               {l === "pt" ? "Certificações Ativas" : "Active Certifications"}
             </p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {activeCerts.map((c, i) => {
-                const isHalal = c.certification_name?.toLowerCase().includes("halal");
-                return (
-                  <span key={i}
-                    className={`rounded-full border px-4 py-2 text-sm font-semibold ${
-                      isHalal
-                        ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                        : "border-[#e5e7eb] bg-[#f7f8fa] text-[#374151]"
-                    }`}>
-                    {isHalal ? "☪ " : ""}{c.certification_name}
-                    {c.expires_at ? ` · até ${fmtDate(c.expires_at, l)}` : ""}
-                  </span>
-                );
-              })}
+            <div className="mt-4 flex flex-wrap items-start gap-4">
+              {hasHalal && <HalalBadgeSVG size={120} />}
+              <div className="flex flex-wrap gap-2">
+                {activeCerts
+                  .filter(c => !c.certification_name?.toLowerCase().includes("halal"))
+                  .map((c, i) => (
+                    <span key={i}
+                      className="rounded-full border border-[#e5e7eb] bg-[#f7f8fa] px-4 py-2 text-sm font-semibold text-[#374151]">
+                      {c.certification_name}
+                      {c.expires_at ? ` · até ${fmtDate(c.expires_at, l)}` : ""}
+                    </span>
+                  ))}
+              </div>
             </div>
           </section>
         )}
