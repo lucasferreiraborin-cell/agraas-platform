@@ -25,7 +25,7 @@ type AnimalRow = {
 type AiPredictionRow = {
   id: string;
   animal_id: string;
-  risk_level: "low" | "medium" | "high";
+  risk_level: string;
   alerts: string[];
   recommendations: string[];
   predicted_score_30d: number | null;
