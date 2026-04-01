@@ -1,258 +1,82 @@
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 import Link from "next/link";
+import { Syringe, Scale, FlaskConical, Package, Layers, ShoppingCart } from "lucide-react";
 
-const actions = [
-  {
-    title: "Nova aplicação",
-    description: "Registre uma aplicação sanitária na base.",
-    href: "/aplicacoes",
-    icon: "💉",
-  },
-  {
-    title: "Nova pesagem",
-    description: "Registre o peso atual de um animal.",
-    href: "/pesagens",
-    icon: "⚖️",
-  },
-  {
-    title: "Registrar venda",
-    description: "Registre transferência ou venda do animal.",
-    href: "/vendas",
-    icon: "💰",
-  },
-  {
-    title: "Gerenciar lotes",
-    description: "Crie lotes e acompanhe a cadeia produtiva.",
-    href: "/lotes",
-    icon: "📦",
-  },
-  {
-    title: "Registrar abate",
-    description: "Registre o abate e o frigorífico.",
-    href: "/abates",
-    icon: "📋",
-  },
-  {
-    title: "Certificações",
-    description: "Consulte animais certificados na base.",
-    href: "/certificacoes",
-    icon: "✅",
-  },
-];
+export default async function OperacoesPage() {
+  const supabase = await createSupabaseServerClient();
+  const now = new Date();
+  const d30 = new Date(now.getTime() - 30 * 86400000).toISOString();
+  const today = now.toISOString().split("T")[0];
 
-export default function OperacoesPage() {
+  const [
+    { count: aplicacoes30d },
+    { count: pesagens30d },
+    { count: carenciaAtiva },
+    { count: lotesAtivos },
+  ] = await Promise.all([
+    supabase.from("applications").select("id", { count: "exact", head: true }).gte("created_at", d30),
+    supabase.from("weights").select("id", { count: "exact", head: true }).gte("weighing_date", d30),
+    supabase.from("applications").select("id", { count: "exact", head: true }).gt("withdrawal_date", today),
+    supabase.from("lots").select("id", { count: "exact", head: true }).neq("status", "encerrado"),
+  ]);
+
+  const kpis = [
+    { label: "Aplicações (30d)", value: aplicacoes30d ?? 0, sub: "medicamentos e vacinas", color: "text-purple-600" },
+    { label: "Pesagens (30d)",   value: pesagens30d ?? 0,   sub: "registros de peso",     color: "text-blue-600" },
+    { label: "Em carência",      value: carenciaAtiva ?? 0, sub: "animais com restrição",  color: "text-red-600" },
+    { label: "Lotes ativos",     value: lotesAtivos ?? 0,   sub: "em andamento",           color: "text-emerald-600" },
+  ];
+
+  const modules = [
+    { href: "/aplicacoes",    label: "Aplicações",      sub: "Medicamentos e vacinas",   icon: Syringe,     badge: aplicacoes30d ?? 0, badgeSub: "nos últimos 30d" },
+    { href: "/pesagens",      label: "Pesagens",         sub: "Controle de peso",         icon: Scale,       badge: pesagens30d ?? 0,   badgeSub: "nos últimos 30d" },
+    { href: "/estoque",       label: "Estoque",          sub: "Produtos e validades",     icon: Package,     badge: null, badgeSub: "" },
+    { href: "/lotes",         label: "Lotes",            sub: "Manejo de grupos",         icon: Layers,      badge: lotesAtivos ?? 0,   badgeSub: "lotes ativos" },
+    { href: "/vendas",        label: "Vendas",           sub: "Registro de transações",   icon: ShoppingCart,badge: null, badgeSub: "" },
+    { href: "/laboratorio",   label: "Laboratório",      sub: "Exames e resultados",      icon: FlaskConical,badge: null, badgeSub: "" },
+  ];
+
   return (
     <main className="space-y-8">
-      <section className="ag-card-strong overflow-hidden">
-        <div className="grid gap-0 xl:grid-cols-[1.1fr_0.9fr]">
-          <div className="relative p-8 lg:p-10">
-            <div className="pointer-events-none absolute right-0 top-0 h-56 w-56 rounded-full bg-[radial-gradient(circle,rgba(93,156,68,0.18)_0%,rgba(93,156,68,0)_72%)]" />
-
-            <div className="ag-badge ag-badge-green">Hub operacional</div>
-
-            <h1 className="mt-5 text-4xl font-semibold tracking-[-0.06em] text-[var(--text-primary)] lg:text-6xl">
-              Centro de operações da base
-            </h1>
-
-            <p className="mt-5 max-w-3xl text-[1.02rem] leading-8 text-[var(--text-secondary)]">
-              Registre eventos sanitários, movimentações, pesagens, vendas e
-              etapas da cadeia produtiva em uma estrutura operacional unificada
-              da plataforma Agraas.
-            </p>
-
-            <div className="mt-10 grid gap-4 md:grid-cols-3">
-              <HeroMetric
-                label="Aplicações"
-                value="Sanidade"
-                subtitle="registro sanitário contínuo"
-              />
-              <HeroMetric
-                label="Movimentações"
-                value="Lotes"
-                subtitle="estrutura produtiva"
-              />
-              <HeroMetric
-                label="Cadeia"
-                value="Abate"
-                subtitle="rastreamento final"
-              />
+      <section className="ag-card-strong p-8">
+        <h1 className="ag-page-title">Operações</h1>
+        <p className="ag-section-subtitle mt-1">Visão geral das operações do rebanho</p>
+        <div className="mt-6 grid grid-cols-4 gap-4">
+          {kpis.map(k => (
+            <div key={k.label} className="ag-kpi-card">
+              <p className="ag-kpi-label">{k.label}</p>
+              <p className={`ag-kpi-value ${k.color}`}>{k.value}</p>
+              <p className="sub">{k.sub}</p>
             </div>
-          </div>
-
-          <div className="ag-hero-panel">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                  Radar operacional
-                </p>
-
-                <h2 className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
-                  Camada operacional da Agraas
-                </h2>
-              </div>
-
-              <span className="ag-badge ag-badge-dark">Operations</span>
-            </div>
-
-            <div className="mt-8 grid gap-4 sm:grid-cols-2">
-              <SnapshotCard label="Aplicações" value="Sanidade animal" />
-              <SnapshotCard label="Pesagens" value="Monitoramento de peso" />
-              <SnapshotCard label="Lotes" value="Gestão produtiva" />
-              <SnapshotCard label="Abates" value="Final da cadeia" />
-            </div>
-
-            <div className="mt-6 ag-kpi-card">
-              <p className="text-sm text-[var(--text-muted)]">
-                Estrutura da plataforma
-              </p>
-
-              <p className="mt-3 text-base leading-7 text-[var(--text-secondary)]">
-                Cada operação registrada alimenta o passaporte do animal,
-                fortalecendo a rastreabilidade e a construção do score de
-                confiança da base pecuária.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="grid gap-4 xl:grid-cols-4">
-        <KpiCard
-          label="Sanidade"
-          value="Aplicações"
-          icon="💉"
-          subtitle="controle sanitário"
-        />
-
-        <KpiCard
-          label="Pesagem"
-          value="Peso"
-          icon="⚖️"
-          subtitle="monitoramento zootécnico"
-        />
-
-        <KpiCard
-          label="Movimentação"
-          value="Lotes"
-          icon="📦"
-          subtitle="gestão produtiva"
-        />
-
-        <KpiCard
-          label="Cadeia final"
-          value="Abate"
-          icon="📋"
-          subtitle="integração frigorífica"
-        />
-      </section>
-
-      <section className="ag-card p-8">
-        <div className="ag-section-header">
-          <div>
-            <h2 className="ag-section-title">Operações disponíveis</h2>
-
-            <p className="ag-section-subtitle">
-              Acesse rapidamente os módulos operacionais da plataforma.
-            </p>
-          </div>
-
-          <div className="ag-badge ag-badge-dark">
-            {actions.length} módulos
-          </div>
-        </div>
-
-        <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {actions.map((action) => (
-            <Link
-              key={action.title}
-              href={action.href}
-              className="group rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-6 transition hover:border-[rgba(93,156,68,0.24)] hover:bg-[var(--primary-soft)]"
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-2xl shadow-[var(--shadow-soft)]">
-                  {action.icon}
-                </div>
-
-                <span className="ag-badge ag-badge-green">Abrir</span>
-              </div>
-
-              <h2 className="mt-5 text-xl font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
-                {action.title}
-              </h2>
-
-              <p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">
-                {action.description}
-              </p>
-            </Link>
           ))}
         </div>
       </section>
-    </main>
-  );
-}
 
-function HeroMetric({
-  label,
-  value,
-  subtitle,
-}: {
-  label: string;
-  value: string;
-  subtitle: string;
-}) {
-  return (
-    <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5">
-      <p className="text-sm text-[var(--text-muted)]">{label}</p>
-      <p className="mt-3 text-2xl font-semibold tracking-[-0.05em] text-[var(--text-primary)]">
-        {value}
-      </p>
-      <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-        {subtitle}
-      </p>
-    </div>
-  );
-}
-
-function SnapshotCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="ag-kpi-card">
-      <p className="text-sm text-[var(--text-muted)]">{label}</p>
-      <p className="mt-3 text-lg font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
-        {value}
-      </p>
-    </div>
-  );
-}
-
-function KpiCard({
-  label,
-  value,
-  icon,
-  subtitle,
-}: {
-  label: string;
-  value: string;
-  icon: string;
-  subtitle: string;
-}) {
-  return (
-    <div className="ag-card p-6">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--primary-soft)] text-xl shadow-[var(--shadow-soft)]">
-          {icon}
+      <section className="ag-card-strong p-8 space-y-4">
+        <h2 className="ag-section-title">Módulos</h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {modules.map(m => {
+            const Icon = m.icon;
+            return (
+              <Link key={m.href} href={m.href}
+                className="group rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] p-5 hover:border-[var(--primary)]/40 hover:bg-[var(--primary-soft)] transition space-y-2">
+                <div className="flex items-start justify-between">
+                  <div className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--primary-soft)] group-hover:bg-white transition">
+                    <Icon size={18} className="text-[var(--primary)]" />
+                  </div>
+                  {m.badge !== null && m.badge > 0 && (
+                    <span className="opacity-0 group-hover:opacity-100 transition rounded-full bg-[var(--primary)] text-white text-[10px] font-bold px-2 py-0.5">
+                      {m.badge} {m.badgeSub}
+                    </span>
+                  )}
+                </div>
+                <p className="font-semibold text-[var(--text-primary)] group-hover:text-[var(--primary)]">{m.label}</p>
+                <p className="text-sm text-[var(--text-muted)]">{m.sub}</p>
+              </Link>
+            );
+          })}
         </div>
-
-        <span className="text-xs uppercase tracking-[0.14em] text-[var(--text-muted)]">
-          Hub
-        </span>
-      </div>
-
-      <p className="mt-5 ag-kpi-label">{label}</p>
-
-      <p className="mt-3 ag-kpi-value">{value}</p>
-
-      <p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">
-        {subtitle}
-      </p>
-    </div>
+      </section>
+    </main>
   );
 }
