@@ -492,9 +492,11 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
                             <span className="text-xs text-[var(--text-muted)]">{animal.breed ?? "—"} · {sexLabel(animal.sex)}</span>
                             <span className="text-xs font-medium text-[var(--text-secondary)]">Score {score}</span>
                             {last && <span className="text-xs text-[var(--text-muted)]">{last} kg</span>}
-                            {certs.length > 0 && certs.map(c => (
-                              <span key={c} className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${c === "Halal" ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-600"}`}>{c}</span>
-                            ))}
+                            {certs.length > 0 && certs.map(c =>
+                              c === "Halal"
+                                ? <HalalBadgeSVG key={c} size={24} />
+                                : <span key={c} className="rounded-full px-2 py-0.5 text-[10px] font-semibold bg-gray-100 text-gray-600">{c}</span>
+                            )}
                           </div>
                           {pendencias.length > 0 && (
                             <p className="mt-1.5 text-xs text-amber-700">{pendencias.join(" · ")}</p>
@@ -583,6 +585,7 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
                 lotId={id}
                 clientId={lot.client_id ?? null}
                 initialCheckpoints={trackingCheckpoints}
+                hasHalal={lot.certificacoes_exigidas?.includes("Halal") ?? false}
               />
             </section>
           </div>

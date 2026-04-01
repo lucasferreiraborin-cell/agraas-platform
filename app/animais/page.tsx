@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
+import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -506,7 +507,10 @@ function AnimalCardComponent({ animal }: { animal: AnimalCard }) {
     >
       {/* Top section */}
       <div className="flex items-start gap-4 p-6">
-        <ScoreCircle score={score} />
+        <div className="flex flex-col items-center gap-1">
+          <ScoreCircle score={score} />
+          {animal.has_halal && <HalalBadgeSVG size={24} />}
+        </div>
         <div className="min-w-0 flex-1">
           <p className="truncate text-lg font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
             {animal.internal_code ?? "Animal"}

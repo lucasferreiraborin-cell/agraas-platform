@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { CheckCircle2, Circle, Loader2, MapPin, User, AlertTriangle, Plus, X } from "lucide-react";
+import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
 
 type Checkpoint = {
   id: string;
@@ -32,10 +33,12 @@ export default function TrackingTimeline({
   lotId,
   clientId,
   initialCheckpoints,
+  hasHalal = false,
 }: {
   lotId: string;
   clientId: string | null;
   initialCheckpoints: Checkpoint[];
+  hasHalal?: boolean;
 }) {
   const [checkpoints, setCheckpoints] = useState<Checkpoint[]>(initialCheckpoints);
   const [showModal, setShowModal] = useState(false);
@@ -109,14 +112,23 @@ export default function TrackingTimeline({
     <div className="space-y-6">
       {/* KPI Bar */}
       {started != null && (
-        <div className="flex flex-wrap gap-4 rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] px-6 py-4">
+        <div className="flex flex-wrap items-center gap-4 rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] px-6 py-4">
           <KPIStat label="Saíram" value={started} />
-          <div className="w-px bg-[var(--border)]" />
+          <div className="w-px self-stretch bg-[var(--border)]" />
           <KPIStat label="Vivos agora" value={alive ?? "—"} green />
-          <div className="w-px bg-[var(--border)]" />
+          <div className="w-px self-stretch bg-[var(--border)]" />
           <KPIStat label="Perdas" value={totalLost} red={totalLost > 0} />
-          <div className="w-px bg-[var(--border)]" />
+          <div className="w-px self-stretch bg-[var(--border)]" />
           <KPIStat label="Sobrevivência" value={pctSurvival ? `${pctSurvival}%` : "—"} green={pctSurvival != null && Number(pctSurvival) >= 98} />
+          {hasHalal && (
+            <>
+              <div className="w-px self-stretch bg-[var(--border)]" />
+              <div className="flex items-center gap-2">
+                <HalalBadgeSVG size={40} />
+                <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-600">Halal</span>
+              </div>
+            </>
+          )}
         </div>
       )}
 

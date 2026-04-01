@@ -2,6 +2,7 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import Link from "next/link";
 import { TrendingUp, Weight, ShieldCheck, BarChart3, Info } from "lucide-react";
 import MarketCalculator from "@/app/components/MarketCalculator";
+import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
 
 type MarketAnimalRow = {
   animal_id: string;
@@ -171,8 +172,15 @@ export default async function MarketPage() {
                   return (
                     <tr key={a.animal_id} className="group">
                       <td>
-                        <p className="font-semibold">{a.internal_code ?? a.animal_id}</p>
-                        <p className="text-xs text-[var(--text-muted)]">{formatDate(a.birth_date)}</p>
+                        <div className="flex items-center gap-2">
+                          <div>
+                            <p className="font-semibold">{a.internal_code ?? a.animal_id}</p>
+                            <p className="text-xs text-[var(--text-muted)]">{formatDate(a.birth_date)}</p>
+                          </div>
+                          {a.certifications?.some(c => c.name?.toLowerCase().includes("halal")) && (
+                            <HalalBadgeSVG size={24} />
+                          )}
+                        </div>
                       </td>
                       <td className="max-w-[150px] truncate text-[var(--text-secondary)]">{a.property_name ?? "—"}</td>
                       <td className="text-sm">{formatSex(a.sex)}</td>

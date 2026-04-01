@@ -406,6 +406,7 @@ export default function CompradorView({
                     <div className="flex items-center gap-3">
                       <span className="font-mono text-sm font-bold text-[var(--text-primary)]">{lot.name}</span>
                       {lot.pais_destino && <span className="text-xs text-[var(--text-muted)]">→ {lot.pais_destino}</span>}
+                      {lot.certificacoes_exigidas?.includes("Halal") && <HalalBadgeSVG size={32} />}
                     </div>
                     <div className="flex items-center gap-3">
                       {lastConfCp?.animals_confirmed != null && (

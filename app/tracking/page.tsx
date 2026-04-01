@@ -1,6 +1,7 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import Link from "next/link";
 import { Truck, MapPin, AlertTriangle } from "lucide-react";
+import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
 
 type TrackingRow = {
   id: string;
@@ -12,7 +13,7 @@ type TrackingRow = {
   location_name: string | null;
 };
 
-type LotRow = { id: string; name: string };
+type LotRow = { id: string; name: string; certificacoes_exigidas: string[] | null };
 
 const STAGE_LABELS: Record<string, string> = {
   fazenda:       "Fazenda",
@@ -34,12 +35,14 @@ export default async function TrackingPage() {
       .from("shipment_tracking")
       .select("id, lot_id, stage, timestamp, animals_confirmed, animals_lost, location_name")
       .order("timestamp", { ascending: false }),
-    supabase.from("lots").select("id, name"),
+    supabase.from("lots").select("id, name, certificacoes_exigidas"),
   ]);
 
   const trackings: TrackingRow[] = (trackingData ?? []) as TrackingRow[];
   const lots: LotRow[] = (lotsData ?? []) as LotRow[];
-  const lotMap = new Map(lots.map(l => [l.id, l.name]));
+  const lotMap = new Map(lots.map(l => [l.id, l]));
+  const lotName = (id: string) => lotMap.get(id)?.name ?? id;
+  const lotHasHalal = (id: string) => lotMap.get(id)?.certificacoes_exigidas?.includes("Halal") ?? false;
 
   // Agrupa checkpoints por lote e determina etapa atual
   const byLot = new Map<string, TrackingRow[]>();
@@ -58,7 +61,7 @@ export default async function TrackingPage() {
     const lastConfirmed = lastRow?.animals_confirmed ?? null;
     const started = rows.find(r => r.stage === "fazenda")?.animals_confirmed ?? null;
     const pctSurvival = started && lastConfirmed ? Math.round((lastConfirmed / started) * 100) : null;
-    return { lotId, lotName: lotMap.get(lotId) ?? lotId, currentStage, lastRow, totalLost, lastConfirmed, started, pctSurvival };
+    return { lotId, lotName: lotName(lotId), hasHalal: lotHasHalal(lotId), currentStage, lastRow, totalLost, lastConfirmed, started, pctSurvival };
   });
 
   return (
@@ -91,7 +94,7 @@ export default async function TrackingPage() {
             <span className="ag-badge">{lotSummaries.length} lotes</span>
           </div>
           <div className="space-y-4">
-            {lotSummaries.map(({ lotId, lotName, currentStage, lastRow, totalLost, lastConfirmed, started, pctSurvival }) => {
+            {lotSummaries.map(({ lotId, lotName, hasHalal, currentStage, lastRow, totalLost, lastConfirmed, started, pctSurvival }) => {
               const stageIdx = STAGE_ORDER.indexOf(currentStage);
               return (
                 <Link
@@ -101,7 +104,10 @@ export default async function TrackingPage() {
                 >
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
-                      <p className="font-semibold text-[var(--text-primary)] group-hover:text-[var(--primary)]">{lotName}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-semibold text-[var(--text-primary)] group-hover:text-[var(--primary)]">{lotName}</p>
+                        {hasHalal && <HalalBadgeSVG size={40} />}
+                      </div>
                       <div className="mt-1 flex items-center gap-2 text-xs text-[var(--text-muted)]">
                         <MapPin size={11} />
                         <span>{lastRow?.location_name ?? "—"}</span>

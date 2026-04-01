@@ -2,6 +2,7 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import Link from "next/link";
 import { Trophy, TrendingUp, ShieldCheck, Star } from "lucide-react";
 import ScoresFilter from "@/app/components/ScoresFilter";
+import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
 
 type ScoreRow = {
   animal_id: string;
@@ -170,7 +171,12 @@ export default async function ScoresPage() {
                   className="group rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] p-5 hover:border-[var(--primary)]/30 hover:bg-[var(--primary-soft)] transition">
                   <div className="flex items-center justify-between">
                     <span className="text-2xl">{medal}</span>
-                    <ScoreCircleLarge score={Math.round(score)} size={60} />
+                    <div className="flex flex-col items-center gap-1">
+                      <ScoreCircleLarge score={Math.round(score)} size={60} />
+                      {item.active_certifications?.some(c => c.toLowerCase().includes("halal")) && (
+                        <HalalBadgeSVG size={24} />
+                      )}
+                    </div>
                   </div>
                   <p className="mt-3 font-semibold text-[var(--text-primary)]">{item.internal_code ?? item.animal_id}</p>
                   <p className="text-xs text-[var(--text-muted)] mt-0.5">{item.current_property_name ?? "—"}</p>

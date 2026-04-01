@@ -150,22 +150,30 @@ export default function ExportacaoPage() {
     return lots.map(lot => {
       const lotAnimals = assignments.filter(a => a.lot_id === lot.id);
       const certRequired = lot.certificacoes_exigidas ?? [];
+      const halalRequired = certRequired.some(c => c.toLowerCase() === "halal");
       let aptos = 0; let inaptos = 0; let pendencias = 0;
+      let halalTotal = 0; let halalAptos = 0;
 
       for (const a of lotAnimals) {
         const score = scoreByAnimal.get(a.animal_id) ?? 0;
         const animalCerts = certsByAnimal.get(a.animal_id) ?? [];
         const certsFaltando = certRequired.filter(c => !animalCerts.includes(c));
         const carencia = hasCarenciaByAnimal.has(a.animal_id);
+        const isHalal = animalCerts.some(c => c.toLowerCase().includes("halal"));
 
         if (score < 60 || carencia) inaptos++;
         else if (certsFaltando.length > 0) pendencias++;
         else aptos++;
+
+        if (isHalal) {
+          halalTotal++;
+          if (score >= 60 && !carencia && certsFaltando.length === 0) halalAptos++;
+        }
       }
 
       const total = lotAnimals.length;
       const pct = total > 0 ? Math.round((aptos / total) * 100) : 0;
-      return { lot, total, aptos, inaptos, pendencias, pct };
+      return { lot, total, aptos, inaptos, pendencias, pct, halalRequired, halalTotal, halalAptos };
     });
   }, [lots, assignments, scoreByAnimal, certsByAnimal, hasCarenciaByAnimal]);
 
@@ -299,7 +307,7 @@ export default function ExportacaoPage() {
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {lotStats.map(({ lot, total, aptos, inaptos, pendencias, pct }) => {
+            {lotStats.map(({ lot, total, aptos, inaptos, pendencias, pct, halalRequired, halalTotal, halalAptos }) => {
               const borderCls =
                 pct >= 60 ? "border-emerald-400/40" : pct > 0 ? "border-amber-400/40" : "border-red-400/40";
               const barGrad =
@@ -387,6 +395,15 @@ export default function ExportacaoPage() {
                             {cert === "Halal" ? "☪ Halal" : cert}
                           </span>
                         ))}
+                      </div>
+                    )}
+                    {halalRequired && halalTotal > 0 && (
+                      <div className="mt-3 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2">
+                        <HalalBadgeSVG size={40} />
+                        <div>
+                          <p className="text-xs font-semibold text-emerald-700">{halalAptos}/{halalTotal} Halal certified</p>
+                          <p className="text-[10px] text-emerald-500">{halalAptos === halalTotal ? "todos aptos" : `${halalTotal - halalAptos} pendente${halalTotal - halalAptos !== 1 ? "s" : ""}`}</p>
+                        </div>
                       </div>
                     )}
                   </div>

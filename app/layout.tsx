@@ -5,6 +5,7 @@ import { ToastContainer } from "./components/Toast";
 import AgroAssistant from "./components/AgroAssistant";
 import QuickActions from "./components/QuickActions";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
 
 export default async function RootLayout({
   children,
@@ -53,8 +54,11 @@ export default async function RootLayout({
                     </p>
                   </div>
 
-                  <div className="rounded-2xl border border-white/10 bg-white/10 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/70">
-                    MVP
+                  <div className="flex flex-col items-end gap-2">
+                    <div className="rounded-2xl border border-white/10 bg-white/10 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/70">
+                      MVP
+                    </div>
+                    <HalalBadgeSVG size={32} />
                   </div>
                 </div>
               </div>
