@@ -10,6 +10,7 @@ import ExportRouteMap from "@/app/components/ExportRouteMap";
 import TrackingTimeline from "@/app/components/TrackingTimeline";
 import { FileText, Upload } from "lucide-react";
 import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
+import DownloadLotPDFButton from "@/app/components/DownloadLotPDFButton";
 
 const SCORE_MINIMO_EXPORT = 60;
 
@@ -336,15 +337,18 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
                   </div>
                 )}
               </div>
-              {exportStats && (
-                <div className="rounded-2xl border border-white/10 bg-white/6 p-5 text-center min-w-[140px]">
-                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/40">Conformidade</p>
-                  <p className={`mt-2 text-5xl font-semibold tracking-tight ${exportStats.pct >= 80 ? "text-emerald-400" : exportStats.pct >= 50 ? "text-amber-400" : "text-red-400"}`}>
-                    {exportStats.pct}%
-                  </p>
-                  <p className="mt-1 text-xs text-white/40">{exportStats.aptos}/{animals.length} aptos</p>
-                </div>
-              )}
+              <div className="flex flex-col items-end gap-3">
+                {exportStats && (
+                  <div className="rounded-2xl border border-white/10 bg-white/6 p-5 text-center min-w-[140px]">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-white/40">Conformidade</p>
+                    <p className={`mt-2 text-5xl font-semibold tracking-tight ${exportStats.pct >= 80 ? "text-emerald-400" : exportStats.pct >= 50 ? "text-amber-400" : "text-red-400"}`}>
+                      {exportStats.pct}%
+                    </p>
+                    <p className="mt-1 text-xs text-white/40">{exportStats.aptos}/{animals.length} aptos</p>
+                  </div>
+                )}
+                <DownloadLotPDFButton lotId={id} lotName={lot.name} />
+              </div>
             </div>
             <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <ExportKPI label="Total no lote" value={animals.length} sub="animais" />
