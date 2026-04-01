@@ -5,7 +5,7 @@ import { createBrowserClient } from "@supabase/ssr";
 import { useRouter } from "next/navigation";
 import {
   Beef, CheckCircle2, Clock, AlertTriangle, ShieldCheck,
-  ShieldAlert, Truck, MapPin, Users, Activity,
+  ShieldAlert, Truck, MapPin, Users, Activity, Rabbit, Bird,
 } from "lucide-react";
 import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
 
@@ -23,6 +23,8 @@ type Cert            = { animal_id: string; certification_name: string; status: 
 type Withdrawal      = { animal_id: string; product_name: string | null; withdrawal_date: string | null };
 type Score           = { animal_id: string; score_json: Record<string, unknown> | null };
 type TrackingCheckpoint = { lot_id: string; stage: string; timestamp: string; animals_confirmed: number | null; animals_lost: number; loss_cause: string | null; location_name: string | null };
+type LivestockAnimal = { id: string; species: string; breed: string | null; birth_date: string | null; internal_code: string | null; score: number | null; certifications: string[]; status: string };
+type PoultryBatch    = { id: string; batch_code: string; species: string; breed: string | null; current_count: number; mortality_count: number; initial_count: number; feed_conversion: number | null; status: string; halal_certified: boolean; integrator_name: string | null };
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -48,6 +50,7 @@ const T = {
     shipments: { title: "Active Shipments", lotId: "Lot ID", origin: "Origin", dest: "Destination", dep: "Departure", animals: "Animals", compliance: "Compliance", status: "Status", details: "View Details" },
     tracking: { title: "Live Shipment Tracking", noData: "No tracking data available yet.", animalsConf: "animals confirmed", loss: "loss", losses: "losses" },
     matrix: { title: "Animal Certification Matrix", all: "All", eligible: "Eligible", pending: "Pending", ineligible: "Ineligible", animal: "Animal", breed: "Breed", age: "Age", withdrawal: "Withdrawal", score: "Score", status: "Status", clear: "Clear", labelEligible: "ELIGIBLE", labelPending: "PENDING", labelIneligible: "INELIGIBLE" },
+    species: { all: "All Species", cattle: "Cattle", sheep: "Sheep & Goats", poultry: "Poultry" },
     risk: { title: "Risk Intelligence", sanitary: "Sanitary Risk", compliance: "Compliance Risk", delivery: "Delivery Risk", low: "ON TRACK", medium: "MONITORED", high: "ACTION REQUIRED", withWithdrawal: "animals with active withdrawal", ineligible: "ineligible animals", lostInTransit: "animals lost in transit" },
     footer: "Powered by Agraas Intelligence Layer · Certified by MAPA · Real-time data",
     signOut: "Sign Out",
@@ -59,6 +62,7 @@ const T = {
     shipments: { title: "Embarques Ativos", lotId: "ID do Lote", origin: "Origem", dest: "Destino", dep: "Embarque", animals: "Animais", compliance: "Conformidade", status: "Status", details: "Ver Detalhes" },
     tracking: { title: "Rastreio de Embarques ao Vivo", noData: "Nenhum dado de rastreio disponível ainda.", animalsConf: "animais confirmados", loss: "perda", losses: "perdas" },
     matrix: { title: "Matriz de Certificações Animais", all: "Todos", eligible: "Aptos", pending: "Pendentes", ineligible: "Inaptos", animal: "Animal", breed: "Raça", age: "Idade", withdrawal: "Carência", score: "Score", status: "Status", clear: "Livre", labelEligible: "APTO", labelPending: "PENDENTE", labelIneligible: "INAPTO" },
+    species: { all: "Todas", cattle: "Bovinos", sheep: "Ovinos", poultry: "Aves" },
     risk: { title: "Inteligência de Risco", sanitary: "Risco Sanitário", compliance: "Risco de Conformidade", delivery: "Risco de Entrega", low: "EM DIA", medium: "MONITORADO", high: "AÇÃO NECESSÁRIA", withWithdrawal: "animais com carência ativa", ineligible: "animais inaptos", lostInTransit: "animais perdidos em trânsito" },
     footer: "Powered by Agraas Intelligence Layer · Certificado pelo MAPA · Dados em tempo real",
     signOut: "Sair",
@@ -85,13 +89,17 @@ function fmtAge(birth: string | null) {
 
 export default function CompradorView({
   buyerName, lots, assignments, animals, certifications, activeWithdrawals, scores, trackingCheckpoints,
+  livestockAnimals, poultryBatches,
 }: {
   buyerName: string; lots: Lot[]; assignments: Assignment[]; animals: Animal[];
   certifications: Cert[]; activeWithdrawals: Withdrawal[]; scores: Score[];
   trackingCheckpoints: TrackingCheckpoint[];
+  livestockAnimals: LivestockAnimal[];
+  poultryBatches: PoultryBatch[];
 }) {
   const [lang, setLang]             = useState<"en" | "pt">("en");
   const [filter, setFilter]         = useState<"all" | "eligible" | "pending" | "ineligible">("all");
+  const [speciesFilter, setSpeciesFilter] = useState<"all" | "bovinos" | "ovinos" | "aves">("all");
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
   const [utcTime, setUtcTime]       = useState("");
   const router  = useRouter();
@@ -153,11 +161,28 @@ export default function CompradorView({
     filter === "all" ? complianceRows : complianceRows.filter(r => r.status === filter),
   [complianceRows, filter]);
 
+  // ── Livestock (ovinos/caprinos) derived rows ──────────────────────────────────
+
+  const livestockRows = useMemo(() => livestockAnimals.map(a => {
+    const hasHalal = a.certifications?.includes("Halal") ?? false;
+    const score    = a.score ?? 0;
+    const status: "eligible" | "pending" | "ineligible" =
+      score < 60 ? "ineligible" : "eligible";
+    return { ...a, hasHalal, score, status };
+  }), [livestockAnimals]);
+
+  const filteredLivestockRows = useMemo(() =>
+    filter === "all" ? livestockRows : livestockRows.filter(r => r.status === filter),
+  [livestockRows, filter]);
+
   // ── KPIs ─────────────────────────────────────────────────────────────────────
 
-  const totalAnimals  = animals.length;
+  const totalAnimals  = animals.length + livestockAnimals.length + poultryBatches.length;
   const eligibleCount = complianceRows.filter(r => r.status === "eligible").length;
-  const halalCount    = animals.filter(a => certsByAnimal.get(a.id)?.has("Halal")).length;
+  const halalCount    =
+    animals.filter(a => certsByAnimal.get(a.id)?.has("Halal")).length +
+    livestockAnimals.filter(a => a.certifications?.includes("Halal")).length +
+    poultryBatches.filter(b => b.halal_certified).length;
   const nextDeparture = lots.map(l => l.data_embarque).filter(Boolean).sort()[0] ?? null;
   const daysToNext    = daysUntil(nextDeparture);
 
@@ -295,7 +320,7 @@ export default function CompradorView({
       {/* ═══ 6 KPI CARDS ════════════════════════════════════════════════════════ */}
       <section className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
         {[
-          { icon: Beef,        label: t.kpi.total,     value: totalAnimals,  cls: "text-[var(--text-primary)]", halalBadge: false },
+          { icon: Beef,        label: t.kpi.total,     value: `${totalAnimals}`,  cls: "text-[var(--text-primary)]", halalBadge: false },
           { icon: CheckCircle2,label: t.kpi.eligible,  value: eligibleCount, cls: "text-emerald-600",           halalBadge: false },
           { icon: ShieldCheck, label: t.kpi.halal,     value: halalCount,    cls: "text-amber-600",             halalBadge: true  },
           { icon: Truck,       label: t.kpi.shipments, value: lots.length,   cls: "text-blue-600",              halalBadge: false },
@@ -488,83 +513,202 @@ export default function CompradorView({
 
       {/* ═══ ANIMAL CERTIFICATION MATRIX ════════════════════════════════════════ */}
       <section className="overflow-hidden rounded-3xl border border-[var(--border)] bg-white">
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[var(--border)] bg-[var(--primary-hover)] px-6 py-4">
-          <h2 className="font-semibold text-white">{t.matrix.title}</h2>
-          {/* Filter */}
-          <div className="flex overflow-hidden rounded-lg border border-white/25">
-            {([
-              { k: "all",        l: t.matrix.all },
-              { k: "eligible",   l: t.matrix.eligible },
-              { k: "pending",    l: t.matrix.pending },
-              { k: "ineligible", l: t.matrix.ineligible },
-            ] as const).map(f => (
-              <button key={f.k} onClick={() => setFilter(f.k)}
-                className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.1em] transition ${filter === f.k ? "bg-white text-[var(--primary-hover)]" : "bg-transparent text-white/70 hover:bg-white/10"}`}>
-                {f.l}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-[var(--border)] bg-[var(--surface-soft)]">
-                {[t.matrix.animal, t.matrix.breed, t.matrix.age, "Halal", "MAPA", "GTA", "SIF", t.matrix.withdrawal, t.matrix.score, t.matrix.status].map((h, i) => (
-                  <th key={i} className={`px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)] whitespace-nowrap ${i > 2 ? "text-center" : "text-left"}`}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filteredRows.map(({ animal, certs, score, withdrawals, status }) => {
-                const sc = status === "eligible" ? "text-emerald-600" : status === "pending" ? "text-amber-600" : "text-red-600";
-                const sbadge = status === "eligible"
-                  ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                  : status === "pending"
-                  ? "border-amber-200 bg-amber-50 text-amber-700"
-                  : "border-red-200 bg-red-50 text-red-700";
-                const sl = status === "eligible" ? t.matrix.labelEligible : status === "pending" ? t.matrix.labelPending : t.matrix.labelIneligible;
+        <div className="border-b border-[var(--border)] bg-[var(--primary-hover)] px-6 py-4 space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <h2 className="font-semibold text-white">{t.matrix.title}</h2>
+            {/* Species filter */}
+            <div className="flex overflow-hidden rounded-lg border border-white/25">
+              {([
+                { k: "all",     l: t.species.all,     icon: null    },
+                { k: "bovinos", l: t.species.cattle,   icon: Beef    },
+                { k: "ovinos",  l: t.species.sheep,    icon: Rabbit  },
+                { k: "aves",    l: t.species.poultry,  icon: Bird    },
+              ] as const).map(f => {
+                const Icon = f.icon;
                 return (
-                  <tr key={animal.id}
-                    onMouseEnter={() => setHoveredRow(animal.id)}
-                    onMouseLeave={() => setHoveredRow(null)}
-                    className={`border-b border-[var(--border)] transition-colors ${hoveredRow === animal.id ? "bg-[var(--primary-soft)]" : ""}`}
-                  >
-                    <td className="px-4 py-3 font-semibold text-[var(--text-primary)] whitespace-nowrap">
-                      {animal.nickname ?? animal.internal_code ?? "—"}
-                    </td>
-                    <td className="px-4 py-3 text-[var(--text-secondary)] whitespace-nowrap">{animal.breed ?? "—"}</td>
-                    <td className="px-4 py-3 text-[var(--text-secondary)] whitespace-nowrap">{fmtAge(animal.birth_date)}</td>
-                    {CERT_LIST.map(cert => (
-                      <td key={cert} className="px-4 py-3 text-center">
-                        {cert === "Halal" && certs.has(cert) && status === "eligible" ? (
-                          <div className="flex justify-center">
-                            <HalalBadgeSVG size={40} />
-                          </div>
-                        ) : (
-                          <span className={`inline-flex h-6 w-6 items-center justify-center rounded-md border text-[10px] font-bold ${certs.has(cert) ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-[var(--border)] bg-[var(--surface-soft)] text-[var(--text-muted)]"}`}>
-                            {certs.has(cert) ? "✓" : "—"}
-                          </span>
-                        )}
-                      </td>
-                    ))}
-                    <td className="px-4 py-3 text-center">
-                      {withdrawals.length === 0
-                        ? <span className="text-xs font-semibold text-emerald-600">{t.matrix.clear}</span>
-                        : <span className="text-xs font-semibold text-red-600">{new Date(withdrawals[0]).toLocaleDateString(locale, { day: "2-digit", month: "short" })}</span>
-                      }
-                    </td>
-                    <td className={`px-4 py-3 text-center text-base font-bold ${score >= 75 ? "text-emerald-600" : score >= 60 ? "text-amber-600" : sc}`}>
-                      {score > 0 ? score : "—"}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <span className={`rounded-full border px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.14em] ${sbadge}`}>{sl}</span>
-                    </td>
-                  </tr>
+                  <button key={f.k} onClick={() => setSpeciesFilter(f.k)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.1em] transition ${speciesFilter === f.k ? "bg-white text-[var(--primary-hover)]" : "bg-transparent text-white/70 hover:bg-white/10"}`}>
+                    {Icon && <Icon size={10} />}{f.l}
+                  </button>
                 );
               })}
-            </tbody>
-          </table>
+            </div>
+          </div>
+          {/* Status filter — only for bovinos/ovinos/all */}
+          {speciesFilter !== "aves" && (
+            <div className="flex overflow-hidden rounded-lg border border-white/25 w-fit">
+              {([
+                { k: "all",        l: t.matrix.all },
+                { k: "eligible",   l: t.matrix.eligible },
+                { k: "pending",    l: t.matrix.pending },
+                { k: "ineligible", l: t.matrix.ineligible },
+              ] as const).map(f => (
+                <button key={f.k} onClick={() => setFilter(f.k)}
+                  className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.1em] transition ${filter === f.k ? "bg-white/20 text-white" : "bg-transparent text-white/55 hover:bg-white/10"}`}>
+                  {f.l}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
+
+        {/* ── Bovinos table (all / bovinos) ── */}
+        {(speciesFilter === "all" || speciesFilter === "bovinos") && (
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-[var(--border)] bg-[var(--surface-soft)]">
+                  {[t.matrix.animal, t.matrix.breed, t.matrix.age, "Halal", "MAPA", "GTA", "SIF", t.matrix.withdrawal, t.matrix.score, t.matrix.status].map((h, i) => (
+                    <th key={i} className={`px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)] whitespace-nowrap ${i > 2 ? "text-center" : "text-left"}`}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filteredRows.length === 0 ? (
+                  <tr><td colSpan={10} className="px-4 py-8 text-center text-sm text-[var(--text-muted)]">No cattle data available.</td></tr>
+                ) : filteredRows.map(({ animal, certs, score, withdrawals, status }) => {
+                  const sc = status === "eligible" ? "text-emerald-600" : status === "pending" ? "text-amber-600" : "text-red-600";
+                  const sbadge = status === "eligible" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : status === "pending" ? "border-amber-200 bg-amber-50 text-amber-700" : "border-red-200 bg-red-50 text-red-700";
+                  const sl = status === "eligible" ? t.matrix.labelEligible : status === "pending" ? t.matrix.labelPending : t.matrix.labelIneligible;
+                  return (
+                    <tr key={animal.id}
+                      onMouseEnter={() => setHoveredRow(animal.id)}
+                      onMouseLeave={() => setHoveredRow(null)}
+                      className={`border-b border-[var(--border)] transition-colors ${hoveredRow === animal.id ? "bg-[var(--primary-soft)]" : ""}`}>
+                      <td className="px-4 py-3 font-semibold text-[var(--text-primary)] whitespace-nowrap">{animal.nickname ?? animal.internal_code ?? "—"}</td>
+                      <td className="px-4 py-3 text-[var(--text-secondary)] whitespace-nowrap">{animal.breed ?? "—"}</td>
+                      <td className="px-4 py-3 text-[var(--text-secondary)] whitespace-nowrap">{fmtAge(animal.birth_date)}</td>
+                      {CERT_LIST.map(cert => (
+                        <td key={cert} className="px-4 py-3 text-center">
+                          {cert === "Halal" && certs.has(cert) && status === "eligible" ? (
+                            <div className="flex justify-center"><HalalBadgeSVG size={40} /></div>
+                          ) : (
+                            <span className={`inline-flex h-6 w-6 items-center justify-center rounded-md border text-[10px] font-bold ${certs.has(cert) ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-[var(--border)] bg-[var(--surface-soft)] text-[var(--text-muted)]"}`}>
+                              {certs.has(cert) ? "✓" : "—"}
+                            </span>
+                          )}
+                        </td>
+                      ))}
+                      <td className="px-4 py-3 text-center">
+                        {withdrawals.length === 0
+                          ? <span className="text-xs font-semibold text-emerald-600">{t.matrix.clear}</span>
+                          : <span className="text-xs font-semibold text-red-600">{new Date(withdrawals[0]).toLocaleDateString(locale, { day: "2-digit", month: "short" })}</span>}
+                      </td>
+                      <td className={`px-4 py-3 text-center text-base font-bold ${score >= 75 ? "text-emerald-600" : score >= 60 ? "text-amber-600" : sc}`}>{score > 0 ? score : "—"}</td>
+                      <td className="px-4 py-3 text-center">
+                        <span className={`rounded-full border px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.14em] ${sbadge}`}>{sl}</span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* ── Ovinos/Caprinos table ── */}
+        {speciesFilter === "ovinos" && (
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-[var(--border)] bg-[var(--surface-soft)]">
+                  {[t.matrix.animal, t.matrix.breed, "Espécie", t.matrix.age, "Halal", t.matrix.score, t.matrix.status].map((h, i) => (
+                    <th key={i} className={`px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)] whitespace-nowrap ${i > 3 ? "text-center" : "text-left"}`}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filteredLivestockRows.length === 0 ? (
+                  <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-[var(--text-muted)]">No sheep/goat data available.</td></tr>
+                ) : filteredLivestockRows.map(row => {
+                  const sbadge = row.status === "eligible" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-red-200 bg-red-50 text-red-700";
+                  const sl = row.status === "eligible" ? t.matrix.labelEligible : t.matrix.labelIneligible;
+                  const scoreCls = row.score >= 75 ? "text-emerald-600" : row.score >= 60 ? "text-amber-600" : "text-red-600";
+                  return (
+                    <tr key={row.id}
+                      onMouseEnter={() => setHoveredRow(row.id)}
+                      onMouseLeave={() => setHoveredRow(null)}
+                      className={`border-b border-[var(--border)] transition-colors ${hoveredRow === row.id ? "bg-[var(--primary-soft)]" : ""}`}>
+                      <td className="px-4 py-3 font-semibold text-[var(--text-primary)] whitespace-nowrap">{row.internal_code ?? "—"}</td>
+                      <td className="px-4 py-3 text-[var(--text-secondary)] whitespace-nowrap">{row.breed ?? "—"}</td>
+                      <td className="px-4 py-3 text-[var(--text-secondary)] capitalize">{row.species}</td>
+                      <td className="px-4 py-3 text-[var(--text-secondary)] whitespace-nowrap">{fmtAge(row.birth_date)}</td>
+                      <td className="px-4 py-3 text-center">
+                        {row.hasHalal ? (
+                          <div className="flex justify-center"><HalalBadgeSVG size={40} /></div>
+                        ) : (
+                          <span className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-[var(--border)] bg-[var(--surface-soft)] text-[10px] font-bold text-[var(--text-muted)]">—</span>
+                        )}
+                      </td>
+                      <td className={`px-4 py-3 text-center text-base font-bold ${scoreCls}`}>{row.score > 0 ? row.score : "—"}</td>
+                      <td className="px-4 py-3 text-center">
+                        <span className={`rounded-full border px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.14em] ${sbadge}`}>{sl}</span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* ── Aves/Frangos table ── */}
+        {speciesFilter === "aves" && (
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-[var(--border)] bg-[var(--surface-soft)]">
+                  {["Lote", "Espécie", "Aves", "Mortalidade", "Conv. Alimentar", "Halal Abatedouro", "Status"].map((h, i) => (
+                    <th key={i} className={`px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)] whitespace-nowrap ${i >= 2 ? "text-center" : "text-left"}`}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {poultryBatches.length === 0 ? (
+                  <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-[var(--text-muted)]">No poultry batch data available.</td></tr>
+                ) : poultryBatches.map(b => {
+                  const mort    = b.initial_count > 0 ? ((b.mortality_count / b.initial_count) * 100).toFixed(1) : "—";
+                  const highMort = Number(mort) > 5;
+                  const STATUS_BADGE: Record<string, string> = {
+                    alojado:       "border-blue-200 bg-blue-50 text-blue-700",
+                    em_crescimento:"border-emerald-200 bg-emerald-50 text-emerald-700",
+                    pronto_abate:  "border-amber-200 bg-amber-50 text-amber-700",
+                    abatido:       "border-gray-200 bg-gray-50 text-gray-600",
+                  };
+                  const STATUS_LABEL: Record<string, string> = {
+                    alojado: "HOUSED", em_crescimento: "GROWING", pronto_abate: "READY", abatido: "SLAUGHTERED",
+                  };
+                  return (
+                    <tr key={b.id}
+                      onMouseEnter={() => setHoveredRow(b.id)}
+                      onMouseLeave={() => setHoveredRow(null)}
+                      className={`border-b border-[var(--border)] transition-colors ${hoveredRow === b.id ? "bg-[var(--primary-soft)]" : ""}`}>
+                      <td className="px-4 py-3 font-mono text-xs font-bold text-[var(--text-primary)] whitespace-nowrap">{b.batch_code}</td>
+                      <td className="px-4 py-3 text-[var(--text-secondary)] capitalize">{b.species}{b.breed ? ` · ${b.breed}` : ""}</td>
+                      <td className="px-4 py-3 text-center font-semibold text-[var(--text-primary)]">{b.current_count.toLocaleString("pt-BR")}</td>
+                      <td className={`px-4 py-3 text-center font-semibold ${highMort ? "text-red-600" : "text-emerald-600"}`}>
+                        {mort}%{highMort && <AlertTriangle size={11} className="inline ml-1" />}
+                      </td>
+                      <td className="px-4 py-3 text-center text-[var(--text-secondary)]">{b.feed_conversion ?? "—"}</td>
+                      <td className="px-4 py-3 text-center">
+                        {b.halal_certified ? (
+                          <div className="flex justify-center"><HalalBadgeSVG size={40} /></div>
+                        ) : (
+                          <span className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-[var(--border)] bg-[var(--surface-soft)] text-[10px] font-bold text-[var(--text-muted)]">—</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <span className={`rounded-full border px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.14em] ${STATUS_BADGE[b.status] ?? "border-gray-200 bg-gray-50 text-gray-600"}`}>
+                          {STATUS_LABEL[b.status] ?? b.status}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
 
       {/* ═══ RISK INTELLIGENCE ═══════════════════════════════════════════════════ */}

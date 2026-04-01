@@ -91,6 +91,18 @@ export default async function CompradorPage() {
         .order("timestamp", { ascending: true })
     : { data: [] };
 
+  // ── Ovinos / Caprinos (todas as espécies — service client, sem RLS) ────────
+  const { data: livestockData } = await db
+    .from("livestock_species")
+    .select("id, species, breed, birth_date, internal_code, score, certifications, status")
+    .in("species", ["ovino", "caprino"]);
+
+  // ── Lotes avícolas ─────────────────────────────────────────────────────────
+  const { data: poultryData } = await db
+    .from("poultry_batches")
+    .select("id, batch_code, species, breed, current_count, mortality_count, initial_count, feed_conversion, status, halal_certified, integrator_name")
+    .order("housing_date", { ascending: false });
+
   return (
     <CompradorView
       buyerName={clientData.name}
@@ -101,6 +113,8 @@ export default async function CompradorPage() {
       activeWithdrawals={appsData ?? []}
       scores={scoresData ?? []}
       trackingCheckpoints={trackingData ?? []}
+      livestockAnimals={livestockData ?? []}
+      poultryBatches={poultryData ?? []}
     />
   );
 }
