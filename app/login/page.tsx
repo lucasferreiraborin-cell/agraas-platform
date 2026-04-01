@@ -57,8 +57,8 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#F5F7F4]">
       <div className="w-full max-w-md px-6">
-        <div className="mb-10 flex items-center justify-between">
-          <div>
+        <div className="mb-10 flex items-center justify-center gap-8">
+          <div className="text-center">
             <p className="text-[11px] uppercase tracking-[0.32em] text-[var(--text-muted)]">
               Plataforma
             </p>
@@ -69,7 +69,7 @@ export default function LoginPage() {
               Intelligence Layer
             </p>
           </div>
-          <HalalBadgeSVG size={84} />
+          <HalalBadgeSVG size={100} />
         </div>
 
         <div className="rounded-3xl border border-[var(--border)] bg-white p-8 shadow-[var(--shadow-soft)]">
