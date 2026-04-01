@@ -1,8 +1,9 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, AlertTriangle, Calendar, MapPin } from "lucide-react";
+import { ArrowLeft, AlertTriangle, Calendar, MapPin, ShieldCheck } from "lucide-react";
 import PoultryEventForm from "@/app/components/PoultryEventForm";
+import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
 
 type Batch = {
   id: string;
@@ -19,6 +20,9 @@ type Batch = {
   status: string;
   notes: string | null;
   property_id: string | null;
+  score: number | null;
+  halal_certified: boolean;
+  sif_certified: boolean;
 };
 
 type BatchEvent = {
@@ -28,6 +32,8 @@ type BatchEvent = {
   value: number | null;
   notes: string | null;
   operator: string | null;
+  withdrawal_days: number;
+  withdrawal_date: string | null;
 };
 
 type PropertyRow = { id: string; name: string };
@@ -35,67 +41,92 @@ type PropertyRow = { id: string; name: string };
 const SPECIES_LABEL: Record<string, string> = { frango: "Frango", peru: "Peru", pato: "Pato" };
 
 const STATUS_STYLE: Record<string, { badge: string; label: string; bg: string; border: string }> = {
-  alojado:       { badge: "bg-blue-100 text-blue-700 border-blue-300",      label: "Alojado",         bg: "bg-blue-50",    border: "border-blue-200"    },
-  em_crescimento:{ badge: "bg-emerald-100 text-emerald-700 border-emerald-300", label: "Em crescimento", bg: "bg-emerald-50", border: "border-emerald-200" },
-  pronto_abate:  { badge: "bg-amber-100 text-amber-700 border-amber-300",   label: "Pronto p/ abate", bg: "bg-amber-50",   border: "border-amber-200"   },
-  abatido:       { badge: "bg-gray-100 text-gray-600 border-gray-300",      label: "Abatido",         bg: "bg-gray-50",    border: "border-gray-200"    },
+  alojado:        { badge: "bg-blue-100 text-blue-700 border-blue-300",         label: "Alojado",         bg: "bg-blue-50",    border: "border-blue-200"    },
+  em_crescimento: { badge: "bg-emerald-100 text-emerald-700 border-emerald-300",label: "Em crescimento",  bg: "bg-emerald-50", border: "border-emerald-200" },
+  pronto_abate:   { badge: "bg-amber-100 text-amber-700 border-amber-300",      label: "Pronto p/ abate", bg: "bg-amber-50",   border: "border-amber-200"   },
+  abatido:        { badge: "bg-gray-100 text-gray-600 border-gray-300",         label: "Abatido",         bg: "bg-gray-50",    border: "border-gray-200"    },
 };
 
 const EVENT_STYLE: Record<string, { icon: string; color: string; bg: string; border: string }> = {
-  vacina:     { icon: "💉", color: "text-blue-700",    bg: "bg-blue-50",    border: "border-blue-200"    },
-  racao:      { icon: "🌾", color: "text-amber-700",   bg: "bg-amber-50",   border: "border-amber-200"   },
-  mortalidade:{ icon: "⚠️", color: "text-red-700",     bg: "bg-red-50",     border: "border-red-200"     },
-  pesagem:    { icon: "⚖️", color: "text-emerald-700", bg: "bg-emerald-50", border: "border-emerald-200" },
-  abate:      { icon: "🏭", color: "text-gray-700",    bg: "bg-gray-50",    border: "border-gray-200"    },
+  vacina:      { icon: "💉", color: "text-blue-700",    bg: "bg-blue-50",    border: "border-blue-200"    },
+  racao:       { icon: "🌾", color: "text-amber-700",   bg: "bg-amber-50",   border: "border-amber-200"   },
+  mortalidade: { icon: "⚠️", color: "text-red-700",     bg: "bg-red-50",     border: "border-red-200"     },
+  pesagem:     { icon: "⚖️", color: "text-emerald-700", bg: "bg-emerald-50", border: "border-emerald-200" },
+  abate:       { icon: "🏭", color: "text-gray-700",    bg: "bg-gray-50",    border: "border-gray-200"    },
 };
 
 const EVENT_LABEL: Record<string, string> = {
   vacina: "Vacinação", racao: "Ração", mortalidade: "Mortalidade", pesagem: "Pesagem", abate: "Abate",
 };
 
+const SCORE_DIMENSIONS = [
+  { label: "Sanitário",    pct: 30 },
+  { label: "Produtivo",    pct: 30 },
+  { label: "Operacional",  pct: 20 },
+  { label: "Conformidade", pct: 20 },
+];
+
 function formatDate(d: string) {
   return new Date(d + "T12:00:00").toLocaleDateString("pt-BR");
+}
+
+function ScoreCircle({ score }: { score: number }) {
+  const size = 88; const r = 36;
+  const circ = 2 * Math.PI * r;
+  const offset = circ - (Math.max(0, Math.min(100, score)) / 100) * circ;
+  const color = score >= 75 ? "#2d9b6f" : score >= 50 ? "#d4930a" : "#c0392b";
+  const track = score >= 75 ? "#d1fae5" : score >= 50 ? "#fef3c7" : "#fee2e2";
+  return (
+    <div className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={track} strokeWidth="6" />
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth="6"
+          strokeDasharray={circ} strokeDashoffset={offset}
+          strokeLinecap="round" transform={`rotate(-90 ${size/2} ${size/2})`} />
+      </svg>
+      <span className="absolute text-xl font-bold" style={{ color }}>{score}</span>
+    </div>
+  );
 }
 
 export default async function AveDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createSupabaseServerClient();
+  const today = new Date().toISOString().split("T")[0];
 
   const [{ data: batchData }, { data: eventsData }, { data: propData }] = await Promise.all([
-    supabase
-      .from("poultry_batches")
-      .select("id, batch_code, species, breed, housing_date, initial_count, current_count, mortality_count, average_weight_kg, feed_conversion, integrator_name, status, notes, property_id")
-      .eq("id", id)
-      .single(),
-    supabase
-      .from("poultry_batch_events")
-      .select("id, event_type, date, value, notes, operator")
-      .eq("batch_id", id)
-      .order("date", { ascending: true }),
+    supabase.from("poultry_batches")
+      .select("id, batch_code, species, breed, housing_date, initial_count, current_count, mortality_count, average_weight_kg, feed_conversion, integrator_name, status, notes, property_id, score, halal_certified, sif_certified")
+      .eq("id", id).single(),
+    supabase.from("poultry_batch_events")
+      .select("id, event_type, date, value, notes, operator, withdrawal_days, withdrawal_date")
+      .eq("batch_id", id).order("date", { ascending: true }),
     supabase.from("properties").select("id, name"),
   ]);
 
   if (!batchData) notFound();
 
-  const batch: Batch        = batchData as Batch;
+  const batch: Batch       = batchData as Batch;
   const events: BatchEvent[] = (eventsData ?? []) as BatchEvent[];
   const propMap = new Map(((propData ?? []) as PropertyRow[]).map(p => [p.id, p.name]));
 
   const style      = STATUS_STYLE[batch.status] ?? STATUS_STYLE.alojado;
-  const mortality  = batch.initial_count > 0 ? ((batch.mortality_count / batch.initial_count) * 100).toFixed(1) : "—";
-  const highMort   = Number(mortality) > 5;
+  const mortalityPct = batch.initial_count > 0 ? (batch.mortality_count / batch.initial_count) * 100 : 0;
+  const mortality  = batch.initial_count > 0 ? mortalityPct.toFixed(1) : "—";
+  const highMort   = mortalityPct > 3;
+
+  // Vacinas em carência
+  const vacinasEmCarencia = events.filter(e => e.event_type === "vacina" && e.withdrawal_date && e.withdrawal_date > today);
 
   // Pesagens para gráfico de evolução
-  const weighings = events
-    .filter(e => e.event_type === "pesagem" && e.value != null)
-    .map(e => ({ date: e.date, kg: e.value! }));
+  const weighings = events.filter(e => e.event_type === "pesagem" && e.value != null).map(e => ({ date: e.date, kg: e.value! }));
   const maxKg = Math.max(...weighings.map(w => w.kg), 0.1);
 
   const kpis = [
-    { label: "Aves atuais",       value: batch.current_count.toLocaleString("pt-BR"), sub: "cabeças", color: "text-emerald-600" },
-    { label: "Mortalidade",       value: `${mortality}%`, sub: `${batch.mortality_count} aves`,      color: highMort ? "text-red-600" : "text-[var(--text-primary)]" },
-    { label: "Peso médio",        value: batch.average_weight_kg != null ? `${batch.average_weight_kg} kg` : "—", sub: "último registro", color: "text-[var(--text-primary)]" },
-    { label: "Conv. alimentar",   value: batch.feed_conversion != null ? `${batch.feed_conversion}` : "—", sub: "kg ração / kg ganho", color: "text-[var(--text-primary)]" },
+    { label: "Aves atuais",     value: batch.current_count.toLocaleString("pt-BR"), sub: "cabeças",          color: "text-emerald-600" },
+    { label: "Mortalidade",     value: `${mortality}%`, sub: `${batch.mortality_count} aves`,               color: highMort ? "text-red-600" : "text-[var(--text-primary)]" },
+    { label: "Peso médio",      value: batch.average_weight_kg != null ? `${batch.average_weight_kg} kg` : "—", sub: "último registro", color: "text-[var(--text-primary)]" },
+    { label: "Conv. alimentar", value: batch.feed_conversion != null ? `${batch.feed_conversion}` : "—",    sub: "kg ração / kg ganho", color: batch.feed_conversion != null && batch.feed_conversion < 1.8 ? "text-emerald-600" : "text-[var(--text-primary)]" },
   ];
 
   return (
@@ -104,7 +135,7 @@ export default async function AveDetailPage({ params }: { params: Promise<{ id: 
         <ArrowLeft size={14} /> Aves & Frangos
       </Link>
 
-      {/* Header */}
+      {/* ── Header ── */}
       <section className="ag-card-strong overflow-hidden">
         <div className="relative p-8 lg:p-10">
           <div className="pointer-events-none absolute right-0 top-0 h-48 w-48 rounded-full bg-[radial-gradient(circle,rgba(122,168,76,0.12)_0%,rgba(122,168,76,0)_70%)]" />
@@ -113,22 +144,33 @@ export default async function AveDetailPage({ params }: { params: Promise<{ id: 
               <div className="flex flex-wrap items-center gap-2">
                 <span className="ag-badge ag-badge-green">{SPECIES_LABEL[batch.species] ?? batch.species}</span>
                 <span className={`rounded-full border px-3 py-1 text-xs font-bold ${style.badge}`}>{style.label}</span>
+                {vacinasEmCarencia.length > 0 && (
+                  <span className="rounded-full border border-red-200 bg-red-50 px-3 py-1 text-xs font-bold text-red-700">
+                    {vacinasEmCarencia.length} vacina{vacinasEmCarencia.length > 1 ? "s" : ""} em carência
+                  </span>
+                )}
               </div>
               <h1 className="ag-page-title mt-4">{batch.batch_code}</h1>
               <div className="mt-3 flex flex-wrap gap-5 text-sm text-[var(--text-secondary)]">
                 {batch.breed && <span>{batch.breed}</span>}
                 {batch.integrator_name && <span>{batch.integrator_name}</span>}
                 <span className="flex items-center gap-1.5"><Calendar size={13} />Alojamento: {formatDate(batch.housing_date)}</span>
-                {batch.property_id && (
-                  <span className="flex items-center gap-1.5"><MapPin size={13} />{propMap.get(batch.property_id) ?? "—"}</span>
-                )}
+                {batch.property_id && <span className="flex items-center gap-1.5"><MapPin size={13} />{propMap.get(batch.property_id) ?? "—"}</span>}
               </div>
             </div>
-            <div className="text-right">
-              <p className="text-4xl font-bold tracking-tight text-[var(--text-primary)]">
-                {batch.initial_count.toLocaleString("pt-BR")}
-              </p>
-              <p className="text-sm text-[var(--text-muted)]">alojados inicialmente</p>
+            <div className="flex items-end gap-6">
+              {batch.score != null && (
+                <div className="flex flex-col items-center gap-1">
+                  <ScoreCircle score={batch.score} />
+                  <p className="text-xs text-[var(--text-muted)]">Agraas Score</p>
+                </div>
+              )}
+              <div className="text-right">
+                <p className="text-4xl font-bold tracking-tight text-[var(--text-primary)]">
+                  {batch.initial_count.toLocaleString("pt-BR")}
+                </p>
+                <p className="text-sm text-[var(--text-muted)]">alojados inicialmente</p>
+              </div>
             </div>
           </div>
         </div>
@@ -145,53 +187,110 @@ export default async function AveDetailPage({ params }: { params: Promise<{ id: 
         </div>
       </section>
 
+      {/* ── Score + Certificações ── */}
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* Evolução de peso */}
-        {weighings.length > 0 && (
+        {batch.score != null && (
           <section className="ag-card-strong p-8 space-y-5">
             <div>
-              <h2 className="ag-section-title">Evolução de peso médio</h2>
-              <p className="ag-section-subtitle">Pesagens registradas no ciclo</p>
+              <h2 className="ag-section-title">Score por dimensão</h2>
+              <p className="ag-section-subtitle">Pesos configurados para avicultura</p>
             </div>
-            <div className="space-y-3">
-              {weighings.map((w, i) => {
-                const pct  = Math.round((w.kg / maxKg) * 100);
-                const color = w.kg >= 2.5 ? "#2d9b6f" : w.kg >= 1.5 ? "#d4930a" : "#3b82f6";
-                return (
-                  <div key={i} className="flex items-center gap-3">
-                    <span className="w-20 shrink-0 text-xs text-[var(--text-muted)]">{formatDate(w.date)}</span>
-                    <div className="flex-1 h-7 rounded-xl bg-[var(--surface-soft)] overflow-hidden">
-                      <div className="h-full rounded-xl flex items-center px-3 transition-all duration-500"
-                        style={{ width: `${Math.max(pct, 6)}%`, backgroundColor: color }}>
-                        <span className="text-[11px] font-bold text-white">{w.kg} kg</span>
-                      </div>
-                    </div>
+            <div className="space-y-4">
+              {SCORE_DIMENSIONS.map(d => (
+                <div key={d.label} className="space-y-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-medium text-[var(--text-secondary)]">{d.label}</span>
+                    <span className="tabular-nums text-[var(--text-muted)]">{d.pct}% do score</span>
                   </div>
-                );
-              })}
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-[var(--surface-soft)]">
+                    <div className="h-full rounded-full bg-[var(--primary)]" style={{ width: `${d.pct}%` }} />
+                  </div>
+                </div>
+              ))}
             </div>
-            <p className="text-xs text-[var(--text-muted)]">Meta abate frango: ~2,8 kg</p>
           </section>
         )}
 
-        {/* Alertas de mortalidade */}
-        {highMort && (
-          <section className="ag-card-strong p-8 space-y-4">
-            <h2 className="ag-section-title flex items-center gap-2 text-red-700">
-              <AlertTriangle size={18} /> Alerta de mortalidade
-            </h2>
-            <div className="rounded-2xl border border-red-200 bg-red-50 p-5">
-              <p className="font-semibold text-red-700">Mortalidade acima de 5%</p>
-              <p className="mt-1 text-sm text-red-600">
-                {batch.mortality_count} aves perdidas de {batch.initial_count.toLocaleString("pt-BR")} alojadas ({mortality}%).
-                Verificar causas nos eventos registrados.
+        <section className="ag-card-strong p-8 space-y-4">
+          <h2 className="ag-section-title">Certificações e conformidade</h2>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className={`rounded-2xl border p-4 flex flex-col items-center gap-2 text-center ${batch.halal_certified ? "border-emerald-200 bg-emerald-50" : "border-[var(--border)] bg-[var(--surface-soft)]"}`}>
+              <HalalBadgeSVG size={44} />
+              <p className={`text-sm font-semibold ${batch.halal_certified ? "text-emerald-700" : "text-[var(--text-muted)]"}`}>
+                Halal
               </p>
+              <span className={`rounded-full border px-2.5 py-0.5 text-[10px] font-bold ${batch.halal_certified ? "bg-emerald-100 text-emerald-700 border-emerald-200" : "bg-gray-100 text-gray-500 border-gray-200"}`}>
+                {batch.halal_certified ? "Certificado" : "Não certificado"}
+              </span>
             </div>
-          </section>
-        )}
+            <div className={`rounded-2xl border p-4 flex flex-col items-center gap-2 text-center ${batch.sif_certified ? "border-blue-200 bg-blue-50" : "border-[var(--border)] bg-[var(--surface-soft)]"}`}>
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-100">
+                <ShieldCheck size={22} className={batch.sif_certified ? "text-blue-600" : "text-gray-400"} />
+              </div>
+              <p className={`text-sm font-semibold ${batch.sif_certified ? "text-blue-700" : "text-[var(--text-muted)]"}`}>
+                SIF
+              </p>
+              <span className={`rounded-full border px-2.5 py-0.5 text-[10px] font-bold ${batch.sif_certified ? "bg-blue-100 text-blue-700 border-blue-200" : "bg-gray-100 text-gray-500 border-gray-200"}`}>
+                {batch.sif_certified ? "Certificado" : "Não certificado"}
+              </span>
+            </div>
+          </div>
+
+          {/* Mortalidade */}
+          <div className={`rounded-2xl border p-4 ${highMort ? "border-red-200 bg-red-50" : "border-[var(--border)] bg-[var(--surface-soft)]"}`}>
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold text-[var(--text-primary)]">Mortalidade do lote</p>
+              {highMort && <AlertTriangle size={15} className="text-red-600" />}
+            </div>
+            <p className={`mt-1 text-2xl font-bold ${highMort ? "text-red-600" : "text-emerald-600"}`}>{mortality}%</p>
+            <p className="text-xs text-[var(--text-muted)]">{highMort ? "Acima de 3% — verificar causas" : "Dentro da meta (< 3%)"}</p>
+          </div>
+
+          {/* Carência ativas */}
+          {vacinasEmCarencia.length > 0 && (
+            <div className="rounded-2xl border border-red-200 bg-red-50 p-4 space-y-2">
+              <p className="text-sm font-semibold text-red-700">Vacinas em carência</p>
+              {vacinasEmCarencia.map(v => (
+                <div key={v.id} className="flex items-center justify-between text-xs">
+                  <span className="text-red-600">{v.notes ?? "Vacinação"} · {v.withdrawal_days}d</span>
+                  <span className="font-bold text-red-700">vence {formatDate(v.withdrawal_date!)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
       </div>
 
-      {/* Timeline de eventos */}
+      {/* ── Evolução de peso ── */}
+      {weighings.length > 0 && (
+        <section className="ag-card-strong p-8 space-y-5">
+          <div>
+            <h2 className="ag-section-title">Evolução de peso médio</h2>
+            <p className="ag-section-subtitle">Pesagens registradas no ciclo</p>
+          </div>
+          <div className="space-y-3">
+            {weighings.map((w, i) => {
+              const pct   = Math.round((w.kg / maxKg) * 100);
+              const color = w.kg >= 2.5 ? "#2d9b6f" : w.kg >= 1.5 ? "#d4930a" : "#3b82f6";
+              return (
+                <div key={i} className="flex items-center gap-3">
+                  <span className="w-20 shrink-0 text-xs text-[var(--text-muted)]">{formatDate(w.date)}</span>
+                  <div className="flex-1 h-7 rounded-xl bg-[var(--surface-soft)] overflow-hidden">
+                    <div className="h-full rounded-xl flex items-center px-3 transition-all duration-500"
+                      style={{ width: `${Math.max(pct, 6)}%`, backgroundColor: color }}>
+                      <span className="text-[11px] font-bold text-white">{w.kg} kg</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <p className="text-xs text-[var(--text-muted)]">Meta abate frango: ~2,8 kg</p>
+        </section>
+      )}
+
+      {/* ── Timeline de eventos ── */}
       <section className="ag-card-strong p-8 space-y-5">
         <div className="flex items-center justify-between">
           <div>
@@ -209,6 +308,7 @@ export default async function AveDetailPage({ params }: { params: Promise<{ id: 
           <div className="space-y-3">
             {[...events].reverse().map(ev => {
               const s = EVENT_STYLE[ev.event_type] ?? { icon: "📋", color: "text-gray-700", bg: "bg-gray-50", border: "border-gray-200" };
+              const emCarencia = ev.event_type === "vacina" && ev.withdrawal_date && ev.withdrawal_date > today;
               return (
                 <div key={ev.id} className={`flex items-start gap-4 rounded-2xl border p-4 ${s.bg} ${s.border}`}>
                   <span className="text-xl">{s.icon}</span>
@@ -217,14 +317,17 @@ export default async function AveDetailPage({ params }: { params: Promise<{ id: 
                       <span className={`text-sm font-semibold ${s.color}`}>{EVENT_LABEL[ev.event_type] ?? ev.event_type}</span>
                       {ev.value != null && (
                         <span className="text-sm text-[var(--text-secondary)] tabular-nums">
-                          {ev.event_type === "pesagem" ? `${ev.value} kg` :
-                           ev.event_type === "mortalidade" ? `${ev.value} aves` :
-                           ev.event_type === "racao" ? `${ev.value} kg ração` :
+                          {ev.event_type === "pesagem"     ? `${ev.value} kg`       :
+                           ev.event_type === "mortalidade" ? `${ev.value} aves`     :
+                           ev.event_type === "racao"       ? `${ev.value} kg ração` :
                            ev.value}
                         </span>
                       )}
-                      {ev.operator && (
-                        <span className="text-xs text-[var(--text-muted)]">{ev.operator}</span>
+                      {ev.operator && <span className="text-xs text-[var(--text-muted)]">{ev.operator}</span>}
+                      {emCarencia && (
+                        <span className="rounded-full border border-red-200 bg-red-100 px-2 py-0.5 text-[10px] font-bold text-red-700">
+                          em carência · vence {formatDate(ev.withdrawal_date!)}
+                        </span>
                       )}
                     </div>
                     {ev.notes && <p className="mt-1 text-sm text-[var(--text-secondary)]">{ev.notes}</p>}
@@ -237,7 +340,7 @@ export default async function AveDetailPage({ params }: { params: Promise<{ id: 
         )}
       </section>
 
-      {/* Seção de abate */}
+      {/* ── Abate ── */}
       {batch.status === "abatido" && (
         <section className="ag-card-strong p-8 space-y-4">
           <h2 className="ag-section-title">Registro de abate</h2>

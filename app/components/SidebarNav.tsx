@@ -115,7 +115,8 @@ const menuGroups: NavGroup[] = [
     items: [
       { href: "/ovinos",           label: "Ovinos & Caprinos", icon: Rabbit   },
       { href: "/ovinos/dashboard", label: "Dashboard Ovinos",  icon: BarChart2, sub: true },
-      { href: "/aves",             label: "Aves & Frangos",    icon: Bird     },
+      { href: "/aves",             label: "Aves & Frangos",    icon: Bird      },
+      { href: "/aves/dashboard",   label: "Dashboard Aves",    icon: BarChart2, sub: true },
     ],
   },
   {
