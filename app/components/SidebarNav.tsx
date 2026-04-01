@@ -134,6 +134,7 @@ const menuGroups: NavGroup[] = [
       { href: "/agricultura/armazens", label: "Armazéns",   icon: Warehouse, sub: true },
       { href: "/agricultura/embarques",label: "Embarques",  icon: Ship,      sub: true },
       { href: "/agricultura/insumos",  label: "Insumos",    icon: Boxes,     sub: true },
+      { href: "/agricultura/fiscal",   label: "Fiscal Agrícola", icon: Receipt, sub: true },
     ],
   },
   {
