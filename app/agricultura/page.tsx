@@ -3,7 +3,13 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { Wheat, Ship, Layers, Warehouse, Plus } from "lucide-react";
 
-const AgricultureMap = dynamic(() => import("@/app/components/AgricultureMap"), { ssr: false });
+const AgricultureMap = dynamic(
+  async () => (await import("@/app/components/AgricultureMap")).default,
+  {
+    ssr: false,
+    loading: () => <div style={{ height: "400px", background: "#f0f4ef", borderRadius: "8px" }} />,
+  }
+);
 
 type Farm     = { id: string; name: string; city: string; state: string; lat: number; lng: number; total_area_ha: number | null };
 type Field    = { id: string; field_code: string; field_name: string | null; culture: string; area_ha: number | null; status: string; polygon_coordinates: { lat: number; lng: number }[] | null; farm_id: string };
