@@ -113,8 +113,9 @@ const menuGroups: NavGroup[] = [
   {
     label: "Pecuária Expandida",
     items: [
-      { href: "/ovinos", label: "Ovinos & Caprinos", icon: Rabbit },
-      { href: "/aves",   label: "Aves & Frangos",    icon: Bird   },
+      { href: "/ovinos",           label: "Ovinos & Caprinos", icon: Rabbit   },
+      { href: "/ovinos/dashboard", label: "Dashboard Ovinos",  icon: BarChart2, sub: true },
+      { href: "/aves",             label: "Aves & Frangos",    icon: Bird     },
     ],
   },
   {
