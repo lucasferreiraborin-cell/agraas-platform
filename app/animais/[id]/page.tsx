@@ -11,6 +11,7 @@ import AnimalAnalysis from "@/app/components/AnimalAnalysis";
 import AnimalQRCode from "@/app/components/AnimalQRCode";
 import ExportPassportModal from "@/app/components/ExportPassportModal";
 import { UnverifiedBadge } from "@/app/components/DocumentGate";
+import PredictiveAlerts from "@/app/components/PredictiveAlerts";
 
 type PageProps = {
   params: Promise<{
@@ -865,6 +866,8 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
       <section className="ag-card p-8">
         <AnimalAnalysis animalId={id} />
       </section>
+
+      <PredictiveAlerts animalId={id} />
 
       <section className="ag-card p-8">
         <div className="flex items-start justify-between gap-4">
