@@ -69,7 +69,7 @@ export default function LoginPage() {
               Intelligence Layer
             </p>
           </div>
-          <HalalBadgeSVG size={60} />
+          <HalalBadgeSVG size={84} />
         </div>
 
         <div className="rounded-3xl border border-[var(--border)] bg-white p-8 shadow-[var(--shadow-soft)]">
