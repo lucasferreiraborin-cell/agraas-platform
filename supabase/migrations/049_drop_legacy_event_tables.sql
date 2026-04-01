@@ -1,38 +1,71 @@
 -- Migration 049: Drop tabelas legadas animal_events e farm_events
--- Substituídas pela tabela unificada events na migration 002.
--- Seguro dropar: tabelas foram esvaziadas/nunca mais populadas após migration 009.
+--
+-- Contexto: migration 002 já migrou todos os registros dessas tabelas para
+-- a tabela unificada events (INSERT INTO events SELECT FROM animal_events/farm_events).
+-- Migration 009 pretendia dropar mas foi mantida por segurança na época.
+-- Os dados existentes JÁ estão em events — drop é seguro.
+--
+-- Schema original de animal_events: animal_id, event_type, event_timestamp, notes, created_at
+-- Schema original de farm_events:   animal_id, type, event_date, description, created_at
 
 DO $$
-DECLARE
-  v_animal_events_count bigint := 0;
-  v_farm_events_count   bigint := 0;
 BEGIN
-  -- Verifica existência e contagem de animal_events
+  -- ── animal_events ────────────────────────────────────────────────────────────
   IF EXISTS (
     SELECT 1 FROM information_schema.tables
     WHERE table_schema = 'public' AND table_name = 'animal_events'
   ) THEN
-    SELECT COUNT(*) INTO v_animal_events_count FROM animal_events;
-    IF v_animal_events_count > 0 THEN
-      RAISE EXCEPTION 'animal_events não está vazia: % registros encontrados. Drop cancelado.', v_animal_events_count;
-    END IF;
+    -- Inserção defensiva: migra quaisquer registros que possam ter escapado
+    -- da migration 002 (apenas os que não têm correspondência em events).
+    INSERT INTO events (animal_id, source, event_type, event_date, notes, created_at)
+    SELECT
+      ae.animal_id,
+      'animal',
+      ae.event_type,
+      ae.event_timestamp,
+      ae.notes,
+      COALESCE(ae.created_at, now())
+    FROM animal_events ae
+    WHERE ae.animal_id IS NOT NULL
+      AND NOT EXISTS (
+        SELECT 1 FROM events e
+        WHERE e.animal_id  = ae.animal_id
+          AND e.source     = 'animal'
+          AND e.event_type = ae.event_type
+          AND e.event_date = ae.event_timestamp
+      );
+
     DROP TABLE animal_events;
-    RAISE NOTICE 'Tabela animal_events removida (estava vazia).';
+    RAISE NOTICE 'Tabela animal_events removida com sucesso.';
   ELSE
     RAISE NOTICE 'Tabela animal_events não existe — nada a fazer.';
   END IF;
 
-  -- Verifica existência e contagem de farm_events
+  -- ── farm_events ───────────────────────────────────────────────────────────────
   IF EXISTS (
     SELECT 1 FROM information_schema.tables
     WHERE table_schema = 'public' AND table_name = 'farm_events'
   ) THEN
-    SELECT COUNT(*) INTO v_farm_events_count FROM farm_events;
-    IF v_farm_events_count > 0 THEN
-      RAISE EXCEPTION 'farm_events não está vazia: % registros encontrados. Drop cancelado.', v_farm_events_count;
-    END IF;
+    INSERT INTO events (animal_id, source, event_type, event_date, notes, created_at)
+    SELECT
+      fe.animal_id,
+      'farm',
+      fe.type,
+      fe.event_date::timestamptz,
+      fe.description,
+      COALESCE(fe.created_at, now())
+    FROM farm_events fe
+    WHERE fe.animal_id IS NOT NULL
+      AND NOT EXISTS (
+        SELECT 1 FROM events e
+        WHERE e.animal_id  = fe.animal_id
+          AND e.source     = 'farm'
+          AND e.event_type = fe.type
+          AND e.event_date = fe.event_date::timestamptz
+      );
+
     DROP TABLE farm_events;
-    RAISE NOTICE 'Tabela farm_events removida (estava vazia).';
+    RAISE NOTICE 'Tabela farm_events removida com sucesso.';
   ELSE
     RAISE NOTICE 'Tabela farm_events não existe — nada a fazer.';
   END IF;
