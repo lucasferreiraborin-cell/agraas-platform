@@ -1,5 +1,6 @@
-import { supabase } from "@/lib/supabase";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 import Link from "next/link";
+import { Brain, AlertTriangle } from "lucide-react";
 
 type BatchRow = {
   id: string;
@@ -17,6 +18,23 @@ type ProductRow = {
 type AnimalRow = {
   id: string;
   internal_code: string | null;
+  agraas_id: string | null;
+  nickname: string | null;
+};
+
+type AiPredictionRow = {
+  id: string;
+  animal_id: string;
+  risk_level: "low" | "medium" | "high";
+  alerts: string[];
+  recommendations: string[];
+  predicted_score_30d: number | null;
+  created_at: string;
+  animals: {
+    agraas_id: string | null;
+    internal_code: string | null;
+    nickname: string | null;
+  } | null;
 };
 
 type WeightRow = {
@@ -26,16 +44,26 @@ type WeightRow = {
 };
 
 export default async function AlertasPage() {
+  const supabase = await createSupabaseServerClient();
+
+  const cutoff24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
   const [
     { data: batchesData, error: batchesError },
     { data: productsData, error: productsError },
     { data: animalsData, error: animalsError },
     { data: weightsData, error: weightsError },
+    { data: aiPredictionsData },
   ] = await Promise.all([
     supabase.from("stock_batches").select("id, batch_number, quantity, expiration_date, product_id"),
     supabase.from("products").select("id, name"),
-    supabase.from("animals").select("id, internal_code"),
+    supabase.from("animals").select("id, internal_code, agraas_id, nickname"),
     supabase.from("weights").select("animal_id, weight, weighing_date").order("weighing_date", { ascending: false }),
+    supabase
+      .from("ai_predictions")
+      .select("id, animal_id, risk_level, alerts, recommendations, predicted_score_30d, created_at, animals(agraas_id, internal_code, nickname)")
+      .gte("created_at", cutoff24h)
+      .order("created_at", { ascending: false }),
   ]);
 
   if (batchesError) console.error("Erro ao buscar lotes sanitários:", batchesError);
@@ -46,6 +74,12 @@ export default async function AlertasPage() {
   const batches = (batchesData ?? []) as BatchRow[];
   const products = (productsData ?? []) as ProductRow[];
   const animals = (animalsData ?? []) as AnimalRow[];
+  const aiPredictions = (aiPredictionsData ?? []) as AiPredictionRow[];
+
+  // Group AI predictions by risk level (high first, then medium, skip low if no alerts)
+  const highRisk   = aiPredictions.filter(p => p.risk_level === "high");
+  const mediumRisk = aiPredictions.filter(p => p.risk_level === "medium" && p.alerts.length > 0);
+  const aiAlerts   = [...highRisk, ...mediumRisk];
   const weights = (weightsData ?? []) as WeightRow[];
 
   const productMap = new Map<string, string>();
@@ -124,9 +158,9 @@ export default async function AlertasPage() {
                 subtitle="animais há mais de 90 dias sem pesagem"
               />
               <MetricCard
-                label="Status"
-                value="monitorando"
-                subtitle="alertas operacionais ativos"
+                label="Risco IA"
+                value={aiAlerts.length}
+                subtitle="animais com risco alto ou médio nas últimas 24h"
               />
             </div>
           </div>
@@ -218,6 +252,80 @@ export default async function AlertasPage() {
             )}
           </div>
         </div>
+      </section>
+
+      {/* ── AI Predictions ─────────────────────────────────────────────────── */}
+      <section className="ag-card p-8">
+        <div className="flex items-center gap-2 mb-6">
+          <Brain size={16} className="text-violet-400" />
+          <h2 className="ag-section-title mb-0">Alertas preditivos IA</h2>
+          <span className="ag-badge ag-badge-dark ml-2">últimas 24h</span>
+        </div>
+
+        {aiAlerts.length === 0 ? (
+          <p className="text-sm text-[var(--text-muted)]">
+            Nenhum animal com risco alto ou médio nas últimas 24 horas. Acesse a página de um animal para gerar uma análise.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {aiAlerts.map((pred) => {
+              const animalLabel =
+                pred.animals?.nickname ??
+                pred.animals?.internal_code ??
+                pred.animals?.agraas_id ??
+                pred.animal_id;
+              const isHigh = pred.risk_level === "high";
+              return (
+                <div
+                  key={pred.id}
+                  className={`rounded-xl border p-4 ${
+                    isHigh
+                      ? "border-red-500/25 bg-red-500/8"
+                      : "border-amber-500/20 bg-amber-500/8"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <AlertTriangle
+                        size={14}
+                        className={isHigh ? "text-red-400" : "text-amber-400"}
+                      />
+                      <Link
+                        href={`/animais/${pred.animal_id}`}
+                        className={`font-semibold text-sm hover:underline ${
+                          isHigh ? "text-red-300" : "text-amber-300"
+                        }`}
+                      >
+                        {animalLabel}
+                      </Link>
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${
+                          isHigh
+                            ? "bg-red-500/20 text-red-300"
+                            : "bg-amber-500/20 text-amber-300"
+                        }`}
+                      >
+                        {pred.risk_level}
+                      </span>
+                    </div>
+                    {pred.predicted_score_30d !== null && (
+                      <span className="text-xs text-white/40">
+                        Score 30d: <strong className="text-white/70">{pred.predicted_score_30d}</strong>
+                      </span>
+                    )}
+                  </div>
+                  {pred.alerts.length > 0 && (
+                    <ul className="mt-2 space-y-1">
+                      {pred.alerts.map((a, i) => (
+                        <li key={i} className="text-xs text-white/60">• {a}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </section>
     </main>
   );
