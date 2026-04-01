@@ -185,8 +185,7 @@ export default async function PainelPage() {
       .from("animal_certifications")
       .select("animal_id, certification_name, status")
       .ilike("certification_name", "%Halal%")
-      .eq("status", "active")
-      .eq("client_id", clientId),
+      .eq("status", "active"),
 
     supabaseServer
       .from("animal_certifications")

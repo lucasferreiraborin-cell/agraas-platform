@@ -41,8 +41,8 @@ export default async function RootLayout({
           <div className="flex min-h-screen">
             <aside className="hidden w-[320px] shrink-0 border-r border-white/10 bg-[linear-gradient(180deg,var(--sidebar)_0%,var(--sidebar-2)_100%)] text-white lg:flex lg:flex-col">
               <div className="border-b border-white/10 px-7 py-8">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
+                <div className="flex items-center justify-center gap-6">
+                  <div className="text-center">
                     <p className="text-[11px] uppercase tracking-[0.32em] text-white/50">
                       Plataforma
                     </p>
@@ -53,13 +53,7 @@ export default async function RootLayout({
                       Intelligence Layer
                     </p>
                   </div>
-
-                  <div className="flex flex-col items-end gap-2">
-                    <div className="rounded-2xl border border-white/10 bg-white/10 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/70">
-                      MVP
-                    </div>
-                    <HalalBadgeSVG size={32} />
-                  </div>
+                  <HalalBadgeSVG size={56} />
                 </div>
               </div>
 

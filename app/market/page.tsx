@@ -172,24 +172,25 @@ export default async function MarketPage() {
                   return (
                     <tr key={a.animal_id} className="group">
                       <td>
-                        <div className="flex items-center gap-2">
-                          <div>
-                            <p className="font-semibold">{a.internal_code ?? a.animal_id}</p>
-                            <p className="text-xs text-[var(--text-muted)]">{formatDate(a.birth_date)}</p>
-                          </div>
-                          {a.certifications?.some(c => c.name?.toLowerCase().includes("halal")) && (
-                            <HalalBadgeSVG size={24} />
-                          )}
+                        <div>
+                          <p className="font-semibold">{a.internal_code ?? a.animal_id}</p>
+                          <p className="text-xs text-[var(--text-muted)]">{formatDate(a.birth_date)}</p>
                         </div>
                       </td>
                       <td className="max-w-[150px] truncate text-[var(--text-secondary)]">{a.property_name ?? "—"}</td>
                       <td className="text-sm">{formatSex(a.sex)}</td>
                       <td className="text-right tabular-nums font-medium">{a.last_weight ? `${a.last_weight} kg` : "—"}</td>
                       <td className="text-center">
-                        <span className="inline-block rounded-full px-2.5 py-0.5 text-xs font-bold border"
-                          style={{ color: scoreColor, borderColor: scoreColor + "40", backgroundColor: scoreColor + "12" }}>
-                          {score}
-                        </span>
+                        <div className="inline-flex items-center justify-center gap-2">
+                          <span className="inline-block rounded-full px-2.5 py-0.5 text-xs font-bold border"
+                            style={{ color: scoreColor, borderColor: scoreColor + "40", backgroundColor: scoreColor + "12" }}>
+                            {score}
+                          </span>
+                          {a.certifications?.some(c => c.name?.toLowerCase().includes("halal"))
+                            ? <HalalBadgeSVG size={32} />
+                            : <div style={{ width: 32, height: 32 }} />
+                          }
+                        </div>
                       </td>
                       <td>
                         <div className="flex flex-wrap gap-1">

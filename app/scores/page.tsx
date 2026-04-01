@@ -171,11 +171,12 @@ export default async function ScoresPage() {
                   className="group rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] p-5 hover:border-[var(--primary)]/30 hover:bg-[var(--primary-soft)] transition">
                   <div className="flex items-center justify-between">
                     <span className="text-2xl">{medal}</span>
-                    <div className="flex flex-col items-center gap-1">
+                    <div className="flex items-center gap-2">
                       <ScoreCircleLarge score={Math.round(score)} size={60} />
-                      {item.active_certifications?.some(c => c.toLowerCase().includes("halal")) && (
-                        <HalalBadgeSVG size={24} />
-                      )}
+                      {item.active_certifications?.some(c => c.toLowerCase().includes("halal"))
+                        ? <HalalBadgeSVG size={60} />
+                        : <div style={{ width: 60, height: 60 }} />
+                      }
                     </div>
                   </div>
                   <p className="mt-3 font-semibold text-[var(--text-primary)]">{item.internal_code ?? item.animal_id}</p>
