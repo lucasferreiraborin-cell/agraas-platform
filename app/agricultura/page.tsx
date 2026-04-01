@@ -1,15 +1,10 @@
-import { createSupabaseServerClient } from "@/lib/supabase-server";
-import Link from "next/link";
-import dynamic from "next/dynamic";
-import { Wheat, Ship, Layers, Warehouse, Plus } from "lucide-react";
+"use client";
 
-const AgricultureMap = dynamic(
-  async () => (await import("@/app/components/AgricultureMap")).default,
-  {
-    ssr: false,
-    loading: () => <div style={{ height: "400px", background: "#f0f4ef", borderRadius: "8px" }} />,
-  }
-);
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Wheat, Ship, Layers, Warehouse } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import AgricultureMap from "@/app/components/AgricultureMap";
 
 type Farm     = { id: string; name: string; city: string; state: string; lat: number; lng: number; total_area_ha: number | null };
 type Field    = { id: string; field_code: string; field_name: string | null; culture: string; area_ha: number | null; status: string; polygon_coordinates: { lat: number; lng: number }[] | null; farm_id: string };
@@ -29,42 +24,50 @@ const STATUS_LABEL: Record<string,string> = { planejado:"Planejado",carregando:"
 function fmtDate(d: string | null) { if (!d) return "—"; return new Date(d).toLocaleDateString("pt-BR"); }
 function fmtTons(t: number) { return t.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 }); }
 
-export default async function AgriculturaPage() {
-  const supabase = await createSupabaseServerClient();
+export default function AgriculturaPage() {
+  const [farms,     setFarms]     = useState<Farm[]>([]);
+  const [fields,    setFields]    = useState<Field[]>([]);
+  const [shipments, setShipments] = useState<Shipment[]>([]);
+  const [tracking,  setTracking]  = useState<Tracking[]>([]);
+  const [loading,   setLoading]   = useState(true);
 
-  const [
-    { data: farmsData },
-    { data: fieldsData },
-    { data: shipmentsData },
-    { data: trackingData },
-  ] = await Promise.all([
-    supabase.from("farms_agriculture").select("id, name, city, state, lat, lng, total_area_ha").eq("status","active"),
-    supabase.from("crop_fields").select("id, field_code, field_name, culture, area_ha, status, polygon_coordinates, farm_id"),
-    supabase.from("crop_shipments").select("id, contract_number, culture, quantity_tons, destination_country, destination_port, vessel_name, departure_date, status").order("departure_date", { ascending: true }),
-    supabase.from("crop_shipment_tracking").select("shipment_id, stage, stage_date").order("stage_date", { ascending: false }),
-  ]);
-
-  const farms:     Farm[]     = (farmsData ?? []) as Farm[];
-  const fields:    Field[]    = (fieldsData ?? []) as Field[];
-  const shipments: Shipment[] = (shipmentsData ?? []) as Shipment[];
-  const tracking:  Tracking[] = (trackingData ?? []) as Tracking[];
+  useEffect(() => {
+    async function load() {
+      const [
+        { data: farmsData },
+        { data: fieldsData },
+        { data: shipmentsData },
+        { data: trackingData },
+      ] = await Promise.all([
+        supabase.from("farms_agriculture").select("id, name, city, state, lat, lng, total_area_ha").eq("status","active"),
+        supabase.from("crop_fields").select("id, field_code, field_name, culture, area_ha, status, polygon_coordinates, farm_id"),
+        supabase.from("crop_shipments").select("id, contract_number, culture, quantity_tons, destination_country, destination_port, vessel_name, departure_date, status").order("departure_date", { ascending: true }),
+        supabase.from("crop_shipment_tracking").select("shipment_id, stage, stage_date").order("stage_date", { ascending: false }),
+      ]);
+      setFarms((farmsData ?? []) as Farm[]);
+      setFields((fieldsData ?? []) as Field[]);
+      setShipments((shipmentsData ?? []) as Shipment[]);
+      setTracking((trackingData ?? []) as Tracking[]);
+      setLoading(false);
+    }
+    load();
+  }, []);
 
   const active     = shipments.filter(s => s.status !== "entregue");
   const totalTons  = shipments.filter(s => s.status === "entregue").reduce((s, sh) => s + sh.quantity_tons, 0);
   const inProd     = fields.filter(f => ["plantado","em_desenvolvimento"].includes(f.status)).length;
   const farmCount  = farms.length;
 
-  // Current stage per shipment
   const shipStageMap = new Map<string, string>();
   for (const t of tracking) {
     if (!shipStageMap.has(t.shipment_id)) shipStageMap.set(t.shipment_id, t.stage);
   }
 
   const kpis = [
-    { label: "Fazendas ativas",       value: farmCount,         sub: "em produção",          icon: Wheat,     color: "text-emerald-600" },
-    { label: "Talhões em produção",   value: inProd,            sub: "plantados / crescendo", icon: Layers,    color: "text-blue-600" },
-    { label: "Toneladas embarcadas",  value: fmtTons(totalTons),sub: "safra atual",           icon: Ship,      color: "text-indigo-600" },
-    { label: "Embarques ativos",      value: active.length,     sub: "em andamento",          icon: Warehouse, color: "text-amber-600" },
+    { label: "Fazendas ativas",       value: loading ? "—" : farmCount,              sub: "em produção",           icon: Wheat,     color: "text-emerald-600" },
+    { label: "Talhões em produção",   value: loading ? "—" : inProd,                 sub: "plantados / crescendo", icon: Layers,    color: "text-blue-600" },
+    { label: "Toneladas embarcadas",  value: loading ? "—" : fmtTons(totalTons),     sub: "safra atual",           icon: Ship,      color: "text-indigo-600" },
+    { label: "Embarques ativos",      value: loading ? "—" : active.length,          sub: "em andamento",          icon: Warehouse, color: "text-amber-600" },
   ];
 
   return (
@@ -120,12 +123,13 @@ export default async function AgriculturaPage() {
           </div>
         </div>
         <div style={{ height: 400 }}>
-          <AgricultureMap farms={farms} fields={fields} />
+          {!loading && <AgricultureMap farms={farms} fields={fields} />}
+          {loading  && <div style={{ height: 400, background: "#f0f4ef", borderRadius: "0 0 1.5rem 1.5rem" }} />}
         </div>
       </section>
 
       {/* Embarques ativos */}
-      {active.length > 0 && (
+      {!loading && active.length > 0 && (
         <section className="ag-card-strong p-8 space-y-5">
           <div className="flex items-center justify-between">
             <h2 className="ag-section-title">Embarques ativos</h2>
