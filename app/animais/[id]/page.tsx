@@ -10,8 +10,15 @@ import EventModal from "@/app/components/EventModal";
 import AnimalAnalysis from "@/app/components/AnimalAnalysis";
 import AnimalQRCode from "@/app/components/AnimalQRCode";
 import ExportPassportModal from "@/app/components/ExportPassportModal";
-import { UnverifiedBadge } from "@/app/components/DocumentGate";
 import PredictiveAlerts from "@/app/components/PredictiveAlerts";
+import AnimalTimeline, {
+  type TimelineWeight,
+  type TimelineApplication,
+  type TimelineEvent,
+  type TimelineMovement,
+  type TimelineCertification,
+  type TimelineSale,
+} from "@/app/components/AnimalTimeline";
 
 type PageProps = {
   params: Promise<{
@@ -122,15 +129,6 @@ type SanitaryHistoryRow = {
   application_date: string | null;
 };
 
-type TimelineRow = {
-  id: string;
-  title: string;
-  description: string;
-  date: string | null;
-  badge: string;
-  unverified?: boolean;
-};
-
 export default async function AnimalPassaportePage({ params }: PageProps) {
   const { id } = await params;
   const supabase = await createSupabaseServerClient();
@@ -146,6 +144,7 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
     { data: weightsData },
     { data: movementsData },
     { data: certificationsData },
+    { data: salesData },
   ] = await Promise.all([
     supabase
       .from("agraas_master_passport_cache")
@@ -193,6 +192,12 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
       .from("animal_certifications")
       .select("id, certification_name, issued_at, expires_at, status")
       .eq("animal_id", id),
+
+    supabase
+      .from("sales")
+      .select("id, sale_date, weight_kg, price_per_arroba, total_value, notes")
+      .eq("animal_id", id)
+      .order("sale_date", { ascending: false }),
   ]);
 
   if (animalError || !animalData) {
@@ -238,6 +243,7 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
   const weights = (weightsData ?? []) as WeightRow[];
   const movements = (movementsData ?? []) as MovementRow[];
   const certifications = (certificationsData ?? []) as CertificationRow[];
+  const sales = (salesData ?? []) as TimelineSale[];
 
   // Busca pai, mãe e propriedade atual em paralelo
   const [sireData, damData, currentPropertyData, sireScoreRaw, damScoreRaw] = await Promise.all([
@@ -318,68 +324,7 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
   const birthDate = animal.birth_date ?? null;
   const ageMonths = birthDate ? calculateAgeInMonths(birthDate) : null;
 
-  const timelineApplications: TimelineRow[] = applications.map((application) => ({
-    id: `application-${application.id}`,
-    title: "Aplicação sanitária",
-    description: `${
-      application.product_id
-        ? productMap.get(application.product_id) ?? application.product_name ?? "Produto"
-        : application.product_name ?? "Produto"
-    } • lote ${application.batch_id ? batchMap.get(application.batch_id) ?? "-" : "-"} • dose ${
-      application.dose ?? "-"
-    }`,
-    date: application.application_date ?? application.created_at ?? null,
-    badge: "💉 Aplicação",
-  }));
 
-  const timelineWeights: TimelineRow[] = weights.map((weight) => ({
-    id: `weight-${weight.id}`,
-    title: "Pesagem registrada",
-    description: `${weight.weight} kg${weight.notes ? ` • ${weight.notes}` : ""}`,
-    date: weight.weighing_date,
-    badge: "⚖️ Pesagem",
-  }));
-
-  const timelineMovements: TimelineRow[] = movements.map((movement) => ({
-    id: `movement-${movement.id}`,
-    title: formatMovementType(movement.movement_type),
-    description: `${movement.origin_ref ?? "-"} → ${movement.destination_ref ?? "-"}${
-      movement.notes ? ` • ${movement.notes}` : ""
-    }`,
-    date: movement.movement_date,
-    badge: "🔁 Movimento",
-  }));
-
-  const timelineEvents: TimelineRow[] = events.map((event) => ({
-    id: `event-${event.id}-${event.event_date ?? "sem-data"}`,
-    title: formatEventType(event.event_type ?? ""),
-    description: event.notes ?? (event.source === "farm" ? "Evento operacional registrado." : "Evento registrado."),
-    date: event.event_date ?? null,
-    badge: `${getEventIcon(event.event_type ?? "")} ${formatEventType(event.event_type ?? "")}`,
-    unverified: event.event_type === "ownership_transfer" && !event.document_source,
-  }));
-
-  const timeline = [
-    ...timelineApplications,
-    ...timelineWeights,
-    ...timelineMovements,
-    ...timelineEvents,
-  ]
-    .sort((a, b) => {
-      const aTime = a.date ? new Date(a.date).getTime() : 0;
-      const bTime = b.date ? new Date(b.date).getTime() : 0;
-      return bTime - aTime;
-    })
-    .filter(
-      (item, index, self) =>
-        index ===
-        self.findIndex(
-          (other) =>
-            other.title === item.title &&
-            other.description === item.description &&
-            other.date === item.date
-        )
-    );
 
   const displayInternalCode =
     identity.internal_code ?? animal.internal_code ?? animal.id;
@@ -776,60 +721,25 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
       </section>
 
       <section className="ag-card p-8">
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start justify-between gap-4 mb-6">
           <div>
             <h2 className="ag-section-title">Timeline operacional</h2>
             <p className="ag-section-subtitle">
-              Linha do tempo consolidada com eventos, aplicações, pesagens e movimentações.
+              Linha do tempo cronológica com todos os eventos da vida do animal.
             </p>
           </div>
-
-          <div className="flex items-center gap-3">
-            <span className="ag-badge ag-badge-dark">{timeline.length} registros</span>
-            <EventModal animalId={id} />
-          </div>
+          <EventModal animalId={id} />
         </div>
-
-        <div className="mt-8">
-          {timeline.length === 0 ? (
-            <div className="rounded-3xl bg-[var(--surface-soft)] p-6 text-sm text-[var(--text-muted)]">
-              Nenhum evento encontrado para este animal.
-            </div>
-          ) : (
-            <div className="relative">
-              {/* Linha vertical */}
-              <div className="absolute left-5 top-2 bottom-2 w-px bg-[var(--border)]" />
-              <div className="space-y-0">
-                {timeline.map((item) => {
-                  const dotColor = timelineItemColor(item.badge);
-                  const emoji = [...item.badge][0] ?? "•";
-                  return (
-                    <div key={item.id} className="relative flex gap-5 pb-7 last:pb-0">
-                      {/* Círculo colorido */}
-                      <div
-                        className="relative z-10 mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 bg-white text-base"
-                        style={{ borderColor: dotColor }}
-                      >
-                        {emoji}
-                      </div>
-                      {/* Conteúdo */}
-                      <div className="flex-1 min-w-0 pt-1">
-                        <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-0.5">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <p className="font-semibold text-[var(--text-primary)]">{item.title}</p>
-                            {item.unverified && <UnverifiedBadge />}
-                          </div>
-                          <span className="shrink-0 text-xs text-[var(--text-muted)]">{formatDate(item.date)}</span>
-                        </div>
-                        <p className="mt-1 text-sm leading-relaxed text-[var(--text-secondary)]">{item.description}</p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </div>
+        <AnimalTimeline
+          birth={{ birth_date: animal.birth_date, birth_weight: animal.birth_weight, breed: animal.breed }}
+          weights={weights as TimelineWeight[]}
+          applications={applications as TimelineApplication[]}
+          events={events as TimelineEvent[]}
+          movements={movements as TimelineMovement[]}
+          certifications={certifications as TimelineCertification[]}
+          sales={sales}
+          animalId={id}
+        />
       </section>
 
       {animal.agraas_id && (
@@ -1186,12 +1096,3 @@ function ScoreDonut({ score, size = 140 }: { score: number; size?: number }) {
 }
 
 // ── Cor do dot por tipo de evento na timeline ──
-function timelineItemColor(badge: string): string {
-  if (badge.includes("⚖") || badge.includes("Pesagem")) return "#3b82f6";
-  if (badge.includes("💉") || badge.includes("Aplicação")) return "#f59e0b";
-  if (badge.includes("🔁") || badge.includes("Movimento")) return "#8b5cf6";
-  if (badge.includes("📦") || badge.includes("Lote")) return "#6b7280";
-  if (badge.includes("🐣") || badge.includes("Nascimento")) return "#10b981";
-  if (badge.includes("✅") || badge.includes("Certif")) return "#059669";
-  return "#9ca3af";
-}
