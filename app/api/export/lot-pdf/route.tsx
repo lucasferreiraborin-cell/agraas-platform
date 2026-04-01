@@ -452,7 +452,7 @@ export async function POST(req: NextRequest) {
           </Page>
         </Document>
       );
-      return new Response(emptyPdf, {
+      return new Response(new Uint8Array(emptyPdf), {
         headers: {
           "Content-Type": "application/pdf",
           "Content-Disposition": `attachment; filename="lot-certificate-empty.pdf"`,
@@ -548,7 +548,7 @@ export async function POST(req: NextRequest) {
       />
     );
 
-    return new Response(pdfBuffer, {
+    return new Response(new Uint8Array(pdfBuffer), {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="lot-certificate-${safeName}.pdf"`,
