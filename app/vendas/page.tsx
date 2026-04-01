@@ -4,6 +4,12 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 import { useSearchParams } from "next/navigation";
 import { DollarSign, Weight, TrendingUp, CheckCircle, Loader2 } from "lucide-react";
+import DocumentGate, {
+  type GateMode,
+  type ParsedDoc,
+  LockedField,
+  UnverifiedBadge,
+} from "@/app/components/DocumentGate";
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -17,6 +23,7 @@ type VendaEvent = {
   event_date: string | null;
   animal_id: string | null;
   notes: string | null;
+  document_source: string | null;
 };
 
 function parseNotes(notes: string | null): { comprador?: string; preco?: number; peso?: number; animal_code?: string } {
@@ -43,6 +50,11 @@ function VendasContent() {
   const [success,    setSuccess]    = useState("");
   const [error,      setError]      = useState("");
 
+  // DocumentGate
+  const [gateMode,  setGateMode]  = useState<GateMode>("idle");
+  const [parsedDoc, setParsedDoc] = useState<ParsedDoc | null>(null);
+
+  // Campos do formulário
   const [animalId,   setAnimalId]   = useState(presetAnimalId);
   const [propertyId, setPropertyId] = useState("");
   const [saleDate,   setSaleDate]   = useState(new Date().toISOString().slice(0, 10));
@@ -56,7 +68,8 @@ function VendasContent() {
       const [ar, pr, hr] = await Promise.all([
         supabase.from("animals").select("id, internal_code").order("created_at", { ascending: false }),
         supabase.from("properties").select("id, name").order("name"),
-        supabase.from("events").select("id, event_date, animal_id, notes")
+        supabase.from("events")
+          .select("id, event_date, animal_id, notes, document_source")
           .eq("source", "animal").eq("event_type", "ownership_transfer")
           .order("event_date", { ascending: false }).limit(50),
       ]);
@@ -67,8 +80,7 @@ function VendasContent() {
     })();
   }, []);
 
-  const animalMap = useMemo(() => new Map(animals.map(a => [a.id, a.internal_code ?? a.id])), [animals]);
-
+  const animalMap   = useMemo(() => new Map(animals.map(a => [a.id, a.internal_code ?? a.id])), [animals]);
   const parsedHistory = useMemo(() => history.map(e => ({ ...e, ...parseNotes(e.notes) })), [history]);
 
   const kpis = useMemo(() => {
@@ -78,9 +90,41 @@ function VendasContent() {
     return { total, receita, pesoTotal };
   }, [parsedHistory]);
 
+  function handleParsed(data: ParsedDoc) {
+    setParsedDoc(data);
+    setGateMode("verified");
+    // Pre-preenche comprador (destinatário da nota) e preço
+    setComprador(data.header.destinatario_nome || "");
+    setPreco(data.header.valor_total > 0 ? String(data.header.valor_total) : "");
+  }
+
+  function handleManual() {
+    setParsedDoc(null);
+    setGateMode("manual");
+  }
+
+  function handleReset() {
+    setParsedDoc(null);
+    setGateMode("idle");
+    setComprador("");
+    setPreco("");
+  }
+
+  function verifiedSummary() {
+    if (!parsedDoc) return "";
+    const h = parsedDoc.header;
+    const parts = [
+      h.numero_nota && `NF-e ${h.numero_nota}`,
+      h.emitente_nome,
+      h.valor_total > 0 && `R$\u00a0${h.valor_total.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`,
+    ].filter(Boolean);
+    return parts.join(" · ");
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true); setError(""); setSuccess("");
+
     const selectedAnimal = animals.find(a => a.id === animalId);
     const notesObj = {
       animal_code: selectedAnimal?.internal_code ?? animalId,
@@ -88,14 +132,21 @@ function VendasContent() {
       preco:       preco ? Number(preco) : undefined,
       peso:        pesoVivo ? Number(pesoVivo) : undefined,
     };
+
+    let documentSource: string | null = null;
+    if (gateMode === "verified" && parsedDoc) {
+      documentSource = `nfe:${parsedDoc.header.numero_nota}`;
+    }
+
     try {
       const [evErr, anErr] = await Promise.all([
         supabase.from("events").insert({
-          animal_id:  animalId || null,
-          source:     "animal",
-          event_type: "ownership_transfer",
-          event_date: saleDate || null,
-          notes:      JSON.stringify(notesObj),
+          animal_id:       animalId || null,
+          source:          "animal",
+          event_type:      "ownership_transfer",
+          event_date:      saleDate || null,
+          notes:           JSON.stringify(notesObj),
+          document_source: documentSource,
         }).then(r => r.error),
         propertyId
           ? supabase.from("animals").update({ current_property_id: propertyId }).eq("id", animalId).then(r => r.error)
@@ -105,11 +156,15 @@ function VendasContent() {
       if (anErr) { setError(anErr.message); return; }
       setSuccess("Venda registrada com sucesso.");
       // Atualiza histórico
-      const { data: newH } = await supabase.from("events").select("id, event_date, animal_id, notes")
+      const { data: newH } = await supabase.from("events")
+        .select("id, event_date, animal_id, notes, document_source")
         .eq("source", "animal").eq("event_type", "ownership_transfer")
         .order("event_date", { ascending: false }).limit(50);
       setHistory(newH ?? []);
-      setAnimalId(""); setPropertyId(""); setComprador(""); setPreco(""); setPesoVivo("");
+      // Reset form
+      setAnimalId(""); setPropertyId(""); setPesoVivo("");
+      setSaleDate(new Date().toISOString().slice(0, 10));
+      handleReset();
     } finally {
       setSubmitting(false);
     }
@@ -129,7 +184,7 @@ function VendasContent() {
             <span className="ag-badge ag-badge-green">Registro</span>
             <h1 className="ag-page-title">Vendas e Transferências</h1>
             <p className="mt-4 max-w-lg text-[1rem] leading-7 text-[var(--text-secondary)]">
-              Registre vendas de animais com comprador, preço e peso. Histórico completo com KPIs de receita.
+              Registre vendas de animais com comprador, preço e peso. Importe a NF-e para dados verificados.
             </p>
           </div>
           <div className="ag-hero-panel">
@@ -138,9 +193,9 @@ function VendasContent() {
             ) : (
               <div className="grid gap-3 sm:grid-cols-3">
                 {[
-                  { label: "Total vendas",   value: kpis.total,   sub: "registradas",        icon: TrendingUp,  bg: "bg-[var(--primary-soft)]", cl: "text-[var(--primary)]" },
-                  { label: "Receita total",  value: `R$\u00a0${kpis.receita.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, sub: "soma informada", icon: DollarSign, bg: "bg-emerald-50", cl: "text-emerald-600" },
-                  { label: "Peso vendido",   value: kpis.pesoTotal > 0 ? `${kpis.pesoTotal.toLocaleString("pt-BR")} kg` : "—", sub: "total informado", icon: Weight, bg: "bg-blue-50", cl: "text-blue-600" },
+                  { label: "Total vendas",  value: kpis.total,   sub: "registradas",        icon: TrendingUp, bg: "bg-[var(--primary-soft)]", cl: "text-[var(--primary)]" },
+                  { label: "Receita total", value: `R$\u00a0${kpis.receita.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, sub: "soma informada", icon: DollarSign, bg: "bg-emerald-50", cl: "text-emerald-600" },
+                  { label: "Peso vendido",  value: kpis.pesoTotal > 0 ? `${kpis.pesoTotal.toLocaleString("pt-BR")} kg` : "—", sub: "total informado", icon: Weight, bg: "bg-blue-50", cl: "text-blue-600" },
                 ].map(k => {
                   const Icon = k.icon;
                   return (
@@ -163,51 +218,119 @@ function VendasContent() {
       {/* ── Formulário ───────────────────────────────────────────────────── */}
       <section className="ag-card-strong p-8 space-y-6">
         <h2 className="ag-section-title">Registrar venda / transferência</h2>
-        <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <div>
-            <label className={labelCls}>Animal *</label>
-            <select value={animalId} onChange={e => setAnimalId(e.target.value)} className={inputCls} required>
-              <option value="">Selecione um animal</option>
-              {animals.map(a => <option key={a.id} value={a.id}>{a.internal_code ?? a.id}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className={labelCls}>Propriedade destino</label>
-            <select value={propertyId} onChange={e => setPropertyId(e.target.value)} className={inputCls}>
-              <option value="">Não informado</option>
-              {properties.map(p => <option key={p.id} value={p.id}>{p.name ?? p.id}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className={labelCls}>Data da venda *</label>
-            <input type="date" value={saleDate} onChange={e => setSaleDate(e.target.value)} className={inputCls} required />
-          </div>
-          <div>
-            <label className={labelCls}>Comprador</label>
-            <input type="text" value={comprador} onChange={e => setComprador(e.target.value)} placeholder="Nome ou empresa" className={inputCls} />
-          </div>
-          <div>
-            <label className={labelCls}>Preço (R$)</label>
-            <input type="number" step="0.01" min="0" value={preco} onChange={e => setPreco(e.target.value)} placeholder="0,00" className={inputCls} />
-          </div>
-          <div>
-            <label className={labelCls}>Peso vivo (kg)</label>
-            <input type="number" step="0.1" min="0" value={pesoVivo} onChange={e => setPesoVivo(e.target.value)} placeholder="Ex: 450" className={inputCls} />
-          </div>
 
-          <div className="sm:col-span-2 lg:col-span-3 flex items-center gap-4 pt-2">
-            <button type="submit" disabled={submitting}
-              className="ag-button-primary flex items-center gap-2 disabled:opacity-60">
-              {submitting ? <><Loader2 size={14} className="animate-spin" />Registrando…</> : "Registrar venda"}
-            </button>
-            {success && (
-              <div className="flex items-center gap-2 text-sm text-emerald-700">
-                <CheckCircle size={14} />{success}
+        <DocumentGate
+          mode={gateMode}
+          verifiedSummary={verifiedSummary()}
+          onParsed={handleParsed}
+          onManual={handleManual}
+          onReset={handleReset}
+        >
+          <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {/* Animal */}
+            <div>
+              <label className={labelCls}>Animal *</label>
+              <select value={animalId} onChange={e => setAnimalId(e.target.value)} className={inputCls} required>
+                <option value="">Selecione um animal</option>
+                {animals.map(a => <option key={a.id} value={a.id}>{a.internal_code ?? a.id}</option>)}
+              </select>
+            </div>
+
+            {/* Propriedade destino */}
+            <div>
+              <label className={labelCls}>Propriedade destino</label>
+              <select value={propertyId} onChange={e => setPropertyId(e.target.value)} className={inputCls}>
+                <option value="">Não informado</option>
+                {properties.map(p => <option key={p.id} value={p.id}>{p.name ?? p.id}</option>)}
+              </select>
+            </div>
+
+            {/* Data */}
+            <div>
+              <label className={labelCls}>Data da venda *</label>
+              <input type="date" value={saleDate} onChange={e => setSaleDate(e.target.value)} className={inputCls} required />
+            </div>
+
+            {/* Comprador — bloqueado se veio da NF-e */}
+            {gateMode === "verified" && parsedDoc?.header.destinatario_nome ? (
+              <LockedField label="Comprador" value={parsedDoc.header.destinatario_nome} />
+            ) : (
+              <div>
+                <label className={labelCls}>
+                  Comprador
+                  {gateMode === "manual" && <span className="ml-2 align-middle"><UnverifiedBadge /></span>}
+                </label>
+                <input
+                  type="text"
+                  value={comprador}
+                  onChange={e => setComprador(e.target.value)}
+                  placeholder="Nome ou empresa"
+                  className={inputCls}
+                />
               </div>
             )}
-            {error && <p className="text-sm text-red-600">{error}</p>}
-          </div>
-        </form>
+
+            {/* Preço — bloqueado se veio da NF-e */}
+            {gateMode === "verified" && parsedDoc && parsedDoc.header.valor_total > 0 ? (
+              <LockedField
+                label="Preço (R$)"
+                value={`R$\u00a0${parsedDoc.header.valor_total.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`}
+              />
+            ) : (
+              <div>
+                <label className={labelCls}>
+                  Preço (R$)
+                  {gateMode === "manual" && <span className="ml-2 align-middle"><UnverifiedBadge /></span>}
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={preco}
+                  onChange={e => setPreco(e.target.value)}
+                  placeholder="0,00"
+                  className={inputCls}
+                />
+              </div>
+            )}
+
+            {/* Peso vivo — sempre editável (não está na NF-e) */}
+            <div>
+              <label className={labelCls}>
+                Peso vivo (kg)
+                {gateMode === "manual" && <span className="ml-2 align-middle"><UnverifiedBadge /></span>}
+              </label>
+              <input
+                type="number"
+                step="0.1"
+                min="0"
+                value={pesoVivo}
+                onChange={e => setPesoVivo(e.target.value)}
+                placeholder="Ex: 450"
+                className={inputCls}
+              />
+            </div>
+
+            <div className="sm:col-span-2 lg:col-span-3 flex items-center gap-4 pt-2">
+              <button
+                type="submit"
+                disabled={submitting}
+                className="ag-button-primary flex items-center gap-2 disabled:opacity-60"
+              >
+                {submitting
+                  ? <><Loader2 size={14} className="animate-spin" />Registrando…</>
+                  : "Registrar venda"
+                }
+              </button>
+              {success && (
+                <div className="flex items-center gap-2 text-sm text-emerald-700">
+                  <CheckCircle size={14} />{success}
+                </div>
+              )}
+              {error && <p className="text-sm text-red-600">{error}</p>}
+            </div>
+          </form>
+        </DocumentGate>
       </section>
 
       {/* ── Histórico ────────────────────────────────────────────────────── */}
@@ -232,6 +355,7 @@ function VendasContent() {
                   <th className="text-left">Comprador</th>
                   <th className="text-right">Preço</th>
                   <th className="text-right">Peso vivo</th>
+                  <th className="text-center">Rastreabilidade</th>
                 </tr>
               </thead>
               <tbody>
@@ -249,6 +373,15 @@ function VendasContent() {
                     </td>
                     <td className="text-right tabular-nums">
                       {e.peso != null ? `${Number(e.peso).toLocaleString("pt-BR")} kg` : "—"}
+                    </td>
+                    <td className="text-center">
+                      {e.document_source ? (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 whitespace-nowrap">
+                          ✓ {e.document_source.startsWith("nfe:") ? `NF-e ${e.document_source.split(":")[1]}` : e.document_source}
+                        </span>
+                      ) : (
+                        <UnverifiedBadge />
+                      )}
                     </td>
                   </tr>
                 ))}
