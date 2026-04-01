@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 import { useRouter } from "next/navigation";
+import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
 
 export default function LoginPage() {
   const [email, setEmail]       = useState("");
@@ -56,16 +57,19 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#F5F7F4]">
       <div className="w-full max-w-md px-6">
-        <div className="mb-10 text-center">
-          <p className="text-[11px] uppercase tracking-[0.32em] text-[var(--text-muted)]">
-            Plataforma
-          </p>
-          <h1 className="mt-3 text-[3.5rem] font-semibold leading-none tracking-[-0.07em] text-[var(--text-primary)]">
-            Agraas
-          </h1>
-          <p className="mt-3 text-base text-[var(--text-secondary)]">
-            Intelligence Layer
-          </p>
+        <div className="mb-10 flex items-center justify-between">
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.32em] text-[var(--text-muted)]">
+              Plataforma
+            </p>
+            <h1 className="mt-3 text-[3.5rem] font-semibold leading-none tracking-[-0.07em] text-[var(--text-primary)]">
+              Agraas
+            </h1>
+            <p className="mt-3 text-base text-[var(--text-secondary)]">
+              Intelligence Layer
+            </p>
+          </div>
+          <HalalBadgeSVG size={60} />
         </div>
 
         <div className="rounded-3xl border border-[var(--border)] bg-white p-8 shadow-[var(--shadow-soft)]">
