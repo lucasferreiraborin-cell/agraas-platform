@@ -10,6 +10,7 @@ import EventModal from "@/app/components/EventModal";
 import AnimalAnalysis from "@/app/components/AnimalAnalysis";
 import AnimalQRCode from "@/app/components/AnimalQRCode";
 import ExportPassportModal from "@/app/components/ExportPassportModal";
+import { UnverifiedBadge } from "@/app/components/DocumentGate";
 
 type PageProps = {
   params: Promise<{
@@ -74,6 +75,7 @@ type EventRow = {
   event_type: string | null;
   event_date: string | null;
   notes: string | null;
+  document_source: string | null;
 };
 
 type WeightRow = {
@@ -125,6 +127,7 @@ type TimelineRow = {
   description: string;
   date: string | null;
   badge: string;
+  unverified?: boolean;
 };
 
 export default async function AnimalPassaportePage({ params }: PageProps) {
@@ -167,7 +170,7 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
 
     supabase
       .from("events")
-      .select("id, animal_id, source, event_type, event_date, notes")
+      .select("id, animal_id, source, event_type, event_date, notes, document_source")
       .eq("animal_id", id)
       .order("event_date", { ascending: false }),
 
@@ -352,6 +355,7 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
     description: event.notes ?? (event.source === "farm" ? "Evento operacional registrado." : "Evento registrado."),
     date: event.event_date ?? null,
     badge: `${getEventIcon(event.event_type ?? "")} ${formatEventType(event.event_type ?? "")}`,
+    unverified: event.event_type === "ownership_transfer" && !event.document_source,
   }));
 
   const timeline = [
@@ -810,7 +814,10 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
                       {/* Conteúdo */}
                       <div className="flex-1 min-w-0 pt-1">
                         <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-0.5">
-                          <p className="font-semibold text-[var(--text-primary)]">{item.title}</p>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="font-semibold text-[var(--text-primary)]">{item.title}</p>
+                            {item.unverified && <UnverifiedBadge />}
+                          </div>
                           <span className="shrink-0 text-xs text-[var(--text-muted)]">{formatDate(item.date)}</span>
                         </div>
                         <p className="mt-1 text-sm leading-relaxed text-[var(--text-secondary)]">{item.description}</p>
