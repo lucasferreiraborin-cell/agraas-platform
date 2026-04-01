@@ -22,6 +22,12 @@ type AnimalRow = {
   nickname: string | null;
 };
 
+type AnimalJoin = {
+  agraas_id: string | null;
+  internal_code: string | null;
+  nickname: string | null;
+};
+
 type AiPredictionRow = {
   id: string;
   animal_id: string;
@@ -30,12 +36,13 @@ type AiPredictionRow = {
   recommendations: string[];
   predicted_score_30d: number | null;
   created_at: string;
-  animals: {
-    agraas_id: string | null;
-    internal_code: string | null;
-    nickname: string | null;
-  } | null;
+  animals: AnimalJoin | AnimalJoin[] | null;
 };
+
+function getAnimal(animals: AiPredictionRow["animals"]): AnimalJoin | null {
+  if (!animals) return null;
+  return Array.isArray(animals) ? (animals[0] ?? null) : animals;
+}
 
 type WeightRow = {
   animal_id: string;
@@ -74,7 +81,7 @@ export default async function AlertasPage() {
   const batches = (batchesData ?? []) as BatchRow[];
   const products = (productsData ?? []) as ProductRow[];
   const animals = (animalsData ?? []) as AnimalRow[];
-  const aiPredictions = (aiPredictionsData ?? []) as AiPredictionRow[];
+  const aiPredictions = (aiPredictionsData ?? []) as unknown as AiPredictionRow[];
 
   // Group AI predictions by risk level (high first, then medium, skip low if no alerts)
   const highRisk   = aiPredictions.filter(p => p.risk_level === "high");
@@ -269,10 +276,11 @@ export default async function AlertasPage() {
         ) : (
           <div className="space-y-3">
             {aiAlerts.map((pred) => {
+              const a = getAnimal(pred.animals);
               const animalLabel =
-                pred.animals?.nickname ??
-                pred.animals?.internal_code ??
-                pred.animals?.agraas_id ??
+                a?.nickname ??
+                a?.internal_code ??
+                a?.agraas_id ??
                 pred.animal_id;
               const isHigh = pred.risk_level === "high";
               return (
