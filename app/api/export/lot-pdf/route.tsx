@@ -188,6 +188,8 @@ type TrackRow  = {
 function LotPDF({
   lot, animals, certsByAnimal, scoreByAnimal, withdrawalByAnimal,
   tracking, totalEligible, compliancePct, generatedAt,
+  valorBase, bonusScore, bonusHalal, bonusExport, penalCarencia, valorFinal,
+  cotacaoArroba, countComPeso, countBonusScore, countCarencia,
 }: {
   lot: LotRow;
   animals: AnimalRow[];
@@ -198,6 +200,16 @@ function LotPDF({
   totalEligible: number;
   compliancePct: number;
   generatedAt: string;
+  valorBase: number;
+  bonusScore: number;
+  bonusHalal: number;
+  bonusExport: number;
+  penalCarencia: number;
+  valorFinal: number;
+  cotacaoArroba: number;
+  countComPeso: number;
+  countBonusScore: number;
+  countCarencia: number;
 }) {
   const certRequired = lot.certificacoes_exigidas ?? [];
   const SCORE_MIN = 60;
@@ -394,6 +406,63 @@ function LotPDF({
           </>
         )}
 
+        {/* ── Lot Valuation ── */}
+        {countComPeso > 0 && (
+          <>
+            <Text style={[S.sectionHeader, { marginTop: 24 }]}>Lot Valuation</Text>
+            <View style={{ borderWidth: 1, borderColor: S.barTrack.backgroundColor, borderRadius: 6, padding: 10, marginBottom: 8 }}>
+              <View style={S.infoRow}>
+                <Text style={S.infoLabel}>Reference price</Text>
+                <Text style={S.infoValue}>R$ {cotacaoArroba.toFixed(2)}/@ · {countComPeso} animals with weight</Text>
+              </View>
+              <View style={S.infoRow}>
+                <Text style={S.infoLabel}>Base value</Text>
+                <Text style={[S.infoValue, { fontFamily: "Helvetica-Bold" }]}>
+                  R$ {valorBase.toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                </Text>
+              </View>
+              {bonusScore > 0 && (
+                <View style={S.infoRow}>
+                  <Text style={S.infoLabel}>Score bonus (+3%)</Text>
+                  <Text style={[S.infoValue, { color: C.green }]}>
+                    +R$ {bonusScore.toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} · {countBonusScore} animals score ≥ 75
+                  </Text>
+                </View>
+              )}
+              {bonusHalal > 0 && (
+                <View style={S.infoRow}>
+                  <Text style={S.infoLabel}>Halal bonus (+5%)</Text>
+                  <Text style={[S.infoValue, { color: C.green }]}>
+                    +R$ {bonusHalal.toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} · 100% certified
+                  </Text>
+                </View>
+              )}
+              {bonusExport > 0 && (
+                <View style={S.infoRow}>
+                  <Text style={S.infoLabel}>Arab export bonus (+8%)</Text>
+                  <Text style={[S.infoValue, { color: C.green }]}>
+                    +R$ {bonusExport.toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} · {lot.pais_destino}
+                  </Text>
+                </View>
+              )}
+              {penalCarencia > 0 && (
+                <View style={S.infoRow}>
+                  <Text style={S.infoLabel}>Withdrawal penalty (-5%)</Text>
+                  <Text style={[S.infoValue, { color: C.red }]}>
+                    -R$ {penalCarencia.toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} · {countCarencia} animals
+                  </Text>
+                </View>
+              )}
+              <View style={[S.infoRow, { borderTopWidth: 1, borderColor: C.border, marginTop: 6, paddingTop: 6 }]}>
+                <Text style={[S.infoLabel, { fontFamily: "Helvetica-Bold", color: C.textPrimary }]}>Estimated value</Text>
+                <Text style={[S.infoValue, { fontFamily: "Helvetica-Bold", fontSize: 12, color: C.green }]}>
+                  R$ {valorFinal.toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                </Text>
+              </View>
+            </View>
+          </>
+        )}
+
         {/* Footer */}
         <View style={S.footer} fixed>
           <Text style={S.footerText}>
@@ -467,6 +536,8 @@ export async function POST(req: NextRequest) {
       { data: cacheData },
       { data: appData },
       { data: trackData },
+      { data: weightData },
+      { data: cotacaoData },
     ] = await Promise.all([
       supabase.from("animals")
         .select("id, agraas_id, internal_code, breed")
@@ -485,6 +556,11 @@ export async function POST(req: NextRequest) {
         .select("stage, timestamp, animals_confirmed, animals_lost, loss_cause, location_name, responsible_name, notes")
         .eq("lot_id", lotId)
         .order("timestamp", { ascending: true }),
+      supabase.from("weights")
+        .select("animal_id, weight, weighing_date")
+        .in("animal_id", animalIds)
+        .order("weighing_date", { ascending: false }),
+      supabase.from("platform_settings").select("value").eq("key", "cotacao_arroba").single(),
     ]);
 
     const animals = (animalsData ?? []) as AnimalRow[];
@@ -516,6 +592,41 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // ── Mapa de pesos por animal ──
+    const weightByAnimal = new Map<string, number>();
+    for (const w of (weightData ?? []) as { animal_id: string; weight: number }[]) {
+      if (!weightByAnimal.has(w.animal_id)) weightByAnimal.set(w.animal_id, Number(w.weight));
+    }
+
+    // ── Cotação ──
+    const cotacaoArroba = cotacaoData?.value ? Number(cotacaoData.value) : 330;
+
+    // ── Cálculo de valor ──
+    const KG_PER_ARROBA = 15;
+    const ARABIC_DEST = ["emirados","uae","arábia saudita","saudi","qatar","kuwait","bahrein","bahrain","omã","oman","egito","egypt","jordânia","jordan","iraque","iraq"];
+    const isArabic = ARABIC_DEST.some(d => (lot.pais_destino ?? "").toLowerCase().includes(d));
+    const requiresHalal = (lot.certificacoes_exigidas ?? []).some(c => c.toLowerCase().includes("halal"));
+
+    let valorBase = 0; let bonusScore = 0; let bonusHalal = 0; let bonusExport = 0;
+    let penalCarencia = 0; let countComPeso = 0; let countBonusScore = 0;
+    let countCarencia = 0; let halalCount = 0;
+    for (const animal of animals) {
+      const w = weightByAnimal.get(animal.id);
+      if (!w) continue;
+      countComPeso++;
+      const animalBase = (w / KG_PER_ARROBA) * cotacaoArroba;
+      valorBase += animalBase;
+      const score = scoreByAnimal.get(animal.id) ?? 0;
+      if (score >= 75) { bonusScore += animalBase * 0.03; countBonusScore++; }
+      if (withdrawalByAnimal.has(animal.id)) { penalCarencia += animalBase * 0.05; countCarencia++; }
+      const certs = certsByAnimal.get(animal.id) ?? [];
+      if (certs.some(c => c.toLowerCase().includes("halal"))) halalCount++;
+    }
+    const allHalal = countComPeso > 0 && halalCount === countComPeso;
+    if ((requiresHalal || allHalal) && allHalal) bonusHalal = valorBase * 0.05;
+    if (isArabic) bonusExport = valorBase * 0.08;
+    const valorFinal = valorBase + bonusScore + bonusHalal + bonusExport - penalCarencia;
+
     // ── Stats de compliance ──
     const certRequired = lot.certificacoes_exigidas ?? [];
     let totalEligible = 0;
@@ -545,6 +656,16 @@ export async function POST(req: NextRequest) {
         totalEligible={totalEligible}
         compliancePct={compliancePct}
         generatedAt={generatedAt}
+        valorBase={valorBase}
+        bonusScore={bonusScore}
+        bonusHalal={bonusHalal}
+        bonusExport={bonusExport}
+        penalCarencia={penalCarencia}
+        valorFinal={valorFinal}
+        cotacaoArroba={cotacaoArroba}
+        countComPeso={countComPeso}
+        countBonusScore={countBonusScore}
+        countCarencia={countCarencia}
       />
     );
 

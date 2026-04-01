@@ -11,6 +11,7 @@ import TrackingTimeline from "@/app/components/TrackingTimeline";
 import { FileText, Upload } from "lucide-react";
 import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
 import DownloadLotPDFButton from "@/app/components/DownloadLotPDFButton";
+import LotValueCalculator from "@/app/components/LotValueCalculator";
 
 const SCORE_MINIMO_EXPORT = 60;
 
@@ -59,6 +60,7 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
   const [certifications, setCertifications] = useState<CertRow[]>([]);
   const [passportScores, setPassportScores] = useState<PassportCacheRow[]>([]);
   const [trackingCheckpoints, setTrackingCheckpoints] = useState<TrackingCheckpoint[]>([]);
+  const [cotacaoArroba, setCotacaoArroba] = useState<number>(330);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchAnimal[]>([]);
@@ -74,14 +76,16 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
   }, []);
 
   async function loadData() {
-    const [{ data: lotData }, { data: assignData }] = await Promise.all([
+    const [{ data: lotData }, { data: assignData }, { data: cotacaoData }] = await Promise.all([
       supabase.from("lots")
         .select("id, name, description, objective, start_date, target_weight, status, property_id, pais_destino, porto_embarque, data_embarque, certificacoes_exigidas, numero_contrato, client_id")
         .eq("id", id).single(),
       supabase.from("animal_lot_assignments")
         .select("id, animal_id")
         .eq("lot_id", id).is("exit_date", null),
+      supabase.from("platform_settings").select("value").eq("key", "cotacao_arroba").single(),
     ]);
+    if (cotacaoData?.value) setCotacaoArroba(Number(cotacaoData.value));
     const lotRow = (lotData as LotRow) ?? null;
     setLot(lotRow);
 
@@ -389,6 +393,19 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
             </div>
           </div>
         </section>
+      )}
+
+      {/* ── Calculadora de Valor ── */}
+      {animals.length > 0 && (
+        <LotValueCalculator
+          animals={animals}
+          weightByAnimal={weightByAnimal}
+          scoreByAnimal={scoreByAnimal}
+          certsByAnimal={certsByAnimal}
+          activeCarenciasByAnimal={activeCarenciasByAnimal}
+          lot={{ pais_destino: lot.pais_destino, certificacoes_exigidas: lot.certificacoes_exigidas }}
+          cotacaoArroba={cotacaoArroba}
+        />
       )}
 
       {/* ── Tabs ── */}
