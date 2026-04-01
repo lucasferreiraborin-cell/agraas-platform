@@ -33,6 +33,22 @@ function fmtArea(ha: number | null) {
   return ha.toLocaleString("pt-BR", { maximumFractionDigits: 0 }) + " ha";
 }
 
+function ScoreBadge({ score }: { score: number | null }) {
+  if (score === null) return <span className="text-xs text-[var(--text-muted)]">—</span>;
+  const color =
+    score >= 75 ? "bg-emerald-100 text-emerald-700 border-emerald-300" :
+    score >= 50 ? "bg-amber-100 text-amber-700 border-amber-300" :
+                  "bg-red-100 text-red-700 border-red-300";
+  return (
+    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-bold ${color}`}>
+      <span className={`h-1.5 w-1.5 rounded-full ${
+        score >= 75 ? "bg-emerald-500" : score >= 50 ? "bg-amber-500" : "bg-red-500"
+      }`} />
+      {score}
+    </span>
+  );
+}
+
 export default async function FazendasPage() {
   const supabase = await createSupabaseServerClient();
 
@@ -50,28 +66,35 @@ export default async function FazendasPage() {
   const farms: Farm[] = (farmsData ?? []) as Farm[];
   const fields: Field[] = (fieldsData ?? []) as Field[];
 
-  // Group cultures per farm
+  // Group active cultures per farm
   const farmCultures = new Map<string, Set<string>>();
   for (const f of fields) {
     if (!farmCultures.has(f.farm_id)) farmCultures.set(f.farm_id, new Set());
     farmCultures.get(f.farm_id)!.add(f.culture);
   }
 
+  // Fetch scores for each farm via RPC
+  const scoreResults = await Promise.all(
+    farms.map(farm =>
+      supabase.rpc("calculate_farm_score", { p_farm_id: farm.id })
+        .then(({ data }) => ({ id: farm.id, score: typeof data === "number" ? data : null }))
+    )
+  );
+  const scoreMap = new Map(scoreResults.map(r => [r.id, r.score]));
+
   return (
     <main className="space-y-8">
       {/* Header */}
       <section className="ag-card-strong p-8">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--primary-soft)]">
+            <Wheat size={20} className="text-[var(--primary)]" />
+          </span>
           <div>
-            <div className="flex items-center gap-3">
-              <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--primary-soft)]">
-                <Wheat size={20} className="text-[var(--primary)]" />
-              </span>
-              <div>
-                <h1 className="ag-page-title leading-none">Fazendas</h1>
-                <p className="mt-0.5 text-sm text-[var(--text-muted)]">{farms.length} fazenda{farms.length !== 1 ? "s" : ""} cadastrada{farms.length !== 1 ? "s" : ""}</p>
-              </div>
-            </div>
+            <h1 className="ag-page-title leading-none">Fazendas</h1>
+            <p className="mt-0.5 text-sm text-[var(--text-muted)]">
+              {farms.length} fazenda{farms.length !== 1 ? "s" : ""} cadastrada{farms.length !== 1 ? "s" : ""}
+            </p>
           </div>
         </div>
       </section>
@@ -84,6 +107,7 @@ export default async function FazendasPage() {
               <th>Fazenda</th>
               <th>Estado / Cidade</th>
               <th>Área Total</th>
+              <th>Score</th>
               <th>CAR</th>
               <th>Culturas ativas</th>
               <th className="text-right">Ações</th>
@@ -92,13 +116,14 @@ export default async function FazendasPage() {
           <tbody>
             {farms.length === 0 && (
               <tr>
-                <td colSpan={6} className="py-12 text-center text-sm text-[var(--text-muted)]">
+                <td colSpan={7} className="py-12 text-center text-sm text-[var(--text-muted)]">
                   Nenhuma fazenda cadastrada.
                 </td>
               </tr>
             )}
             {farms.map(farm => {
               const cultures = [...(farmCultures.get(farm.id) ?? [])];
+              const score = scoreMap.get(farm.id) ?? null;
               return (
                 <tr key={farm.id}>
                   <td>
@@ -111,6 +136,7 @@ export default async function FazendasPage() {
                     </div>
                   </td>
                   <td className="text-sm font-medium text-[var(--text-primary)]">{fmtArea(farm.total_area_ha)}</td>
+                  <td><ScoreBadge score={score} /></td>
                   <td>
                     {farm.car_number ? (
                       <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700 border border-emerald-200">

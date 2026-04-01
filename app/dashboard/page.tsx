@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
+import { Wheat } from "lucide-react";
 // scores are computed server-side via calculate_agraas_score SQL function
 
 const KG_POR_ARROBA = 15;
@@ -51,6 +52,7 @@ export default function DashboardPage() {
   const [cotacaoInput, setCotacaoInput] = useState("");
   const [updatingCotacao, setUpdatingCotacao] = useState(false);
   const [halalCount, setHalalCount] = useState(0);
+  const [agriKpis, setAgriKpis] = useState<{ talhoesEmProducao: number; embarcamentosAtivos: number; toneladasTransito: number } | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -62,6 +64,8 @@ export default function DashboardPage() {
         cotacaoRes,
         { data: { user } },
         { data: halalData },
+        { data: agriFieldsData },
+        { data: agriShipmentsData },
       ] = await Promise.all([
         supabase.from("animals").select(
           "id, internal_code, nickname, agraas_id, birth_date, breed, status, blood_type, sire_animal_id, dam_animal_id"
@@ -72,6 +76,8 @@ export default function DashboardPage() {
         fetch("/api/cotacao").then(r => r.json()).catch(() => ({ cotacao: 330, fonte: "fallback", updated_at: null })),
         supabase.auth.getUser(),
         supabase.from("animal_certifications").select("animal_id").ilike("certification_name", "%Halal%").eq("status", "active"),
+        supabase.from("crop_fields").select("id, status").in("status", ["plantado", "em_desenvolvimento"]),
+        supabase.from("crop_shipments").select("id, quantity_tons, status"),
       ]);
       setAnimals((animalsData as AnimalRow[]) ?? []);
       setWeights((weightsData as WeightRow[]) ?? []);
@@ -79,6 +85,14 @@ export default function DashboardPage() {
       setCotacao(cotacaoRes.cotacao ?? 330);
       setCotacaoMeta({ fonte: cotacaoRes.fonte ?? "cache", updated_at: cotacaoRes.updated_at ?? null });
       setHalalCount((halalData ?? []).length);
+
+      const ships = (agriShipmentsData ?? []) as { id: string; quantity_tons: number; status: string }[];
+      const activeShips = ships.filter(s => s.status !== "entregue");
+      setAgriKpis({
+        talhoesEmProducao:   (agriFieldsData ?? []).length,
+        embarcamentosAtivos: activeShips.length,
+        toneladasTransito:   activeShips.reduce((s, sh) => s + Number(sh.quantity_tons), 0),
+      });
 
       if (user) {
         const { data: c } = await supabase.from("clients").select("role").eq("auth_user_id", user.id).single();
@@ -130,13 +144,13 @@ export default function DashboardPage() {
     cotacao={cotacao} cotacaoMeta={cotacaoMeta} isAdmin={isAdmin}
     cotacaoInput={cotacaoInput} setCotacaoInput={setCotacaoInput}
     updatingCotacao={updatingCotacao} onAtualizarCotacao={atualizarCotacao}
-    halalCount={halalCount} />;
+    halalCount={halalCount} agriKpis={agriKpis} />;
 }
 
 function DashboardContent({
   animals, weights, scores, loading,
   cotacao, cotacaoMeta, isAdmin, cotacaoInput, setCotacaoInput, updatingCotacao, onAtualizarCotacao,
-  halalCount,
+  halalCount, agriKpis,
 }: {
   animals: AnimalRow[];
   weights: WeightRow[];
@@ -150,6 +164,7 @@ function DashboardContent({
   updatingCotacao: boolean;
   onAtualizarCotacao: () => void;
   halalCount: number;
+  agriKpis: { talhoesEmProducao: number; embarcamentosAtivos: number; toneladasTransito: number } | null;
 }) {
   const today = new Date();
   const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
@@ -417,6 +432,25 @@ function DashboardContent({
           </div>
         </section>
       </div>
+      {/* Agricultura */}
+      {agriKpis && (
+        <section className="ag-card p-8">
+          <div className="flex items-center justify-between gap-4 mb-6">
+            <div className="flex items-center gap-2">
+              <Wheat size={18} className="text-[var(--primary)]" />
+              <h2 className="ag-section-title">Agricultura</h2>
+            </div>
+            <Link href="/agricultura" className="text-sm font-semibold text-[var(--primary-hover)] hover:underline">
+              Ver dashboard agrícola →
+            </Link>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <HeroKpi label="Talhões em produção" value={agriKpis.talhoesEmProducao} sub="plantados / em desenvolvimento" />
+            <HeroKpi label="Toneladas em trânsito" value={agriKpis.toneladasTransito.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} sub="embarques ativos" />
+            <HeroKpi label="Embarques ativos" value={agriKpis.embarcamentosAtivos} sub="aguardando entrega" />
+          </div>
+        </section>
+      )}
     </main>
   );
 }

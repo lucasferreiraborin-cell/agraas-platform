@@ -103,6 +103,25 @@ export default async function CompradorPage() {
     .select("id, batch_code, species, breed, current_count, mortality_count, initial_count, feed_conversion, status, halal_certified, integrator_name")
     .order("housing_date", { ascending: false });
 
+  // ── Agricultura — embarques + tracking + fazendas ─────────────────────────
+  const { data: grainShipmentsData } = await db
+    .from("crop_shipments")
+    .select("id, contract_number, culture, quantity_tons, destination_country, destination_port, origin_port, vessel_name, departure_date, arrival_date, status, field_id")
+    .order("departure_date", { ascending: true });
+
+  const { data: grainTrackingData } = await db
+    .from("crop_shipment_tracking")
+    .select("shipment_id, stage, stage_date, quantity_confirmed_tons, quantity_lost_tons")
+    .order("stage_date", { ascending: false });
+
+  const { data: grainFarmsData } = await db
+    .from("farms_agriculture")
+    .select("id, name, car_number");
+
+  const { data: grainFieldsData } = await db
+    .from("crop_fields")
+    .select("id, farm_id, culture");
+
   return (
     <CompradorView
       buyerName={clientData.name}
@@ -115,6 +134,10 @@ export default async function CompradorPage() {
       trackingCheckpoints={trackingData ?? []}
       livestockAnimals={livestockData ?? []}
       poultryBatches={poultryData ?? []}
+      grainShipments={grainShipmentsData ?? []}
+      grainTracking={grainTrackingData ?? []}
+      grainFarms={grainFarmsData ?? []}
+      grainFields={grainFieldsData ?? []}
     />
   );
 }
