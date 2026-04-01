@@ -34,6 +34,8 @@ import {
   Receipt,
   FileSpreadsheet,
   FileUp,
+  Rabbit,
+  Bird,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -103,6 +105,13 @@ const menuGroups: NavGroup[] = [
       { href: "/abates",           label: "Abates",           icon: Scissors },
       { href: "/fiscal",           label: "Fiscal",           icon: Receipt },
       { href: "/fiscal/relatorio", label: "Relatório Fiscal", icon: FileSpreadsheet, sub: true },
+    ],
+  },
+  {
+    label: "Pecuária Expandida",
+    items: [
+      { href: "/ovinos", label: "Ovinos & Caprinos", icon: Rabbit },
+      { href: "/aves",   label: "Aves & Frangos",    icon: Bird   },
     ],
   },
   {
