@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
+import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
 // scores are computed server-side via calculate_agraas_score SQL function
 
 const KG_POR_ARROBA = 15;
@@ -49,6 +50,7 @@ export default function DashboardPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [cotacaoInput, setCotacaoInput] = useState("");
   const [updatingCotacao, setUpdatingCotacao] = useState(false);
+  const [halalCount, setHalalCount] = useState(0);
 
   useEffect(() => {
     async function load() {
@@ -59,6 +61,7 @@ export default function DashboardPage() {
         { data: scoresData },
         cotacaoRes,
         { data: { user } },
+        { data: halalData },
       ] = await Promise.all([
         supabase.from("animals").select(
           "id, internal_code, nickname, agraas_id, birth_date, breed, status, blood_type, sire_animal_id, dam_animal_id"
@@ -68,12 +71,14 @@ export default function DashboardPage() {
         supabase.from("animal_scores").select("animal_id, total_score"),
         fetch("/api/cotacao").then(r => r.json()).catch(() => ({ cotacao: 330, fonte: "fallback", updated_at: null })),
         supabase.auth.getUser(),
+        supabase.from("animal_certifications").select("animal_id").ilike("certification_name", "%Halal%").eq("status", "active"),
       ]);
       setAnimals((animalsData as AnimalRow[]) ?? []);
       setWeights((weightsData as WeightRow[]) ?? []);
       setScores((scoresData as ScoreRow[]) ?? []);
       setCotacao(cotacaoRes.cotacao ?? 330);
       setCotacaoMeta({ fonte: cotacaoRes.fonte ?? "cache", updated_at: cotacaoRes.updated_at ?? null });
+      setHalalCount((halalData ?? []).length);
 
       if (user) {
         const { data: c } = await supabase.from("clients").select("role").eq("auth_user_id", user.id).single();
@@ -124,12 +129,14 @@ export default function DashboardPage() {
   return <DashboardContent animals={animals} weights={weights} scores={scores} loading={loading}
     cotacao={cotacao} cotacaoMeta={cotacaoMeta} isAdmin={isAdmin}
     cotacaoInput={cotacaoInput} setCotacaoInput={setCotacaoInput}
-    updatingCotacao={updatingCotacao} onAtualizarCotacao={atualizarCotacao} />;
+    updatingCotacao={updatingCotacao} onAtualizarCotacao={atualizarCotacao}
+    halalCount={halalCount} />;
 }
 
 function DashboardContent({
   animals, weights, scores, loading,
   cotacao, cotacaoMeta, isAdmin, cotacaoInput, setCotacaoInput, updatingCotacao, onAtualizarCotacao,
+  halalCount,
 }: {
   animals: AnimalRow[];
   weights: WeightRow[];
@@ -142,6 +149,7 @@ function DashboardContent({
   setCotacaoInput: (v: string) => void;
   updatingCotacao: boolean;
   onAtualizarCotacao: () => void;
+  halalCount: number;
 }) {
   const today = new Date();
   const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
@@ -238,11 +246,28 @@ function DashboardContent({
             <p className="mt-5 max-w-2xl text-[1.02rem] leading-8 text-[var(--text-secondary)]">
               KPIs em tempo real da sua fazenda — score médio do rebanho, valor estimado, alertas e performance produtiva.
             </p>
-            <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <HeroKpi label="Animais" value={loading ? "—" : totalAnimais} sub="base total" />
-              <HeroKpi label="Score médio" value={loading ? "—" : scoresMedio} sub="qualidade do rebanho" />
-              <HeroKpi label="Em alerta" value={loading ? "—" : animaisSemPesagem.length} sub="sem pesagem >30 dias" danger />
-              <HeroKpi label="@ no rebanho" value={loading ? "—" : Math.round(arroba_rebanho)} sub="arrobas estimadas" />
+            <div className="mt-10">
+              {halalCount > 0 && (
+                <div className="mb-4 flex justify-end">
+                  <div
+                    className="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-2"
+                    title="Animais com certificação Halal ativa"
+                  >
+                    <HalalBadgeSVG size={48} />
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-600">Halal Certified</p>
+                      <p className="text-2xl font-bold tracking-tight text-emerald-700">{halalCount}</p>
+                      <p className="text-xs text-emerald-500">animais certificados</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <HeroKpi label="Animais" value={loading ? "—" : totalAnimais} sub="base total" />
+                <HeroKpi label="Score médio" value={loading ? "—" : scoresMedio} sub="qualidade do rebanho" />
+                <HeroKpi label="Em alerta" value={loading ? "—" : animaisSemPesagem.length} sub="sem pesagem >30 dias" danger />
+                <HeroKpi label="@ no rebanho" value={loading ? "—" : Math.round(arroba_rebanho)} sub="arrobas estimadas" />
+              </div>
             </div>
           </div>
           <div className="ag-hero-panel">

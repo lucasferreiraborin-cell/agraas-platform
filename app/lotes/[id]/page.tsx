@@ -9,6 +9,7 @@ import ExportConformityReport from "@/app/components/ExportConformityReport";
 import ExportRouteMap from "@/app/components/ExportRouteMap";
 import TrackingTimeline from "@/app/components/TrackingTimeline";
 import { FileText, Upload } from "lucide-react";
+import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
 
 const SCORE_MINIMO_EXPORT = 60;
 
@@ -278,6 +279,13 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
     return { aptos, inaptos, pendencias, pct };
   }, [exportAptidao, animals]);
 
+  const halalConformidade = useMemo(() => {
+    if (!isExportLot || !lot?.certificacoes_exigidas?.includes("Halal") || !exportAptidao) return null;
+    const comCert = exportAptidao.filter(a => a.certs.some(c => c.toLowerCase().includes("halal"))).length;
+    const aptos = exportAptidao.filter(a => a.certs.some(c => c.toLowerCase().includes("halal")) && a.status === "apto").length;
+    return comCert > 0 ? { comCert, aptos } : null;
+  }, [isExportLot, lot, exportAptidao]);
+
   if (loading) return (
     <main className="space-y-8">
       {[1,2,3].map(i => <div key={i} className="h-24 animate-pulse rounded-3xl bg-[var(--surface-soft)]" />)}
@@ -406,6 +414,21 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
         {/* ── Tab: Visão Geral ── */}
         {activeTab === "overview" && (
           <div className="mt-8 space-y-8">
+            {halalConformidade && (
+              <section className="ag-card flex items-center gap-6 p-6">
+                <HalalBadgeSVG size={56} />
+                <div className="flex gap-8">
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">Halal Aptos</p>
+                    <p className="mt-1 text-3xl font-bold text-emerald-600">{halalConformidade.aptos}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">Com Certificado</p>
+                    <p className="mt-1 text-3xl font-bold text-[var(--text-primary)]">{halalConformidade.comCert}</p>
+                  </div>
+                </div>
+              </section>
+            )}
             {isExportLot && exportAptidao && exportStats && (
               <ExportRouteMap
                 lot={lot}

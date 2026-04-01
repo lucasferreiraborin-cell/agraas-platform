@@ -295,19 +295,26 @@ export default function CompradorView({
       {/* ═══ 6 KPI CARDS ════════════════════════════════════════════════════════ */}
       <section className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
         {[
-          { icon: Beef,        label: t.kpi.total,     value: totalAnimals,  cls: "text-[var(--text-primary)]" },
-          { icon: CheckCircle2,label: t.kpi.eligible,  value: eligibleCount, cls: "text-emerald-600" },
-          { icon: ShieldCheck, label: t.kpi.halal,     value: halalCount,    cls: "text-amber-600" },
-          { icon: Truck,       label: t.kpi.shipments, value: lots.length,   cls: "text-blue-600" },
-          { icon: Clock,       label: t.kpi.departure, value: daysToNext != null ? `T−${daysToNext}` : fmtDate(nextDeparture, locale), cls: "text-purple-600" },
-          { icon: Activity,    label: t.kpi.survival,  value: survivalRate != null ? `${survivalRate}%` : "—", cls: survivalRate == null ? "text-[var(--text-muted)]" : survivalRate >= 98 ? "text-emerald-600" : "text-amber-600" },
-        ].map(({ icon: Icon, label, value, cls }) => (
+          { icon: Beef,        label: t.kpi.total,     value: totalAnimals,  cls: "text-[var(--text-primary)]", halalBadge: false },
+          { icon: CheckCircle2,label: t.kpi.eligible,  value: eligibleCount, cls: "text-emerald-600",           halalBadge: false },
+          { icon: ShieldCheck, label: t.kpi.halal,     value: halalCount,    cls: "text-amber-600",             halalBadge: true  },
+          { icon: Truck,       label: t.kpi.shipments, value: lots.length,   cls: "text-blue-600",              halalBadge: false },
+          { icon: Clock,       label: t.kpi.departure, value: daysToNext != null ? `T−${daysToNext}` : fmtDate(nextDeparture, locale), cls: "text-purple-600", halalBadge: false },
+          { icon: Activity,    label: t.kpi.survival,  value: survivalRate != null ? `${survivalRate}%` : "—", cls: survivalRate == null ? "text-[var(--text-muted)]" : survivalRate >= 98 ? "text-emerald-600" : "text-amber-600", halalBadge: false },
+        ].map(({ icon: Icon, label, value, cls, halalBadge }) => (
           <div key={label} className="rounded-2xl border border-[var(--border)] bg-white px-5 py-4">
             <div className="flex items-center gap-2 text-[var(--text-muted)]">
               <Icon size={13} />
               <p className="text-[10px] font-semibold uppercase tracking-[0.14em]">{label}</p>
             </div>
-            <p className={`mt-3 text-3xl font-bold tracking-tight ${cls}`}>{value}</p>
+            {halalBadge && halalCount > 0 ? (
+              <div className="mt-2 flex items-center gap-2" title="Animais com certificação Halal ativa">
+                <HalalBadgeSVG size={48} />
+                <p className={`text-3xl font-bold tracking-tight ${cls}`}>{value}</p>
+              </div>
+            ) : (
+              <p className={`mt-3 text-3xl font-bold tracking-tight ${cls}`}>{value}</p>
+            )}
           </div>
         ))}
       </section>

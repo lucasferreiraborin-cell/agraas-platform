@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
+import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
 
 type ExportLot = {
   id: string; name: string;
@@ -188,6 +189,15 @@ export default function ExportacaoPage() {
     };
   }, [lots, assignments, lotStats]);
 
+  const halalAnimaisCount = useMemo(() => {
+    const seen = new Set<string>();
+    for (const a of assignments) {
+      const animalCerts = certsByAnimal.get(a.animal_id) ?? [];
+      if (animalCerts.some(c => c.toLowerCase().includes("halal"))) seen.add(a.animal_id);
+    }
+    return seen.size;
+  }, [assignments, certsByAnimal]);
+
   // Ranking: score ≥ 60, no carência, deduped, sorted desc, max 10
   const ranking = useMemo(() => {
     const seen = new Set<string>();
@@ -258,6 +268,15 @@ export default function ExportacaoPage() {
               sub={globalStats.nextLotDest || "sem data definida"}
             />
           </div>
+          {halalAnimaisCount > 0 && (
+            <div className="mt-6 flex items-center gap-4">
+              <HalalBadgeSVG size={56} />
+              <div>
+                <p className="text-sm font-semibold text-[var(--text-primary)]">{halalAnimaisCount} animais Halal certified</p>
+                <p className="text-xs text-[var(--text-muted)]">com certificação Halal ativa nos lotes de exportação</p>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 

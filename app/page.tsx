@@ -2,6 +2,7 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import BrazilMapWrapper from "@/app/components/BrazilMapWrapper";
+import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -471,27 +472,44 @@ export default async function PainelPage() {
           </div>
         </div>
 
-        <div className="mt-8 grid gap-4 md:grid-cols-3">
-          <HeroStat
-            label="Animais monitorados"
-            value={totalAnimals}
-            description="no passaporte vivo da Agraas"
-          />
-          <HeroStat
-            label="Propriedades ativas"
-            value={totalProperties}
-            description="unidades operacionais mapeadas"
-          />
-          <HeroStat
-            label="Alertas ativos"
-            value={totalActiveAlerts}
-            description={
-              totalActiveAlerts > 0
-                ? "requerem atenção imediata"
-                : "operação em dia"
-            }
-            alert={totalActiveAlerts > 0}
-          />
+        <div className="mt-8">
+          {halalCount > 0 && (
+            <div className="mb-4 flex justify-end">
+              <div
+                className="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-2"
+                title="Animais com certificação Halal ativa"
+              >
+                <HalalBadgeSVG size={48} />
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-600">Halal Certified</p>
+                  <p className="text-2xl font-bold tracking-tight text-emerald-700">{halalCount}</p>
+                  <p className="text-xs text-emerald-500">animais certificados</p>
+                </div>
+              </div>
+            </div>
+          )}
+          <div className="grid gap-4 md:grid-cols-3">
+            <HeroStat
+              label="Animais monitorados"
+              value={totalAnimals}
+              description="no passaporte vivo da Agraas"
+            />
+            <HeroStat
+              label="Propriedades ativas"
+              value={totalProperties}
+              description="unidades operacionais mapeadas"
+            />
+            <HeroStat
+              label="Alertas ativos"
+              value={totalActiveAlerts}
+              description={
+                totalActiveAlerts > 0
+                  ? "requerem atenção imediata"
+                  : "operação em dia"
+              }
+              alert={totalActiveAlerts > 0}
+            />
+          </div>
         </div>
       </section>
 
