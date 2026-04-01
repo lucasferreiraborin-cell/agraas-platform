@@ -36,6 +36,9 @@ import {
   FileUp,
   Rabbit,
   Bird,
+  Wheat,
+  Layers,
+  Ship,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -118,6 +121,16 @@ const menuGroups: NavGroup[] = [
     label: "Ferramentas",
     items: [
       { href: "/migrar-dados", label: "Migrar meus dados", icon: FileUp },
+    ],
+  },
+  {
+    label: "Agricultura",
+    items: [
+      { href: "/agricultura",          label: "Dashboard",  icon: Wheat },
+      { href: "/agricultura/fazendas", label: "Fazendas",   icon: Wheat,     sub: true },
+      { href: "/agricultura/talhoes",  label: "Talhões",    icon: Layers,    sub: true },
+      { href: "/agricultura/armazens", label: "Armazéns",   icon: Warehouse, sub: true },
+      { href: "/agricultura/embarques",label: "Embarques",  icon: Ship,      sub: true },
     ],
   },
   {
