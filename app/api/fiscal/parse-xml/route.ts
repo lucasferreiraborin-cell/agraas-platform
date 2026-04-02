@@ -1,6 +1,12 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { NextRequest } from "next/server";
 import { checkRateLimit, tooManyRequests } from "@/lib/rate-limit";
+import { z } from "zod";
+
+// ── Zod schema (formData fields after extraction) ─────────────────────────────
+const FormDataSchema = z.object({
+  farmId: z.string().uuid("farmId deve ser um UUID válido").optional(),
+});
 
 // ── Helpers XML ───────────────────────────────────────────────────────────────
 
@@ -223,7 +229,10 @@ export async function POST(req: NextRequest) {
     if (!user) return Response.json({ error: "Não autenticado" }, { status: 401 });
 
     const file = formData.get("xml") as File | null;
-    if (!file) return Response.json({ error: "Arquivo não enviado" }, { status: 400 });
+    if (!file) return Response.json({ error: "Arquivo não enviado. Envie o campo 'xml' como File." }, { status: 400 });
+
+    const fieldsParsed = FormDataSchema.safeParse({ farmId: formData.get("farm_id") ?? undefined });
+    if (!fieldsParsed.success) return Response.json({ error: fieldsParsed.error.issues[0].message }, { status: 400 });
 
     const isPdf = file.name.toLowerCase().endsWith(".pdf");
     const isXml = file.name.toLowerCase().endsWith(".xml");

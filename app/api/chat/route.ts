@@ -3,6 +3,13 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { NextRequest } from "next/server";
 import { checkRateLimit, tooManyRequests } from "@/lib/rate-limit";
 import { withApiSentry } from "@/lib/with-sentry";
+import { z } from "zod";
+
+// ── Zod schema ────────────────────────────────────────────────────────────────
+const PostBodySchema = z.object({
+  message: z.string().min(1, "message é obrigatório").max(4000, "message muito longo (máx 4000 chars)"),
+  history: z.array(z.unknown()).optional().default([]),
+});
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -21,7 +28,9 @@ export const POST = withApiSentry(async function POST(req: NextRequest) {
   if (!rl.allowed) return tooManyRequests(rl.retryAfter);
 
   try {
-    const { message, history } = await req.json();
+    const bodyParsed = PostBodySchema.safeParse(await req.json().catch(() => ({})));
+    if (!bodyParsed.success) return Response.json({ error: bodyParsed.error.issues[0].message }, { status: 400 });
+    const { message, history } = bodyParsed.data;
 
     const supabase = await createSupabaseServerClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -164,8 +173,8 @@ export const POST = withApiSentry(async function POST(req: NextRequest) {
     const context = fullContext.length > 8000 ? fullContext.slice(0, 8000) + "\n[contexto truncado]" : fullContext;
 
     const msgs: Anthropic.MessageParam[] = [
-      ...(history ?? []),
-      { role: "user", content: message },
+      ...(history as Anthropic.MessageParam[] ?? []),
+      { role: "user" as const, content: message },
     ];
 
     const response = await anthropic.messages.create({

@@ -4,6 +4,12 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { NextRequest } from "next/server";
 import { checkRateLimit, tooManyRequests } from "@/lib/rate-limit";
 import { withApiSentry } from "@/lib/with-sentry";
+import { z } from "zod";
+
+// ── Zod schema ────────────────────────────────────────────────────────────────
+const PostBodySchema = z.object({
+  lotId: z.string().uuid("lotId deve ser um UUID válido"),
+});
 import React from "react";
 import {
   renderToBuffer,
@@ -488,8 +494,9 @@ export const POST = withApiSentry(async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { lotId } = await req.json() as { lotId: string };
-    if (!lotId) return Response.json({ error: "lotId required" }, { status: 400 });
+    const bodyParsed = PostBodySchema.safeParse(await req.json().catch(() => ({})));
+    if (!bodyParsed.success) return Response.json({ error: bodyParsed.error.issues[0].message }, { status: 400 });
+    const { lotId } = bodyParsed.data;
 
     // ── Busca lote ──
     const { data: lotData } = await supabase

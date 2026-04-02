@@ -3,8 +3,19 @@ import Anthropic from "@anthropic-ai/sdk";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { checkRateLimit, tooManyRequests } from "@/lib/rate-limit";
 import { withApiSentry } from "@/lib/with-sentry";
+import { z } from "zod";
 
 export const runtime = "nodejs";
+
+// ── Zod schemas ───────────────────────────────────────────────────────────────
+const GetQuerySchema = z.object({
+  animalId: z.string().uuid("animalId deve ser um UUID válido"),
+});
+
+const PostBodySchema = z.object({
+  animalId: z.string().uuid("animalId deve ser um UUID válido"),
+  force: z.boolean().optional().default(false),
+});
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -15,8 +26,9 @@ export const GET = withApiSentry(async function GET(req: NextRequest) {
   const rl = checkRateLimit(req, 60, 60_000);
   if (!rl.allowed) return tooManyRequests(rl.retryAfter);
 
-  const animalId = req.nextUrl.searchParams.get("animalId");
-  if (!animalId) return NextResponse.json({ error: "Missing animalId" }, { status: 400 });
+  const parsed = GetQuerySchema.safeParse({ animalId: req.nextUrl.searchParams.get("animalId") });
+  if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
+  const { animalId } = parsed.data;
 
   const supabase = await createSupabaseServerClient();
   const cutoff = new Date(Date.now() - CACHE_TTL_MS).toISOString();
@@ -39,9 +51,10 @@ export const POST = withApiSentry(async function POST(req: NextRequest) {
   const rl = checkRateLimit(req, 10, 60_000);
   if (!rl.allowed) return tooManyRequests(rl.retryAfter);
 
-  const body = await req.json().catch(() => ({}));
-  const { animalId, force = false } = body as { animalId?: string; force?: boolean };
-  if (!animalId) return NextResponse.json({ error: "Missing animalId" }, { status: 400 });
+  const bodyRaw = await req.json().catch(() => ({}));
+  const bodyParsed = PostBodySchema.safeParse(bodyRaw);
+  if (!bodyParsed.success) return NextResponse.json({ error: bodyParsed.error.issues[0].message }, { status: 400 });
+  const { animalId, force } = bodyParsed.data;
 
   const supabase = await createSupabaseServerClient();
 
