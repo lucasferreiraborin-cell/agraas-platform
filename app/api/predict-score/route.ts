@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { checkRateLimit, tooManyRequests } from "@/lib/rate-limit";
+import { withApiSentry } from "@/lib/with-sentry";
 
 export const runtime = "nodejs";
 
@@ -10,7 +11,7 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 h
 
 // ── GET — return cached prediction ────────────────────────────────────────────
-export async function GET(req: NextRequest) {
+export const GET = withApiSentry(async function GET(req: NextRequest) {
   const rl = checkRateLimit(req, 60, 60_000);
   if (!rl.allowed) return tooManyRequests(rl.retryAfter);
 
@@ -31,10 +32,10 @@ export async function GET(req: NextRequest) {
 
   if (!data) return NextResponse.json({ cached: false });
   return NextResponse.json({ cached: true, prediction: data });
-}
+});
 
 // ── POST — generate (or force-refresh) prediction ─────────────────────────────
-export async function POST(req: NextRequest) {
+export const POST = withApiSentry(async function POST(req: NextRequest) {
   const rl = checkRateLimit(req, 10, 60_000);
   if (!rl.allowed) return tooManyRequests(rl.retryAfter);
 
@@ -223,4 +224,4 @@ Rules:
   }
 
   return NextResponse.json({ cached: false, prediction: saved });
-}
+});

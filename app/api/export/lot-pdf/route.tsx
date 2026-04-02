@@ -3,6 +3,7 @@ export const runtime = "nodejs";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { NextRequest } from "next/server";
 import { checkRateLimit, tooManyRequests } from "@/lib/rate-limit";
+import { withApiSentry } from "@/lib/with-sentry";
 import React from "react";
 import {
   renderToBuffer,
@@ -478,7 +479,7 @@ function LotPDF({
 
 // ── Handler ───────────────────────────────────────────────────────────────────
 
-export async function POST(req: NextRequest) {
+export const POST = withApiSentry(async function POST(req: NextRequest) {
   const rl = checkRateLimit(req, 10, 60_000);
   if (!rl.allowed) return tooManyRequests(rl.retryAfter);
 
@@ -681,4 +682,4 @@ export async function POST(req: NextRequest) {
     console.error("[lot-pdf]", msg);
     return Response.json({ error: msg }, { status: 500 });
   }
-}
+});
