@@ -2,6 +2,7 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import Link from "next/link";
 import { Truck, MapPin, AlertTriangle } from "lucide-react";
 import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
+import ShipTrackingMapWrapper from "@/app/components/ShipTrackingMapWrapper";
 
 type TrackingRow = {
   id: string;
@@ -13,7 +14,16 @@ type TrackingRow = {
   location_name: string | null;
 };
 
-type LotRow = { id: string; name: string; certificacoes_exigidas: string[] | null };
+type LotRow = {
+  id: string;
+  name: string;
+  certificacoes_exigidas: string[] | null;
+  ship_name: string | null;
+  arrival_date: string | null;
+  data_embarque: string | null;
+  porto_embarque: string | null;
+  pais_destino: string | null;
+};
 
 const STAGE_LABELS: Record<string, string> = {
   fazenda:       "Fazenda",
@@ -35,7 +45,7 @@ export default async function TrackingPage() {
       .from("shipment_tracking")
       .select("id, lot_id, stage, timestamp, animals_confirmed, animals_lost, location_name")
       .order("timestamp", { ascending: false }),
-    supabase.from("lots").select("id, name, certificacoes_exigidas"),
+    supabase.from("lots").select("id, name, certificacoes_exigidas, ship_name, arrival_date, data_embarque, porto_embarque, pais_destino"),
   ]);
 
   const trackings: TrackingRow[] = (trackingData ?? []) as TrackingRow[];
@@ -61,7 +71,23 @@ export default async function TrackingPage() {
     const lastConfirmed = lastRow?.animals_confirmed ?? null;
     const started = rows.find(r => r.stage === "fazenda")?.animals_confirmed ?? null;
     const pctSurvival = started && lastConfirmed ? Math.round((lastConfirmed / started) * 100) : null;
-    return { lotId, lotName: lotName(lotId), hasHalal: lotHasHalal(lotId), currentStage, lastRow, totalLost, lastConfirmed, started, pctSurvival };
+    const lot = lotMap.get(lotId);
+    return {
+      lotId,
+      lotName: lotName(lotId),
+      hasHalal: lotHasHalal(lotId),
+      currentStage,
+      lastRow,
+      totalLost,
+      lastConfirmed,
+      started,
+      pctSurvival,
+      ship_name: lot?.ship_name ?? null,
+      arrival_date: lot?.arrival_date ?? null,
+      data_embarque: lot?.data_embarque ?? null,
+      porto_embarque: lot?.porto_embarque ?? null,
+      pais_destino: lot?.pais_destino ?? null,
+    };
   });
 
   return (
@@ -77,6 +103,27 @@ export default async function TrackingPage() {
           </p>
         </div>
       </section>
+
+      {/* Viagens Ativas — mapa do navio */}
+      {lotSummaries.filter(s => s.currentStage === "navio" && s.data_embarque).length > 0 && (
+        <section className="space-y-4">
+          <h2 className="ag-section-title px-1">Viagens Ativas</h2>
+          {lotSummaries
+            .filter(s => s.currentStage === "navio" && s.data_embarque)
+            .map(s => (
+              <ShipTrackingMapWrapper
+                key={s.lotId}
+                departureDate={s.data_embarque!}
+                arrivalDate={s.arrival_date}
+                shipName={s.ship_name}
+                animalsOnBoard={s.lastConfirmed ?? 0}
+                lotName={s.lotName}
+                originPort={s.porto_embarque}
+                destinationPort={s.pais_destino}
+              />
+            ))}
+        </section>
+      )}
 
       {/* Lista de lotes com tracking */}
       {lotSummaries.length === 0 ? (
