@@ -42,7 +42,7 @@ Responda SEMPRE em JSON com esta estrutura: {"risks": [{"item": string, "descric
       max_tokens: 1024,
       system: systemPrompt,
       messages: [{ role: "user", content: `NF-e nº ${note?.numero_nota} | Emitente: ${note?.emitente_nome} | Valor total: R$${Number(note?.valor_total ?? 0).toFixed(2)}\n\nItens:\n${itemsText}\n\nAnalise esta nota fiscal agropecuária.` }],
-    });
+    }, { signal: AbortSignal.timeout(10_000) });
 
     const text = response.content[0].type === "text" ? response.content[0].text : "{}";
     let analysis: any = {};

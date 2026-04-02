@@ -22,6 +22,7 @@ async function fetchCepeaPrice(indicatorId: number): Promise<number | null> {
     const res = await fetch(url, {
       headers: { "User-Agent": "Agraas-Platform/1.0" },
       next: { revalidate: 0 },
+      signal: AbortSignal.timeout(10_000),
     });
     if (!res.ok) return null;
     const json = await res.json();

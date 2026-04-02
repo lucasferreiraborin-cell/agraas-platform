@@ -11,6 +11,7 @@ async function fetchCepeaCotacao(): Promise<number | null> {
     const res = await fetch(CEPEA_URL, {
       headers: { "User-Agent": "Mozilla/5.0 (compatible; AgraasBot/1.0)" },
       next: { revalidate: REVALIDATE_SECONDS },
+      signal: AbortSignal.timeout(10_000),
     });
     if (!res.ok) return null;
     const html = await res.text();

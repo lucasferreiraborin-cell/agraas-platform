@@ -89,7 +89,9 @@ DADOS DO ANIMAL (${hoje}):
 `.trim();
 
   // Tool use para garantir resposta estruturada
-  const response = await anthropic.messages.create({
+  let response: Awaited<ReturnType<typeof anthropic.messages.create>>;
+  try {
+    response = await anthropic.messages.create({
     model: "claude-sonnet-4-20250514",
     max_tokens: 512,
     system: contexto,
@@ -131,7 +133,13 @@ DADOS DO ANIMAL (${hoje}):
       },
     }],
     tool_choice: { type: "any" },
-  });
+  }, { signal: AbortSignal.timeout(10_000) });
+  } catch (err) {
+    if (err instanceof Error && err.name === "TimeoutError") {
+      return Response.json({ error: "Análise IA expirou. Tente novamente." }, { status: 504 });
+    }
+    return Response.json({ error: "Análise indisponível" }, { status: 502 });
+  }
 
   const toolUse = response.content.find(c => c.type === "tool_use");
   if (!toolUse || toolUse.type !== "tool_use") {

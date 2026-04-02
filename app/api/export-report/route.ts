@@ -143,7 +143,9 @@ ${animalReport.filter(a => a.status !== "apto").map(a =>
 ).join("\n") || "Nenhum — todos aptos"}
 `.trim();
 
-  const response = await anthropic.messages.create({
+  let response: Awaited<ReturnType<typeof anthropic.messages.create>>;
+  try {
+    response = await anthropic.messages.create({
     model: "claude-sonnet-4-20250514",
     max_tokens: 1024,
     system: contexto,
@@ -170,7 +172,13 @@ ${animalReport.filter(a => a.status !== "apto").map(a =>
       },
     }],
     tool_choice: { type: "any" },
-  });
+  }, { signal: AbortSignal.timeout(10_000) });
+  } catch (err) {
+    if (err instanceof Error && err.name === "TimeoutError") {
+      return Response.json({ ok: false, error: "Relatório IA expirou. Tente novamente." }, { status: 504 });
+    }
+    return Response.json({ ok: false, error: "Relatório indisponível" }, { status: 502 });
+  }
 
   const toolUse = response.content.find(c => c.type === "tool_use");
   if (!toolUse || toolUse.type !== "tool_use") {

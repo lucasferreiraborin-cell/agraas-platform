@@ -190,7 +190,7 @@ Rules:
       model: "claude-sonnet-4-6",
       max_tokens: 512,
       messages: [{ role: "user", content: prompt }],
-    });
+    }, { signal: AbortSignal.timeout(10_000) });
 
     const text = message.content[0].type === "text" ? message.content[0].text : "";
     // Extract JSON from response (may have surrounding text)
@@ -212,6 +212,9 @@ Rules:
       prediction.predicted_score_30d = 50;
     }
   } catch (err) {
+    if (err instanceof Error && err.name === "TimeoutError") {
+      return NextResponse.json({ error: "AI analysis timed out" }, { status: 504 });
+    }
     console.error("Claude prediction failed:", err);
     return NextResponse.json({ error: "AI analysis failed" }, { status: 502 });
   }

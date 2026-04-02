@@ -182,12 +182,15 @@ export const POST = withApiSentry(async function POST(req: NextRequest) {
       max_tokens: 1024,
       system: context,
       messages: msgs,
-    });
+    }, { signal: AbortSignal.timeout(10_000) });
 
     const text = response.content[0].type === "text" ? response.content[0].text : "";
     return Response.json({ reply: text });
 
   } catch (err) {
+    if (err instanceof Error && err.name === "TimeoutError") {
+      return Response.json({ reply: "Tempo limite excedido. Tente novamente." }, { status: 504 });
+    }
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[agroassistant] erro:", msg, err);
     return Response.json({ reply: `Erro interno: ${msg}` }, { status: 500 });
