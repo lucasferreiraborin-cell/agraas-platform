@@ -9,6 +9,7 @@ import {
   Ship, Wheat,
 } from "lucide-react";
 import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
+import ShipTrackingMapWrapper from "@/app/components/ShipTrackingMapWrapper";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -17,6 +18,7 @@ type Lot = {
   pais_destino: string | null; porto_embarque: string | null;
   data_embarque: string | null; certificacoes_exigidas: string[] | null;
   numero_contrato: string | null; status: string | null;
+  ship_name: string | null; arrival_date: string | null;
 };
 type Assignment       = { animal_id: string; lot_id: string };
 type Animal          = { id: string; internal_code: string | null; nickname: string | null; sex: string | null; breed: string | null; birth_date: string | null };
@@ -515,6 +517,21 @@ export default function CompradorView({
                       )}
                     </div>
                   </div>
+
+                  {/* Ship map — shown when lot is at sea */}
+                  {completedSet.has("navio") && !completedSet.has("entregue") && lot.data_embarque && (
+                    <div className="mb-6">
+                      <ShipTrackingMapWrapper
+                        departureDate={lot.data_embarque}
+                        arrivalDate={lot.arrival_date}
+                        shipName={lot.ship_name}
+                        animalsOnBoard={lastConfCp?.animals_confirmed ?? 0}
+                        lotName={lot.name}
+                        originPort={lot.porto_embarque}
+                        destinationPort={lot.pais_destino}
+                      />
+                    </div>
+                  )}
 
                   {/* Horizontal stage bar */}
                   <div className="flex items-start">

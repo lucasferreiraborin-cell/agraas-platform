@@ -31,7 +31,7 @@ export default async function CompradorPage() {
   const { data: lotsData } = lotIds.length
     ? await db
         .from("lots")
-        .select("id, name, objective, pais_destino, porto_embarque, data_embarque, certificacoes_exigidas, numero_contrato, status")
+        .select("id, name, objective, pais_destino, porto_embarque, data_embarque, certificacoes_exigidas, numero_contrato, status, ship_name, arrival_date")
         .in("id", lotIds)
     : { data: [] };
 
