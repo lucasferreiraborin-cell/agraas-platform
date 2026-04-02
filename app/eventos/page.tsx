@@ -152,8 +152,12 @@ export default async function EventosPage({ searchParams }: PageProps) {
 
         <div className="mt-8 overflow-x-auto">
           {rows.length === 0 ? (
-            <div className="rounded-3xl bg-[var(--surface-soft)] p-6 text-sm text-[var(--text-muted)]">
-              Nenhum evento encontrado.
+            <div className="rounded-3xl bg-[var(--surface-soft)] p-10 text-center">
+              <p className="text-[var(--text-muted)] mb-4">Nenhum evento registrado ainda.</p>
+              <div className="flex justify-center gap-3 flex-wrap">
+                <Link href="/pesagens" className="ag-button-primary">Registrar pesagem</Link>
+                <Link href="/aplicacoes" className="ag-button-secondary">Registrar aplicação</Link>
+              </div>
             </div>
           ) : (
             <table className="ag-table">

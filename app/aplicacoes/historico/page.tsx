@@ -176,8 +176,9 @@ export default async function AplicacoesHistoricoPage() {
 
         <div className="mt-8 overflow-x-auto">
           {rows.length === 0 ? (
-            <div className="rounded-3xl bg-[var(--surface-soft)] p-6 text-sm text-[var(--text-muted)]">
-              Nenhuma aplicação encontrada.
+            <div className="rounded-3xl bg-[var(--surface-soft)] p-10 text-center">
+              <p className="text-[var(--text-muted)] mb-4">Nenhuma aplicação sanitária registrada ainda.</p>
+              <Link href="/aplicacoes" className="ag-button-primary">Registrar primeira aplicação</Link>
             </div>
           ) : (
             <table className="ag-table">
