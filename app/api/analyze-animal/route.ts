@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
   if (!animal) return new Response("Animal não encontrado", { status: 404 });
 
   const cotacao = parseFloat(cotacaoData?.value ?? "330");
-  const KG_POR_ARROBA = 15;
+  const KG_POR_ARROBA = 30; // peso vivo: 1 arroba = 30 kg
   const lastWeight = weights?.[0] ? Number(weights[0].weight) : null;
   const prevWeight = weights?.[1] ? Number(weights[1].weight) : null;
   const gmd = calculateDailyGain(lastWeight, prevWeight, weights?.[0]?.weighing_date, weights?.[1]?.weighing_date);

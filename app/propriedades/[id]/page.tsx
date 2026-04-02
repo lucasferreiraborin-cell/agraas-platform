@@ -123,7 +123,7 @@ export default async function PropriedadeDetailPage({ params }: PageProps) {
     }
   }
 
-  const KG_POR_ARROBA = 15;
+  const KG_POR_ARROBA = 30; // peso vivo: 1 arroba = 30 kg
   const totalArrobas = Array.from(lastWeightByAnimal.values()).reduce((s, w) => s + w / KG_POR_ARROBA, 0);
   const valorRebanho = totalArrobas * cotacao;
   const targetArrobas = property?.target_arrobas ?? null;

@@ -610,7 +610,7 @@ export const POST = withApiSentry(async function POST(req: NextRequest) {
     const cotacaoArroba = cotacaoData?.value ? Number(cotacaoData.value) : 330;
 
     // ── Cálculo de valor ──
-    const KG_PER_ARROBA = 15;
+    const KG_PER_ARROBA = 30; // peso vivo: 1 arroba = 30 kg
     const ARABIC_DEST = ["emirados","uae","arábia saudita","saudi","qatar","kuwait","bahrein","bahrain","omã","oman","egito","egypt","jordânia","jordan","iraque","iraq"];
     const isArabic = ARABIC_DEST.some(d => (lot.pais_destino ?? "").toLowerCase().includes(d));
     const requiresHalal = (lot.certificacoes_exigidas ?? []).some(c => c.toLowerCase().includes("halal"));

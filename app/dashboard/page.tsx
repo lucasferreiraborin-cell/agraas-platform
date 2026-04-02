@@ -7,7 +7,7 @@ import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
 import { Wheat } from "lucide-react";
 // scores are computed server-side via calculate_agraas_score SQL function
 
-const KG_POR_ARROBA = 15;
+const KG_POR_ARROBA = 30; // peso vivo: 1 arroba = 30 kg
 
 type AnimalRow = {
   id: string;

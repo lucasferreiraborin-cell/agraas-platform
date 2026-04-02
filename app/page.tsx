@@ -274,7 +274,7 @@ export default async function PainelPage() {
     (sum, a) => sum + (lastWeightMap.get(a.id) ?? 0),
     0
   );
-  const totalArrobas = Math.round(totalWeightKg / 15);
+  const totalArrobas = Math.round(totalWeightKg / 30); // peso vivo: 1 arroba = 30 kg
   const estimatedValue = new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: "BRL",

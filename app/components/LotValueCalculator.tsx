@@ -5,7 +5,7 @@ import { TrendingUp, AlertTriangle, Award, Star } from "lucide-react";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const KG_PER_ARROBA = 15;
+const KG_PER_ARROBA = 30; // peso vivo: 1 arroba = 30 kg
 
 const ARABIC_DESTINATIONS = [
   "emirados", "uae", "arábia saudita", "saudi", "qatar", "kuwait",
