@@ -1,7 +1,9 @@
 import { createSupabaseServiceClient } from "@/lib/supabase-service";
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
 import type { Metadata } from "next";
 import PublicPassportView from "./PublicPassportView";
+import { checkRateLimitByIp } from "@/lib/rate-limit";
 
 type PageProps = { params: Promise<{ agraas_id: string }> };
 
@@ -16,6 +18,20 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function PublicPassportPage({ params }: PageProps) {
   const { agraas_id } = await params;
+
+  // Rate limit: 30 req/min por IP
+  const hdrs = await headers();
+  const ip = hdrs.get("x-forwarded-for")?.split(",")[0].trim() ?? hdrs.get("x-real-ip") ?? "unknown";
+  const rl = checkRateLimitByIp(ip, `/passaporte/${agraas_id}`, 30, 60_000);
+  if (!rl.allowed) {
+    return (
+      <main style={{ padding: "2rem", textAlign: "center", fontFamily: "sans-serif" }}>
+        <h1 style={{ fontSize: "2rem" }}>429 — Too Many Requests</h1>
+        <p>Muitas requisições. Tente novamente em {rl.retryAfter} segundos.</p>
+      </main>
+    );
+  }
+
   const supabase = createSupabaseServiceClient();
   const today = new Date();
   const twelveMonthsAgo = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate()).toISOString().slice(0, 10);

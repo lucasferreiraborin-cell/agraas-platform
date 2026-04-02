@@ -33,6 +33,29 @@ export function checkRateLimit(
   return { allowed: true, retryAfter: 0 };
 }
 
+// ── Variant for Server Components (no Request object available) ───────────────
+export function checkRateLimitByIp(
+  ip: string,
+  pathname: string,
+  limit: number,
+  windowMs: number,
+): { allowed: boolean; retryAfter: number } {
+  const key = `${ip}:${pathname}`;
+  const now = Date.now();
+  const entry = _store.get(key);
+
+  if (!entry || now > entry.resetAt) {
+    _store.set(key, { count: 1, resetAt: now + windowMs });
+    return { allowed: true, retryAfter: 0 };
+  }
+
+  entry.count += 1;
+  if (entry.count > limit) {
+    return { allowed: false, retryAfter: Math.ceil((entry.resetAt - now) / 1000) };
+  }
+  return { allowed: true, retryAfter: 0 };
+}
+
 export function tooManyRequests(retryAfter: number): Response {
   return new Response("Too Many Requests", {
     status: 429,
