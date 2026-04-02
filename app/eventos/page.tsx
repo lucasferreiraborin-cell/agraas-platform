@@ -1,6 +1,8 @@
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 
+const PAGE_SIZE = 20;
+
 type FarmEventRow = {
   id: string;
   animal_id: string | null;
@@ -23,16 +25,24 @@ type DisplayRow = {
   event_date: string | null;
 };
 
-export default async function EventosPage() {
+type PageProps = { searchParams?: Promise<{ page?: string }> };
+
+export default async function EventosPage({ searchParams }: PageProps) {
+  const params = await searchParams;
+  const page = Math.max(0, parseInt(params?.page ?? "0", 10) || 0);
+  const from = page * PAGE_SIZE;
+  const to = from + PAGE_SIZE - 1;
+
   const [
-    { data: eventsData, error: eventsError },
+    { data: eventsData, count: totalCount, error: eventsError },
     { data: animalsData, error: animalsError },
   ] = await Promise.all([
     supabase
       .from("events")
-      .select("id, animal_id, event_type, notes, event_date, created_at")
+      .select("id, animal_id, event_type, notes, event_date, created_at", { count: "exact" })
       .order("event_date", { ascending: false })
-      .order("created_at", { ascending: false }),
+      .order("created_at", { ascending: false })
+      .range(from, to),
 
     supabase
       .from("animals")
@@ -49,6 +59,8 @@ export default async function EventosPage() {
 
   const events = (eventsData ?? []) as FarmEventRow[];
   const animals = (animalsData ?? []) as AnimalRow[];
+  const total = totalCount ?? 0;
+  const totalPages = Math.ceil(total / PAGE_SIZE);
 
   const animalMap = new Map<string, string>();
   for (const animal of animals) {
@@ -98,7 +110,7 @@ export default async function EventosPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <MetricCard
                 label="Eventos"
-                value={rows.length}
+                value={total}
                 subtitle="trilha operacional registrada"
               />
               <MetricCard
@@ -134,7 +146,7 @@ export default async function EventosPage() {
           </div>
 
           <div className="ag-badge ag-badge-dark">
-            {rows.length} eventos
+            {total} eventos
           </div>
         </div>
 
@@ -167,6 +179,25 @@ export default async function EventosPage() {
             </table>
           )}
         </div>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between border-t border-[var(--border)] px-8 py-5">
+            {page > 0 ? (
+              <Link href={`?page=${page - 1}`} className="ag-button-secondary">Anterior</Link>
+            ) : (
+              <span className="ag-button-secondary opacity-40 pointer-events-none">Anterior</span>
+            )}
+            <span className="text-sm text-[var(--text-muted)]">
+              Mostrando {from + 1}–{Math.min(from + PAGE_SIZE, total)} de {total}
+            </span>
+            {page < totalPages - 1 ? (
+              <Link href={`?page=${page + 1}`} className="ag-button-secondary">Próximo</Link>
+            ) : (
+              <span className="ag-button-secondary opacity-40 pointer-events-none">Próximo</span>
+            )}
+          </div>
+        )}
       </section>
     </main>
   );

@@ -1,7 +1,9 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import Link from "next/link";
-import { Rabbit, Plus, ShieldCheck, AlertTriangle, Search } from "lucide-react";
+import { Rabbit, Plus } from "lucide-react";
 import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
+
+const PAGE_SIZE = 20;
 
 type LivestockRow = {
   id: string;
@@ -60,19 +62,27 @@ function ScoreRing({ score }: { score: number }) {
   );
 }
 
-export default async function OvinosPage() {
+type PageProps = { searchParams?: Promise<{ page?: string }> };
+
+export default async function OvinosPage({ searchParams }: PageProps) {
+  const params = await searchParams;
+  const page = Math.max(0, parseInt(params?.page ?? "0", 10) || 0);
+  const from = page * PAGE_SIZE;
+  const to = from + PAGE_SIZE - 1;
+
   const supabase = await createSupabaseServerClient();
 
   const [
-    { data: animalsData },
+    { data: animalsData, count: totalCount },
     { data: propertiesData },
     { data: quarantineData },
   ] = await Promise.all([
     supabase
       .from("livestock_species")
-      .select("id, species, breed, sex, weight_kg, status, internal_code, agraas_id, score, certifications, property_id")
+      .select("id, species, breed, sex, weight_kg, status, internal_code, agraas_id, score, certifications, property_id", { count: "exact" })
       .in("species", ["ovino", "caprino"])
-      .order("score", { ascending: false }),
+      .order("score", { ascending: false })
+      .range(from, to),
     supabase.from("properties").select("id, name"),
     supabase.from("pre_shipment_quarantine").select("animal_id, status"),
   ]);
@@ -80,14 +90,15 @@ export default async function OvinosPage() {
   const animals: LivestockRow[] = (animalsData ?? []) as LivestockRow[];
   const properties: PropertyRow[] = (propertiesData ?? []) as PropertyRow[];
   const quarantines: QuarantineRow[] = (quarantineData ?? []) as QuarantineRow[];
+  const total = totalCount ?? 0;
+  const totalPages = Math.ceil(total / PAGE_SIZE);
 
   const propMap = new Map(properties.map(p => [p.id, p.name]));
   const quarantineAnimalIds = new Set(
     quarantines.filter(q => q.status === "em_quarentena").map(q => q.animal_id)
   );
 
-  // KPIs
-  const total         = animals.length;
+  // KPIs (computed from current page; total from DB count)
   const withScore     = animals.filter(a => a.score != null);
   const avgScore      = withScore.length > 0
     ? Math.round(withScore.reduce((s, a) => s + (a.score ?? 0), 0) / withScore.length)
@@ -206,6 +217,24 @@ export default async function OvinosPage() {
               </tbody>
             </table>
           </div>
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between border-t border-[var(--border)] px-8 py-5">
+              {page > 0 ? (
+                <Link href={`?page=${page - 1}`} className="ag-button-secondary">Anterior</Link>
+              ) : (
+                <span className="ag-button-secondary opacity-40 pointer-events-none">Anterior</span>
+              )}
+              <span className="text-sm text-[var(--text-muted)]">
+                Mostrando {from + 1}–{Math.min(from + PAGE_SIZE, total)} de {total}
+              </span>
+              {page < totalPages - 1 ? (
+                <Link href={`?page=${page + 1}`} className="ag-button-secondary">Próximo</Link>
+              ) : (
+                <span className="ag-button-secondary opacity-40 pointer-events-none">Próximo</span>
+              )}
+            </div>
+          )}
         </section>
       )}
     </main>

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 
+const PAGE_SIZE = 20;
 const OBJECTIVES = ["Engorda", "Cria", "Recria", "Reprodução", "Descarte", "Exportação"];
 const PAISES_DESTINO = ["Arábia Saudita", "Emirados Árabes", "Kuwait", "Qatar", "Omã", "Jordânia", "Egito", "Líbia", "Argélia"];
 const PORTOS = ["Santos (SP)", "Paranaguá (PR)", "Vitória (ES)", "Salvador (BA)", "Fortaleza (CE)", "Belém (PA)", "Outro"];
@@ -30,6 +31,8 @@ export default function LotesPage() {
   const [properties, setProperties] = useState<PropertyRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [page, setPage] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
 
   // Campos do form
   const [nome, setNome] = useState("");
@@ -63,18 +66,23 @@ export default function LotesPage() {
         setMyClientId(clientId);
       }
 
-      const [{ data: lotsData }, { data: propsData }] = await Promise.all([
+      const from = page * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+
+      const [{ data: lotsData, count }, { data: propsData }] = await Promise.all([
         supabase.from("lots")
-          .select("id, name, description, objective, start_date, status, property_id, client_id, pais_destino, porto_embarque, data_embarque")
-          .order("created_at", { ascending: false }),
+          .select("id, name, description, objective, start_date, status, property_id, client_id, pais_destino, porto_embarque, data_embarque", { count: "exact" })
+          .order("created_at", { ascending: false })
+          .range(from, to),
         supabase.from("properties").select("id, name").order("name"),
       ]);
+      setTotalCount(count ?? 0);
       setLots((lotsData as LotRow[]) ?? []);
       setProperties((propsData as PropertyRow[]) ?? []);
       setLoading(false);
     }
     load();
-  }, []);
+  }, [page]);
 
   async function criarLote(e: React.FormEvent) {
     e.preventDefault();
@@ -250,6 +258,12 @@ export default function LotesPage() {
           {[1,2,3].map(i => <div key={i} className="h-40 animate-pulse rounded-3xl bg-[var(--surface-soft)]" />)}
         </div>
       ) : (
+        <>
+        <p className="text-sm text-[var(--text-muted)]">
+          {totalCount > 0
+            ? `Mostrando ${page * PAGE_SIZE + 1}–${Math.min((page + 1) * PAGE_SIZE, totalCount)} de ${totalCount} lote${totalCount !== 1 ? "s" : ""}`
+            : "Nenhum lote encontrado"}
+        </p>
         <section className="grid gap-4 xl:grid-cols-3">
           {lots.map(lot => {
             const isExportLot = lot.objective === "Exportação";
@@ -281,6 +295,29 @@ export default function LotesPage() {
             );
           })}
         </section>
+        {/* Pagination */}
+        {totalCount > PAGE_SIZE && (
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => setPage(p => Math.max(0, p - 1))}
+              disabled={page === 0}
+              className="ag-button-secondary disabled:opacity-40"
+            >
+              Anterior
+            </button>
+            <span className="text-sm text-[var(--text-muted)]">
+              Página {page + 1} de {Math.ceil(totalCount / PAGE_SIZE)}
+            </span>
+            <button
+              onClick={() => setPage(p => p + 1)}
+              disabled={(page + 1) * PAGE_SIZE >= totalCount}
+              className="ag-button-secondary disabled:opacity-40"
+            >
+              Próximo
+            </button>
+          </div>
+        )}
+        </>
       )}
     </main>
   );

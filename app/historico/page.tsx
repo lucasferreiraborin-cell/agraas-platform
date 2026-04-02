@@ -37,43 +37,55 @@ function fmtDate(d: string) {
 }
 
 export default function HistoricoPage() {
-  const [events,  setEvents]  = useState<Evt[]>([]);
+  const [visible, setVisible] = useState<Evt[]>([]);
   const [animals, setAnimals] = useState<Map<string, Animal>>(new Map());
   const [loading, setLoading] = useState(true);
   const [period,  setPeriod]  = useState<"7"|"30"|"90"|"all">("30");
   const [typeF,   setTypeF]   = useState<string>("all");
   const [page,    setPage]    = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalEvents, setTotalEvents] = useState(0);
+  const [lastDate, setLastDate] = useState<string | null>(null);
+  const [types, setTypes] = useState<string[]>([]);
 
   useEffect(() => {
     async function load() {
       setLoading(true);
-      const [{ data: evts }, { data: ants }] = await Promise.all([
-        supabase.from("events").select("id, event_type, event_date, notes, animal_id").order("event_date", { ascending: false }).limit(500),
+      const from = page * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+      const cutoff = period === "all" ? null : new Date(Date.now() - Number(period) * 86400000).toISOString();
+
+      let q = supabase
+        .from("events")
+        .select("id, event_type, event_date, notes, animal_id", { count: "exact" })
+        .order("event_date", { ascending: false })
+        .range(from, to);
+      if (cutoff) q = q.gte("event_date", cutoff);
+      if (typeF !== "all") q = q.eq("event_type", typeF);
+
+      const [{ data: evts, count }, { data: ants }, { data: typesData }, { data: statsData }] = await Promise.all([
+        q,
         supabase.from("animals").select("id, internal_code, nickname"),
+        supabase.from("events").select("event_type").limit(200),
+        supabase.from("events").select("event_date").order("event_date", { ascending: false }).limit(1),
       ]);
-      setEvents((evts ?? []) as Evt[]);
+
+      setVisible((evts ?? []) as Evt[]);
+      setTotalCount(count ?? 0);
       const m = new Map<string, Animal>();
       for (const a of (ants ?? []) as Animal[]) m.set(a.id, a);
       setAnimals(m);
+      setTotalEvents(count ?? 0);
+      setLastDate((statsData?.[0] as any)?.event_date ?? null);
+      const allTypes = Array.from(new Set((typesData ?? []).map((e: any) => e.event_type))).sort() as string[];
+      setTypes(allTypes);
       setLoading(false);
     }
     load();
-  }, []);
+  }, [period, typeF, page]);
 
-  const cutoff = period === "all" ? null : new Date(Date.now() - Number(period) * 86400000).toISOString();
-  const filtered = events.filter(e => {
-    if (cutoff && e.event_date < cutoff) return false;
-    if (typeF !== "all" && e.event_type !== typeF) return false;
-    return true;
-  });
-
-  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
-  const visible = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
-
-  const uniqueAnimals = new Set(events.filter(e => e.animal_id).map(e => e.animal_id)).size;
-  const lastDate = events[0]?.event_date ?? null;
-
-  const types = Array.from(new Set(events.map(e => e.event_type))).sort();
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+  const uniqueAnimals = new Set(visible.filter(e => e.animal_id).map(e => e.animal_id)).size;
 
   return (
     <main className="space-y-8">
@@ -84,7 +96,7 @@ export default function HistoricoPage() {
         <div className="mt-6 grid grid-cols-3 gap-4">
           <div className="ag-kpi-card">
             <p className="ag-kpi-label">Total de eventos</p>
-            <p className="ag-kpi-value text-[var(--primary)]">{loading ? "—" : events.length}</p>
+            <p className="ag-kpi-value text-[var(--primary)]">{loading ? "—" : totalEvents}</p>
             <p className="sub">registrados</p>
           </div>
           <div className="ag-kpi-card">
@@ -115,7 +127,7 @@ export default function HistoricoPage() {
             <option value="all">Todos os tipos</option>
             {types.map(t => <option key={t} value={t}>{TYPE_LABEL[t] ?? t}</option>)}
           </select>
-          <span className="text-sm text-[var(--text-muted)] ml-auto">{filtered.length} eventos encontrados</span>
+          <span className="text-sm text-[var(--text-muted)] ml-auto">{loading ? "…" : `${totalCount} eventos encontrados`}</span>
         </div>
 
         <div className="overflow-x-auto">
@@ -159,10 +171,12 @@ export default function HistoricoPage() {
 
         {totalPages > 1 && (
           <div className="flex items-center justify-between pt-2">
-            <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0}
+            <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={page === 0 || loading}
               className="ag-button-secondary disabled:opacity-40">Anterior</button>
-            <span className="text-sm text-[var(--text-muted)]">Página {page + 1} de {totalPages}</span>
-            <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1}
+            <span className="text-sm text-[var(--text-muted)]">
+              Mostrando {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, totalCount)} de {totalCount}
+            </span>
+            <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={page >= totalPages - 1 || loading}
               className="ag-button-secondary disabled:opacity-40">Próximo</button>
           </div>
         )}

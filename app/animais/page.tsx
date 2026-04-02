@@ -5,6 +5,10 @@ import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
 
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const PAGE_SIZE = 20;
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type ClientRow = { id: string; name: string };
@@ -12,21 +16,19 @@ type PropertyRow = { id: string; name: string };
 
 type PassportCacheRow = {
   animal_id: string;
-  identity_json: {
-    internal_code?: string | null;
-    sex?: string | null;
-    breed?: string | null;
-    status?: string | null;
-  } | null;
   score_json: { total_score?: number | null } | null;
 };
 
 type AnimalBaseRow = {
   id: string;
   agraas_id: string | null;
+  internal_code: string | null;
   birth_date: string | null;
   nickname: string | null;
   current_property_id: string | null;
+  sex: string | null;
+  breed: string | null;
+  status: string | null;
 };
 
 type CertRow = {
@@ -36,7 +38,6 @@ type CertRow = {
   certification_code: string | null;
 };
 
-// BUG 4 fix: table is "weights" with columns weight + weighing_date
 type WeighingRow = { animal_id: string; weight: number; weighing_date: string };
 type ActiveAppRow = { animal_id: string; withdrawal_date: string };
 
@@ -77,6 +78,8 @@ export default function AnimaisPage() {
   const [filter, setFilter] = useState<FilterKey>("all");
   const [selectedProperty, setSelectedProperty] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortKey>("score_desc");
+  const [page, setPage] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
 
   // Load clients once
   useEffect(() => {
@@ -96,73 +99,90 @@ export default function AnimaisPage() {
       setError(false);
 
       const todayStr = new Date().toISOString().split("T")[0];
+      const from = page * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
 
-      let passportQuery = supabase
-        .from("agraas_master_passport_cache")
-        .select("animal_id, identity_json, score_json");
-      // BUG 2 fix: include current_property_id; RLS filters to this user's animals only
-      let animalsQuery = supabase
+      // Count + paginated animals query in parallel
+      let countQ = supabase.from("animals").select("*", { count: "exact", head: true });
+      let pageQ = supabase
         .from("animals")
-        .select("id, agraas_id, birth_date, nickname, current_property_id");
+        .select("id, agraas_id, internal_code, birth_date, nickname, current_property_id, sex, breed, status")
+        .order("internal_code")
+        .range(from, to);
 
       if (selectedClientId) {
-        passportQuery = passportQuery.eq(
-          "client_id",
-          selectedClientId
-        ) as typeof passportQuery;
-        animalsQuery = animalsQuery.eq(
-          "client_id",
-          selectedClientId
-        ) as typeof animalsQuery;
+        countQ = countQ.eq("client_id", selectedClientId) as typeof countQ;
+        pageQ = pageQ.eq("client_id", selectedClientId) as typeof pageQ;
       }
 
-      const [
-        { data: passportData, error: passportErr },
-        { data: animalsBaseData, error: animalsErr },
-        { data: weighingsData },
-        { data: propertiesData },
-        { data: activeAppsData },
-        // BUG 3 fix: query animal_certifications directly (certifications_json never populated)
-        { data: certsData },
-      ] = await Promise.all([
-        passportQuery,
-        animalsQuery,
-        // BUG 4 fix: correct table "weights" with columns weight + weighing_date
-        supabase
-          .from("weights")
-          .select("animal_id, weight, weighing_date")
-          .order("weighing_date", { ascending: false }),
-        supabase.from("properties").select("id, name"),
-        supabase
-          .from("applications")
-          .select("animal_id, withdrawal_date")
-          .gte("withdrawal_date", todayStr),
-        supabase
-          .from("animal_certifications")
-          .select("animal_id, certification_name, status, certification_code"),
+      const [{ count }, { data: animalsBaseData, error: animalsErr }] = await Promise.all([
+        countQ,
+        pageQ,
       ]);
 
-      if (passportErr || animalsErr) {
+      if (animalsErr) {
         setError(true);
         setLoading(false);
         return;
       }
 
-      const passports = (passportData as PassportCacheRow[] | null) ?? [];
+      setTotalCount(count ?? 0);
+
       const animalsBase = (animalsBaseData as AnimalBaseRow[] | null) ?? [];
+      if (animalsBase.length === 0) {
+        setCards([]);
+        setProperties([]);
+        setLoading(false);
+        return;
+      }
+
+      const animalIds = animalsBase.map((a) => a.id);
+
+      // Fetch enrichment for the current page's animals only
+      const [
+        { data: passportData },
+        { data: weighingsData },
+        { data: propertiesData },
+        { data: activeAppsData },
+        { data: certsData },
+      ] = await Promise.all([
+        supabase
+          .from("agraas_master_passport_cache")
+          .select("animal_id, score_json")
+          .in("animal_id", animalIds),
+        supabase
+          .from("weights")
+          .select("animal_id, weight, weighing_date")
+          .in("animal_id", animalIds)
+          .order("weighing_date", { ascending: false }),
+        supabase.from("properties").select("id, name"),
+        supabase
+          .from("applications")
+          .select("animal_id, withdrawal_date")
+          .in("animal_id", animalIds)
+          .gte("withdrawal_date", todayStr),
+        supabase
+          .from("animal_certifications")
+          .select("animal_id, certification_name, status, certification_code")
+          .in("animal_id", animalIds),
+      ]);
+
+      const passports = (passportData as PassportCacheRow[] | null) ?? [];
       const weighings = (weighingsData as WeighingRow[] | null) ?? [];
       const propsData = (propertiesData as PropertyRow[] | null) ?? [];
       const activeApps = (activeAppsData as ActiveAppRow[] | null) ?? [];
       const allCerts = (certsData as CertRow[] | null) ?? [];
 
       // Build lookup maps
-      const animalBaseMap = new Map<string, AnimalBaseRow>();
-      for (const a of animalsBase) animalBaseMap.set(a.id, a);
+      const scoreMap = new Map<string, number>();
+      for (const p of passports) {
+        const s = p.score_json?.total_score;
+        if (s != null) scoreMap.set(p.animal_id, s);
+      }
 
       const propertyMap = new Map<string, string>();
       for (const p of propsData) propertyMap.set(p.id, p.name);
 
-      // BUG 4 fix: last weight per animal from "weights" table
       const lastWeightMap = new Map<string, number>();
       const lastWeighDateMap = new Map<string, string>();
       for (const w of weighings) {
@@ -172,7 +192,6 @@ export default function AnimaisPage() {
         }
       }
 
-      // BUG 3 fix: build cert map keyed by animal_id
       const certsByAnimal = new Map<string, { name: string; status: string; code: string | null }[]>();
       for (const c of allCerts) {
         const arr = certsByAnimal.get(c.animal_id) ?? [];
@@ -185,73 +204,71 @@ export default function AnimaisPage() {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      // BUG 2 fix: only include animals that belong to this user (RLS-filtered animalBaseMap)
-      const result: AnimalCard[] = passports
-        .filter((p) => animalBaseMap.has(p.animal_id))
-        .map((p) => {
-          const base = animalBaseMap.get(p.animal_id)!;
-          // BUG 2 fix: use animals.current_property_id (ownership_json never populated)
-          const propId = base.current_property_id ?? null;
-          // BUG 3 fix: certs from direct query
-          const certs = certsByAnimal.get(p.animal_id) ?? [];
+      const result: AnimalCard[] = animalsBase.map((base) => {
+        const propId = base.current_property_id ?? null;
+        const certs = certsByAnimal.get(base.id) ?? [];
+        const score = scoreMap.get(base.id) ?? 0;
 
-          const hasHalal = certs.some(
-            (c) => c.name.toLowerCase().includes("halal") && c.status === "active"
-          );
-          const hasWithdrawal = withdrawalSet.has(p.animal_id);
-          const score = p.score_json?.total_score ?? 0;
-          const isExportReady = score >= 75 && hasHalal && !hasWithdrawal;
+        const hasHalal = certs.some(
+          (c) => c.name.toLowerCase().includes("halal") && c.status === "active"
+        );
+        const hasWithdrawal = withdrawalSet.has(base.id);
+        const isExportReady = score >= 75 && hasHalal && !hasWithdrawal;
 
-          // BUG 4 fix: use weighing_date from weights table
-          const lastWeighDate = lastWeighDateMap.get(p.animal_id) ?? null;
-          let daysSince: number | null = null;
-          if (lastWeighDate) {
-            const d = new Date(lastWeighDate);
-            d.setHours(0, 0, 0, 0);
-            daysSince = Math.floor((today.getTime() - d.getTime()) / 86400000);
-          }
+        const lastWeighDate = lastWeighDateMap.get(base.id) ?? null;
+        let daysSince: number | null = null;
+        if (lastWeighDate) {
+          const d = new Date(lastWeighDate);
+          d.setHours(0, 0, 0, 0);
+          daysSince = Math.floor((today.getTime() - d.getTime()) / 86400000);
+        }
 
-          const hasExpiredCert = certs.some((c) => c.status === "expired");
-          const isInAlert =
-            (daysSince !== null && daysSince > 30) ||
-            hasWithdrawal ||
-            hasExpiredCert;
+        const hasExpiredCert = certs.some((c) => c.status === "expired");
+        const isInAlert =
+          (daysSince !== null && daysSince > 30) ||
+          hasWithdrawal ||
+          hasExpiredCert;
 
-          return {
-            animal_id: p.animal_id,
-            internal_code: p.identity_json?.internal_code ?? null,
-            nickname: base.nickname ?? null,
-            agraas_id: base.agraas_id ?? null,
-            sex: p.identity_json?.sex ?? null,
-            breed: p.identity_json?.breed ?? null,
-            animal_status: p.identity_json?.status ?? null,
-            total_score: score,
-            birth_date: base.birth_date ?? null,
-            // BUG 4 fix: weight from weights table
-            last_weight: lastWeightMap.get(p.animal_id) ?? null,
-            last_weight_date: lastWeighDate,
-            property_id: propId,
-            property_name: propId ? (propertyMap.get(propId) ?? null) : null,
-            certifications: certs,
-            has_halal: hasHalal,
-            is_export_ready: isExportReady,
-            is_in_alert: isInAlert,
-            days_since_weighing: daysSince,
-            has_active_withdrawal: hasWithdrawal,
-          };
-        });
+        return {
+          animal_id: base.id,
+          internal_code: base.internal_code ?? null,
+          nickname: base.nickname ?? null,
+          agraas_id: base.agraas_id ?? null,
+          sex: base.sex ?? null,
+          breed: base.breed ?? null,
+          animal_status: base.status ?? null,
+          total_score: score,
+          birth_date: base.birth_date ?? null,
+          last_weight: lastWeightMap.get(base.id) ?? null,
+          last_weight_date: lastWeighDate,
+          property_id: propId,
+          property_name: propId ? (propertyMap.get(propId) ?? null) : null,
+          certifications: certs,
+          has_halal: hasHalal,
+          is_export_ready: isExportReady,
+          is_in_alert: isInAlert,
+          days_since_weighing: daysSince,
+          has_active_withdrawal: hasWithdrawal,
+        };
+      });
 
-      // Filter properties to only those used by this user's animals
-      // (properties table may have no RLS — avoids showing other clients' farms in dropdown)
       const userPropIds = new Set(result.map((a) => a.property_id).filter(Boolean));
       setProperties(propsData.filter((p) => userPropIds.has(p.id)));
-
       setCards(result);
       setLoading(false);
     }
 
     loadAnimals();
-  }, [selectedClientId]);
+  }, [selectedClientId, page]);
+
+  function handleClientChange(id: string | null) {
+    setSelectedClientId(id);
+    setPage(0);
+  }
+
+  function handleFilterChange(f: FilterKey) {
+    setFilter(f);
+  }
 
   // ── Filtered + sorted list ──────────────────────────────────────────────────
   const filtered = useMemo(() => {
@@ -275,7 +292,7 @@ export default function AnimaisPage() {
     });
   }, [cards, filter, selectedProperty, sortBy]);
 
-  // ── Summary metrics ──────────────────────────────────────────────────────────
+  // ── Summary metrics (current page) ───────────────────────────────────────────
   const avgScore =
     cards.length > 0
       ? Math.round(
@@ -285,6 +302,9 @@ export default function AnimaisPage() {
   const halalCount = cards.filter((a) => a.has_halal).length;
   const exportReadyCount = cards.filter((a) => a.is_export_ready).length;
   const alertCount = cards.filter((a) => a.is_in_alert).length;
+
+  const from = page * PAGE_SIZE;
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
   return (
     <main className="space-y-8">
@@ -296,7 +316,7 @@ export default function AnimaisPage() {
           </span>
           <button
             type="button"
-            onClick={() => setSelectedClientId(null)}
+            onClick={() => handleClientChange(null)}
             className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
               selectedClientId === null
                 ? "bg-[var(--primary-hover)] text-white"
@@ -309,7 +329,7 @@ export default function AnimaisPage() {
             <button
               key={c.id}
               type="button"
-              onClick={() => setSelectedClientId(c.id)}
+              onClick={() => handleClientChange(c.id)}
               className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
                 selectedClientId === c.id
                   ? "bg-[var(--primary-hover)] text-white"
@@ -345,24 +365,24 @@ export default function AnimaisPage() {
         <div className="mt-10 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <HeroStat
             label="Animais"
-            value={loading ? "—" : cards.length}
-            sub="registrados"
+            value={loading ? "—" : totalCount}
+            sub="registrados total"
           />
           <HeroStat
             label="Score médio"
             value={loading ? "—" : avgScore}
-            sub="do rebanho"
+            sub="nesta página"
           />
           <HeroStat
             label="Halal ativos"
             value={loading ? "—" : halalCount}
-            sub="certificados"
+            sub="nesta página"
             accent="green"
           />
           <HeroStat
             label="Em alerta"
             value={loading ? "—" : alertCount}
-            sub="requerem ação"
+            sub="nesta página"
             accent={alertCount > 0 ? "red" : undefined}
           />
         </div>
@@ -388,7 +408,7 @@ export default function AnimaisPage() {
               <button
                 key={key}
                 type="button"
-                onClick={() => setFilter(key)}
+                onClick={() => handleFilterChange(key)}
                 className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition ${
                   filter === key
                     ? "bg-[var(--primary-hover)] text-white shadow-sm"
@@ -447,7 +467,9 @@ export default function AnimaisPage() {
         <p className="mt-4 text-sm text-[var(--text-muted)]">
           {loading
             ? "Carregando animais…"
-            : `Exibindo ${filtered.length} de ${cards.length} animal${cards.length !== 1 ? "is" : ""}`}
+            : totalCount === 0
+            ? "Nenhum animal encontrado"
+            : `Mostrando ${from + 1}–${Math.min(from + PAGE_SIZE, totalCount)} de ${totalCount} animal${totalCount !== 1 ? "is" : ""}`}
         </p>
       </section>
 
@@ -485,6 +507,29 @@ export default function AnimaisPage() {
             {filtered.map((animal) => (
               <AnimalCardComponent key={animal.animal_id} animal={animal} />
             ))}
+          </div>
+        )}
+
+        {/* ── Pagination ── */}
+        {!loading && !error && totalPages > 1 && (
+          <div className="mt-8 flex items-center justify-between">
+            <button
+              onClick={() => { setPage((p) => Math.max(0, p - 1)); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+              disabled={page === 0}
+              className="ag-button-secondary disabled:opacity-40"
+            >
+              Anterior
+            </button>
+            <span className="text-sm text-[var(--text-muted)]">
+              Página {page + 1} de {totalPages}
+            </span>
+            <button
+              onClick={() => { setPage((p) => p + 1); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+              disabled={page >= totalPages - 1}
+              className="ag-button-secondary disabled:opacity-40"
+            >
+              Próximo
+            </button>
           </div>
         )}
       </section>
@@ -609,7 +654,7 @@ function AnimalCardComponent({ animal }: { animal: AnimalCard }) {
 
 function ScoreCircle({ score }: { score: number }) {
   const r = 26;
-  const circ = 2 * Math.PI * r; // ≈ 163.36
+  const circ = 2 * Math.PI * r;
   const filled = Math.max(0, Math.min(1, score / 100)) * circ;
 
   const color =
@@ -622,38 +667,17 @@ function ScoreCircle({ score }: { score: number }) {
       viewBox="0 0 64 64"
       className="flex-shrink-0"
     >
-      {/* Background track */}
+      <circle cx="32" cy="32" r={r} fill="none" stroke="#e5e7eb" strokeWidth="6" />
       <circle
-        cx="32"
-        cy="32"
-        r={r}
-        fill="none"
-        stroke="#e5e7eb"
-        strokeWidth="6"
-      />
-      {/* Filled arc */}
-      <circle
-        cx="32"
-        cy="32"
-        r={r}
-        fill="none"
-        stroke={color}
-        strokeWidth="6"
+        cx="32" cy="32" r={r} fill="none" stroke={color} strokeWidth="6"
         strokeLinecap="round"
         strokeDasharray={`${filled} ${circ}`}
         strokeDashoffset="0"
         transform="rotate(-90 32 32)"
       />
-      {/* Score text */}
       <text
-        x="32"
-        y="32"
-        textAnchor="middle"
-        dominantBaseline="central"
-        fontSize="14"
-        fontWeight="700"
-        fill={color}
-        fontFamily="inherit"
+        x="32" y="32" textAnchor="middle" dominantBaseline="central"
+        fontSize="14" fontWeight="700" fill={color} fontFamily="inherit"
       >
         {score}
       </text>
@@ -686,13 +710,7 @@ function CertBadges({
               }`}
             >
               {isActive && (
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  className="h-3 w-3"
-                >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3 w-3">
                   <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
                 </svg>
               )}
@@ -733,7 +751,6 @@ function CertBadges({
           );
         }
 
-        // Generic cert
         return (
           <span
             key={i}
@@ -809,15 +826,7 @@ function EmptyState({ filter }: { filter: FilterKey }) {
   return (
     <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-12 text-center">
       <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-[var(--primary-soft)] shadow-[var(--shadow-soft)]">
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="#5d9c44"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="h-8 w-8"
-        >
+        <svg viewBox="0 0 24 24" fill="none" stroke="#5d9c44" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8">
           <circle cx="11" cy="11" r="8" />
           <line x1="21" y1="21" x2="16.65" y2="16.65" />
         </svg>
