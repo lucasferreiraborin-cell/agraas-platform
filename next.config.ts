@@ -1,7 +1,47 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
-const nextConfig: NextConfig = {};
+const supabaseHost = process.env.NEXT_PUBLIC_SUPABASE_URL
+  ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).host
+  : "*.supabase.co";
+
+const cspHeader = [
+  "default-src 'self'",
+  // Scripts: self + Sentry CDN
+  "script-src 'self' 'unsafe-inline' https://browser.sentry-cdn.com",
+  // Styles: self + inline (Next.js injects critical CSS)
+  "style-src 'self' 'unsafe-inline'",
+  // Images: self + data URIs + Supabase storage
+  `img-src 'self' data: https://${supabaseHost}`,
+  // Fonts: self
+  "font-src 'self'",
+  // API connections: self + Supabase + Sentry
+  `connect-src 'self' https://${supabaseHost} https://o*.ingest.sentry.io`,
+  // Frames: none
+  "frame-src 'none'",
+  // Objects: none
+  "object-src 'none'",
+  // Base URI: self only
+  "base-uri 'self'",
+  // Form action: self only
+  "form-action 'self'",
+].join("; ");
+
+const nextConfig: NextConfig = {
+  async headers() {
+    return [
+      {
+        source: "/(.*)",
+        headers: [
+          { key: "Content-Security-Policy", value: cspHeader },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+        ],
+      },
+    ];
+  },
+};
 
 export default withSentryConfig(nextConfig, {
   // Suppress the Sentry CLI output during builds
