@@ -11,12 +11,12 @@ const cspHeader = [
   "script-src 'self' 'unsafe-inline' https://browser.sentry-cdn.com",
   // Styles: self + inline (Next.js injects critical CSS)
   "style-src 'self' 'unsafe-inline'",
-  // Images: self + data URIs + Supabase storage
-  `img-src 'self' data: https://${supabaseHost}`,
+  // Images: self + data URIs + Supabase storage + Leaflet/OpenStreetMap tiles
+  `img-src 'self' data: https://${supabaseHost} https://*.tile.openstreetmap.org`,
   // Fonts: self
   "font-src 'self'",
-  // API connections: self + Supabase + Sentry
-  `connect-src 'self' https://${supabaseHost} https://o*.ingest.sentry.io`,
+  // API connections: self + Supabase + Sentry + OpenStreetMap (Leaflet tile attribution)
+  `connect-src 'self' https://${supabaseHost} https://o*.ingest.sentry.io https://*.tile.openstreetmap.org`,
   // Frames: none
   "frame-src 'none'",
   // Objects: none

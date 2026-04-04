@@ -1,19 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import { unstable_cache } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { createClient } from "@supabase/supabase-js";
 import { checkRateLimit, tooManyRequests } from "@/lib/rate-limit";
 
 const CACHE_TTL = 300; // 5 minutos
 
-// Cache por client_id — agrega stats pesadas do rebanho
-function getHerdStats(clientId: string) {
-  return unstable_cache(
+// Cria service client uma vez (fora do cache, fora do handler)
+function getServiceDb() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
+
+// Cache definido a nível de módulo — unstable_cache precisa ser estável entre requisições
+const fetchHerdStats = (clientId: string) =>
+  unstable_cache(
     async () => {
-      const { createClient } = await import("@supabase/supabase-js");
-      const db = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-      );
+      const db = getServiceDb();
+
+      const today = new Date().toISOString().split("T")[0];
+      const cutoff30d = new Date(Date.now() - 30 * 86400000).toISOString().split("T")[0];
 
       const [
         { count: totalAnimals },
@@ -28,7 +36,7 @@ function getHerdStats(clientId: string) {
         db.from("animal_scores").select("total_score").eq("client_id", clientId),
         db.from("weights").select("animal_id, weight, weighing_date").eq("client_id", clientId).order("weighing_date", { ascending: false }).limit(500),
         db.from("animal_certifications").select("animal_id").eq("client_id", clientId).ilike("certification_name", "%Halal%").eq("status", "active"),
-        db.from("applications").select("animal_id, withdrawal_date").eq("client_id", clientId).gte("withdrawal_date", new Date().toISOString().split("T")[0]),
+        db.from("applications").select("animal_id").eq("client_id", clientId).gte("withdrawal_date", today),
         db.from("crop_fields").select("id, status").eq("client_id", clientId).in("status", ["plantado", "em_desenvolvimento"]),
         db.from("crop_shipments").select("id, quantity_tons, status").eq("client_id", clientId),
       ]);
@@ -47,8 +55,8 @@ function getHerdStats(clientId: string) {
       const avgWeight = allWeights.length > 0
         ? Math.round(allWeights.reduce((s, w) => s + w.weight, 0) / allWeights.length)
         : 0;
-      const cutoff30d = new Date(Date.now() - 30 * 86400000).toISOString().split("T")[0];
-      const semPesagem30d = (totalAnimals ?? 0) - allWeights.filter(w => w.date >= cutoff30d).length;
+      const comPesagem30d = allWeights.filter(w => w.date >= cutoff30d).length;
+      const semPesagem30d = Math.max(0, (totalAnimals ?? 0) - comPesagem30d);
 
       // Agri KPIs
       const ships = (shipmentsData ?? []) as { id: string; quantity_tons: number; status: string }[];
@@ -58,7 +66,7 @@ function getHerdStats(clientId: string) {
         totalAnimals: totalAnimals ?? 0,
         avgScore,
         avgWeight,
-        semPesagem30d: Math.max(0, semPesagem30d),
+        semPesagem30d,
         halalCount: (halalRows ?? []).length,
         carenciasAtivas: (carenciaRows ?? []).length,
         agriKpis: {
@@ -71,7 +79,6 @@ function getHerdStats(clientId: string) {
     [`dashboard-stats-${clientId}`],
     { revalidate: CACHE_TTL }
   );
-}
 
 export async function GET(req: NextRequest) {
   const rl = checkRateLimit(req, 60, 60_000);
@@ -84,7 +91,7 @@ export async function GET(req: NextRequest) {
   const { data: clientData } = await supabase.from("clients").select("id").eq("auth_user_id", user.id).single();
   if (!clientData) return NextResponse.json({ error: "Cliente não encontrado" }, { status: 404 });
 
-  const stats = await getHerdStats(clientData.id)();
+  const stats = await fetchHerdStats(clientData.id)();
 
   return NextResponse.json({ ok: true, stats, cached_at: new Date().toISOString() });
 }
