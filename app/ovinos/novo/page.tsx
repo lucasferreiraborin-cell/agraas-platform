@@ -26,6 +26,7 @@ export default function OvinosNovoPage() {
   const [weightKg,     setWeightKg]     = useState("");
   const [propertyId,   setPropertyId]   = useState("");
   const [rfid,         setRfid]         = useState("");
+  const [rfidDeviceType, setRfidDeviceType] = useState("brinco_auricular");
   const [notes,        setNotes]        = useState("");
 
   useEffect(() => {
@@ -71,6 +72,7 @@ export default function OvinosNovoPage() {
       weight_kg:     weightKg ? Number(weightKg) : null,
       property_id:   propertyId || null,
       rfid:          rfid || null,
+      rfid_device_type: rfidDeviceType,
       notes:         notes || null,
       status:        "active",
     };
@@ -155,6 +157,17 @@ export default function OvinosNovoPage() {
               <label className={labelCls}>RFID</label>
               <input type="text" value={rfid} onChange={e => setRfid(e.target.value)} placeholder="Ex: 941000026XXXXXX" className={inputCls} />
             </div>
+          </div>
+
+          {/* Tipo de dispositivo RFID */}
+          <div>
+            <label className={labelCls}>Tipo de dispositivo RFID</label>
+            <select value={rfidDeviceType} onChange={e => setRfidDeviceType(e.target.value)} className={inputCls}>
+              <option value="brinco_auricular">Brinco Auricular</option>
+              <option value="bolus_intra_ruminal">Bolus Intra-ruminal (ISO 11784/11785)</option>
+              <option value="subcutaneo">Subcutâneo</option>
+              <option value="outro">Outro</option>
+            </select>
           </div>
 
           {/* Observações */}

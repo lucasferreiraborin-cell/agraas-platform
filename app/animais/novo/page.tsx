@@ -29,6 +29,7 @@ export default function NovoAnimalPage() {
   const [nickname, setNickname] = useState("");
   const [internalCode, setInternalCode] = useState("");
   const [rfid, setRfid] = useState("");
+  const [rfidDeviceType, setRfidDeviceType] = useState("brinco_auricular");
   const [sex, setSex] = useState("");
   const [category, setCategory] = useState("");
   const [breed, setBreed] = useState("");
@@ -133,6 +134,7 @@ export default function NovoAnimalPage() {
       nickname: nickname || null,
       internal_code: internalCode || null,
       rfid: rfid || null,
+      rfid_device_type: rfidDeviceType,
       sex: sex || null,
       category: category || null,
       breed: breed || null,
@@ -207,6 +209,16 @@ export default function NovoAnimalPage() {
               <Field label="RFID">
                 <input type="text" value={rfid} onChange={e => setRfid(e.target.value)}
                   className={inputClass} placeholder="Ex.: 982000123456789" />
+              </Field>
+
+              {/* Tipo de dispositivo RFID */}
+              <Field label="Tipo de dispositivo RFID">
+                <select value={rfidDeviceType} onChange={e => setRfidDeviceType(e.target.value)} className={selectClass}>
+                  <option value="brinco_auricular">Brinco Auricular</option>
+                  <option value="bolus_intra_ruminal">Bolus Intra-ruminal (ISO 11784/11785)</option>
+                  <option value="subcutaneo">Subcutâneo</option>
+                  <option value="outro">Outro</option>
+                </select>
               </Field>
 
               {/* Data de nascimento */}

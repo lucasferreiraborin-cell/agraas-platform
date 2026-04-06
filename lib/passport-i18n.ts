@@ -42,6 +42,14 @@ const T = {
     statusEligible:  "Elegível",
     statusWithdrawal:"Em carência",
 
+    // RFID device
+    rfidDevice:      "Dispositivo de Identificação",
+    rfidBrinco:      "Brinco Auricular",
+    rfidBolus:       "Bolus Intra-ruminal",
+    rfidSubcutaneo:  "Subcutâneo",
+    rfidOutro:       "Outro",
+    bolusBadge:      "Identificação Permanente — Bolus ISO 11784/11785",
+
     // Footer
     footer: (date: string) =>
       `Passaporte gerado em ${date} pela plataforma Agraas. Documento de rastreabilidade pecuária.`,
@@ -84,6 +92,14 @@ const T = {
     statusEligible:  "Eligible",
     statusWithdrawal:"Withdrawal period",
 
+    // RFID device
+    rfidDevice:      "Identification Device",
+    rfidBrinco:      "Ear Tag",
+    rfidBolus:       "Intra-ruminal Bolus",
+    rfidSubcutaneo:  "Subcutaneous Implant",
+    rfidOutro:       "Other",
+    bolusBadge:      "Permanent ID — Bolus ISO 11784/11785",
+
     // Footer
     footer: (date: string) =>
       `Passport generated on ${date} by the Agraas platform. Livestock traceability document.`,
@@ -125,6 +141,14 @@ const T = {
     statusActive:    "نشط",
     statusEligible:  "مؤهل",
     statusWithdrawal:"فترة الانتظار",
+
+    // RFID device
+    rfidDevice:      "جهاز التعريف",
+    rfidBrinco:      "وسم الأذن",
+    rfidBolus:       "بولوس داخل الكرش",
+    rfidSubcutaneo:  "زرع تحت الجلد",
+    rfidOutro:       "أخرى",
+    bolusBadge:      "تعريف دائم — بولوس ISO 11784/11785",
 
     // Footer
     footer: (date: string) =>
@@ -185,3 +209,17 @@ export const LANG_BUTTON: Record<Lang, string> = {
   en: "🇬🇧 EN",
   ar: "🇸🇦 AR",
 };
+
+export type RfidDeviceType = "brinco_auricular" | "bolus_intra_ruminal" | "subcutaneo" | "outro";
+
+/** Retorna o label traduzido do tipo de dispositivo RFID. */
+export function tRfidDevice(lang: Lang, type: RfidDeviceType | null): string {
+  if (!type) return "—";
+  const map: Record<RfidDeviceType, TranslationKey> = {
+    brinco_auricular:  "rfidBrinco",
+    bolus_intra_ruminal: "rfidBolus",
+    subcutaneo:        "rfidSubcutaneo",
+    outro:             "rfidOutro",
+  };
+  return t(lang, map[type]);
+}

@@ -5,9 +5,11 @@ import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
 import LanguageToggle from "@/app/components/LanguageToggle";
 import {
   type Lang,
+  type RfidDeviceType,
   t,
   tFooter,
   tSex,
+  tRfidDevice,
   fmtDateI18n,
 } from "@/lib/passport-i18n";
 
@@ -28,6 +30,7 @@ type Props = {
     breed: string | null;
     birth_date: string | null;
     status: string | null;
+    rfid_device_type: RfidDeviceType;
   };
   property: { name: string | null } | null;
   score: number;
@@ -177,6 +180,19 @@ export default function PublicPassportView({
                 <p className="mt-1 text-sm font-semibold text-[#1a1a2e]">{item.value}</p>
               </div>
             ))}
+          </div>
+
+          {/* Dispositivo RFID */}
+          <div className="border-t border-[#e5e7eb] px-8 py-4 flex items-center gap-3 flex-wrap">
+            <span className="text-xs text-[#9ca3af]">{t(lang, "rfidDevice")}: </span>
+            <span className="text-sm font-semibold text-[#1a1a2e]">
+              {tRfidDevice(lang, animal.rfid_device_type)}
+            </span>
+            {animal.rfid_device_type === "bolus_intra_ruminal" && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 border border-emerald-300 px-3 py-1 text-xs font-bold text-emerald-700">
+                ● {t(lang, "bolusBadge")}
+              </span>
+            )}
           </div>
 
           {property && (

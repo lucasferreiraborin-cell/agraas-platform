@@ -39,7 +39,7 @@ export default async function PublicPassportPage({ params }: PageProps) {
   // Busca animal pelo agraas_id
   const { data: animal } = await supabase
     .from("animals")
-    .select("id, agraas_id, internal_code, nickname, sex, breed, birth_date, status, current_property_id")
+    .select("id, agraas_id, internal_code, nickname, sex, breed, birth_date, status, current_property_id, rfid_device_type")
     .eq("agraas_id", agraas_id)
     .single();
 
@@ -98,6 +98,7 @@ export default async function PublicPassportPage({ params }: PageProps) {
         breed: animal.breed,
         birth_date: animal.birth_date,
         status: animal.status,
+        rfid_device_type: (animal.rfid_device_type ?? "brinco_auricular") as import("@/lib/passport-i18n").RfidDeviceType,
       }}
       property={propertyData ?? null}
       score={score}
