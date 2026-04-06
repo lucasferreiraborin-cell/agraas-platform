@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { Ship, Wheat } from "lucide-react";
 import {
-  GrainShipment, GrainTracking, GrainFarm, GrainField,
+  GrainShipment, GrainTracking, GrainFarm, GrainField, GrainQualityReport,
   GRAIN_STAGES, CULTURE_LABEL_EN, CULTURE_LABEL_PT,
   GRAIN_STATUS_EN, GRAIN_STATUS_PT, GRAIN_STATUS_CLS,
   Lang, fmtDate,
@@ -14,12 +14,13 @@ interface Props {
   grainTracking: GrainTracking[];
   grainFarms: GrainFarm[];
   grainFields: GrainField[];
+  grainQualityReports: GrainQualityReport[];
   lang: Lang;
   locale: string;
 }
 
 export default function CompradorGrainsTab({
-  grainShipments, grainTracking, grainFarms, grainFields, lang, locale,
+  grainShipments, grainTracking, grainFarms, grainFields, grainQualityReports, lang, locale,
 }: Props) {
   const fieldFarmMap = useMemo(() => new Map(grainFields.map(f => [f.id, f.farm_id])), [grainFields]);
   const farmCarMap   = useMemo(() => new Map(grainFarms.map(f => [f.id, !!f.car_number])), [grainFarms]);
@@ -35,6 +36,12 @@ export default function CompradorGrainsTab({
     for (const t of grainTracking) { if (!m.has(t.shipment_id)) m.set(t.shipment_id, t.quantity_confirmed_tons); }
     return m;
   }, [grainTracking]);
+
+  const qualityMap = useMemo(() => {
+    const m = new Map<string, GrainQualityReport>();
+    for (const q of grainQualityReports) { if (!m.has(q.shipment_id)) m.set(q.shipment_id, q); }
+    return m;
+  }, [grainQualityReports]);
 
   const activeGrainShipments = useMemo(() => grainShipments.filter(s => s.status !== "entregue"), [grainShipments]);
   const grainTonsInTransit   = useMemo(() => activeGrainShipments.reduce((s, sh) => s + Number(sh.quantity_tons), 0), [activeGrainShipments]);
@@ -138,6 +145,10 @@ export default function CompradorGrainsTab({
               const farmId        = sh.field_id ? fieldFarmMap.get(sh.field_id) : null;
               const hasCar        = farmId ? (farmCarMap.get(farmId) ?? false) : false;
 
+              const qr      = qualityMap.get(sh.id) ?? null;
+              const hasDocs = sh.bill_of_lading || sh.phytosanitary_cert;
+              const sfda    = qr && qr.mycotoxin_ppb != null && qr.mycotoxin_ppb < 10;
+
               return (
                 <div key={sh.id} className="p-6 lg:p-8">
                   <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
@@ -194,6 +205,55 @@ export default function CompradorGrainsTab({
                       );
                     })}
                   </div>
+
+                  {/* Documents + Quality */}
+                  {(hasDocs || qr) && (
+                    <div className="mt-5 space-y-3">
+                      {hasDocs && (
+                        <div className="flex flex-wrap gap-2">
+                          {sh.bill_of_lading && (
+                            <span className="inline-flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-[10px] font-bold text-indigo-700">
+                              📄 BL: {sh.bill_of_lading}
+                            </span>
+                          )}
+                          {sh.phytosanitary_cert && (
+                            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[10px] font-bold text-emerald-700">
+                              ✅ {lang === "en" ? "Phyto" : "Fitossanitário"}: {sh.phytosanitary_cert}
+                            </span>
+                          )}
+                          {sh.bill_of_lading && sh.phytosanitary_cert && (
+                            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-300 bg-emerald-100 px-3 py-1 text-[10px] font-bold text-emerald-800">
+                              {lang === "en" ? "Docs OK ✓" : "Docs OK ✓"}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      {qr && (
+                        <div className="flex flex-wrap items-center gap-3">
+                          {qr.humidity_pct != null && (
+                            <span className="text-[10px] text-[var(--text-muted)]">
+                              {lang === "en" ? "Humidity" : "Umidade"}: <strong className="text-[var(--text-primary)]">{qr.humidity_pct}%</strong>
+                            </span>
+                          )}
+                          {qr.protein_pct != null && (
+                            <span className="text-[10px] text-[var(--text-muted)]">
+                              {lang === "en" ? "Protein" : "Proteína"}: <strong className="text-[var(--text-primary)]">{qr.protein_pct}%</strong>
+                            </span>
+                          )}
+                          {qr.mycotoxin_ppb != null && (
+                            <span className="text-[10px] text-[var(--text-muted)]">
+                              {lang === "en" ? "Mycotoxins" : "Micotoxinas"}: <strong className={sfda ? "text-emerald-600" : "text-red-500"}>{qr.mycotoxin_ppb} ppb</strong>
+                            </span>
+                          )}
+                          {sfda && (
+                            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-300 bg-emerald-100 px-3 py-1 text-[10px] font-bold text-emerald-800">
+                              {lang === "en" ? "Mycotoxins <10ppb ✓ SFDA" : "Micotoxinas <10ppb ✓ SFDA"}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             })}

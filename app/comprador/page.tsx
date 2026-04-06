@@ -106,7 +106,7 @@ export default async function CompradorPage() {
   // ── Agricultura — embarques + tracking + fazendas ─────────────────────────
   const { data: grainShipmentsData } = await db
     .from("crop_shipments")
-    .select("id, contract_number, culture, quantity_tons, destination_country, destination_port, origin_port, vessel_name, departure_date, arrival_date, status, field_id")
+    .select("id, contract_number, culture, quantity_tons, destination_country, destination_port, origin_port, vessel_name, departure_date, arrival_date, status, field_id, bill_of_lading, phytosanitary_cert, phytosanitary_cert_date")
     .order("departure_date", { ascending: true });
 
   const { data: grainTrackingData } = await db
@@ -121,6 +121,10 @@ export default async function CompradorPage() {
   const { data: grainFieldsData } = await db
     .from("crop_fields")
     .select("id, farm_id, culture");
+
+  const { data: grainQualityData } = await db
+    .from("crop_quality_reports")
+    .select("id, shipment_id, humidity_pct, protein_pct, mycotoxin_ppb, impurity_pct, classification, lab_name, report_date, report_number");
 
   return (
     <CompradorView
@@ -138,6 +142,7 @@ export default async function CompradorPage() {
       grainTracking={grainTrackingData ?? []}
       grainFarms={grainFarmsData ?? []}
       grainFields={grainFieldsData ?? []}
+      grainQualityReports={grainQualityData ?? []}
     />
   );
 }

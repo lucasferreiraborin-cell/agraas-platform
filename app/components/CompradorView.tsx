@@ -9,7 +9,7 @@ import CompradorGrainsTab from "@/app/components/CompradorGrainsTab";
 import {
   Lot, Assignment, Animal, Cert, Withdrawal, Score,
   TrackingCheckpoint, LivestockAnimal, PoultryBatch,
-  GrainShipment, GrainTracking, GrainFarm, GrainField,
+  GrainShipment, GrainTracking, GrainFarm, GrainField, GrainQualityReport,
   ComplianceRow, LivestockRow,
   T, Lang, daysUntil, fmtDate,
 } from "@/app/components/compradorTypes";
@@ -18,7 +18,7 @@ import {
 export type {
   Lot, Assignment, Animal, Cert, Withdrawal, Score,
   TrackingCheckpoint, LivestockAnimal, PoultryBatch,
-  GrainShipment, GrainTracking, GrainFarm, GrainField,
+  GrainShipment, GrainTracking, GrainFarm, GrainField, GrainQualityReport,
 };
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -38,6 +38,7 @@ interface Props {
   grainTracking: GrainTracking[];
   grainFarms: GrainFarm[];
   grainFields: GrainField[];
+  grainQualityReports: GrainQualityReport[];
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -46,7 +47,7 @@ export default function CompradorView({
   buyerName, lots, assignments, animals, certifications,
   activeWithdrawals, scores, trackingCheckpoints,
   livestockAnimals, poultryBatches,
-  grainShipments, grainTracking, grainFarms, grainFields,
+  grainShipments, grainTracking, grainFarms, grainFields, grainQualityReports,
 }: Props) {
   const [lang, setLang]                   = useState<Lang>("en");
   const [mainTab, setMainTab]             = useState<"livestock" | "grains">("livestock");
@@ -301,6 +302,7 @@ export default function CompradorView({
           grainTracking={grainTracking}
           grainFarms={grainFarms}
           grainFields={grainFields}
+          grainQualityReports={grainQualityReports}
           lang={lang}
           locale={locale}
         />

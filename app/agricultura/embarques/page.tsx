@@ -13,6 +13,22 @@ type Shipment = {
   departure_date: string | null;
   arrival_date: string | null;
   status: string;
+  bill_of_lading: string | null;
+  phytosanitary_cert: string | null;
+  phytosanitary_cert_date: string | null;
+};
+
+type QualityReport = {
+  id: string;
+  shipment_id: string;
+  humidity_pct: number | null;
+  protein_pct: number | null;
+  mycotoxin_ppb: number | null;
+  impurity_pct: number | null;
+  classification: string | null;
+  lab_name: string | null;
+  report_date: string | null;
+  report_number: string | null;
 };
 
 type Tracking = {
@@ -47,19 +63,23 @@ function fmtTons(t: number) { return t.toLocaleString("pt-BR", { minimumFraction
 export default async function EmbarquesPage() {
   const supabase = await createSupabaseServerClient();
 
-  const [{ data: shipmentsData }, { data: trackingData }] = await Promise.all([
+  const [{ data: shipmentsData }, { data: trackingData }, { data: qualityData }] = await Promise.all([
     supabase
       .from("crop_shipments")
-      .select("id, contract_number, culture, quantity_tons, destination_country, destination_port, vessel_name, departure_date, arrival_date, status")
+      .select("id, contract_number, culture, quantity_tons, destination_country, destination_port, vessel_name, departure_date, arrival_date, status, bill_of_lading, phytosanitary_cert, phytosanitary_cert_date")
       .order("departure_date", { ascending: true }),
     supabase
       .from("crop_shipment_tracking")
       .select("shipment_id, stage, stage_date, quantity_confirmed_tons, quantity_lost_tons, location_name")
       .order("stage_date", { ascending: false }),
+    supabase
+      .from("crop_quality_reports")
+      .select("id, shipment_id, humidity_pct, protein_pct, mycotoxin_ppb, impurity_pct, classification, lab_name, report_date, report_number"),
   ]);
 
   const shipments: Shipment[] = (shipmentsData ?? []) as Shipment[];
   const tracking: Tracking[] = (trackingData ?? []) as Tracking[];
+  const qualityReports: QualityReport[] = (qualityData ?? []) as QualityReport[];
 
   // Latest stage per shipment + latest confirmed qty
   const shipStageMap = new Map<string, string>();
@@ -69,6 +89,12 @@ export default async function EmbarquesPage() {
       shipStageMap.set(t.shipment_id, t.stage);
       shipConfirmedMap.set(t.shipment_id, t.quantity_confirmed_tons);
     }
+  }
+
+  // Quality report per shipment (first found)
+  const qualityMap = new Map<string, QualityReport>();
+  for (const q of qualityReports) {
+    if (!qualityMap.has(q.shipment_id)) qualityMap.set(q.shipment_id, q);
   }
 
   const active = shipments.filter(s => s.status !== "entregue");
@@ -102,6 +128,10 @@ export default async function EmbarquesPage() {
         const confirmedTons = shipConfirmedMap.get(sh.id) ?? null;
         const lostTons = tracking.filter(t => t.shipment_id === sh.id).reduce((s, t) => s + t.quantity_lost_tons, 0);
         const confirmedPct = confirmedTons != null ? Math.min(100, (confirmedTons / sh.quantity_tons) * 100) : null;
+
+        const qr = qualityMap.get(sh.id) ?? null;
+        const hasDocs = sh.bill_of_lading || sh.phytosanitary_cert;
+        const sfda = qr && qr.mycotoxin_ppb != null && qr.mycotoxin_ppb < 10;
 
         return (
           <section key={sh.id} className="ag-card-strong overflow-hidden">
@@ -153,6 +183,83 @@ export default async function EmbarquesPage() {
                   </div>
                   <div className="h-2 w-full rounded-full bg-[var(--border)]">
                     <div className="h-2 rounded-full bg-emerald-500 transition-all" style={{ width: `${confirmedPct}%` }} />
+                  </div>
+                </div>
+              )}
+
+              {/* Documentos de Embarque */}
+              {hasDocs && (
+                <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] p-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--text-muted)] mb-3">Documentos de Embarque</p>
+                  <div className="flex flex-wrap gap-2">
+                    {sh.bill_of_lading && (
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
+                        📄 BL: {sh.bill_of_lading}
+                      </span>
+                    )}
+                    {sh.phytosanitary_cert && (
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                        ✅ Fitossanitário: {sh.phytosanitary_cert}
+                        {sh.phytosanitary_cert_date ? ` · ${fmtDate(sh.phytosanitary_cert_date)}` : ""}
+                      </span>
+                    )}
+                    {sh.bill_of_lading && sh.phytosanitary_cert && (
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300 bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800">
+                        Docs OK ✓
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Laudo de Qualidade */}
+              {qr && (
+                <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] p-4">
+                  <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--text-muted)]">
+                      Laudo de Qualidade
+                      {qr.lab_name ? ` · ${qr.lab_name}` : ""}
+                      {qr.report_number ? ` · ${qr.report_number}` : ""}
+                    </p>
+                    {sfda && (
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300 bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800">
+                        Micotoxinas &lt;10ppb ✓ SFDA
+                      </span>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    {qr.humidity_pct != null && (
+                      <div>
+                        <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--text-muted)]">Umidade</p>
+                        <p className="mt-0.5 text-sm font-bold text-[var(--text-primary)]">{qr.humidity_pct}%</p>
+                      </div>
+                    )}
+                    {qr.protein_pct != null && (
+                      <div>
+                        <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--text-muted)]">Proteína</p>
+                        <p className="mt-0.5 text-sm font-bold text-[var(--text-primary)]">{qr.protein_pct}%</p>
+                      </div>
+                    )}
+                    {qr.mycotoxin_ppb != null && (
+                      <div>
+                        <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--text-muted)]">Micotoxinas</p>
+                        <p className={`mt-0.5 text-sm font-bold ${sfda ? "text-emerald-600" : "text-red-500"}`}>
+                          {qr.mycotoxin_ppb} ppb
+                        </p>
+                      </div>
+                    )}
+                    {qr.impurity_pct != null && (
+                      <div>
+                        <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--text-muted)]">Impurezas</p>
+                        <p className="mt-0.5 text-sm font-bold text-[var(--text-primary)]">{qr.impurity_pct}%</p>
+                      </div>
+                    )}
+                    {qr.classification && (
+                      <div>
+                        <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--text-muted)]">Classificação</p>
+                        <p className="mt-0.5 text-sm font-bold text-[var(--text-primary)]">{qr.classification}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

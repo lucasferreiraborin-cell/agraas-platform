@@ -15,6 +15,21 @@ type Shipment = {
   departure_date: string | null;
   arrival_date: string | null;
   status: string;
+  bill_of_lading: string | null;
+  phytosanitary_cert: string | null;
+  phytosanitary_cert_date: string | null;
+};
+
+type QualityReport = {
+  id: string;
+  humidity_pct: number | null;
+  protein_pct: number | null;
+  mycotoxin_ppb: number | null;
+  impurity_pct: number | null;
+  classification: string | null;
+  lab_name: string | null;
+  report_date: string | null;
+  report_number: string | null;
 };
 
 type Tracking = {
@@ -81,10 +96,10 @@ export default async function EmbarqueDetailPage({ params }: { params: Promise<{
   const { id } = await params;
   const supabase = await createSupabaseServerClient();
 
-  const [{ data: shipData }, { data: trackingData }, { data: movementsData }] = await Promise.all([
+  const [{ data: shipData }, { data: trackingData }, { data: movementsData }, { data: qualityData }] = await Promise.all([
     supabase
       .from("crop_shipments")
-      .select("id, contract_number, culture, quantity_tons, destination_country, destination_port, origin_port, vessel_name, departure_date, arrival_date, status, field_id, storage_id")
+      .select("id, contract_number, culture, quantity_tons, destination_country, destination_port, origin_port, vessel_name, departure_date, arrival_date, status, field_id, storage_id, bill_of_lading, phytosanitary_cert, phytosanitary_cert_date")
       .eq("id", id)
       .single(),
     supabase
@@ -96,6 +111,12 @@ export default async function EmbarqueDetailPage({ params }: { params: Promise<{
       .from("crop_storage_movements")
       .select("id, movement_type, quantity_tons, humidity_pct, impurity_pct, classification, nfe_key, responsible, movement_date, notes")
       .order("movement_date", { ascending: true }),
+    supabase
+      .from("crop_quality_reports")
+      .select("id, humidity_pct, protein_pct, mycotoxin_ppb, impurity_pct, classification, lab_name, report_date, report_number")
+      .eq("shipment_id", id)
+      .limit(1)
+      .single(),
   ]);
 
   if (!shipData) notFound();
@@ -103,6 +124,7 @@ export default async function EmbarqueDetailPage({ params }: { params: Promise<{
   const sh = shipData as Shipment;
   const tracking: Tracking[] = (trackingData ?? []) as Tracking[];
   const movements: StorageMovement[] = (movementsData ?? []) as StorageMovement[];
+  const qr: QualityReport | null = qualityData ?? null;
 
   // Current stage
   const latestTracking = tracking[0] ?? null;
@@ -231,6 +253,86 @@ export default async function EmbarqueDetailPage({ params }: { params: Promise<{
           })}
         </div>
       </section>
+
+      {/* Documentos de Embarque */}
+      {(sh.bill_of_lading || sh.phytosanitary_cert) && (
+        <section className="ag-card-strong p-8 space-y-4">
+          <h2 className="ag-section-title">Documentos de Embarque</h2>
+          <div className="flex flex-wrap gap-3">
+            {sh.bill_of_lading && (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700">
+                📄 Bill of Lading: {sh.bill_of_lading}
+              </span>
+            )}
+            {sh.phytosanitary_cert && (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700">
+                ✅ Certificado Fitossanitário: {sh.phytosanitary_cert}
+                {sh.phytosanitary_cert_date ? ` · ${fmtDate(sh.phytosanitary_cert_date)}` : ""}
+              </span>
+            )}
+            {sh.bill_of_lading && sh.phytosanitary_cert && (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300 bg-emerald-100 px-4 py-2 text-sm font-bold text-emerald-800">
+                Docs OK ✓
+              </span>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* Laudo de Qualidade */}
+      {qr && (
+        <section className="ag-card-strong p-8 space-y-4">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <h2 className="ag-section-title">Laudo de Qualidade</h2>
+              {(qr.lab_name || qr.report_number) && (
+                <p className="text-sm text-[var(--text-muted)]">
+                  {[qr.lab_name, qr.report_number, qr.report_date ? fmtDate(qr.report_date) : null].filter(Boolean).join(" · ")}
+                </p>
+              )}
+            </div>
+            {qr.mycotoxin_ppb != null && qr.mycotoxin_ppb < 10 && (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300 bg-emerald-100 px-4 py-2 text-sm font-bold text-emerald-800">
+                Micotoxinas &lt;10ppb ✓ SFDA
+              </span>
+            )}
+          </div>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            {qr.humidity_pct != null && (
+              <div className="ag-card-strong p-4">
+                <p className="ag-kpi-label">Umidade</p>
+                <p className="ag-kpi-value text-[var(--text-primary)]">{qr.humidity_pct}%</p>
+              </div>
+            )}
+            {qr.protein_pct != null && (
+              <div className="ag-card-strong p-4">
+                <p className="ag-kpi-label">Proteína</p>
+                <p className="ag-kpi-value text-[var(--text-primary)]">{qr.protein_pct}%</p>
+              </div>
+            )}
+            {qr.mycotoxin_ppb != null && (
+              <div className="ag-card-strong p-4">
+                <p className="ag-kpi-label">Micotoxinas</p>
+                <p className={`ag-kpi-value ${qr.mycotoxin_ppb < 10 ? "text-emerald-600" : "text-red-500"}`}>
+                  {qr.mycotoxin_ppb} ppb
+                </p>
+              </div>
+            )}
+            {qr.impurity_pct != null && (
+              <div className="ag-card-strong p-4">
+                <p className="ag-kpi-label">Impurezas</p>
+                <p className="ag-kpi-value text-[var(--text-primary)]">{qr.impurity_pct}%</p>
+              </div>
+            )}
+            {qr.classification && (
+              <div className="ag-card-strong p-4">
+                <p className="ag-kpi-label">Classificação</p>
+                <p className="ag-kpi-value text-[var(--text-primary)]">{qr.classification}</p>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* Documentos fiscais */}
       {movements.length > 0 && (
