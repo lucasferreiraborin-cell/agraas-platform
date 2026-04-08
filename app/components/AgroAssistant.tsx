@@ -44,10 +44,10 @@ export default function AgroAssistant() {
         body: JSON.stringify({ message: userMsg, history }),
       });
       const json = await res.json();
-      const reply: string = json.reply ?? "🚧 Funcionalidade em construção — disponível em breve.";
+      const reply: string = json.reply ?? "Desculpe, não consegui processar sua pergunta. Tente novamente.";
       setMessages(prev => [...prev, { role: "assistant", content: reply }]);
     } catch {
-      setMessages(prev => [...prev, { role: "assistant", content: "🚧 Funcionalidade em construção — disponível em breve." }]);
+      setMessages(prev => [...prev, { role: "assistant", content: "Erro de conexão. Verifique sua internet e tente novamente." }]);
     }
     setLoading(false);
   }
