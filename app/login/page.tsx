@@ -5,25 +5,7 @@ import { createBrowserClient } from "@supabase/ssr";
 import { useRouter } from "next/navigation";
 import AgraasLogo from "@/app/components/AgraasLogo";
 import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
-import { Fingerprint, Wheat, ShieldCheck } from "lucide-react";
-
-const VALUE_PROPS = [
-  {
-    icon: Fingerprint,
-    title: "Passaporte Digital",
-    description: "Identidade digital única para cada animal — rastreabilidade completa da fazenda ao porto.",
-  },
-  {
-    icon: Wheat,
-    title: "Grain ID",
-    description: "Documentação de embarque, laudos de qualidade e rastreio de grãos em tempo real.",
-  },
-  {
-    icon: ShieldCheck,
-    title: "Conformidade Halal",
-    description: "Certificação Halal integrada, matriz de conformidade e relatórios para exportação.",
-  },
-];
+import { ShieldCheck, Wheat, Award } from "lucide-react";
 
 export default function LoginPage() {
   const [email, setEmail]       = useState("");
@@ -74,66 +56,59 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col lg:flex-row">
-      {/* ═══ LEFT — Institutional ═══════════════════════════════════════════ */}
-      <div className="relative flex w-full flex-col justify-between bg-[#1A5C38] px-8 py-10 text-white lg:w-[60%] lg:px-16 lg:py-14">
-        {/* Gradient overlay */}
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(93,156,68,0.25)_0%,transparent_60%)]" />
+    <div className="flex min-h-screen flex-col md:flex-row">
 
-        <div className="relative z-10">
-          {/* Logo + Halal */}
-          <div className="flex items-center gap-5">
-            <AgraasLogo size={56} />
-            <div>
-              <h1 className="text-4xl font-semibold tracking-[-0.06em] lg:text-5xl">Agraas</h1>
-              <p className="mt-1 text-sm text-white/60">Intelligence Layer</p>
-            </div>
-            <div className="ml-auto hidden sm:block">
-              <HalalBadgeSVG size={52} />
-            </div>
+      {/* ── LEFT — Institutional ─────────────────────────────────────────── */}
+      <div
+        className="flex w-full flex-col justify-between px-8 py-8 text-white md:w-[55%] md:px-14 md:py-12"
+        style={{ background: "linear-gradient(160deg, #3d762c 0%, #294f1d 100%)" }}
+      >
+        {/* Mobile: compact header · Desktop: full layout */}
+        <div>
+          {/* Logo + Badge */}
+          <div className="flex items-center justify-center gap-5 md:justify-start">
+            <AgraasLogo size={64} />
+            <HalalBadgeSVG size={80} />
           </div>
 
-          {/* Tagline */}
-          <p className="mt-8 max-w-md text-lg font-medium leading-8 text-white/90 lg:mt-12 lg:text-xl">
+          {/* Tagline — hidden on mobile */}
+          <p className="mt-6 hidden text-lg font-normal leading-8 text-white/85 md:block" style={{ fontFamily: "Inter, sans-serif" }}>
             A infraestrutura digital do agro brasileiro
           </p>
-          <p className="mt-2 max-w-lg text-sm leading-6 text-white/50">
-            Rastreabilidade, performance produtiva e inteligência operacional para a cadeia pecuária e agrícola.
-          </p>
 
-          {/* Value props */}
-          <div className="mt-10 grid gap-5 sm:grid-cols-3 lg:mt-14">
-            {VALUE_PROPS.map((vp) => {
-              const Icon = vp.icon;
-              return (
-                <div key={vp.title} className="rounded-2xl border border-white/10 bg-white/[0.06] p-5 backdrop-blur-sm">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10">
-                    <Icon size={20} className="text-emerald-300" />
-                  </div>
-                  <h3 className="mt-4 text-sm font-semibold text-white">{vp.title}</h3>
-                  <p className="mt-2 text-xs leading-5 text-white/50">{vp.description}</p>
-                </div>
-              );
-            })}
+          {/* Divider — hidden on mobile */}
+          <div className="mt-8 hidden border-t border-white/20 md:block" />
+
+          {/* Value props — hidden on mobile */}
+          <div className="mt-8 hidden space-y-6 md:block">
+            <ValueProp icon={ShieldCheck} title="Passaporte Digital" description="Rastreabilidade individual por animal" />
+            <ValueProp icon={Wheat} title="Grain ID" description="Grãos rastreados do talhão a Jeddah" />
+            <ValueProp icon={Award} title="Conformidade Halal" description="Certificação verificável para o mercado árabe" />
           </div>
         </div>
 
-        {/* Footer */}
-        <p className="relative z-10 mt-10 text-[11px] text-white/30 lg:mt-0">
-          Agraas Platform v1.0 · Certificado pelo MAPA
+        {/* Footer — hidden on mobile */}
+        <p className="mt-10 hidden text-[11px] text-white/40 md:block">
+          Agraas Platform v1.0 · 2026
         </p>
       </div>
 
-      {/* ═══ RIGHT — Form ══════════════════════════════════════════════════ */}
-      <div className="flex w-full flex-1 items-center justify-center bg-white px-6 py-12 lg:w-[40%] lg:px-12">
+      {/* ── RIGHT — Form ─────────────────────────────────────────────────── */}
+      <div className="flex flex-1 items-center justify-center px-6 py-12 md:px-10" style={{ background: "#f8faf7" }}>
         <div className="w-full max-w-sm">
+
+          {/* Small logo icon */}
+          <div className="mb-8 flex justify-center md:justify-start">
+            <AgraasLogo size={36} />
+          </div>
+
           {!showReset ? (
             <>
-              <h2 className="text-2xl font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
+              <h2 className="text-2xl font-bold text-[var(--text-primary)]" style={{ fontFamily: "Inter, sans-serif" }}>
                 Bem-vindo de volta
               </h2>
-              <p className="mt-2 text-sm text-[var(--text-muted)]">
-                Acesse sua conta para continuar.
+              <p className="mt-2 text-sm text-[var(--text-secondary)]">
+                Acesse sua conta Agraas
               </p>
 
               <form onSubmit={handleLogin} className="mt-8 space-y-5">
@@ -146,8 +121,9 @@ export default function LoginPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="w-full rounded-xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary-soft)]"
                     placeholder="seu@email.com"
+                    style={{ borderRadius: 18 }}
+                    className="w-full border border-[#d1e8c7] bg-white px-4 py-3 text-sm text-[var(--text-primary)] outline-none transition focus:border-[#5d9c44] focus:ring-2 focus:ring-[#5d9c44]/20"
                   />
                 </div>
 
@@ -160,53 +136,61 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="w-full rounded-xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary-soft)]"
                     placeholder="••••••••"
+                    style={{ borderRadius: 18 }}
+                    className="w-full border border-[#d1e8c7] bg-white px-4 py-3 text-sm text-[var(--text-primary)] outline-none transition focus:border-[#5d9c44] focus:ring-2 focus:ring-[#5d9c44]/20"
                   />
                 </div>
 
                 {error && (
-                  <div className="ag-form-error">
-                    {error}
-                  </div>
+                  <div className="ag-form-error">{error}</div>
                 )}
 
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full rounded-xl bg-[var(--primary)] py-3.5 text-sm font-semibold text-white shadow-[var(--shadow-green)] transition hover:bg-[var(--primary-hover)] disabled:opacity-60"
+                  style={{ borderRadius: 18, height: 48, fontFamily: "Inter, sans-serif" }}
+                  className="w-full bg-[#5d9c44] text-[15px] font-semibold text-white transition hover:bg-[#4f8a38] disabled:opacity-60"
                 >
                   {loading ? "Entrando..." : "Entrar"}
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() => { setShowReset(true); setResetEmail(email); }}
-                  className="w-full text-center text-xs text-[var(--text-muted)] hover:text-[var(--primary)] transition"
-                >
-                  Esqueci minha senha
-                </button>
+                <div className="text-right">
+                  <button
+                    type="button"
+                    onClick={() => { setShowReset(true); setResetEmail(email); }}
+                    className="text-[13px] text-[#5d9c44] transition hover:underline"
+                  >
+                    Esqueci minha senha
+                  </button>
+                </div>
               </form>
+
+              <div className="mt-8 flex items-center gap-3">
+                <div className="h-px flex-1 bg-[var(--border)]" />
+                <span className="text-xs text-[var(--text-muted)]">Plataforma restrita a clientes Agraas</span>
+                <div className="h-px flex-1 bg-[var(--border)]" />
+              </div>
             </>
           ) : (
             <>
               <button
                 type="button"
                 onClick={() => { setShowReset(false); setResetSent(false); setResetError(""); }}
-                className="mb-5 flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition"
+                className="mb-6 text-[13px] text-[#5d9c44] transition hover:underline"
               >
                 ← Voltar para o login
               </button>
 
-              <h2 className="text-2xl font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
+              <h2 className="text-2xl font-bold text-[var(--text-primary)]">
                 Redefinir senha
               </h2>
-              <p className="mt-2 text-sm text-[var(--text-muted)]">
+              <p className="mt-2 text-sm text-[var(--text-secondary)]">
                 Informe seu e-mail e enviaremos um link de redefinição.
               </p>
 
               {resetSent ? (
-                <div className="mt-6 rounded-xl bg-green-50 border border-green-200 px-4 py-4 text-sm text-green-700">
+                <div className="mt-6 rounded-xl border border-green-200 bg-green-50 px-4 py-4 text-sm text-green-700">
                   Enviamos um link de redefinição para seu e-mail.
                 </div>
               ) : (
@@ -220,21 +204,21 @@ export default function LoginPage() {
                       value={resetEmail}
                       onChange={(e) => setResetEmail(e.target.value)}
                       required
-                      className="w-full rounded-xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary-soft)]"
                       placeholder="seu@email.com"
+                      style={{ borderRadius: 18 }}
+                      className="w-full border border-[#d1e8c7] bg-white px-4 py-3 text-sm text-[var(--text-primary)] outline-none transition focus:border-[#5d9c44] focus:ring-2 focus:ring-[#5d9c44]/20"
                     />
                   </div>
 
                   {resetError && (
-                    <div className="ag-form-error">
-                      {resetError}
-                    </div>
+                    <div className="ag-form-error">{resetError}</div>
                   )}
 
                   <button
                     type="submit"
                     disabled={resetLoading}
-                    className="w-full rounded-xl bg-[var(--primary)] py-3.5 text-sm font-semibold text-white shadow-[var(--shadow-green)] transition hover:bg-[var(--primary-hover)] disabled:opacity-60"
+                    style={{ borderRadius: 18, height: 48, fontFamily: "Inter, sans-serif" }}
+                    className="w-full bg-[#5d9c44] text-[15px] font-semibold text-white transition hover:bg-[#4f8a38] disabled:opacity-60"
                   >
                     {resetLoading ? "Enviando..." : "Enviar link de redefinição"}
                   </button>
@@ -243,6 +227,18 @@ export default function LoginPage() {
             </>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function ValueProp({ icon: Icon, title, description }: { icon: React.ComponentType<{ size?: number; className?: string }>; title: string; description: string }) {
+  return (
+    <div className="flex items-start gap-4">
+      <Icon size={20} className="mt-0.5 shrink-0 text-white/80" />
+      <div>
+        <p className="text-sm font-semibold text-white">{title}</p>
+        <p className="mt-0.5 text-sm text-white/55">{description}</p>
       </div>
     </div>
   );
