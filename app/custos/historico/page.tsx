@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 import Link from "next/link";
 
 type CostRow = {
@@ -32,6 +32,7 @@ type DisplayRow = {
 };
 
 export default async function CustosHistoricoPage() {
+  const supabase = await createSupabaseServerClient();
   const [
     { data: costsData, error: costsError },
     { data: animalsData, error: animalsError },

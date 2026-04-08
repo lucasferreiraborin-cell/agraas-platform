@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 import Link from "next/link";
 
 type MovementRow = {
@@ -27,6 +27,7 @@ type DisplayRow = {
 };
 
 export default async function MovimentacoesHistoricoPage() {
+  const supabase = await createSupabaseServerClient();
   const [
     { data: movementsData, error: movementsError },
     { data: animalsData, error: animalsError },

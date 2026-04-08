@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 import Link from "next/link";
 
 type ApplicationRow = {
@@ -36,6 +36,7 @@ type DisplayRow = {
 };
 
 export default async function AplicacoesHistoricoPage() {
+  const supabase = await createSupabaseServerClient();
   const [
     { data: applicationsData, error: applicationsError },
     { data: productsData, error: productsError },

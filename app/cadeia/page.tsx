@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 import Link from "next/link";
 
 type ChainRow = {
@@ -12,6 +12,7 @@ type ChainRow = {
 };
 
 export default async function CadeiaPage() {
+  const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("agraas_master_passport")
     .select(

@@ -1,7 +1,8 @@
-import { supabase } from "@/lib/supabase";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 import Link from "next/link";
 
 export default async function RelatoriosPage() {
+  const supabase = await createSupabaseServerClient();
   const [
     { count: animalsCount },
     { count: applicationsCount },

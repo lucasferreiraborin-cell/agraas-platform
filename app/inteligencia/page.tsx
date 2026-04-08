@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 import Link from "next/link";
 import {
   calculateDailyGain,
@@ -58,6 +58,7 @@ type InsightRow = {
 };
 
 export default async function InteligenciaPage() {
+  const supabase = await createSupabaseServerClient();
   const [
     { data: animalsData },
     { data: weightsData },

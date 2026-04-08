@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 import Link from "next/link";
 
 const PAGE_SIZE = 20;
@@ -28,6 +28,7 @@ type DisplayRow = {
 type PageProps = { searchParams?: Promise<{ page?: string }> };
 
 export default async function EventosPage({ searchParams }: PageProps) {
+  const supabase = await createSupabaseServerClient();
   const params = await searchParams;
   const page = Math.max(0, parseInt(params?.page ?? "0", 10) || 0);
   const from = page * PAGE_SIZE;

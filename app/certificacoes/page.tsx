@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 import Link from "next/link";
 
 type CertificationRow = {
@@ -36,6 +36,7 @@ type ConsolidatedRow = {
 };
 
 export default async function CertificacoesPage() {
+  const supabase = await createSupabaseServerClient();
   const [
     { data: certificationsData, error: certificationsError },
     { data: animalsData, error: animalsError },

@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 import Link from "next/link";
 
 type WeightRow = {
@@ -61,6 +61,7 @@ type ProductiveRankingRow = {
 };
 
 export default async function ProdutivoPage() {
+  const supabase = await createSupabaseServerClient();
   const [
     { data: weightsData, error: weightsError },
     { data: animalsData, error: animalsError },

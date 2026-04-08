@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 import Link from "next/link";
 
 type WeightRow = {
@@ -24,6 +24,7 @@ type DisplayRow = {
 };
 
 export default async function PesagensHistoricoPage() {
+  const supabase = await createSupabaseServerClient();
   const [
     { data: weightsData, error: weightsError },
     { data: animalsData, error: animalsError },
