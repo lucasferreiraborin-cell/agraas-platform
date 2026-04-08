@@ -324,3 +324,71 @@ textarea {
     justify-content: space-between;
   }
 }
+
+/* ─── Empty state ────────────────────────────────────────────────────────── */
+
+.ag-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 3rem 2rem;
+  border-radius: 24px;
+  border: 1px dashed var(--border-strong);
+  background: var(--surface-soft);
+  text-align: center;
+}
+
+.ag-empty-state-icon {
+  display: flex;
+  height: 3.5rem;
+  width: 3.5rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  background: var(--primary-soft);
+  font-size: 1.5rem;
+  color: var(--primary);
+}
+
+.ag-empty-state-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.ag-empty-state-text {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  max-width: 24rem;
+  line-height: 1.6;
+}
+
+/* ─── Skeleton loader ────────────────────────────────────────────────────── */
+
+.ag-skeleton {
+  background: linear-gradient(90deg, var(--surface-soft) 25%, var(--surface-muted) 50%, var(--surface-soft) 75%);
+  background-size: 200% 100%;
+  animation: ag-shimmer 1.5s ease-in-out infinite;
+  border-radius: 12px;
+}
+
+@keyframes ag-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ─── Form error (inline) ────────────────────────────────────────────────── */
+
+.ag-form-error {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  border-radius: 12px;
+  background: rgba(214, 69, 69, 0.06);
+  border: 1px solid rgba(214, 69, 69, 0.15);
+  font-size: 0.875rem;
+  color: var(--danger);
+}
