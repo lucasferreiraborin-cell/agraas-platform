@@ -4,7 +4,8 @@ import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
-import { Wheat } from "lucide-react";
+import { Wheat, Plane, TrendingUp, BarChart3 } from "lucide-react";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 // scores are computed server-side via calculate_agraas_score SQL function
 
 const KG_POR_ARROBA = 30; // peso vivo: 1 arroba = 30 kg
@@ -256,10 +257,10 @@ function DashboardContent({
             <div className="pointer-events-none absolute right-0 top-0 h-56 w-56 rounded-full bg-[radial-gradient(circle,rgba(93,156,68,0.18)_0%,rgba(93,156,68,0)_72%)]" />
             <div className="ag-badge ag-badge-green">Dashboard executivo</div>
             <h1 className="mt-5 text-4xl font-semibold tracking-[-0.06em] text-[var(--text-primary)] lg:text-6xl">
-              Visão da operação
+              Visão de negócio
             </h1>
             <p className="mt-5 max-w-2xl text-[1.02rem] leading-8 text-[var(--text-secondary)]">
-              KPIs em tempo real da sua fazenda — score médio do rebanho, valor estimado, alertas e performance produtiva.
+              Métricas financeiras, evolução temporal do score, cotação da arroba e animais aptos para exportação.
             </p>
             <div className="mt-10">
               {halalCount > 0 && (
@@ -362,14 +363,16 @@ function DashboardContent({
 
       {/* Top 5 e alertas lado a lado */}
       <div className="grid gap-4 xl:grid-cols-2">
-        {/* Top 5 por score */}
+        {/* Top 5 para exportação */}
         <section className="ag-card p-8">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h2 className="ag-section-title">Top 5 — maior score</h2>
-              <p className="ag-section-subtitle">Melhores animais da operação.</p>
+              <h2 className="ag-section-title">Top 5 — aptos para exportação</h2>
+              <p className="ag-section-subtitle">Animais com maior score, prontos para lote de exportação.</p>
             </div>
-            <span className="ag-badge ag-badge-green">Ranking</span>
+            <Link href="/exportacao" className="ag-badge ag-badge-green hover:opacity-80 transition">
+              <Plane size={12} className="mr-1" /> Exportação
+            </Link>
           </div>
           <div className="mt-6 space-y-3">
             {loading ? (
@@ -468,59 +471,26 @@ function HeroKpi({ label, value, sub, danger }: { label: string; value: string |
 }
 
 function ScoreChart({ data }: { data: { week: string; score: number; label: string }[] }) {
-  const W = 600; const H = 150; const PL = 32; const PR = 16; const PT = 16; const PB = 28;
-  const scores = data.map(d => d.score);
-  const minScore = Math.max(0,  Math.min(...scores) - 8);
-  const maxScore = Math.min(100, Math.max(...scores) + 8);
-  const scoreRange = maxScore - minScore || 1;
-  const n = data.length;
-
-  const toX = (i: number) => PL + (i / (n - 1)) * (W - PL - PR);
-  const toY = (s: number) => PT + (1 - (s - minScore) / scoreRange) * (H - PT - PB);
-
-  // Cubic bezier smooth path
-  const pts = data.map((d, i) => [toX(i), toY(d.score)] as [number, number]);
-  const linePath = pts.reduce((acc, [x, y], i) => {
-    if (i === 0) return `M ${x} ${y}`;
-    const [px, py] = pts[i - 1];
-    const cpx = (px + x) / 2;
-    return `${acc} C ${cpx} ${py}, ${cpx} ${y}, ${x} ${y}`;
-  }, "");
-  const areaPath = `${linePath} L ${pts[n - 1][0]} ${H - PB} L ${pts[0][0]} ${H - PB} Z`;
-
-  // Label every other week if many points
-  const labelStep = n > 8 ? 2 : 1;
-
   return (
-    <div className="overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-2">
-      <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full">
-        <defs>
-          <linearGradient id="chartGrad2" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%"   stopColor="rgba(93,156,68,0.22)" />
-            <stop offset="100%" stopColor="rgba(93,156,68,0)" />
-          </linearGradient>
-        </defs>
-        {/* Grid lines */}
-        {[25, 50, 75].map(v => (
-          <line key={v}
-            x1={PL} y1={toY(v)} x2={W - PR} y2={toY(v)}
-            stroke="rgba(0,0,0,0.05)" strokeWidth="1" strokeDasharray="4 4"
+    <div className="overflow-hidden rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-4">
+      <ResponsiveContainer width="100%" height={200}>
+        <AreaChart data={data} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
+          <defs>
+            <linearGradient id="scoreGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#5d9c44" stopOpacity={0.25} />
+              <stop offset="100%" stopColor="#5d9c44" stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="4 4" stroke="rgba(30,42,27,0.06)" />
+          <XAxis dataKey="label" tick={{ fontSize: 11, fill: "#788473" }} axisLine={false} tickLine={false} />
+          <YAxis domain={["dataMin - 5", "dataMax + 5"]} tick={{ fontSize: 11, fill: "#788473" }} axisLine={false} tickLine={false} />
+          <Tooltip
+            contentStyle={{ borderRadius: 12, border: "1px solid rgba(30,42,27,0.08)", fontSize: 13 }}
+            formatter={(value: number) => [`${value} pts`, "Score médio"]}
           />
-        ))}
-        {/* Area */}
-        <path d={areaPath} fill="url(#chartGrad2)" />
-        {/* Line */}
-        <path d={linePath} fill="none" stroke="#5d9c44" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-        {/* X labels */}
-        {data.map((d, i) => i % labelStep === 0 && (
-          <text key={i} x={toX(i)} y={H - 6} textAnchor="middle" fontSize="9" fill="rgba(30,42,27,0.4)">
-            {d.label}
-          </text>
-        ))}
-        {/* Y labels */}
-        <text x={PL - 4} y={toY(maxScore) + 4} textAnchor="end" fontSize="9" fill="rgba(30,42,27,0.4)">{Math.round(maxScore)}</text>
-        <text x={PL - 4} y={toY(minScore) + 4} textAnchor="end" fontSize="9" fill="rgba(30,42,27,0.4)">{Math.round(minScore)}</text>
-      </svg>
+          <Area type="monotone" dataKey="score" stroke="#5d9c44" strokeWidth={2.5} fill="url(#scoreGrad)" />
+        </AreaChart>
+      </ResponsiveContainer>
     </div>
   );
 }
