@@ -19,12 +19,7 @@ type MarketAnimalRow = {
   status: string | null;
 };
 
-const CEPEA_PRICES = [
-  { produto: "Boi gordo (arroba carcaça)", preco: "R$ 330,00", unidade: "@", variacao: "+1,2%", up: true },
-  { produto: "Bezerro",                    preco: "R$ 1.850,00", unidade: "cab.", variacao: "+0,8%", up: true },
-  { produto: "Vaca gorda (arroba)",        preco: "R$ 290,00", unidade: "@", variacao: "-0,3%", up: false },
-  { produto: "Novilho precoce",            preco: "R$ 340,00", unidade: "@", variacao: "+1,5%", up: true },
-];
+type CepeaPrice = { produto: string; preco: string; unidade: string; updated_at: string | null };
 
 function formatSex(v: string | null) {
   if (!v) return "—";
@@ -51,6 +46,21 @@ export default async function MarketPage() {
     .order("total_score", { ascending: false });
 
   const animals: MarketAnimalRow[] = (data as MarketAnimalRow[] | null) ?? [];
+
+  // Fetch real CEPEA prices from platform_settings (populated by /api/cron/cotacao)
+  const { data: settingsData } = await supabase
+    .from("platform_settings")
+    .select("key, value, updated_at")
+    .in("key", ["cotacao_arroba", "cotacao_boi_gordo", "cotacao_bezerro", "cotacao_vaca_gorda", "cotacao_novilho_precoce"]);
+
+  const settings = new Map((settingsData ?? []).map((s: { key: string; value: string; updated_at: string | null }) => [s.key, s]));
+  const fmtPrice = (v: string | undefined) => v ? `R$ ${Number(v).toFixed(2).replace(".", ",")}` : "—";
+  const cepeaPrices: CepeaPrice[] = [
+    { produto: "Boi gordo (arroba carcaça)", preco: fmtPrice(settings.get("cotacao_boi_gordo")?.value ?? settings.get("cotacao_arroba")?.value), unidade: "@", updated_at: settings.get("cotacao_boi_gordo")?.updated_at ?? settings.get("cotacao_arroba")?.updated_at ?? null },
+    { produto: "Bezerro",                    preco: fmtPrice(settings.get("cotacao_bezerro")?.value),        unidade: "cab.", updated_at: settings.get("cotacao_bezerro")?.updated_at ?? null },
+    { produto: "Vaca gorda (arroba)",        preco: fmtPrice(settings.get("cotacao_vaca_gorda")?.value),     unidade: "@",    updated_at: settings.get("cotacao_vaca_gorda")?.updated_at ?? null },
+    { produto: "Novilho precoce",            preco: fmtPrice(settings.get("cotacao_novilho_precoce")?.value), unidade: "@",   updated_at: settings.get("cotacao_novilho_precoce")?.updated_at ?? null },
+  ];
   const totalAnimals   = animals.length;
   const withScore      = animals.filter(a => Number(a.total_score ?? 0) > 0);
   const avgScore       = withScore.length > 0 ? Math.round(withScore.reduce((a, r) => a + Number(r.total_score), 0) / withScore.length) : 0;
@@ -112,20 +122,22 @@ export default async function MarketPage() {
             <h2 className="ag-section-title">Cotações de referência</h2>
             <p className="ag-section-subtitle">Preços indicativos CEPEA — {today}</p>
           </div>
-          <div className="flex items-center gap-1.5 rounded-xl bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-700">
+          <div className="flex items-center gap-1.5 rounded-xl bg-emerald-50 border border-emerald-200 px-3 py-2 text-xs text-emerald-700">
             <Info size={12} />
-            Atualizar manualmente
+            Dados via CEPEA / cotação manual
           </div>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {CEPEA_PRICES.map(p => (
+          {cepeaPrices.map(p => (
             <div key={p.produto} className="ag-kpi-card">
               <p className="ag-kpi-label leading-snug">{p.produto}</p>
               <p className="ag-kpi-value text-[var(--primary)]">{p.preco}</p>
               <p className="sub">por {p.unidade}</p>
-              <span className={`mt-1 inline-block text-xs font-semibold ${p.up ? "text-emerald-600" : "text-red-600"}`}>
-                {p.variacao} (7d)
-              </span>
+              {p.updated_at && (
+                <span className="mt-1 inline-block text-[10px] text-[var(--text-muted)]">
+                  Atualizado: {new Date(p.updated_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                </span>
+              )}
             </div>
           ))}
         </div>
