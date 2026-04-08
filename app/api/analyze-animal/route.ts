@@ -17,6 +17,13 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return new Response("Não autenticado", { status: 401 });
 
+  // Ownership check — animal must belong to user's client
+  const { data: clientData } = await supabase.from("clients").select("id").eq("auth_user_id", user.id).single();
+  if (clientData) {
+    const { data: animalCheck } = await supabase.from("animals").select("id").eq("id", animalId).eq("client_id", clientData.id).single();
+    if (!animalCheck) return new Response("Animal não encontrado", { status: 404 });
+  }
+
   // Coleta dados do animal
   const [
     { data: animal },

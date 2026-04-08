@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { checkRateLimit, tooManyRequests } from "@/lib/rate-limit";
 
 const VALID_STAGES = ["fazenda","armazem","transportadora","porto_origem","navio","porto_destino","entregue"];
 
 export async function POST(req: NextRequest) {
+  const rl = checkRateLimit(req, 60, 60_000);
+  if (!rl.allowed) return tooManyRequests(rl.retryAfter);
+
   try {
     const body = await req.json();
 

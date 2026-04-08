@@ -13,6 +13,10 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return new Response("Não autenticado", { status: 401 });
 
+  // Ownership check
+  const { data: animalCheck } = await supabase.from("animals").select("id").eq("id", animalId).single();
+  if (!animalCheck) return Response.json({ ok: false, error: "Animal não encontrado" }, { status: 404 });
+
   const { data: score, error } = await supabase.rpc("calculate_agraas_score", {
     p_animal_id: animalId,
   });
