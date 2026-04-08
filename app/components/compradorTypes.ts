@@ -15,10 +15,11 @@ export type Score            = { animal_id: string; score_json: Record<string, u
 export type TrackingCheckpoint = { lot_id: string; stage: string; timestamp: string; animals_confirmed: number | null; animals_lost: number; loss_cause: string | null; location_name: string | null };
 export type LivestockAnimal  = { id: string; species: string; breed: string | null; birth_date: string | null; internal_code: string | null; score: number | null; certifications: string[]; status: string };
 export type PoultryBatch     = { id: string; batch_code: string; species: string; breed: string | null; current_count: number; mortality_count: number; initial_count: number; feed_conversion: number | null; status: string; halal_certified: boolean; integrator_name: string | null };
-export type GrainShipment    = { id: string; contract_number: string | null; culture: string; quantity_tons: number; destination_country: string | null; destination_port: string | null; origin_port: string | null; vessel_name: string | null; departure_date: string | null; arrival_date: string | null; status: string; field_id: string | null };
+export type GrainShipment    = { id: string; contract_number: string | null; culture: string; quantity_tons: number; destination_country: string | null; destination_port: string | null; origin_port: string | null; vessel_name: string | null; departure_date: string | null; arrival_date: string | null; status: string; field_id: string | null; bill_of_lading: string | null; phytosanitary_cert: string | null; phytosanitary_cert_date: string | null };
 export type GrainTracking    = { shipment_id: string; stage: string; stage_date: string; quantity_confirmed_tons: number | null; quantity_lost_tons: number };
 export type GrainFarm        = { id: string; name: string; car_number: string | null };
 export type GrainField       = { id: string; farm_id: string; culture: string };
+export type GrainQualityReport = { id: string; shipment_id: string; humidity_pct: number | null; protein_pct: number | null; mycotoxin_ppb: number | null; impurity_pct: number | null; classification: string | null; lab_name: string | null; report_date: string | null; report_number: string | null };
 
 export type ComplianceRow = {
   animal: Animal;
