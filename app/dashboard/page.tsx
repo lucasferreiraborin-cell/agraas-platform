@@ -486,7 +486,7 @@ function ScoreChart({ data }: { data: { week: string; score: number; label: stri
           <YAxis domain={["dataMin - 5", "dataMax + 5"]} tick={{ fontSize: 11, fill: "#788473" }} axisLine={false} tickLine={false} />
           <Tooltip
             contentStyle={{ borderRadius: 12, border: "1px solid rgba(30,42,27,0.08)", fontSize: 13 }}
-            formatter={(value: number) => [`${value} pts`, "Score médio"]}
+            formatter={(value) => [`${value} pts`, "Score médio"]}
           />
           <Area type="monotone" dataKey="score" stroke="#5d9c44" strokeWidth={2.5} fill="url(#scoreGrad)" />
         </AreaChart>
