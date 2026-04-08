@@ -1,6 +1,7 @@
 import "./globals.css";
 import LogoutButton from "./components/LogoutButton";
 import SidebarNav from "./components/SidebarNav";
+import MobileDrawer from "./components/MobileDrawer";
 import { ToastContainer } from "./components/Toast";
 import AgroAssistant from "./components/AgroAssistant";
 import QuickActions from "./components/QuickActions";
@@ -114,13 +115,16 @@ export default async function RootLayout({
             <div className="flex min-w-0 flex-1 flex-col">
               <header className="sticky top-0 z-20 border-b border-black/5 bg-[rgba(244,247,242,0.82)] backdrop-blur-2xl">
                 <div className="mx-auto flex h-20 max-w-[1600px] items-center justify-between px-6 lg:px-10">
-                  <div className="min-w-0">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--text-muted)]">
-                      Agraas Intelligence Layer
-                    </p>
-                    <h2 className="mt-1 truncate text-lg font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
-                      Infraestrutura digital da cadeia pecuária
-                    </h2>
+                  <div className="flex items-center gap-3">
+                    <MobileDrawer />
+                    <div className="min-w-0">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--text-muted)]">
+                        Agraas Intelligence Layer
+                      </p>
+                      <h2 className="mt-1 truncate text-lg font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
+                        Infraestrutura digital da cadeia pecuária
+                      </h2>
+                    </div>
                   </div>
 
                   <div className="hidden items-center gap-3 md:flex">
