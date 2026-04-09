@@ -168,6 +168,33 @@ agraas/
 | 061 | Campo `document_source` em fiscal |
 | 062 | Tabela `ai_predictions` com RLS |
 | 063 | Colunas `ship_name`, `arrival_date` em `lots` |
+| 064 | `rfid_device_type_enum` — bolus intra-ruminal + brinco + subcutâneo |
+| 065 | `crop_quality_reports` + campos BL/fitossanitário em `crop_shipments` |
+| 066 | Indexes de performance (shipment_tracking, events, clients UNIQUE email) |
+| 067 | Triggers DELETE para recalcular score bovinos |
+| 068 | Seed reprodutivo completo para Lucas |
+
+---
+
+## Score Engines — Flow completo
+
+### Bovinos (`calculate_agraas_score`)
+- **Trigger INSERT/UPDATE:** `weights`, `events`, `applications` (migration 036)
+- **Trigger DELETE:** `weights`, `events`, `applications` (migration 067)
+- **Flow:** Trigger → `calculate_agraas_score(animal_id)` → atualiza `animal_scores` + `agraas_master_passport_cache.score_json`
+- **Algoritmo:** 28% produtivo + 24% sanitário + 18% operacional + 20% continuidade + 10% idade + bônus rastreabilidade
+
+### Ovinos/Caprinos (`calculate_livestock_score`)
+- **Triggers:** `livestock_weights`, `livestock_applications`, `livestock_events`, `livestock_certifications` (migration 054)
+- **Flow:** Trigger → `calculate_livestock_score(animal_id)` → atualiza `livestock_species.score`
+
+### Aves (`calculate_poultry_score`)
+- **Triggers:** `poultry_batch_events` (migration 056)
+- **Flow:** Trigger → `calculate_poultry_score(batch_id)` → atualiza `poultry_batches.score`
+
+### Talhões (`calculate_field_score`)
+- **Triggers:** `crop_inputs`, `crop_shipment_tracking`, `crop_certifications` (migration 059)
+- **Flow:** Trigger → `calculate_field_score(field_id)` → atualiza `crop_fields.score`
 
 ---
 
