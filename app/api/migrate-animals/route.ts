@@ -7,6 +7,7 @@ type Row = Record<string, string>;
 type ImportPayload = {
   rows: Row[];
   mapping: Record<string, string>; // agraasField -> csvHeader
+  property_id?: string;
 };
 
 export type ImportResult = {
@@ -45,7 +46,7 @@ export async function POST(req: NextRequest) {
   if (!clientData) return Response.json({ error: "Cliente não encontrado" }, { status: 404 });
 
   const clientId = clientData.id;
-  const { rows, mapping }: ImportPayload = await req.json();
+  const { rows, mapping, property_id }: ImportPayload = await req.json();
 
   if (!Array.isArray(rows) || rows.length === 0) {
     return Response.json({ error: "Nenhum registro enviado" }, { status: 400 });
@@ -86,9 +87,16 @@ export async function POST(req: NextRequest) {
     }
 
     const animalData: Record<string, unknown> = { client_id: clientId, internal_code: internalCode };
+    if (property_id) animalData.current_property_id = property_id;
 
     const nickname = get(row, "nickname");
     if (nickname) animalData.nickname = nickname;
+
+    const category = get(row, "category");
+    if (category) animalData.category = category;
+
+    const notes = get(row, "notes");
+    if (notes) animalData.notes = notes;
 
     const sexRaw = get(row, "sex");
     if (sexRaw) {
