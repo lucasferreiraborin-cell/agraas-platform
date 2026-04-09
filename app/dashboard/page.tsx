@@ -12,6 +12,7 @@ const KG_POR_ARROBA = 30; // peso vivo: 1 arroba = 30 kg
 
 type AnimalRow = {
   id: string;
+  client_id: string;
   internal_code: string | null;
   nickname: string | null;
   agraas_id: string | null;
@@ -69,7 +70,7 @@ export default function DashboardPage() {
         { data: agriShipmentsData },
       ] = await Promise.all([
         supabase.from("animals").select(
-          "id, internal_code, nickname, agraas_id, birth_date, breed, status, blood_type, sire_animal_id, dam_animal_id"
+          "id, client_id, internal_code, nickname, agraas_id, birth_date, breed, status, blood_type, sire_animal_id, dam_animal_id"
         ).order("internal_code"),
         supabase.from("weights").select("id, animal_id, weight, weighing_date")
           .order("weighing_date", { ascending: false }),
@@ -95,9 +96,18 @@ export default function DashboardPage() {
         toneladasTransito:   activeShips.reduce((s, sh) => s + Number(sh.quantity_tons), 0),
       });
 
+      // Resolve client + filter data to only this client's animals
       if (user) {
-        const { data: c } = await supabase.from("clients").select("role").eq("auth_user_id", user.id).single();
+        const { data: c } = await supabase.from("clients").select("id, role").eq("auth_user_id", user.id).single();
         setIsAdmin(c?.role === "admin");
+        if (c?.id) {
+          const myAnimals = ((animalsData as AnimalRow[]) ?? []).filter(a => a.client_id === c.id);
+          const myAnimalIds = new Set(myAnimals.map(a => a.id));
+          setAnimals(myAnimals);
+          setWeights(((weightsData as WeightRow[]) ?? []).filter(w => myAnimalIds.has(w.animal_id)));
+          setScores(((scoresData as ScoreRow[]) ?? []).filter(s => myAnimalIds.has(s.animal_id)));
+          setHalalCount((halalData ?? []).filter((h: { animal_id: string }) => myAnimalIds.has(h.animal_id)).length);
+        }
       }
       setLoading(false);
     }
