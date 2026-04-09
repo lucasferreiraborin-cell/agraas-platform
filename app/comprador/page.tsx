@@ -31,11 +31,14 @@ export default async function CompradorPage() {
   const { data: lotsData } = lotIds.length
     ? await db
         .from("lots")
-        .select("id, name, objective, pais_destino, porto_embarque, data_embarque, certificacoes_exigidas, numero_contrato, status, ship_name, arrival_date")
+        .select("id, name, objective, pais_destino, porto_embarque, data_embarque, certificacoes_exigidas, numero_contrato, status, ship_name, arrival_date, client_id")
         .in("id", lotIds)
     : { data: [] };
 
   const lots = lotsData ?? [];
+
+  // Authorized client_ids — only show data from clients whose lots the buyer can access
+  const authorizedClientIds = [...new Set(lots.map((l: { client_id?: string }) => l.client_id).filter(Boolean))] as string[];
 
   // ── Animais dos lotes ─────────────────────────────────────────────────────
   const { data: assignData } = lotIds.length
@@ -91,40 +94,62 @@ export default async function CompradorPage() {
         .order("timestamp", { ascending: true })
     : { data: [] };
 
-  // ── Ovinos / Caprinos (todas as espécies — service client, sem RLS) ────────
-  const { data: livestockData } = await db
-    .from("livestock_species")
-    .select("id, species, breed, birth_date, internal_code, score, certifications, status")
-    .in("species", ["ovino", "caprino"]);
+  // ── Ovinos / Caprinos — filtrado por client_ids autorizados ─────────────────
+  const { data: livestockData } = authorizedClientIds.length
+    ? await db
+        .from("livestock_species")
+        .select("id, species, breed, birth_date, internal_code, score, certifications, status")
+        .in("species", ["ovino", "caprino"])
+        .in("client_id", authorizedClientIds)
+    : { data: [] };
 
-  // ── Lotes avícolas ─────────────────────────────────────────────────────────
-  const { data: poultryData } = await db
-    .from("poultry_batches")
-    .select("id, batch_code, species, breed, current_count, mortality_count, initial_count, feed_conversion, status, halal_certified, integrator_name")
-    .order("housing_date", { ascending: false });
+  // ── Lotes avícolas — filtrado por client_ids autorizados ───────────────────
+  const { data: poultryData } = authorizedClientIds.length
+    ? await db
+        .from("poultry_batches")
+        .select("id, batch_code, species, breed, current_count, mortality_count, initial_count, feed_conversion, status, halal_certified, integrator_name")
+        .in("client_id", authorizedClientIds)
+        .order("housing_date", { ascending: false })
+    : { data: [] };
 
-  // ── Agricultura — embarques + tracking + fazendas ─────────────────────────
-  const { data: grainShipmentsData } = await db
-    .from("crop_shipments")
-    .select("id, contract_number, culture, quantity_tons, destination_country, destination_port, origin_port, vessel_name, departure_date, arrival_date, status, field_id, bill_of_lading, phytosanitary_cert, phytosanitary_cert_date")
-    .order("departure_date", { ascending: true });
+  // ── Agricultura — filtrado por client_ids autorizados ─────────────────────
+  const { data: grainShipmentsData } = authorizedClientIds.length
+    ? await db
+        .from("crop_shipments")
+        .select("id, contract_number, culture, quantity_tons, destination_country, destination_port, origin_port, vessel_name, departure_date, arrival_date, status, field_id, bill_of_lading, phytosanitary_cert, phytosanitary_cert_date")
+        .in("client_id", authorizedClientIds)
+        .order("departure_date", { ascending: true })
+    : { data: [] };
 
-  const { data: grainTrackingData } = await db
-    .from("crop_shipment_tracking")
-    .select("shipment_id, stage, stage_date, quantity_confirmed_tons, quantity_lost_tons")
-    .order("stage_date", { ascending: false });
+  const grainShipmentIds = (grainShipmentsData ?? []).map((s: { id: string }) => s.id);
 
-  const { data: grainFarmsData } = await db
-    .from("farms_agriculture")
-    .select("id, name, car_number");
+  const { data: grainTrackingData } = grainShipmentIds.length
+    ? await db
+        .from("crop_shipment_tracking")
+        .select("shipment_id, stage, stage_date, quantity_confirmed_tons, quantity_lost_tons")
+        .in("shipment_id", grainShipmentIds)
+        .order("stage_date", { ascending: false })
+    : { data: [] };
 
-  const { data: grainFieldsData } = await db
-    .from("crop_fields")
-    .select("id, farm_id, culture");
+  const { data: grainFarmsData } = authorizedClientIds.length
+    ? await db
+        .from("farms_agriculture")
+        .select("id, name, car_number")
+        .in("client_id", authorizedClientIds)
+    : { data: [] };
 
-  const { data: grainQualityData } = await db
-    .from("crop_quality_reports")
-    .select("id, shipment_id, humidity_pct, protein_pct, mycotoxin_ppb, impurity_pct, classification, lab_name, report_date, report_number");
+  const { data: grainFieldsData } = authorizedClientIds.length
+    ? await db
+        .from("crop_fields")
+        .select("id, farm_id, culture")
+    : { data: [] };
+
+  const { data: grainQualityData } = grainShipmentIds.length
+    ? await db
+        .from("crop_quality_reports")
+        .select("id, shipment_id, humidity_pct, protein_pct, mycotoxin_ppb, impurity_pct, classification, lab_name, report_date, report_number")
+        .in("shipment_id", grainShipmentIds)
+    : { data: [] };
 
   return (
     <CompradorView
