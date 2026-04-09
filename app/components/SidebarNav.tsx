@@ -91,6 +91,8 @@ const menuGroups: NavGroup[] = [
       { href: "/estoque",                 label: "Estoque",                 icon: Warehouse },
       { href: "/estoque/dashboard",       label: "Dashboard Sanitário",     icon: Warehouse,      sub: true },
       { href: "/estoque/historico",       label: "Histórico Estoque",       icon: Warehouse,      sub: true },
+      { href: "/fornecedores",             label: "Fornecedores",            icon: Truck },
+      { href: "/produtos",               label: "Produtos",                icon: Package },
       { href: "/producao",                label: "Produção",                icon: BarChart3 },
       { href: "/insumos",                 label: "Insumos",                 icon: Boxes },
       { href: "/eventos",                 label: "Eventos",                 icon: Activity },
