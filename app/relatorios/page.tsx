@@ -1,5 +1,6 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import Link from "next/link";
+import HerdPdfButton from "@/app/components/HerdPdfButton";
 
 export default async function RelatoriosPage() {
   const supabase = await createSupabaseServerClient();
@@ -75,6 +76,7 @@ export default async function RelatoriosPage() {
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
+              <HerdPdfButton />
               <Link href="/produtivo" className="ag-button-primary">
                 Dashboard produtivo
               </Link>
