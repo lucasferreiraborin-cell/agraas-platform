@@ -35,8 +35,11 @@ export default function AplicacoesPage() {
   const [animalId, setAnimalId] = useState("");
   const [productId, setProductId] = useState("");
   const [batchId, setBatchId] = useState("");
+  const [productName, setProductName] = useState("");
   const [dose, setDose] = useState("");
   const [applicationDate, setApplicationDate] = useState(todayInputValue());
+
+  const manualMode = products.length === 0 && batches.length === 0;
 
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -132,62 +135,68 @@ export default function AplicacoesPage() {
   }
 
   async function registerApplication() {
-    if (!animalId || !productId || !batchId || !dose || !applicationDate) {
-      alert("Preencha todos os campos.");
+    if (!animalId || !dose || !applicationDate) {
+      alert("Preencha animal, dose e data.");
+      return;
+    }
+
+    if (manualMode && !productName.trim()) {
+      alert("Informe o nome do produto.");
+      return;
+    }
+
+    if (!manualMode && (!productId || !batchId)) {
+      alert("Selecione produto e lote.");
       return;
     }
 
     const numericDose = Number(dose);
-
     if (Number.isNaN(numericDose) || numericDose <= 0) {
       alert("Informe uma dose válida.");
       return;
     }
 
-    if (!selectedBatch) {
-      alert("Selecione um lote válido.");
-      return;
-    }
-
-    if (Number(selectedBatch.quantity) < numericDose) {
+    if (!manualMode && selectedBatch && Number(selectedBatch.quantity) < numericDose) {
       alert("Quantidade insuficiente no lote selecionado.");
       return;
     }
 
     setSaving(true);
 
+    const payload: Record<string, unknown> = {
+      animal_id: animalId,
+      dose: numericDose,
+      application_date: applicationDate,
+    };
+
+    if (manualMode) {
+      payload.product_name = productName.trim();
+    } else {
+      payload.product_id = productId;
+      payload.batch_id = batchId;
+    }
+
     const { error: applicationError } = await supabase
       .from("applications")
-      .insert([
-        {
-          animal_id: animalId,
-          product_id: productId,
-          batch_id: batchId,
-          dose: numericDose,
-          application_date: applicationDate,
-        },
-      ]);
+      .insert([payload]);
 
     if (applicationError) {
-      console.error(
-        "Erro ao registrar aplicação:",
-        JSON.stringify(applicationError)
-      );
+      console.error("Erro ao registrar aplicação:", JSON.stringify(applicationError));
       alert("Erro ao registrar aplicação.");
       setSaving(false);
       return;
     }
 
-    alert("Aplicação registrada com baixa automática no estoque.");
+    alert(manualMode ? "Aplicação registrada." : "Aplicação registrada com baixa automática no estoque.");
 
     setAnimalId("");
     setProductId("");
     setBatchId("");
+    setProductName("");
     setDose("");
     setApplicationDate(todayInputValue());
 
-    await refreshBatches();
-
+    if (!manualMode) await refreshBatches();
     setSaving(false);
   }
 
@@ -286,63 +295,82 @@ export default function AplicacoesPage() {
               </select>
             </label>
 
-            <label>
-              <div className="mb-2 text-sm font-medium text-[var(--text-primary)]">
-                Produto
-              </div>
-              <select
-                value={productId}
-                onChange={(e) => setProductId(e.target.value)}
-                className="w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-[var(--text-primary)]"
-              >
-                <option value="">Selecione um produto</option>
-                {products.map((product) => (
-                  <option key={product.id} value={product.id}>
-                    {product.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+            {manualMode ? (
+              <label>
+                <div className="mb-2 text-sm font-medium text-[var(--text-primary)]">
+                  Nome do produto
+                </div>
+                <input
+                  type="text"
+                  value={productName}
+                  onChange={(e) => setProductName(e.target.value)}
+                  placeholder="Ex.: Ivermectina 1%, Vacina Aftosa"
+                  className="w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--primary)]"
+                />
+                <p className="mt-1 text-xs text-[var(--text-muted)]">
+                  Sem estoque cadastrado — informe o nome do produto manualmente.
+                </p>
+              </label>
+            ) : (
+              <>
+                <label>
+                  <div className="mb-2 text-sm font-medium text-[var(--text-primary)]">
+                    Produto
+                  </div>
+                  <select
+                    value={productId}
+                    onChange={(e) => setProductId(e.target.value)}
+                    className="w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-[var(--text-primary)]"
+                  >
+                    <option value="">Selecione um produto</option>
+                    {products.map((product) => (
+                      <option key={product.id} value={product.id}>
+                        {product.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
 
-            <label>
-              <div className="mb-2 text-sm font-medium text-[var(--text-primary)]">
-                Lote
-              </div>
-              <select
-                value={batchId}
-                onChange={(e) => setBatchId(e.target.value)}
-                disabled={!productId || filteredBatches.length === 0}
-                className="w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-[var(--text-primary)] disabled:opacity-60"
-              >
-                <option value="">
-                  {!productId
-                    ? "Selecione um produto antes"
-                    : filteredBatches.length === 0
-                    ? "Sem lotes disponíveis para este produto"
-                    : "Selecione um lote"}
-                </option>
+                <label>
+                  <div className="mb-2 text-sm font-medium text-[var(--text-primary)]">
+                    Lote
+                  </div>
+                  <select
+                    value={batchId}
+                    onChange={(e) => setBatchId(e.target.value)}
+                    disabled={!productId || filteredBatches.length === 0}
+                    className="w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-[var(--text-primary)] disabled:opacity-60"
+                  >
+                    <option value="">
+                      {!productId
+                        ? "Selecione um produto antes"
+                        : filteredBatches.length === 0
+                        ? "Sem lotes disponíveis para este produto"
+                        : "Selecione um lote"}
+                    </option>
+                    {filteredBatches.map((batch) => (
+                      <option key={batch.id} value={batch.id}>
+                        {batch.batch_number} | saldo {batch.quantity} | validade{" "}
+                        {batch.expiration_date}
+                      </option>
+                    ))}
+                  </select>
+                </label>
 
-                {filteredBatches.map((batch) => (
-                  <option key={batch.id} value={batch.id}>
-                    {batch.batch_number} | saldo {batch.quantity} | validade{" "}
-                    {batch.expiration_date}
-                  </option>
-                ))}
-              </select>
-            </label>
+                {productId && filteredBatches.length > 0 && selectedBatch && (
+                  <div className="rounded-2xl border border-[rgba(93,156,68,0.20)] bg-[var(--primary-soft)] px-4 py-4 text-sm leading-6 text-[var(--primary-hover)]">
+                    <strong>Lote FEFO selecionado automaticamente:</strong>{" "}
+                    {selectedBatch.batch_number} — validade{" "}
+                    {selectedBatch.expiration_date} — saldo {selectedBatch.quantity}
+                  </div>
+                )}
 
-            {productId && filteredBatches.length > 0 && selectedBatch && (
-              <div className="rounded-2xl border border-[rgba(93,156,68,0.20)] bg-[var(--primary-soft)] px-4 py-4 text-sm leading-6 text-[var(--primary-hover)]">
-                <strong>Lote FEFO selecionado automaticamente:</strong>{" "}
-                {selectedBatch.batch_number} — validade{" "}
-                {selectedBatch.expiration_date} — saldo {selectedBatch.quantity}
-              </div>
-            )}
-
-            {productId && filteredBatches.length === 0 && (
-              <div className="rounded-2xl border border-[rgba(214,69,69,0.18)] bg-[rgba(214,69,69,0.08)] px-4 py-4 text-sm leading-6 text-[var(--danger)]">
-                Não há lote disponível com saldo para este produto.
-              </div>
+                {productId && filteredBatches.length === 0 && (
+                  <div className="rounded-2xl border border-[rgba(214,69,69,0.18)] bg-[rgba(214,69,69,0.08)] px-4 py-4 text-sm leading-6 text-[var(--danger)]">
+                    Não há lote disponível com saldo para este produto.
+                  </div>
+                )}
+              </>
             )}
 
             <label>
