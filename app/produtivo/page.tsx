@@ -121,8 +121,9 @@ export default async function ProdutivoPage() {
   const lots = (lotsData ?? []) as LotRow[];
   const assignments = (assignmentsData ?? []) as AssignmentRow[];
   const movements = (movementsData ?? []) as MovementRow[];
-  const applications = (applicationsData ?? []) as ApplicationRow[];
-  const events = (eventsData ?? []) as EventRow[];
+  // applicationsData and eventsData fetched for future use (count-based KPIs)
+  void applicationsData;
+  void eventsData;
 
   const animalMap = new Map<string, AnimalRow>();
   animals.forEach((animal) => animalMap.set(animal.id, animal));

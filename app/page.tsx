@@ -97,11 +97,6 @@ type ActiveAppRow = {
   product_name: string | null;
 };
 
-type ClientRow = {
-  id: string;
-  name: string;
-};
-
 // ─── Alert type ───────────────────────────────────────────────────────────────
 
 type Alert = {

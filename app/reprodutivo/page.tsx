@@ -71,20 +71,6 @@ export default async function ReprodutivoPage() {
     ? ((season.apt_count ?? 0) / Math.max(season.females_inseminated ?? 1, 1)) * 100
     : null;
 
-  const gaugeArc = aptPct != null ? Math.min(aptPct / 100, 1) : 0;
-  // SVG semi-circle: radius=70, center=(90,90), arc from 180° to 0°
-  const r = 70;
-  const cx = 90;
-  const cy = 90;
-  const startX = cx - r;
-  const startY = cy;
-  const endX = cx + r;
-  const endY = cy;
-  const fillAngle = gaugeArc * Math.PI;
-  const fillX = cx + r * Math.cos(Math.PI - fillAngle);
-  const fillY = cy - r * Math.sin(Math.PI - fillAngle);
-  const largeArc = gaugeArc > 0.5 ? 1 : 0;
-
   return (
     <main className="space-y-8">
       {/* Hero */}

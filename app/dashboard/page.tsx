@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
-import { Wheat, Plane, TrendingUp, BarChart3 } from "lucide-react";
+import { Wheat, Plane } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 // scores are computed server-side via calculate_agraas_score SQL function
 

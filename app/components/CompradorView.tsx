@@ -11,7 +11,7 @@ import {
   TrackingCheckpoint, LivestockAnimal, PoultryBatch,
   GrainShipment, GrainTracking, GrainFarm, GrainField, GrainQualityReport,
   ComplianceRow, LivestockRow,
-  T, Lang, daysUntil, fmtDate,
+  T, Lang, daysUntil,
 } from "@/app/components/compradorTypes";
 
 // ─── Re-export types for page.tsx ─────────────────────────────────────────────

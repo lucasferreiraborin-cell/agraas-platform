@@ -45,8 +45,6 @@ export default async function ProducaoPage() {
 
   const totalDeaths = mortality.reduce((s, r) => s + (r.deaths ?? 0), 0);
   const totalAnimals = stock.reduce((s, r) => s + (r.balance ?? 0), 0) || 1;
-  const weightMax = Math.max(...weights.map(w => w.count ?? 0), 1);
-
   // Group sales by date+sex for display
   type SaleGroup = { date: string; male: { count: number; weight: number } | null; female: { count: number; weight: number } | null };
   const saleMap = new Map<string, SaleGroup>();

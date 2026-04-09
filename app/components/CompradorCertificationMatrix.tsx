@@ -4,7 +4,7 @@ import { Beef, Rabbit, Bird, AlertTriangle } from "lucide-react";
 import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
 import {
   ComplianceRow, LivestockRow, PoultryBatch,
-  CERT_LIST, Lang, TDict, fmtAge, fmtDate,
+  CERT_LIST, Lang, TDict, fmtAge,
 } from "@/app/components/compradorTypes";
 
 interface Props {
