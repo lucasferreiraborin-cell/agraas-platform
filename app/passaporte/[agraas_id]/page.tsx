@@ -52,6 +52,7 @@ export default async function PublicPassportPage({ params }: PageProps) {
     { data: certsData },
     { data: applicationsData },
     { data: weightsData },
+    { data: photoData },
   ] = await Promise.all([
     supabase.from("agraas_master_passport_cache")
       .select("score_json")
@@ -77,7 +78,19 @@ export default async function PublicPassportPage({ params }: PageProps) {
       .eq("animal_id", animal.id)
       .order("weighing_date", { ascending: false })
       .limit(1),
+
+    supabase.from("animal_photos")
+      .select("storage_path")
+      .eq("animal_id", animal.id)
+      .order("created_at", { ascending: true })
+      .limit(1),
   ]);
+
+  // Photo signed URL (1h expiry)
+  const photoPath = photoData?.[0]?.storage_path ?? null;
+  const photoUrl = photoPath
+    ? (await supabase.storage.from("animal-photos").createSignedUrl(photoPath, 3600)).data?.signedUrl ?? null
+    : null;
 
   const score: number = passportCache?.score_json?.total_score ?? 0;
   const latestWeight = weightsData?.[0] ? Number(weightsData[0].weight) : null;
@@ -106,6 +119,7 @@ export default async function PublicPassportPage({ params }: PageProps) {
       sanitaryHistory={sanitaryHistory}
       latestWeight={latestWeight}
       generatedAt={generatedAt}
+      photoUrl={photoUrl}
     />
   );
 }

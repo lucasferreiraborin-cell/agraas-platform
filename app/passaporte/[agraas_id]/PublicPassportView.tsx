@@ -38,6 +38,7 @@ type Props = {
   sanitaryHistory: SanitaryEntry[];
   latestWeight: number | null;
   generatedAt: string;
+  photoUrl?: string | null;
 };
 
 const SCORE_META: Record<string, { key: "excellent" | "regular" | "basic"; color: string }> = {
@@ -76,6 +77,7 @@ export default function PublicPassportView({
   sanitaryHistory,
   latestWeight,
   generatedAt,
+  photoUrl,
 }: Props) {
   const [lang, setLang] = useState<Lang>("pt");
 
@@ -161,6 +163,17 @@ export default function PublicPassportView({
               </div>
             </div>
           </div>
+
+          {/* Animal photo */}
+          {photoUrl && (
+            <div className="border-b border-[#e5e7eb]">
+              <img
+                src={photoUrl}
+                alt={animal.nickname ?? animal.internal_code ?? animal.agraas_id}
+                className="h-48 w-full object-cover sm:h-56"
+              />
+            </div>
+          )}
 
           {/* Info grid */}
           <div className="grid grid-cols-2 gap-px bg-[#e5e7eb] sm:grid-cols-4">

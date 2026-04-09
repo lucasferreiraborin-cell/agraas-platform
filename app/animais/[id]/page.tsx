@@ -11,6 +11,7 @@ import AnimalAnalysis from "@/app/components/AnimalAnalysis";
 import AnimalQRCode from "@/app/components/AnimalQRCode";
 import ExportPassportModal from "@/app/components/ExportPassportModal";
 import PredictiveAlerts from "@/app/components/PredictiveAlerts";
+import AnimalPhotoUpload from "@/app/components/AnimalPhotoUpload";
 import AnimalTimeline, {
   type TimelineWeight,
   type TimelineApplication,
@@ -28,6 +29,7 @@ type PageProps = {
 
 type AnimalRow = {
   id: string;
+  client_id: string;
   internal_code: string | null;
   agraas_id: string | null;
   nickname: string | null;
@@ -145,6 +147,7 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
     { data: movementsData },
     { data: certificationsData },
     { data: salesData },
+    { data: photosData },
   ] = await Promise.all([
     supabase
       .from("agraas_master_passport_cache")
@@ -198,6 +201,12 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
       .select("id, sale_date, weight_kg, price_per_arroba, total_value, notes")
       .eq("animal_id", id)
       .order("sale_date", { ascending: false }),
+
+    supabase
+      .from("animal_photos")
+      .select("id, storage_path, file_name")
+      .eq("animal_id", id)
+      .order("created_at", { ascending: true }),
   ]);
 
   if (animalError || !animalData) {
@@ -244,6 +253,15 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
   const movements = (movementsData ?? []) as MovementRow[];
   const certifications = (certificationsData ?? []) as CertificationRow[];
   const sales = (salesData ?? []) as TimelineSale[];
+
+  // Photos with signed URLs
+  const rawPhotos = (photosData ?? []) as { id: string; storage_path: string; file_name: string }[];
+  const photosWithUrls = await Promise.all(
+    rawPhotos.map(async (p) => {
+      const { data } = await supabase.storage.from("animal-photos").createSignedUrl(p.storage_path, 3600);
+      return { ...p, url: data?.signedUrl ?? "" };
+    })
+  );
 
   // Busca pai, mãe e propriedade atual em paralelo
   const [sireData, damData, currentPropertyData, sireScoreRaw, damScoreRaw] = await Promise.all([
@@ -718,6 +736,14 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
             </div>
           )}
         </div>
+      </section>
+
+      <section className="ag-card p-8">
+        <AnimalPhotoUpload
+          animalId={id}
+          clientId={animal.client_id}
+          initialPhotos={photosWithUrls}
+        />
       </section>
 
       <section className="ag-card p-8">
