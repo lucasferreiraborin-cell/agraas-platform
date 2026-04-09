@@ -39,11 +39,13 @@ export default function AplicacoesPage() {
   const [applicationDate, setApplicationDate] = useState(todayInputValue());
 
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     async function loadBase() {
       setLoading(true);
+      setLoadError("");
 
       const { data: animalsData, error: animalsError } = await supabase
         .from("animals")
@@ -52,6 +54,7 @@ export default function AplicacoesPage() {
 
       if (animalsError) {
         console.error("Erro ao buscar animais:", animalsError);
+        setLoadError("Erro ao carregar animais. Recarregue a página.");
       }
 
       const { data: productsData, error: productsError } = await supabase
@@ -61,6 +64,7 @@ export default function AplicacoesPage() {
 
       if (productsError) {
         console.error("Erro ao buscar produtos:", productsError);
+        setLoadError("Erro ao carregar produtos. Recarregue a página.");
       }
 
       const { data: batchesData, error: batchesError } = await supabase
@@ -71,6 +75,7 @@ export default function AplicacoesPage() {
 
       if (batchesError) {
         console.error("Erro ao buscar lotes:", batchesError);
+        setLoadError("Erro ao carregar lotes. Recarregue a página.");
       }
 
       setAnimals((animalsData ?? []) as AnimalRow[]);
@@ -188,6 +193,9 @@ export default function AplicacoesPage() {
 
   return (
     <main className="space-y-8">
+      {loadError && (
+        <div className="ag-form-error">{loadError}</div>
+      )}
       <section className="ag-card-strong overflow-hidden">
         <div className="grid gap-0 xl:grid-cols-[1.05fr_0.95fr]">
           <div className="relative p-8 lg:p-10">
