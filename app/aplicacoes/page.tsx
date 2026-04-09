@@ -17,6 +17,9 @@ type AnimalRow = {
 type ProductRow = {
   id: string;
   name: string;
+  withdrawal_days: number | null;
+  unit: string | null;
+  supplier_id: string | null;
 };
 
 type BatchRow = {
@@ -39,7 +42,8 @@ export default function AplicacoesPage() {
   const [dose, setDose] = useState("");
   const [applicationDate, setApplicationDate] = useState(todayInputValue());
 
-  const manualMode = products.length === 0 && batches.length === 0;
+  const manualMode = products.length === 0;
+  const selectedProduct = products.find(p => p.id === productId) ?? null;
 
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -62,7 +66,8 @@ export default function AplicacoesPage() {
 
       const { data: productsData, error: productsError } = await supabase
         .from("products")
-        .select("id, name")
+        .select("id, name, withdrawal_days, unit, supplier_id")
+        .eq("active", true)
         .order("name", { ascending: true });
 
       if (productsError) {
@@ -173,7 +178,17 @@ export default function AplicacoesPage() {
       payload.product_name = productName.trim();
     } else {
       payload.product_id = productId;
-      payload.batch_id = batchId;
+      payload.product_name = selectedProduct?.name ?? productName.trim();
+      payload.unit = selectedProduct?.unit ?? null;
+      payload.supplier_id = selectedProduct?.supplier_id ?? null;
+      if (batchId) payload.batch_id = batchId;
+
+      // Auto-calculate withdrawal_date from product's withdrawal_days
+      if (selectedProduct?.withdrawal_days && selectedProduct.withdrawal_days > 0) {
+        const wd = new Date(applicationDate);
+        wd.setDate(wd.getDate() + selectedProduct.withdrawal_days);
+        payload.withdrawal_date = wd.toISOString().split("T")[0];
+      }
     }
 
     const { error: applicationError } = await supabase
