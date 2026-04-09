@@ -55,6 +55,9 @@ export default function DashboardPage() {
   const [updatingCotacao, setUpdatingCotacao] = useState(false);
   const [halalCount, setHalalCount] = useState(0);
   const [agriKpis, setAgriKpis] = useState<{ talhoesEmProducao: number; embarcamentosAtivos: number; toneladasTransito: number } | null>(null);
+  const [gmdMedio, setGmdMedio] = useState<number | null>(null);
+  const [pctDentroDaMeta, setPctDentroDaMeta] = useState<number | null>(null);
+  const [aplicacoes7d, setAplicacoes7d] = useState(0);
 
   useEffect(() => {
     async function load() {
@@ -107,6 +110,45 @@ export default function DashboardPage() {
           setWeights(((weightsData as WeightRow[]) ?? []).filter(w => myAnimalIds.has(w.animal_id)));
           setScores(((scoresData as ScoreRow[]) ?? []).filter(s => myAnimalIds.has(s.animal_id)));
           setHalalCount((halalData ?? []).filter((h: { animal_id: string }) => myAnimalIds.has(h.animal_id)).length);
+
+          // New KPIs: GMD, goals, calendar
+          const myWeights = ((weightsData as WeightRow[]) ?? []).filter(w => myAnimalIds.has(w.animal_id));
+          // GMD: for each animal, (last_weight - previous_weight) / days between
+          const weightsByA = new Map<string, WeightRow[]>();
+          for (const w of myWeights) {
+            const arr = weightsByA.get(w.animal_id) ?? [];
+            arr.push(w);
+            weightsByA.set(w.animal_id, arr);
+          }
+          const gmds: number[] = [];
+          for (const [, ws] of weightsByA) {
+            if (ws.length >= 2) {
+              const sorted = ws.sort((a, b) => new Date(b.weighing_date ?? "").getTime() - new Date(a.weighing_date ?? "").getTime());
+              const days = (new Date(sorted[0].weighing_date ?? "").getTime() - new Date(sorted[1].weighing_date ?? "").getTime()) / 86400000;
+              if (days > 0) gmds.push(((sorted[0].weight - sorted[1].weight) / days) * 1000); // g/dia
+            }
+          }
+          setGmdMedio(gmds.length > 0 ? Math.round(gmds.reduce((a, b) => a + b, 0) / gmds.length) : null);
+
+          // Calendar: próximas aplicações em 7d
+          const in7d = new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0];
+          const { data: calData } = await supabase.from("sanitary_calendar")
+            .select("id").eq("active", true).lte("next_due", in7d).gte("next_due", new Date().toISOString().split("T")[0]);
+          setAplicacoes7d((calData ?? []).length);
+
+          // Goals: % within target
+          const { data: goalsData } = await supabase.from("animal_goals").select("category, phase, target_weight_kg, target_age_days");
+          if (goalsData && goalsData.length > 0) {
+            let withinGoal = 0;
+            for (const animal of myAnimals) {
+              const ws = weightsByA.get(animal.id);
+              if (!ws || ws.length === 0) continue;
+              const lastW = ws.sort((a, b) => new Date(b.weighing_date ?? "").getTime() - new Date(a.weighing_date ?? "").getTime())[0];
+              const goal = goalsData[0]; // simplified: use first goal
+              if (lastW.weight >= goal.target_weight_kg * 0.85) withinGoal++;
+            }
+            setPctDentroDaMeta(myAnimals.length > 0 ? Math.round((withinGoal / myAnimals.length) * 100) : null);
+          }
         }
       }
       setLoading(false);
@@ -155,13 +197,15 @@ export default function DashboardPage() {
     cotacao={cotacao} cotacaoMeta={cotacaoMeta} isAdmin={isAdmin}
     cotacaoInput={cotacaoInput} setCotacaoInput={setCotacaoInput}
     updatingCotacao={updatingCotacao} onAtualizarCotacao={atualizarCotacao}
-    halalCount={halalCount} agriKpis={agriKpis} />;
+    halalCount={halalCount} agriKpis={agriKpis}
+    gmdMedio={gmdMedio} pctDentroDaMeta={pctDentroDaMeta} aplicacoes7d={aplicacoes7d} />;
 }
 
 function DashboardContent({
   animals, weights, scores, loading,
   cotacao, cotacaoMeta, isAdmin, cotacaoInput, setCotacaoInput, updatingCotacao, onAtualizarCotacao,
   halalCount, agriKpis,
+  gmdMedio, pctDentroDaMeta, aplicacoes7d,
 }: {
   animals: AnimalRow[];
   weights: WeightRow[];
@@ -176,6 +220,9 @@ function DashboardContent({
   onAtualizarCotacao: () => void;
   halalCount: number;
   agriKpis: { talhoesEmProducao: number; embarcamentosAtivos: number; toneladasTransito: number } | null;
+  gmdMedio: number | null;
+  pctDentroDaMeta: number | null;
+  aplicacoes7d: number;
 }) {
   const today = new Date();
   const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
@@ -293,6 +340,9 @@ function DashboardContent({
                 <HeroKpi label="Score médio" value={loading ? "—" : scoresMedio} sub="qualidade do rebanho" />
                 <HeroKpi label="Em alerta" value={loading ? "—" : animaisSemPesagem.length} sub="sem pesagem >30 dias" danger />
                 <HeroKpi label="@ no rebanho" value={loading ? "—" : Math.round(arroba_rebanho)} sub="arrobas estimadas" />
+                <HeroKpi label="GMD médio" value={loading ? "—" : gmdMedio != null ? `${gmdMedio} g/d` : "—"} sub="ganho médio diário" />
+                <HeroKpi label="Dentro da meta" value={loading ? "—" : pctDentroDaMeta != null ? `${pctDentroDaMeta}%` : "—"} sub="animais ≥85% do alvo" />
+                <HeroKpi label="Aplicações 7d" value={loading ? "—" : aplicacoes7d} sub="próximas doses" danger={aplicacoes7d > 0} />
               </div>
             </div>
           </div>

@@ -17,6 +17,7 @@ const supabase = createBrowserClient(
 );
 
 type Product = { id: string; name: string };
+type Supplier = { id: string; name: string };
 
 const inputCls =
   "w-full rounded-xl border border-[var(--border)] bg-white px-3 py-2.5 text-sm outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/10";
@@ -27,6 +28,8 @@ export default function NovoLote() {
   const router = useRouter();
 
   const [products,  setProducts]  = useState<Product[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [supplierId, setSupplierId] = useState("");
   const [gateMode,  setGateMode]  = useState<GateMode>("idle");
   const [parsedDoc, setParsedDoc] = useState<ParsedDoc | null>(null);
 
@@ -41,8 +44,11 @@ export default function NovoLote() {
   const [error,      setError]      = useState("");
 
   useEffect(() => {
-    supabase.from("products").select("id,name").order("name").then(({ data }) => {
+    supabase.from("products").select("id,name").eq("active", true).order("name").then(({ data }) => {
       setProducts(data ?? []);
+    });
+    supabase.from("suppliers").select("id,name").eq("active", true).order("name").then(({ data }) => {
+      setSuppliers((data ?? []) as Supplier[]);
     });
   }, []);
 
@@ -116,6 +122,7 @@ export default function NovoLote() {
       expiration_date: expirationDate,
       quantity:        Number(quantity),
       document_source: documentSource,
+      supplier_id:     supplierId || null,
     });
 
     if (err) {
@@ -207,6 +214,15 @@ export default function NovoLote() {
                     Dica da nota: &ldquo;{parsedDoc.items[selectedItem].descricao}&rdquo;
                   </p>
                 )}
+              </div>
+
+              {/* Fornecedor */}
+              <div>
+                <label className={labelCls}>Fornecedor</label>
+                <select value={supplierId} onChange={e => setSupplierId(e.target.value)} className={inputCls}>
+                  <option value="">Nenhum</option>
+                  {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
               </div>
 
               {/* Quantidade — bloqueada se veio do documento */}

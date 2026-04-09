@@ -362,7 +362,96 @@ export default function PesagensPage() {
         )}
       </section>
       )}
+
+      {/* GMD Section */}
+      {!loading && animals.length > 0 && (
+        <GmdSection animals={animals} />
+      )}
     </main>
+  );
+}
+
+function GmdSection({ animals }: { animals: AnimalRow[] }) {
+  const [period, setPeriod] = useState(90);
+  const [gmdData, setGmdData] = useState<{ code: string; gmd: number }[]>([]);
+  const [loadingGmd, setLoadingGmd] = useState(false);
+  const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!);
+
+  useEffect(() => {
+    async function calc() {
+      setLoadingGmd(true);
+      const cutoff = new Date(Date.now() - period * 86400000).toISOString().split("T")[0];
+      const { data: weights } = await sb.from("weights")
+        .select("animal_id, weight, weighing_date")
+        .gte("weighing_date", cutoff)
+        .order("weighing_date", { ascending: false });
+
+      const byAnimal = new Map<string, { weight: number; date: string }[]>();
+      for (const w of (weights ?? [])) {
+        const arr = byAnimal.get(w.animal_id) ?? [];
+        arr.push({ weight: w.weight, date: w.weighing_date });
+        byAnimal.set(w.animal_id, arr);
+      }
+
+      const results: { code: string; gmd: number }[] = [];
+      for (const a of animals) {
+        const ws = byAnimal.get(a.id);
+        if (!ws || ws.length < 2) continue;
+        const sorted = ws.sort((x, y) => new Date(y.date).getTime() - new Date(x.date).getTime());
+        const days = (new Date(sorted[0].date).getTime() - new Date(sorted[sorted.length - 1].date).getTime()) / 86400000;
+        if (days > 0) {
+          results.push({ code: a.internal_code ?? a.id.slice(0, 8), gmd: Math.round(((sorted[0].weight - sorted[sorted.length - 1].weight) / days) * 1000) });
+        }
+      }
+      setGmdData(results.sort((a, b) => b.gmd - a.gmd));
+      setLoadingGmd(false);
+    }
+    calc();
+  }, [period, animals]);
+
+  const avgGmd = gmdData.length > 0 ? Math.round(gmdData.reduce((s, r) => s + r.gmd, 0) / gmdData.length) : null;
+
+  return (
+    <section className="ag-card p-8">
+      <div className="flex items-center justify-between gap-4 mb-4">
+        <div>
+          <h2 className="ag-section-title">Ganho Médio Diário (GMD)</h2>
+          <p className="ag-section-subtitle">Performance de ganho de peso por animal no período.</p>
+        </div>
+        <div className="flex gap-2">
+          {[30, 60, 90, 180].map(d => (
+            <button key={d} onClick={() => setPeriod(d)}
+              className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition ${period === d ? "bg-[var(--primary)] text-white" : "bg-[var(--surface-soft)] text-[var(--text-muted)]"}`}>
+              {d}d
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {avgGmd != null && (
+        <div className="mb-4 rounded-2xl bg-[var(--primary-soft)] px-5 py-3">
+          <span className="text-sm text-[var(--text-muted)]">GMD médio do rebanho:</span>
+          <span className="ml-2 text-xl font-bold text-[var(--primary)]">{avgGmd} g/dia</span>
+        </div>
+      )}
+
+      {loadingGmd ? (
+        <div className="h-20 animate-pulse rounded-2xl bg-[var(--surface-soft)]" />
+      ) : gmdData.length === 0 ? (
+        <p className="text-sm text-[var(--text-muted)]">Sem dados suficientes para o período selecionado (mínimo 2 pesagens por animal).</p>
+      ) : (
+        <div className="space-y-2">
+          {gmdData.map(r => (
+            <div key={r.code} className="flex items-center justify-between rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3">
+              <span className="text-sm font-semibold text-[var(--text-primary)]">{r.code}</span>
+              <span className={`text-sm font-bold ${r.gmd > 0 ? "text-emerald-600" : r.gmd < 0 ? "text-red-500" : "text-[var(--text-muted)]"}`}>
+                {r.gmd > 0 ? "+" : ""}{r.gmd} g/dia
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
 
