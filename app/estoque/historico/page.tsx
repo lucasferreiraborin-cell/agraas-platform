@@ -114,74 +114,58 @@ export default function HistoricoEstoquePage() {
   }, []);
 
   return (
-    <div style={{ padding: 40 }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 20,
-        }}
-      >
-        <h1 style={{ fontSize: 28, fontWeight: "bold", margin: 0 }}>
-          Histórico de Movimentações
-        </h1>
+    <main className="space-y-8">
+      <section className="ag-card-strong p-8">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <h1 className="ag-page-title">Histórico de Movimentações</h1>
+          <Link href="/estoque" className="ag-button-primary">Voltar ao Estoque</Link>
+        </div>
+      </section>
 
-        <Link href="/estoque">
-          <button
-            style={{
-              background: "#2e7d32",
-              color: "white",
-              border: "none",
-              padding: "10px 16px",
-              borderRadius: 8,
-              cursor: "pointer",
-              fontWeight: 600,
-            }}
-          >
-            Voltar ao Estoque
-          </button>
-        </Link>
-      </div>
-
-      {loading && <p>Carregando...</p>}
+      {loading && (
+        <div className="ag-card p-8 animate-pulse">
+          <div className="space-y-3">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="h-12 rounded-2xl bg-[var(--surface-soft)]" />
+            ))}
+          </div>
+        </div>
+      )}
 
       {!loading && rows.length === 0 && (
-        <p>Nenhuma movimentação encontrada.</p>
+        <div className="ag-empty-state">
+          <div className="ag-empty-state-icon">📋</div>
+          <p className="ag-empty-state-title">Nenhuma movimentação encontrada</p>
+        </div>
       )}
 
       {!loading && rows.length > 0 && (
-        <table
-          style={{
-            width: "100%",
-            borderCollapse: "collapse",
-            background: "white",
-          }}
-        >
-          <thead>
-            <tr style={{ borderBottom: "1px solid #ddd" }}>
-              <th style={{ textAlign: "left", padding: 12 }}>Data</th>
-              <th style={{ textAlign: "left", padding: 12 }}>Produto</th>
-              <th style={{ textAlign: "left", padding: 12 }}>Lote</th>
-              <th style={{ textAlign: "left", padding: 12 }}>Movimento</th>
-              <th style={{ textAlign: "left", padding: 12 }}>Quantidade</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {rows.map((row) => (
-              <tr key={row.id} style={{ borderBottom: "1px solid #eee" }}>
-                <td style={{ padding: 12 }}>{row.created_at}</td>
-                <td style={{ padding: 12 }}>{row.product_name}</td>
-                <td style={{ padding: 12 }}>{row.batch_number}</td>
-                <td style={{ padding: 12 }}>{row.movement_type}</td>
-                <td style={{ padding: 12 }}>{row.quantity}</td>
+        <section className="ag-card overflow-hidden p-0">
+          <table className="ag-table w-full">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Produto</th>
+                <th>Lote</th>
+                <th>Movimento</th>
+                <th>Quantidade</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr key={row.id}>
+                  <td>{row.created_at}</td>
+                  <td className="font-medium text-[var(--text-primary)]">{row.product_name}</td>
+                  <td>{row.batch_number}</td>
+                  <td>{row.movement_type}</td>
+                  <td>{row.quantity}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
       )}
-    </div>
+    </main>
   );
 }
 

@@ -99,114 +99,65 @@ export default function EstoquePage() {
   }, []);
 
   return (
-    <div style={{ padding: 40 }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 20,
-        }}
-      >
-        <h1 style={{ fontSize: 28, fontWeight: "bold", margin: 0 }}>
-          Estoque Sanitário
-        </h1>
-
-        <div style={{ display: "flex", gap: 12 }}>
-          <Link href="/estoque/dashboard">
-            <button
-              style={{
-                background: "#ffffff",
-                color: "#2e7d32",
-                border: "1px solid #2e7d32",
-                padding: "10px 16px",
-                borderRadius: 8,
-                cursor: "pointer",
-                fontWeight: 600,
-              }}
-            >
-              Dashboard
-            </button>
-          </Link>
-
-          <Link href="/estoque/historico">
-            <button
-              style={{
-                background: "#ffffff",
-                color: "#2e7d32",
-                border: "1px solid #2e7d32",
-                padding: "10px 16px",
-                borderRadius: 8,
-                cursor: "pointer",
-                fontWeight: 600,
-              }}
-            >
-              Histórico
-            </button>
-          </Link>
-
-          <Link href="/estoque/novo">
-            <button
-              style={{
-                background: "#2e7d32",
-                color: "white",
-                border: "none",
-                padding: "10px 16px",
-                borderRadius: 8,
-                cursor: "pointer",
-                fontWeight: 600,
-              }}
-            >
-              + Novo Lote
-            </button>
-          </Link>
+    <main className="space-y-8">
+      <section className="ag-card-strong p-8">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <h1 className="ag-page-title">Estoque Sanitário</h1>
+          <div className="flex gap-3">
+            <Link href="/estoque/dashboard" className="ag-button-secondary">Dashboard</Link>
+            <Link href="/estoque/historico" className="ag-button-secondary">Histórico</Link>
+            <Link href="/estoque/novo" className="ag-button-primary">+ Novo Lote</Link>
+          </div>
         </div>
-      </div>
+      </section>
 
-      {loading && <p>Carregando...</p>}
+      {loading && (
+        <div className="ag-card p-8 animate-pulse">
+          <div className="h-6 w-48 rounded-full bg-[var(--border)]" />
+          <div className="mt-4 space-y-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-12 rounded-2xl bg-[var(--surface-soft)]" />
+            ))}
+          </div>
+        </div>
+      )}
 
-      {!loading && rows.length === 0 && <p>Nenhum lote encontrado.</p>}
+      {!loading && rows.length === 0 && (
+        <div className="ag-empty-state">
+          <div className="ag-empty-state-icon">📦</div>
+          <p className="ag-empty-state-title">Nenhum lote encontrado</p>
+          <p className="ag-empty-state-text">Cadastre o primeiro lote de estoque sanitário.</p>
+          <Link href="/estoque/novo" className="ag-button-primary mt-2">+ Novo Lote</Link>
+        </div>
+      )}
 
       {!loading && rows.length > 0 && (
-        <table
-          style={{
-            width: "100%",
-            borderCollapse: "collapse",
-            background: "white",
-          }}
-        >
-          <thead>
-            <tr style={{ borderBottom: "1px solid #ddd" }}>
-              <th style={{ textAlign: "left", padding: 12 }}>Produto</th>
-              <th style={{ textAlign: "left", padding: 12 }}>Lote</th>
-              <th style={{ textAlign: "left", padding: 12 }}>Validade</th>
-              <th style={{ textAlign: "left", padding: 12 }}>Quantidade</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {rows.map((row) => (
-              <tr
-                key={row.id}
-                style={{
-                  borderBottom: "1px solid #eee",
-                  background:
-                    row.status === "expired"
-                      ? "#ffebee"
-                      : row.status === "warning"
-                      ? "#fff8e1"
-                      : "white",
-                }}
-              >
-                <td style={{ padding: 12 }}>{row.product_name}</td>
-                <td style={{ padding: 12 }}>{row.batch_number}</td>
-                <td style={{ padding: 12 }}>{row.expiration_date}</td>
-                <td style={{ padding: 12 }}>{row.quantity}</td>
+        <section className="ag-card overflow-hidden p-0">
+          <table className="ag-table w-full">
+            <thead>
+              <tr>
+                <th>Produto</th>
+                <th>Lote</th>
+                <th>Validade</th>
+                <th>Quantidade</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr key={row.id} className={
+                  row.status === "expired" ? "bg-red-50" :
+                  row.status === "warning" ? "bg-amber-50" : ""
+                }>
+                  <td className="font-medium text-[var(--text-primary)]">{row.product_name}</td>
+                  <td>{row.batch_number}</td>
+                  <td>{row.expiration_date}</td>
+                  <td>{row.quantity}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
       )}
-    </div>
+    </main>
   );
 }

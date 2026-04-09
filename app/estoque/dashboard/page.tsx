@@ -192,307 +192,108 @@ export default function EstoqueDashboardPage() {
     loadDashboard();
   }, []);
 
+  const STATUS_BADGE: Record<string, string> = {
+    expired:   "rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-[10px] font-bold text-red-700",
+    warning:   "rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[10px] font-bold text-amber-700",
+    low_stock: "rounded-full border border-orange-200 bg-orange-50 px-2.5 py-1 text-[10px] font-bold text-orange-700",
+  };
+
   return (
-    <div style={{ padding: 40 }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 24,
-        }}
-      >
-        <h1 style={{ fontSize: 28, fontWeight: "bold", margin: 0 }}>
-          Dashboard Sanitário
-        </h1>
-
-        <div style={{ display: "flex", gap: 12 }}>
-          <Link href="/estoque">
-            <button style={secondaryButtonStyle}>
-              Estoque
-            </button>
-          </Link>
-
-          <Link href="/estoque/historico">
-            <button style={secondaryButtonStyle}>
-              Histórico
-            </button>
-          </Link>
-
-          <Link href="/estoque/novo">
-            <button style={primaryButtonStyle}>
-              + Novo Lote
-            </button>
-          </Link>
+    <main className="space-y-8">
+      <section className="ag-card-strong p-8">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <h1 className="ag-page-title">Dashboard Sanitário</h1>
+          <div className="flex gap-3">
+            <Link href="/estoque" className="ag-button-secondary">Estoque</Link>
+            <Link href="/estoque/historico" className="ag-button-secondary">Histórico</Link>
+            <Link href="/estoque/novo" className="ag-button-primary">+ Novo Lote</Link>
+          </div>
         </div>
-      </div>
+      </section>
 
-      {loading && <p>Carregando...</p>}
+      {loading && (
+        <div className="ag-card p-8 animate-pulse">
+          <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-5">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="h-24 rounded-2xl bg-[var(--surface-soft)]" />
+            ))}
+          </div>
+        </div>
+      )}
 
       {!loading && (
         <>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
-              gap: 16,
-              marginBottom: 28,
-            }}
-          >
-            <MetricCard
-              title="Lotes ativos"
-              value={String(totalLots)}
-              subtitle="lotes cadastrados no estoque"
-              background="#ffffff"
-            />
+          <section className="grid gap-4 sm:grid-cols-3 lg:grid-cols-5">
+            <div className="ag-kpi-card p-5"><p className="ag-kpi-label">Lotes ativos</p><p className="ag-kpi-value">{totalLots}</p><p className="text-xs text-[var(--text-muted)]">cadastrados no estoque</p></div>
+            <div className="ag-kpi-card p-5 bg-amber-50"><p className="ag-kpi-label">Vencendo em 30d</p><p className="ag-kpi-value text-amber-600">{expiringSoon}</p><p className="text-xs text-[var(--text-muted)]">atenção para reposição</p></div>
+            <div className="ag-kpi-card p-5 bg-red-50"><p className="ag-kpi-label">Vencidos</p><p className="ag-kpi-value text-[var(--danger)]">{expiredLots}</p><p className="text-xs text-[var(--text-muted)]">ação imediata</p></div>
+            <div className="ag-kpi-card p-5 bg-orange-50"><p className="ag-kpi-label">Estoque baixo</p><p className="ag-kpi-value text-orange-600">{lowStockLots}</p><p className="text-xs text-[var(--text-muted)]">saldo crítico</p></div>
+            <div className="ag-kpi-card p-5 bg-[var(--primary-soft)]"><p className="ag-kpi-label">Quantidade total</p><p className="ag-kpi-value text-[var(--primary)]">{totalQuantity}</p><p className="text-xs text-[var(--text-muted)]">saldo consolidado</p></div>
+          </section>
 
-            <MetricCard
-              title="Vencendo em 30 dias"
-              value={String(expiringSoon)}
-              subtitle="atenção para uso ou reposição"
-              background="#fff8e1"
-            />
-
-            <MetricCard
-              title="Lotes vencidos"
-              value={String(expiredLots)}
-              subtitle="necessitam ação imediata"
-              background="#ffebee"
-            />
-
-            <MetricCard
-              title="Estoque baixo"
-              value={String(lowStockLots)}
-              subtitle="lotes com saldo crítico"
-              background="#fff3e0"
-            />
-
-            <MetricCard
-              title="Quantidade total"
-              value={String(totalQuantity)}
-              subtitle="saldo consolidado em estoque"
-              background="#eef7ee"
-            />
-          </div>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1.15fr 0.85fr",
-              gap: 20,
-            }}
-          >
-            <div
-              style={{
-                background: "white",
-                borderRadius: 12,
-                padding: 20,
-                boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
-              }}
-            >
-              <h2 style={{ fontSize: 22, marginTop: 0, marginBottom: 16 }}>
-                Lotes críticos
-              </h2>
-
+          <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+            <section className="ag-card p-8">
+              <h2 className="ag-section-title mb-4">Lotes críticos</h2>
               {criticalLots.length === 0 ? (
-                <p>Nenhum lote crítico encontrado.</p>
+                <div className="ag-empty-state">
+                  <p className="ag-empty-state-title">Nenhum lote crítico</p>
+                </div>
               ) : (
-                <table
-                  style={{
-                    width: "100%",
-                    borderCollapse: "collapse",
-                  }}
-                >
-                  <thead>
-                    <tr style={{ borderBottom: "1px solid #ddd" }}>
-                      <th style={thStyle}>Produto</th>
-                      <th style={thStyle}>Lote</th>
-                      <th style={thStyle}>Validade</th>
-                      <th style={thStyle}>Quantidade</th>
-                      <th style={thStyle}>Status</th>
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {criticalLots.map((lot) => (
-                      <tr key={lot.id} style={{ borderBottom: "1px solid #eee" }}>
-                        <td style={tdStyle}>{lot.product_name}</td>
-                        <td style={tdStyle}>{lot.batch_number}</td>
-                        <td style={tdStyle}>{lot.expiration_date}</td>
-                        <td style={tdStyle}>{lot.quantity}</td>
-                        <td style={tdStyle}>
-                          <span style={getStatusPillStyle(lot.status)}>
-                            {formatLotStatus(lot.status)}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <div className="overflow-x-auto">
+                  <table className="ag-table w-full">
+                    <thead>
+                      <tr><th>Produto</th><th>Lote</th><th>Validade</th><th>Qtd</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                      {criticalLots.map((lot) => (
+                        <tr key={lot.id}>
+                          <td className="font-medium text-[var(--text-primary)]">{lot.product_name}</td>
+                          <td>{lot.batch_number}</td>
+                          <td>{lot.expiration_date}</td>
+                          <td>{lot.quantity}</td>
+                          <td><span className={STATUS_BADGE[lot.status]}>{formatLotStatus(lot.status)}</span></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
-            </div>
+            </section>
 
-            <div
-              style={{
-                background: "white",
-                borderRadius: 12,
-                padding: 20,
-                boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
-              }}
-            >
-              <h2 style={{ fontSize: 22, marginTop: 0, marginBottom: 16 }}>
-                Últimas movimentações
-              </h2>
-
+            <section className="ag-card p-8">
+              <h2 className="ag-section-title mb-4">Últimas movimentações</h2>
               {recentMovements.length === 0 ? (
-                <p>Nenhuma movimentação encontrada.</p>
+                <div className="ag-empty-state">
+                  <p className="ag-empty-state-title">Nenhuma movimentação</p>
+                </div>
               ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                <div className="space-y-3">
                   {recentMovements.map((movement) => (
-                    <div
-                      key={movement.id}
-                      style={{
-                        border: "1px solid #eee",
-                        borderRadius: 10,
-                        padding: 14,
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          gap: 12,
-                          marginBottom: 8,
-                        }}
-                      >
-                        <strong>{movement.product_name}</strong>
-                        <span style={{ color: "#666", fontSize: 13 }}>
-                          {movement.created_at}
-                        </span>
+                    <div key={movement.id} className="rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-sm font-semibold text-[var(--text-primary)]">{movement.product_name}</span>
+                        <span className="text-xs text-[var(--text-muted)]">{movement.created_at}</span>
                       </div>
-
-                      <div style={{ fontSize: 14, color: "#555" }}>
-                        {movement.movement_type} • Quantidade: {movement.quantity}
-                      </div>
+                      <p className="mt-1 text-xs text-[var(--text-secondary)]">{movement.movement_type} · Quantidade: {movement.quantity}</p>
                     </div>
                   ))}
                 </div>
               )}
-            </div>
+            </section>
           </div>
         </>
       )}
-    </div>
-  );
-}
-
-function MetricCard({
-  title,
-  value,
-  subtitle,
-  background,
-}: {
-  title: string;
-  value: string;
-  subtitle: string;
-  background: string;
-}) {
-  return (
-    <div
-      style={{
-        background,
-        borderRadius: 12,
-        padding: 20,
-        boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
-      }}
-    >
-      <div style={{ fontSize: 14, color: "#666", marginBottom: 8 }}>{title}</div>
-      <div style={{ fontSize: 32, fontWeight: "bold", marginBottom: 8 }}>{value}</div>
-      <div style={{ fontSize: 13, color: "#777" }}>{subtitle}</div>
-    </div>
+    </main>
   );
 }
 
 function formatMovementType(value: string | null) {
-  const map: Record<string, string> = {
-    entrada: "Entrada",
-    saida: "Saída",
-    aplicacao: "Aplicação",
-    ajuste: "Ajuste",
-  };
-
+  const map: Record<string, string> = { entrada: "Entrada", saida: "Saída", aplicacao: "Aplicação", ajuste: "Ajuste" };
   if (!value) return "-";
   return map[value.toLowerCase()] ?? value;
 }
 
 function formatLotStatus(value: "expired" | "warning" | "low_stock") {
-  const map = {
-    expired: "Vencido",
-    warning: "Vence em breve",
-    low_stock: "Estoque baixo",
-  };
-
+  const map = { expired: "Vencido", warning: "Vence em breve", low_stock: "Estoque baixo" };
   return map[value];
 }
-
-function getStatusPillStyle(value: "expired" | "warning" | "low_stock"): React.CSSProperties {
-  if (value === "expired") {
-    return {
-      background: "#ffebee",
-      color: "#c62828",
-      padding: "6px 10px",
-      borderRadius: 999,
-      fontSize: 12,
-      fontWeight: 600,
-    };
-  }
-
-  if (value === "warning") {
-    return {
-      background: "#fff8e1",
-      color: "#b26a00",
-      padding: "6px 10px",
-      borderRadius: 999,
-      fontSize: 12,
-      fontWeight: 600,
-    };
-  }
-
-  return {
-    background: "#fff3e0",
-    color: "#ef6c00",
-    padding: "6px 10px",
-    borderRadius: 999,
-    fontSize: 12,
-    fontWeight: 600,
-  };
-}
-
-const primaryButtonStyle: React.CSSProperties = {
-  background: "#2e7d32",
-  color: "white",
-  border: "none",
-  padding: "10px 16px",
-  borderRadius: 8,
-  cursor: "pointer",
-  fontWeight: 600,
-};
-
-const secondaryButtonStyle: React.CSSProperties = {
-  background: "#ffffff",
-  color: "#2e7d32",
-  border: "1px solid #2e7d32",
-  padding: "10px 16px",
-  borderRadius: 8,
-  cursor: "pointer",
-  fontWeight: 600,
-};
-
-const thStyle: React.CSSProperties = {
-  textAlign: "left",
-  padding: 12,
-};
-
-const tdStyle: React.CSSProperties = {
-  padding: 12,
-};
