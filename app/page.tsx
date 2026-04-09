@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import BrazilMapWrapper from "@/app/components/BrazilMapWrapper";
 import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
+import NotificationBanner from "@/app/components/NotificationBanner";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -169,6 +170,8 @@ export default async function PainelPage() {
     { data: animalsData },
     { data: weighingsData },
     { data: activeAppsData },
+    { data: upcomingLotsData },
+    { data: staleTrackingData },
   ] = await Promise.all([
     // Explicit client_id filter on all tables — some have no RLS
     supabaseServer
@@ -223,6 +226,20 @@ export default async function PainelPage() {
       .select("animal_id, withdrawal_date, product_name")
       .eq("client_id", clientId)
       .gte("withdrawal_date", todayStr),
+
+    supabaseServer
+      .from("lots")
+      .select("id, data_embarque")
+      .eq("client_id", clientId)
+      .gte("data_embarque", todayStr)
+      .lte("data_embarque", new Date(now.getTime() + 7 * 86400000).toISOString().split("T")[0]),
+
+    supabaseServer
+      .from("shipment_tracking")
+      .select("id, lot_id, stage, created_at")
+      .eq("client_id", clientId)
+      .neq("stage", "entregue")
+      .lt("created_at", new Date(now.getTime() - 5 * 86400000).toISOString()),
   ]);
 
   const passports = (passportsData as PassportCacheRow[] | null) ?? [];
@@ -240,6 +257,19 @@ export default async function PainelPage() {
   for (const animal of animals) {
     animalMap.set(animal.id, animal.internal_code ?? animal.id);
   }
+
+  // ── Notification banner counters ────────────────────────────────────────────
+  const sevenDaysFromNow = new Date(now.getTime() + 7 * 86400000).toISOString().split("T")[0];
+  const withdrawals7d = activeApps.filter(a => a.withdrawal_date && a.withdrawal_date <= sevenDaysFromNow).length;
+
+  const thirtyDaysAgoStr = new Date(now.getTime() - 30 * 86400000).toISOString().split("T")[0];
+  const animalIdsWithRecentWeight = new Set(
+    weighings.filter(w => w.weighing_date && w.weighing_date >= thirtyDaysAgoStr).map(w => w.animal_id)
+  );
+  const noPesagem30d = animals.filter(a => !animalIdsWithRecentWeight.has(a.id)).length;
+
+  const lotsUpcoming = (upcomingLotsData ?? []).length;
+  const shipmentsStale = (staleTrackingData ?? []).length;
 
   // ── Base metrics ─────────────────────────────────────────────────────────────
   const totalAnimals = passports.length;
@@ -437,6 +467,13 @@ export default async function PainelPage() {
 
   return (
     <main className="space-y-8">
+      <NotificationBanner
+        withdrawals7d={withdrawals7d}
+        noPesagem30d={noPesagem30d}
+        shipmentsStale={shipmentsStale}
+        lotsUpcoming={lotsUpcoming}
+      />
+
       {/* ── 1. Hero executivo ── */}
       <section className="ag-card-strong overflow-hidden p-8 lg:p-10">
         <div className="pointer-events-none absolute right-0 top-0 h-64 w-64 rounded-full bg-[radial-gradient(circle,rgba(122,168,76,0.16)_0%,rgba(122,168,76,0.00)_70%)]" />
