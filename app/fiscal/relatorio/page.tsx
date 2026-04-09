@@ -136,7 +136,7 @@ export default function FiscalRelatorioPage() {
                   onChange={e => setAno(e.target.value)}
                   className="rounded-xl border border-[var(--border)] bg-white px-3 py-2 text-sm outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/10"
                 >
-                  {[2024, 2025, 2026].map(y => <option key={y}>{y}</option>)}
+                  {(() => { const y = new Date().getFullYear(); return [y - 1, y, y + 1]; })().map(y => <option key={y}>{y}</option>)}
                 </select>
               </div>
               <button onClick={exportCsv} className="ag-button-secondary flex items-center gap-2">
