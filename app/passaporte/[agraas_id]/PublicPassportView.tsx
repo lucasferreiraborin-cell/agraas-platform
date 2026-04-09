@@ -195,18 +195,20 @@ export default function PublicPassportView({
             ))}
           </div>
 
-          {/* Dispositivo RFID */}
-          <div className="border-t border-[#e5e7eb] px-8 py-4 flex items-center gap-3 flex-wrap">
-            <span className="text-xs text-[#9ca3af]">{t(lang, "rfidDevice")}: </span>
-            <span className="text-sm font-semibold text-[#1a1a2e]">
-              {tRfidDevice(lang, animal.rfid_device_type)}
-            </span>
-            {animal.rfid_device_type === "bolus_intra_ruminal" && (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 border border-emerald-300 px-3 py-1 text-xs font-bold text-emerald-700">
-                ● {t(lang, "bolusBadge")}
+          {/* Dispositivo RFID — só mostra se não for o default (brinco_auricular) */}
+          {animal.rfid_device_type && animal.rfid_device_type !== "brinco_auricular" && (
+            <div className="border-t border-[#e5e7eb] px-8 py-4 flex items-center gap-3 flex-wrap">
+              <span className="text-xs text-[#9ca3af]">{t(lang, "rfidDevice")}: </span>
+              <span className="text-sm font-semibold text-[#1a1a2e]">
+                {tRfidDevice(lang, animal.rfid_device_type)}
               </span>
-            )}
-          </div>
+              {animal.rfid_device_type === "bolus_intra_ruminal" && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 border border-emerald-300 px-3 py-1 text-xs font-bold text-emerald-700">
+                  ● {t(lang, "bolusBadge")}
+                </span>
+              )}
+            </div>
+          )}
 
           {property && (
             <div className="border-t border-[#e5e7eb] px-8 py-4">
