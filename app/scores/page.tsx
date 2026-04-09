@@ -39,16 +39,33 @@ function ScoreCircleLarge({ score, size = 72 }: { score: number; size?: number }
 export default async function ScoresPage() {
   const supabase = await createSupabaseServerClient();
 
+  // Resolve client_id for filtering
+  const { data: { user } } = await supabase.auth.getUser();
+  const { data: clientData } = user
+    ? await supabase.from("clients").select("id").eq("auth_user_id", user.id).single()
+    : { data: null };
+  const clientId = clientData?.id ?? "00000000-0000-0000-0000-000000000000";
+
+  // Get this client's animal_ids first
+  const { data: myAnimalsData } = await supabase
+    .from("animals")
+    .select("id, agraas_id, birth_date")
+    .eq("client_id", clientId);
+
+  const myAnimalIds = (myAnimalsData ?? []).map((a: { id: string }) => a.id);
+
   const [
     { data: scoreData },
-    { data: animalBaseData },
   ] = await Promise.all([
-    supabase.from("agraas_master_passport")
-      .select("animal_id, internal_code, total_score, current_property_name, active_certifications, animal_status, sex, breed")
-      .order("total_score", { ascending: false })
-      .limit(100),
-    supabase.from("animals").select("id, agraas_id, birth_date"),
+    myAnimalIds.length
+      ? supabase.from("agraas_master_passport")
+          .select("animal_id, internal_code, total_score, current_property_name, active_certifications, animal_status, sex, breed")
+          .in("animal_id", myAnimalIds)
+          .order("total_score", { ascending: false })
+      : Promise.resolve({ data: [] }),
   ]);
+
+  const animalBaseData = myAnimalsData;
 
   const rawRows: ScoreRow[] = (scoreData as ScoreRow[] | null) ?? [];
   const baseMap = new Map((animalBaseData as AnimalBaseRow[] | null ?? []).map(a => [a.id, a]));
