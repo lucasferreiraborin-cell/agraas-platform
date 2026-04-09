@@ -128,7 +128,9 @@ const menuGroups: NavGroup[] = [
   {
     label: "Ferramentas",
     items: [
-      { href: "/migrar-dados", label: "Importar animais", icon: FileUp },
+      { href: "/migrar-dados",                label: "Importar animais",  icon: FileUp },
+      { href: "/planos",                      label: "Planos",            icon: BadgeCheck },
+      { href: "/configuracoes/assinatura",    label: "Assinatura",        icon: BadgeCheck, sub: true },
     ],
   },
   {
