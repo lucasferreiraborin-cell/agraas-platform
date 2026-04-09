@@ -58,6 +58,8 @@ export default function DashboardPage() {
   const [gmdMedio, setGmdMedio] = useState<number | null>(null);
   const [pctDentroDaMeta, setPctDentroDaMeta] = useState<number | null>(null);
   const [aplicacoes7d, setAplicacoes7d] = useState(0);
+  const [receitaMes, setReceitaMes] = useState(0);
+  const [custoMes, setCustoMes] = useState(0);
 
   useEffect(() => {
     async function load() {
@@ -136,6 +138,13 @@ export default function DashboardPage() {
             .select("id").eq("active", true).lte("next_due", in7d).gte("next_due", new Date().toISOString().split("T")[0]);
           setAplicacoes7d((calData ?? []).length);
 
+          // Finance: receita e custo do mês
+          const mesAtual = new Date().toISOString().slice(0, 7); // YYYY-MM
+          const { data: salesMes } = await supabase.from("sales").select("total_value").gte("sale_date", mesAtual + "-01");
+          setReceitaMes((salesMes ?? []).reduce((s: number, r: any) => s + (Number(r.total_value) || 0), 0));
+          const { data: appsMes } = await supabase.from("applications").select("total_cost").gte("application_date", mesAtual + "-01");
+          setCustoMes((appsMes ?? []).reduce((s: number, r: any) => s + (Number(r.total_cost) || 0), 0));
+
           // Goals: % within target
           const { data: goalsData } = await supabase.from("animal_goals").select("category, phase, target_weight_kg, target_age_days");
           if (goalsData && goalsData.length > 0) {
@@ -198,7 +207,8 @@ export default function DashboardPage() {
     cotacaoInput={cotacaoInput} setCotacaoInput={setCotacaoInput}
     updatingCotacao={updatingCotacao} onAtualizarCotacao={atualizarCotacao}
     halalCount={halalCount} agriKpis={agriKpis}
-    gmdMedio={gmdMedio} pctDentroDaMeta={pctDentroDaMeta} aplicacoes7d={aplicacoes7d} />;
+    gmdMedio={gmdMedio} pctDentroDaMeta={pctDentroDaMeta} aplicacoes7d={aplicacoes7d}
+    receitaMes={receitaMes} custoMes={custoMes} />;
 }
 
 function DashboardContent({
@@ -206,6 +216,7 @@ function DashboardContent({
   cotacao, cotacaoMeta, isAdmin, cotacaoInput, setCotacaoInput, updatingCotacao, onAtualizarCotacao,
   halalCount, agriKpis,
   gmdMedio, pctDentroDaMeta, aplicacoes7d,
+  receitaMes, custoMes,
 }: {
   animals: AnimalRow[];
   weights: WeightRow[];
@@ -223,6 +234,8 @@ function DashboardContent({
   gmdMedio: number | null;
   pctDentroDaMeta: number | null;
   aplicacoes7d: number;
+  receitaMes: number;
+  custoMes: number;
 }) {
   const today = new Date();
   const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
@@ -495,6 +508,24 @@ function DashboardContent({
           </div>
         </section>
       </div>
+      {/* Financeiro */}
+      {!loading && (receitaMes > 0 || custoMes > 0) && (
+        <section className="ag-card p-8">
+          <div className="flex items-center justify-between gap-4 mb-6">
+            <h2 className="ag-section-title">Financeiro do mês</h2>
+            <Link href="/custo-producao" className="text-sm font-semibold text-[var(--primary-hover)] hover:underline">
+              Ver custo de produção →
+            </Link>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <HeroKpi label="Receita" value={`R$ ${receitaMes.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} sub="vendas do mês" />
+            <HeroKpi label="Custo" value={`R$ ${custoMes.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`} sub="aplicações do mês" />
+            <HeroKpi label="Margem" value={`R$ ${(receitaMes - custoMes).toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`}
+              sub="receita - custo" danger={receitaMes - custoMes < 0} />
+          </div>
+        </section>
+      )}
+
       {/* Agricultura */}
       {agriKpis && (
         <section className="ag-card p-8">
