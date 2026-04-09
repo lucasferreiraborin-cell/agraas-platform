@@ -246,8 +246,8 @@ export default function AbatesPage() {
                   </span>
                 )}
               </label>
-              <select value={frigorificoId} onChange={e => setFrigorificoId(e.target.value)} className={inputCls} required>
-                <option value="">Selecione um frigorífico</option>
+              <select value={frigorificoId} onChange={e => setFrigorificoId(e.target.value)} className={inputCls}>
+                <option value="">Selecione um frigorífico (opcional)</option>
                 {slaughterhouses.map(s => <option key={s.id} value={s.id}>{s.name ?? s.id}</option>)}
               </select>
             </div>

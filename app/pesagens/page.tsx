@@ -24,6 +24,10 @@ export default function PesagensPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [tab, setTab] = useState<"individual" | "lote">("individual");
+  const [batchRows, setBatchRows] = useState<{ animalId: string; weight: string; selected: boolean }[]>([]);
+  const [batchDate, setBatchDate] = useState(todayInputValue());
+  const [batchSaving, setBatchSaving] = useState(false);
 
   useEffect(() => {
     async function loadAnimals() {
@@ -43,7 +47,9 @@ export default function PesagensPage() {
           return;
         }
 
-        setAnimals((data ?? []) as AnimalRow[]);
+        const loaded = (data ?? []) as AnimalRow[];
+        setAnimals(loaded);
+        setBatchRows(loaded.map(a => ({ animalId: a.id, weight: "", selected: false })));
       } catch (err) {
         console.error("Falha inesperada ao buscar animais:", err);
         setLoadError("Erro inesperado ao carregar os animais.");
@@ -116,6 +122,26 @@ export default function PesagensPage() {
     }
   }
 
+  async function createBatchWeights() {
+    const toSave = batchRows.filter(r => r.selected && r.weight && Number(r.weight) > 0);
+    if (toSave.length === 0) { alert("Selecione ao menos 1 animal e informe o peso."); return; }
+    if (!batchDate) { alert("Informe a data da pesagem."); return; }
+
+    setBatchSaving(true);
+    let saved = 0;
+    for (const row of toSave) {
+      const w = Number(row.weight);
+      const { error } = await supabase.from("weights").insert([{ animal_id: row.animalId, weight: w, weighing_date: batchDate }]);
+      if (!error) {
+        await supabase.from("events").insert([{ animal_id: row.animalId, source: "farm", event_type: "weighing", notes: `Pesagem em lote: ${w} kg`, event_date: batchDate }]);
+        saved++;
+      }
+    }
+    alert(`${saved} pesagem${saved > 1 ? "ns" : ""} registrada${saved > 1 ? "s" : ""}.`);
+    setBatchRows(prev => prev.map(r => ({ ...r, weight: "", selected: false })));
+    setBatchSaving(false);
+  }
+
   return (
     <main className="space-y-8">
       <section className="ag-card-strong overflow-hidden">
@@ -170,6 +196,77 @@ export default function PesagensPage() {
         </div>
       </section>
 
+      {/* Tabs */}
+      <div className="flex gap-2">
+        <button onClick={() => setTab("individual")} className={`rounded-xl px-5 py-2.5 text-sm font-semibold transition ${tab === "individual" ? "bg-[var(--primary)] text-white" : "bg-[var(--surface-soft)] text-[var(--text-muted)] hover:bg-[var(--primary-soft)]"}`}>
+          Individual
+        </button>
+        <button onClick={() => setTab("lote")} className={`rounded-xl px-5 py-2.5 text-sm font-semibold transition ${tab === "lote" ? "bg-[var(--primary)] text-white" : "bg-[var(--surface-soft)] text-[var(--text-muted)] hover:bg-[var(--primary-soft)]"}`}>
+          Pesagem em Lote
+        </button>
+      </div>
+
+      {/* Batch weighing */}
+      {tab === "lote" && !loading && !loadError && (
+        <section className="ag-card p-8">
+          <h2 className="ag-section-title">Pesagem em lote</h2>
+          <p className="ag-section-subtitle">Selecione os animais e informe o peso de cada um.</p>
+
+          <div className="mt-4 mb-4">
+            <label className="text-sm font-medium text-[var(--text-primary)]">Data da pesagem</label>
+            <input type="date" value={batchDate} onChange={e => setBatchDate(e.target.value)}
+              className="ml-3 rounded-xl border border-[var(--border)] bg-white px-3 py-2 text-sm" />
+            <button onClick={() => setBatchRows(prev => prev.map(r => ({ ...r, selected: true })))}
+              className="ml-3 text-sm font-medium text-[var(--primary)] hover:underline">Selecionar todos</button>
+            <button onClick={() => setBatchRows(prev => prev.map(r => ({ ...r, selected: false })))}
+              className="ml-3 text-sm font-medium text-[var(--text-muted)] hover:underline">Limpar</button>
+          </div>
+
+          <div className="max-h-[60vh] overflow-y-auto rounded-2xl border border-[var(--border)]">
+            <table className="w-full text-sm">
+              <thead className="sticky top-0 bg-[var(--surface-soft)]">
+                <tr className="border-b border-[var(--border)]">
+                  <th className="w-10 px-3 py-2" />
+                  <th className="px-3 py-2 text-left font-semibold text-[var(--text-muted)]">Animal</th>
+                  <th className="w-32 px-3 py-2 text-left font-semibold text-[var(--text-muted)]">Peso (kg)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {batchRows.map((row, i) => {
+                  const animal = animals.find(a => a.id === row.animalId);
+                  return (
+                    <tr key={row.animalId} className={`border-b border-[var(--border)] ${row.selected ? "bg-[var(--primary-soft)]" : ""}`}>
+                      <td className="px-3 py-2 text-center">
+                        <input type="checkbox" checked={row.selected}
+                          onChange={e => setBatchRows(prev => prev.map((r, j) => j === i ? { ...r, selected: e.target.checked } : r))}
+                          className="h-4 w-4 rounded accent-[var(--primary)]" />
+                      </td>
+                      <td className="px-3 py-2 font-medium text-[var(--text-primary)]">
+                        {animal?.internal_code ?? row.animalId.slice(0, 8)}
+                        {animal?.agraas_id ? <span className="ml-2 text-xs text-[var(--text-muted)]">{animal.agraas_id}</span> : null}
+                      </td>
+                      <td className="px-3 py-2">
+                        <input type="number" placeholder="kg" value={row.weight}
+                          onChange={e => setBatchRows(prev => prev.map((r, j) => j === i ? { ...r, weight: e.target.value, selected: e.target.value ? true : r.selected } : r))}
+                          className="w-full rounded-xl border border-[var(--border)] bg-white px-3 py-1.5 text-sm outline-none focus:border-[var(--primary)]" />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="mt-4 flex items-center justify-between">
+            <span className="text-sm text-[var(--text-muted)]">{batchRows.filter(r => r.selected && r.weight).length} animais selecionados</span>
+            <button onClick={createBatchWeights} disabled={batchSaving} className="ag-button-primary disabled:opacity-70">
+              {batchSaving ? "Salvando..." : "Registrar pesagens em lote"}
+            </button>
+          </div>
+        </section>
+      )}
+
+      {tab === "individual" && (
       <section className="ag-card p-8">
         <div className="ag-section-header">
           <div>
@@ -264,6 +361,7 @@ export default function PesagensPage() {
           </div>
         )}
       </section>
+      )}
     </main>
   );
 }

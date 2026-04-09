@@ -97,6 +97,9 @@ export default async function EventosPage({ searchParams }: PageProps) {
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
+              <Link href="/animais" className="ag-button-primary">
+                Registrar evento
+              </Link>
               <Link href="/pesagens" className="ag-button-secondary">
                 Nova pesagem
               </Link>
