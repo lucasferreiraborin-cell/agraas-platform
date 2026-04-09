@@ -18,6 +18,8 @@ const AGRAAS_FIELDS = [
   { key: "birth_date",    label: "Data de nascimento" },
   { key: "weight",        label: "Peso (kg)" },
   { key: "status",        label: "Status" },
+  { key: "category",      label: "Categoria" },
+  { key: "notes",         label: "Observações" },
   { key: "rfid",          label: "RFID / Chip" },
   { key: "sire_code",     label: "Código do pai" },
   { key: "dam_code",      label: "Código da mãe" },
@@ -33,6 +35,8 @@ const AUTO_MAP: Record<AgraasFieldKey, string[]> = {
   birth_date:    ["nascimento", "birth", "nasc", "dob", "born", "dtnasc", "datanasc"],
   weight:        ["peso", "weight", "kg", "pesagem", "massa"],
   status:        ["status", "situacao", "state", "condicao"],
+  category:      ["categoria", "category", "lote", "tipo", "grupo_animal", "class"],
+  notes:         ["obs", "observacao", "nota", "comentario", "notes", "remarks", "descricao"],
   rfid:          ["rfid", "chip", "brincoelet", "eletronic", "transponder", "eid"],
   sire_code:     ["pai", "sire", "touro", "father", "codpai", "reprodutor"],
   dam_code:      ["mae", "dam", "vaca", "mother", "codmae", "genitora"],
@@ -131,7 +135,20 @@ export default function MigrarDadosPage() {
   const [scoringState, setScoringState] = useState<"idle" | "loading" | "done">("idle");
   const [scoringCount, setScoringCount] = useState(0);
   const [dragOver, setDragOver]   = useState(false);
+  const [propertyId, setPropertyId] = useState("");
+  const [properties, setProperties] = useState<{ id: string; name: string }[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Load properties on mount
+  useState(() => {
+    import("@supabase/ssr").then(({ createBrowserClient }) => {
+      const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!);
+      sb.from("properties").select("id, name").order("name").then(({ data }) => {
+        setProperties((data ?? []) as { id: string; name: string }[]);
+        if (data && data.length === 1) setPropertyId(data[0].id);
+      });
+    });
+  });
 
   async function handleFile(file: File) {
     if (!file.name.toLowerCase().endsWith(".csv")) {
@@ -160,7 +177,7 @@ export default function MigrarDadosPage() {
       const res = await fetch("/api/migrate-animals", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rows: rowObjects, mapping }),
+        body: JSON.stringify({ rows: rowObjects, mapping, property_id: propertyId || undefined }),
       });
       const data: ImportResult = await res.json();
       setResult(data);
@@ -206,10 +223,10 @@ export default function MigrarDadosPage() {
       <section className="ag-card-strong overflow-hidden">
         <div className="p-8 lg:p-10">
           <div className="ag-badge ag-badge-green">Migração de Dados</div>
-          <h1 className="ag-page-title mt-4">Migrar meus dados</h1>
+          <h1 className="ag-page-title mt-4">Importar animais</h1>
           <p className="mt-4 max-w-2xl text-[1.05rem] leading-8 text-[var(--text-secondary)]">
-            Importe seu rebanho a partir de um arquivo CSV. O mapeamento de campos é feito
-            automaticamente e pode ser ajustado antes da importação.
+            Importe seus animais de qualquer sistema de gestão via arquivo CSV.
+            O mapeamento de campos é feito automaticamente e pode ser ajustado antes da importação.
           </p>
         </div>
       </section>
@@ -243,7 +260,21 @@ export default function MigrarDadosPage() {
 
       {/* ── Etapa 1: Upload ── */}
       {step === "upload" && (
-        <div className="ag-card p-8">
+        <div className="ag-card p-8 space-y-6">
+          {/* Property selector */}
+          {properties.length > 0 && (
+            <div>
+              <label className="mb-2 block text-sm font-medium text-[var(--text-primary)]">
+                Propriedade de destino
+              </label>
+              <select value={propertyId} onChange={e => setPropertyId(e.target.value)}
+                className="w-full max-w-sm rounded-xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--primary)]">
+                <option value="">Selecione a propriedade</option>
+                {properties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            </div>
+          )}
+
           <div
             onDragOver={e => { e.preventDefault(); setDragOver(true); }}
             onDragLeave={() => setDragOver(false)}
@@ -260,7 +291,7 @@ export default function MigrarDadosPage() {
             </div>
             <div className="text-center">
               <p className="text-base font-semibold text-[var(--text-primary)]">
-                Arraste seu CSV aqui ou clique para selecionar
+                Selecione o arquivo CSV exportado do seu sistema atual
               </p>
               <p className="mt-1.5 text-sm text-[var(--text-muted)]">
                 Suporta UTF-8 e Latin-1 · Separadores: vírgula, ponto e vírgula ou tab
