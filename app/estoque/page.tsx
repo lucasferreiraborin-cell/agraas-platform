@@ -20,6 +20,7 @@ type StockBatchRow = {
 type ProductRow = {
   id: string;
   name: string;
+  unit: string | null;
 };
 
 type DisplayRow = {
@@ -28,8 +29,14 @@ type DisplayRow = {
   batch_number: string;
   expiration_date: string;
   quantity: number;
+  unit: string;
   status: "ok" | "warning" | "expired";
 };
+
+function fmtDateBR(d: string): string {
+  try { return new Date(d).toLocaleDateString("pt-BR"); }
+  catch { return d; }
+}
 
 export default function EstoquePage() {
   const [rows, setRows] = useState<DisplayRow[]>([]);
@@ -50,7 +57,7 @@ export default function EstoquePage() {
 
       const { data: productsData, error: productsError } = await supabase
         .from("products")
-        .select("id, name");
+        .select("id, name, unit");
 
       if (productsError) {
         console.error("Erro ao buscar products:", productsError);
@@ -61,9 +68,9 @@ export default function EstoquePage() {
       const batches = (batchesData ?? []) as StockBatchRow[];
       const products = (productsData ?? []) as ProductRow[];
 
-      const productMap = new Map<string, string>();
+      const productMap = new Map<string, ProductRow>();
       for (const product of products) {
-        productMap.set(product.id, product.name);
+        productMap.set(product.id, product);
       }
 
       const today = new Date();
@@ -81,12 +88,14 @@ export default function EstoquePage() {
           status = "warning";
         }
 
+        const prod = productMap.get(batch.product_id);
         return {
           id: batch.id,
-          product_name: productMap.get(batch.product_id) ?? "Produto",
+          product_name: prod?.name ?? "Produto",
           batch_number: batch.batch_number,
           expiration_date: batch.expiration_date,
           quantity: batch.quantity,
+          unit: prod?.unit ?? "un",
           status,
         };
       });
@@ -140,20 +149,29 @@ export default function EstoquePage() {
                 <th>Lote</th>
                 <th>Validade</th>
                 <th>Quantidade</th>
+                <th>Status</th>
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => (
-                <tr key={row.id} className={
-                  row.status === "expired" ? "bg-red-50" :
-                  row.status === "warning" ? "bg-amber-50" : ""
-                }>
-                  <td className="font-medium text-[var(--text-primary)]">{row.product_name}</td>
-                  <td>{row.batch_number}</td>
-                  <td>{row.expiration_date}</td>
-                  <td>{row.quantity}</td>
-                </tr>
-              ))}
+              {rows.map((row) => {
+                const badge =
+                  row.status === "expired" ? { cls: "border-red-200 bg-red-50 text-red-700", label: "Vencido" } :
+                  row.status === "warning" ? { cls: "border-amber-200 bg-amber-50 text-amber-700", label: "Vence em 30d" } :
+                                              { cls: "border-emerald-200 bg-emerald-50 text-emerald-700", label: "OK" };
+                return (
+                  <tr key={row.id}>
+                    <td className="font-medium text-[var(--text-primary)]">{row.product_name}</td>
+                    <td className="font-mono text-xs">{row.batch_number}</td>
+                    <td>{fmtDateBR(row.expiration_date)}</td>
+                    <td>{row.quantity} {row.unit}</td>
+                    <td>
+                      <span className={`rounded-full border px-2.5 py-1 text-[10px] font-bold ${badge.cls}`}>
+                        {badge.label}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </section>

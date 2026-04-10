@@ -225,9 +225,9 @@ export default function EstoqueDashboardPage() {
         <>
           <section className="grid gap-4 sm:grid-cols-3 lg:grid-cols-5">
             <div className="ag-kpi-card p-5"><p className="ag-kpi-label">Lotes ativos</p><p className="ag-kpi-value">{totalLots}</p><p className="text-xs text-[var(--text-muted)]">cadastrados no estoque</p></div>
-            <div className="ag-kpi-card p-5 bg-amber-50"><p className="ag-kpi-label">Vencendo em 30d</p><p className="ag-kpi-value text-amber-600">{expiringSoon}</p><p className="text-xs text-[var(--text-muted)]">atenção para reposição</p></div>
-            <div className="ag-kpi-card p-5 bg-red-50"><p className="ag-kpi-label">Vencidos</p><p className="ag-kpi-value text-[var(--danger)]">{expiredLots}</p><p className="text-xs text-[var(--text-muted)]">ação imediata</p></div>
-            <div className="ag-kpi-card p-5 bg-orange-50"><p className="ag-kpi-label">Estoque baixo</p><p className="ag-kpi-value text-orange-600">{lowStockLots}</p><p className="text-xs text-[var(--text-muted)]">saldo crítico</p></div>
+            <div className="ag-kpi-card p-5 bg-amber-50"><p className="ag-kpi-label">Vencendo em 30d</p><p className="ag-kpi-value" style={{ color: "#B45309" }}>{expiringSoon}</p><p className="text-xs text-[var(--text-muted)]">atenção para reposição</p></div>
+            <div className="ag-kpi-card p-5 bg-red-50"><p className="ag-kpi-label">Vencidos</p><p className="ag-kpi-value" style={{ color: "#DC2626" }}>{expiredLots}</p><p className="text-xs text-[var(--text-muted)]">ação imediata</p></div>
+            <div className="ag-kpi-card p-5 bg-orange-50"><p className="ag-kpi-label">Estoque baixo</p><p className="ag-kpi-value" style={{ color: "#D97706" }}>{lowStockLots}</p><p className="text-xs text-[var(--text-muted)]">saldo crítico</p></div>
             <div className="ag-kpi-card p-5 bg-[var(--primary-soft)]"><p className="ag-kpi-label">Quantidade total</p><p className="ag-kpi-value text-[var(--primary)]">{totalQuantity}</p><p className="text-xs text-[var(--text-muted)]">saldo consolidado</p></div>
           </section>
 
