@@ -3,9 +3,15 @@
 import { useState, useRef } from "react";
 import {
   FileUp, ChevronRight, CheckCircle2, AlertCircle,
-  RefreshCw, Loader2,
+  RefreshCw, Loader2, Download,
 } from "lucide-react";
 import Link from "next/link";
+
+const CSV_TEMPLATE = [
+  "codigo_interno,nome,especie,raca,sexo,data_nascimento,peso_kg,categoria,observacoes",
+  "BOI-001,Tourão,bovino,Nelore,M,2022-03-15,520,Touro,Reprodutor premium",
+  "BOI-002,Vaca Estrela,bovino,Nelore,F,2021-08-20,420,Vaca,Lactante",
+].join("\n");
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 type Step = "upload" | "mapping" | "preview" | "result";
@@ -137,9 +143,11 @@ export default function MigrarDadosPage() {
   const [dragOver, setDragOver]   = useState(false);
   const [propertyId, setPropertyId] = useState("");
   const [properties, setProperties] = useState<{ id: string; name: string }[]>([]);
+  const [lotId, setLotId] = useState("");
+  const [lots, setLots] = useState<{ id: string; name: string; property_id: string | null }[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  // Load properties on mount
+  // Load properties + lots on mount
   useState(() => {
     import("@supabase/ssr").then(({ createBrowserClient }) => {
       const sb = createBrowserClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!);
@@ -147,8 +155,25 @@ export default function MigrarDadosPage() {
         setProperties((data ?? []) as { id: string; name: string }[]);
         if (data && data.length === 1) setPropertyId(data[0].id);
       });
+      sb.from("lots").select("id, name, property_id").neq("status", "encerrado").order("name").then(({ data }) => {
+        setLots((data ?? []) as { id: string; name: string; property_id: string | null }[]);
+      });
     });
   });
+
+  function downloadTemplate() {
+    const blob = new Blob([CSV_TEMPLATE], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "template-animais-agraas.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  const filteredLots = propertyId
+    ? lots.filter(l => l.property_id === propertyId)
+    : lots;
 
   async function handleFile(file: File) {
     if (!file.name.toLowerCase().endsWith(".csv")) {
@@ -228,6 +253,9 @@ export default function MigrarDadosPage() {
             Importe seus animais de qualquer sistema de gestão via arquivo CSV.
             O mapeamento de campos é feito automaticamente e pode ser ajustado antes da importação.
           </p>
+          <p className="mt-2 text-[13px] text-[var(--text-muted)]">
+            Formatos aceitos: CSV, XLSX · Tamanho máximo: 10MB
+          </p>
         </div>
       </section>
 
@@ -263,15 +291,34 @@ export default function MigrarDadosPage() {
         <div className="ag-card p-8 space-y-6">
           {/* Property selector */}
           {properties.length > 0 && (
-            <div>
-              <label className="mb-2 block text-sm font-medium text-[var(--text-primary)]">
-                Propriedade de destino
-              </label>
-              <select value={propertyId} onChange={e => setPropertyId(e.target.value)}
-                className="w-full max-w-sm rounded-xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--primary)]">
-                <option value="">Selecione a propriedade</option>
-                {properties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-              </select>
+            <div className="space-y-3">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-[var(--text-primary)]">
+                  Propriedade de destino
+                </label>
+                <select value={propertyId} onChange={e => { setPropertyId(e.target.value); setLotId(""); }}
+                  className="w-full max-w-sm rounded-xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--primary)]">
+                  <option value="">Selecione a propriedade</option>
+                  {properties.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+                <button
+                  type="button"
+                  onClick={downloadTemplate}
+                  className="mt-2 inline-flex items-center gap-2 rounded-xl border border-[var(--primary)] px-3 py-1.5 text-xs font-semibold text-[var(--primary)] hover:bg-[var(--primary-soft)] transition"
+                >
+                  <Download size={13} /> Baixar template CSV
+                </button>
+              </div>
+              <div>
+                <label className="mb-2 block text-sm font-medium text-[var(--text-primary)]">
+                  Lote de destino <span className="text-[var(--text-muted)] font-normal">(opcional)</span>
+                </label>
+                <select value={lotId} onChange={e => setLotId(e.target.value)}
+                  className="w-full max-w-sm rounded-xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--primary)]">
+                  <option value="">Sem lote inicial</option>
+                  {filteredLots.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                </select>
+              </div>
             </div>
           )}
 
@@ -485,6 +532,19 @@ export default function MigrarDadosPage() {
           </div>
         </div>
       )}
+
+      {/* ── Histórico de importações ── */}
+      <section className="ag-card p-8 space-y-4">
+        <div>
+          <h2 className="ag-section-title">Histórico de importações</h2>
+          <p className="ag-section-subtitle">Últimas migrações realizadas na plataforma</p>
+        </div>
+        <div className="rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface-soft)] p-6 text-center">
+          <p className="text-sm text-[var(--text-muted)]">
+            Nenhuma importação registrada ainda. As próximas migrações serão listadas aqui.
+          </p>
+        </div>
+      </section>
     </main>
   );
 }
