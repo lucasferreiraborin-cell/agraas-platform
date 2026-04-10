@@ -1,5 +1,6 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import Link from "next/link";
+import EventsTable, { normalizeEventType } from "@/app/components/EventsTable";
 
 const PAGE_SIZE = 20;
 
@@ -126,14 +127,18 @@ export default async function EventosPage({ searchParams }: PageProps) {
                 subtitle="com eventos vinculados"
               />
               <MetricCard
-                label="Módulo"
-                value="timeline"
-                subtitle="camada de rastreabilidade"
+                label="Tipos"
+                value={new Set(rows.map(r => normalizeEventType(r.event_type))).size}
+                subtitle="tipos distintos de evento"
               />
               <MetricCard
-                label="Status"
-                value="ativo"
-                subtitle="event logging funcionando"
+                label="Último evento"
+                value={
+                  rows[0]?.event_date
+                    ? new Date(rows[0].event_date).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })
+                    : "—"
+                }
+                subtitle="data do mais recente"
               />
             </div>
           </div>
@@ -164,27 +169,7 @@ export default async function EventosPage({ searchParams }: PageProps) {
               </div>
             </div>
           ) : (
-            <table className="ag-table">
-              <thead>
-                <tr>
-                  <th>Animal</th>
-                  <th>Evento</th>
-                  <th>Descrição</th>
-                  <th>Data</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {rows.map((row) => (
-                  <tr key={row.id}>
-                    <td>{row.animal_code}</td>
-                    <td>{formatEventType(row.event_type)}</td>
-                    <td>{row.notes}</td>
-                    <td>{formatDate(row.event_date)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <EventsTable rows={rows} />
           )}
         </div>
 
@@ -233,22 +218,3 @@ function MetricCard({
   );
 }
 
-function formatDate(value: string | null | undefined) {
-  if (!value) return "-";
-  return new Date(value).toLocaleDateString("pt-BR");
-}
-
-function formatEventType(value: string) {
-  const map: Record<string, string> = {
-    birth: "Nascimento",
-    weighing: "Pesagem",
-    application: "Aplicação sanitária",
-    lot_entry: "Entrada em lote",
-    lot_exit: "Saída de lote",
-    sale: "Venda",
-    slaughter: "Abate",
-    death: "Óbito",
-  };
-
-  return map[value] ?? value;
-}
