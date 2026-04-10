@@ -18,19 +18,19 @@ function EmptyState({ label }: { label: string }) {
   );
 }
 
-function KpiCard({ label, value, sub }: { label: string; value: string; sub: string }) {
+function KpiCard({ label, value, sub, valueClass }: { label: string; value: string; sub: string; valueClass?: string }) {
   return (
     <div className="ag-card flex flex-col gap-1 p-5">
       <p className="ag-kpi-label">{label}</p>
-      <p className="ag-kpi-value">{value}</p>
+      <p className={`ag-kpi-value ${valueClass ?? ""}`}>{value}</p>
       <p className="text-xs text-[var(--text-muted)]">{sub}</p>
     </div>
   );
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
-  "Nutricionais":          "bg-blue-100 text-blue-700",
-  "Medicamentos":          "bg-green-100 text-green-700",
+  "Nutricionais":          "bg-[#DCFCE7] text-[#166534]",
+  "Medicamentos":          "bg-[#DBEAFE] text-[#1E40AF]",
   "Tratamentos/Hormônios": "bg-purple-100 text-purple-700",
   "Vacinas/Vermífugos":    "bg-amber-100 text-amber-700",
   "Maquinários":           "bg-orange-100 text-orange-700",
@@ -61,7 +61,6 @@ export default async function InsumosPage() {
     if (!byCategory.has(cat)) byCategory.set(cat, []);
     byCategory.get(cat)!.push(item);
   }
-  const categories = Array.from(byCategory.entries());
 
   // For bar chart: derive value by category from financial totals (approximation from group totals)
   const CATEGORY_VALUES: Record<string, number> = {
@@ -71,6 +70,10 @@ export default async function InsumosPage() {
     "Vacinas/Vermífugos":    498,
   };
   const totalCatValue = Object.values(CATEGORY_VALUES).reduce((s, v) => s + v, 0);
+
+  // Render all categorias in CATEGORY_VALUES (mesmo sem itens) + outras vindas dos itens
+  const categoryNames = Array.from(new Set([...Object.keys(CATEGORY_VALUES), ...byCategory.keys()]));
+  const categories: [string, typeof items][] = categoryNames.map(cat => [cat, byCategory.get(cat) ?? []]);
 
   return (
     <main className="space-y-8">
@@ -93,12 +96,13 @@ export default async function InsumosPage() {
         {!fin ? <EmptyState label="Nenhuma posição financeira registrada ainda" /> : (
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <KpiCard label="Estoque inicial" value={`R$ ${fmt(fin.initial_stock_value)}`} sub="saldo anterior" />
-            <KpiCard label="Compras no período" value={`R$ ${fmt(fin.purchases_value)}`} sub="total adquirido" />
-            <KpiCard label="Consumo no período" value={`R$ ${fmt(fin.consumption_value)}`} sub="total utilizado" />
+            <KpiCard label="Compras no período" value={`R$ ${fmt(fin.purchases_value)}`} sub="total adquirido" valueClass="text-[#166534]" />
+            <KpiCard label="Consumo no período" value={`R$ ${fmt(fin.consumption_value)}`} sub="total utilizado" valueClass="text-[#D97706]" />
             <KpiCard
               label="Saldo atual"
               value={`R$ ${fmt(fin.balance_value)}`}
               sub="inicial + compras − consumo"
+              valueClass="text-[#166534] font-bold"
             />
           </div>
         )}
@@ -108,7 +112,7 @@ export default async function InsumosPage() {
       <section className="ag-card p-6 lg:p-8">
         <SectionTitle title="Estoque por Categoria" sub="Itens agrupados por tipo de insumo" />
         {categories.length === 0 ? <EmptyState label="Nenhum item cadastrado ainda" /> : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {categories.map(([cat, catItems]) => {
               const colorClass = CATEGORY_COLORS[cat] ?? "bg-gray-100 text-gray-600";
               const catValue = CATEGORY_VALUES[cat];
@@ -183,7 +187,7 @@ export default async function InsumosPage() {
                         </span>
                       </td>
                       <td>{item.dose_per_animal ?? "—"}</td>
-                      <td>{item.unit ?? "—"}</td>
+                      <td>{item.unit === "DS" ? "dose" : (item.unit ?? "—")}</td>
                       <td>{(item.head_count ?? 0).toLocaleString("pt-BR")}</td>
                     </tr>
                   );

@@ -8,8 +8,8 @@ import {
 type InsumosRow = { category: string; value: number; pct: number };
 
 const CAT_COLORS: Record<string, string> = {
-  "Nutricionais":          "#3b82f6",
-  "Medicamentos":          "#22c55e",
+  "Nutricionais":          "#166534",
+  "Medicamentos":          "#1E40AF",
   "Tratamentos/Hormônios": "#a855f7",
   "Vacinas/Vermífugos":    "#f59e0b",
   "Maquinários":           "#f97316",
