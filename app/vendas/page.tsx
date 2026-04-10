@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 import { useSearchParams } from "next/navigation";
-import { DollarSign, Weight, TrendingUp, CheckCircle, Loader2 } from "lucide-react";
+import { DollarSign, Weight, TrendingUp, CheckCircle, Loader2, Tag } from "lucide-react";
 import DocumentGate, {
   type GateMode,
   type ParsedDoc,
@@ -195,7 +195,7 @@ function VendasContent() {
                 {[
                   { label: "Total vendas",  value: kpis.total,   sub: "registradas",        icon: TrendingUp, bg: "bg-[var(--primary-soft)]", cl: "text-[var(--primary)]" },
                   { label: "Receita total", value: `R$\u00a0${kpis.receita.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, sub: "soma informada", icon: DollarSign, bg: "bg-emerald-50", cl: "text-emerald-600" },
-                  { label: "Peso vendido",  value: kpis.pesoTotal > 0 ? `${kpis.pesoTotal.toLocaleString("pt-BR")} kg` : "—", sub: "total informado", icon: Weight, bg: "bg-blue-50", cl: "text-blue-600" },
+                  { label: "Peso vendido",  value: `${kpis.pesoTotal.toLocaleString("pt-BR")} kg`, sub: "total informado", icon: Weight, bg: "bg-blue-50", cl: "text-blue-600" },
                 ].map(k => {
                   const Icon = k.icon;
                   return (
@@ -342,8 +342,17 @@ function VendasContent() {
         {loading ? (
           <div className="flex items-center gap-2 py-8 text-sm text-[var(--text-muted)]"><Loader2 size={14} className="animate-spin" />Carregando…</div>
         ) : parsedHistory.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-[var(--border)] py-12 text-center">
-            <p className="text-sm text-[var(--text-muted)]">Nenhuma venda registrada ainda.</p>
+          <div className="ag-empty-state">
+            <div className="ag-empty-state-icon"><Tag size={24} /></div>
+            <p className="ag-empty-state-title">Nenhuma venda registrada</p>
+            <p className="ag-empty-state-text">Importe uma NF-e ou registre manualmente para começar.</p>
+            <button
+              type="button"
+              onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+              className="ag-button-primary mt-2"
+            >
+              Importar NF-e
+            </button>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -367,7 +376,19 @@ function VendasContent() {
                     <td className="font-medium">
                       {e.animal_code ?? (e.animal_id ? animalMap.get(e.animal_id) : "—") ?? "—"}
                     </td>
-                    <td className="text-[var(--text-secondary)]">{e.comprador ?? "—"}</td>
+                    <td className="text-[var(--text-secondary)]">
+                      <div className="flex items-center gap-2">
+                        <span>{e.comprador ?? "—"}</span>
+                        {e.document_source?.startsWith("nfe:") && (
+                          <span
+                            title="Dados verificados via NF-e"
+                            className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700"
+                          >
+                            NF-e ✓
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td className="text-right tabular-nums font-medium">
                       {e.preco != null ? `R$\u00a0${Number(e.preco).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}` : "—"}
                     </td>
