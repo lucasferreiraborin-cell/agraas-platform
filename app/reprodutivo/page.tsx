@@ -149,15 +149,21 @@ export default async function ReprodutivoPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {stockRows.map(row => (
-                      <tr key={row.category}>
-                        <td className="font-medium text-[var(--text-primary)]">{row.category}</td>
-                        <td>{num(row.total)}</td>
-                        <td className="text-green-600 font-medium">{num(row.pregnant)}</td>
-                        <td className="text-amber-600 font-medium">{num(row.served)}</td>
-                        <td className="text-red-500 font-medium">{num(row.empty)}</td>
-                      </tr>
-                    ))}
+                    {stockRows.map(row => {
+                      // Disambiguate "Novilha" vs "Novilha 2a cria" with friendly labels
+                      const label = row.category === "Novilha"            ? "Novilha 1ª Cria"
+                                  : row.category === "Novilha 2a cria"    ? "Novilha 2ª Cria"
+                                  : row.category;
+                      return (
+                        <tr key={row.category}>
+                          <td className="font-medium text-[var(--text-primary)]">{label}</td>
+                          <td>{num(row.total)}</td>
+                          <td className="text-green-600 font-medium">{num(row.pregnant)}</td>
+                          <td className="text-amber-600 font-medium">{num(row.served)}</td>
+                          <td className="text-red-500 font-medium">{num(row.empty)}</td>
+                        </tr>
+                      );
+                    })}
                     {stockTotal && (
                       <tr className="border-t-2 border-[var(--border)] font-semibold">
                         <td className="text-[var(--text-primary)]">Total</td>
@@ -182,6 +188,66 @@ export default async function ReprodutivoPage() {
               <KpiCard label="Perdas gestacionais" value={`${num(season.pregnancy_losses)} (${pct(season.pregnancy_losses != null && season.births_performed ? (season.pregnancy_losses / season.births_performed) * 100 : null)})`} sub="abortos / natimortos" />
               <KpiCard label="Mortes de gestante" value={`${num(season.gestant_deaths)} (${pct(season.gestant_deaths != null && season.births_performed ? (season.gestant_deaths / season.births_performed) * 100 : null)})`} sub="vacas perdidas" />
             </div>
+
+            {/* ── Tendências ────────────────────────────────────────────── */}
+            {(() => {
+              const META_PRENHEZ = 75;
+              const META_GPD = 0.800;
+              const META_MORTALIDADE = 3;
+              const prenhezRate = season.pregnancy_rate ?? 0;
+              const gpdAvg = season.avg_gpd != null ? Number(season.avg_gpd) : 0;
+              const totalParidas = (season.born_alive ?? 0) + (season.pregnancy_losses ?? 0);
+              const mortalidadeNeonatal = totalParidas > 0 ? ((season.deaths_maternity ?? 0) / totalParidas) * 100 : 0;
+
+              const prenhezOk = prenhezRate >= META_PRENHEZ;
+              const gpdOk = gpdAvg >= META_GPD;
+              const mortOk = mortalidadeNeonatal < META_MORTALIDADE;
+
+              return (
+                <div className="mt-6 rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] p-5">
+                  <p className="mb-4 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                    Tendências da estação
+                  </p>
+                  <div className="grid gap-4 sm:grid-cols-3">
+                    <div>
+                      <p className="text-xs text-[var(--text-muted)]">Taxa de prenhez vs meta</p>
+                      <div className="mt-1 flex items-baseline gap-2">
+                        <p className={`text-2xl font-bold ${prenhezOk ? "text-emerald-600" : "text-amber-600"}`}>
+                          {prenhezRate.toFixed(1)}%
+                        </p>
+                        <span className="text-xs text-[var(--text-muted)]">/ {META_PRENHEZ}%</span>
+                        <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${prenhezOk ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-amber-200 bg-amber-50 text-amber-700"}`}>
+                          {prenhezOk ? "Atingida" : `${(META_PRENHEZ - prenhezRate).toFixed(1)}% abaixo`}
+                        </span>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-xs text-[var(--text-muted)]">GPD médio ao desmame</p>
+                      <div className="mt-1 flex items-baseline gap-2">
+                        <p className={`text-2xl font-bold ${gpdOk ? "text-emerald-600" : "text-amber-600"}`}>
+                          {gpdAvg.toFixed(3).replace(".", ",")}
+                        </p>
+                        <span className="text-xs text-[var(--text-muted)]">kg/dia</span>
+                        <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${gpdOk ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-amber-200 bg-amber-50 text-amber-700"}`}>
+                          {gpdOk ? "Bom" : "Atenção"}
+                        </span>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-xs text-[var(--text-muted)]">Mortalidade neonatal</p>
+                      <div className="mt-1 flex items-baseline gap-2">
+                        <p className={`text-2xl font-bold ${mortOk ? "text-emerald-600" : "text-red-500"}`}>
+                          {mortalidadeNeonatal.toFixed(2).replace(".", ",")}%
+                        </p>
+                        <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${mortOk ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-red-200 bg-red-50 text-red-700"}`}>
+                          {mortOk ? "Saudável" : "Crítico"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
           </section>
 
           {/* Desmame */}
