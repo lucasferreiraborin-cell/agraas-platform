@@ -5,6 +5,20 @@ import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
 import ShipTrackingMapWrapper from "@/app/components/ShipTrackingMapWrapper";
 import { Lot, TrackingCheckpoint, TRACKING_STAGES, Lang, TDict } from "@/app/components/compradorTypes";
 
+const LOCATION_TR: Record<string, string> = {
+  "Fazenda Santa Cruz — Goiás": "Santa Cruz Farm — Goiás",
+  "Centro de Inspeção Veterinária — Santos": "Veterinary Inspection Center — Santos",
+  "Porto de Santos — Terminal Exportação": "Port of Santos — Export Terminal",
+  "Arábia Saudita": "Saudi Arabia",
+  "Estados Unidos": "United States",
+};
+
+const tr = (s: string | null | undefined, lang: Lang): string => {
+  if (!s) return "";
+  if (lang === "pt") return s;
+  return LOCATION_TR[s] ?? s;
+};
+
 interface Props {
   lots: Lot[];
   trackingCheckpoints: TrackingCheckpoint[];
@@ -40,7 +54,7 @@ export default function CompradorTrackingSection({ lots, trackingCheckpoints, la
                 <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <span className="font-mono text-sm font-bold text-[var(--text-primary)]">{lot.name}</span>
-                    {lot.pais_destino && <span className="text-xs text-[var(--text-muted)]">→ {lot.pais_destino}</span>}
+                    {lot.pais_destino && <span className="text-xs text-[var(--text-muted)]">→ {tr(lot.pais_destino, lang)}</span>}
                     {lot.certificacoes_exigidas?.includes("Halal") && <HalalBadgeSVG size={32} />}
                   </div>
                   <div className="flex items-center gap-3">
@@ -70,6 +84,7 @@ export default function CompradorTrackingSection({ lots, trackingCheckpoints, la
                       lotName={lot.name}
                       originPort={lot.porto_embarque}
                       destinationPort={lot.pais_destino}
+                      lang={lang}
                     />
                   </div>
                 )}
@@ -107,7 +122,7 @@ export default function CompradorTrackingSection({ lots, trackingCheckpoints, la
                         </p>
                         {cp?.location_name && (
                           <p className={`mt-1 text-center text-[8px] leading-tight max-w-[72px] ${isCurrent ? "font-semibold text-blue-500" : "text-[var(--text-muted)]"}`}>
-                            {cp.location_name}
+                            {tr(cp.location_name, lang)}
                           </p>
                         )}
                         {cp && cp.animals_lost > 0 && (

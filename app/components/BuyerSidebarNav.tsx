@@ -41,7 +41,6 @@ export default function BuyerSidebarNav() {
                 <Icon size={16} />
               </span>
               <span>{item.label}</span>
-              {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_6px_rgba(110,231,183,0.9)]" />}
             </Link>
           );
         })}

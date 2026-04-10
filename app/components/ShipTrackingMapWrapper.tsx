@@ -28,6 +28,7 @@ export type ShipTrackingMapProps = {
   lotName: string;
   originPort?: string | null;
   destinationPort?: string | null;
+  lang?: "en" | "pt";
 };
 
 export default function ShipTrackingMapWrapper(props: ShipTrackingMapProps) {

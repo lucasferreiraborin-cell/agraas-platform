@@ -132,7 +132,9 @@ export default async function RootLayout({
                         Agraas Intelligence Layer
                       </p>
                       <h2 className="mt-1 truncate text-lg font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
-                        Infraestrutura digital da cadeia pecuária
+                        {isBuyer
+                          ? "Digital infrastructure for the Brazilian food supply chain"
+                          : "Infraestrutura digital da cadeia pecuária"}
                       </h2>
                     </div>
                   </div>

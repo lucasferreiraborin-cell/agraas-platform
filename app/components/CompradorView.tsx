@@ -154,9 +154,13 @@ export default function CompradorView({
   }, [activeWithdrawals, totalAnimals]);
 
   const complianceRisk = useMemo(() => {
-    const n   = complianceRows.filter(r => r.status === "ineligible").length;
+    const ineligible = complianceRows.filter(r => r.status === "ineligible").length;
+    const pending    = complianceRows.filter(r => r.status === "pending").length;
+    const n   = ineligible + pending;
     const pct = totalAnimals ? Math.round((n / totalAnimals) * 100) : 0;
-    return { score: pct, level: (pct === 0 ? "low" : pct <= 20 ? "medium" : "high") as "low" | "medium" | "high", count: n };
+    const level: "low" | "medium" | "high" =
+      ineligible > 0 ? "high" : pending > 0 ? "medium" : "low";
+    return { score: pct, level, count: n };
   }, [complianceRows, totalAnimals]);
 
   const deliveryRisk = useMemo(() => {
@@ -184,10 +188,14 @@ export default function CompradorView({
     const ineligible = complianceRows.filter(r => r.status === "ineligible").length;
     if (pending === 0 && ineligible === 0)
       return lang === "en" ? "On track — All animals compliant" : "Em dia — Todos os animais conformes";
-    if (pending > 0)
+    if (pending > 0 && ineligible === 0)
       return lang === "en"
-        ? `Action required — ${pending} animal${pending > 1 ? "s" : ""} pending certification`
-        : `Ação necessária — ${pending} animal${pending > 1 ? "is" : ""} com certificação pendente`;
+        ? `Monitored — ${pending} animal${pending > 1 ? "s" : ""} pending certification`
+        : `Monitorado — ${pending} animal${pending > 1 ? "is" : ""} com certificação pendente`;
+    if (ineligible > 0)
+      return lang === "en"
+        ? `Action required — ${ineligible} animal${ineligible > 1 ? "s" : ""} ineligible`
+        : `Ação necessária — ${ineligible} animal${ineligible > 1 ? "is" : ""} inapto${ineligible > 1 ? "s" : ""}`;
     return lang === "en"
       ? `Under review — ${ineligible} animal${ineligible > 1 ? "s" : ""} ineligible`
       : `Em revisão — ${ineligible} animal${ineligible > 1 ? "is" : ""} inapto${ineligible > 1 ? "s" : ""}`;

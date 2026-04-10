@@ -10,6 +10,17 @@ import {
   Lang, TDict, daysUntil, fmtDate,
 } from "@/app/components/compradorTypes";
 
+const COUNTRY_TR: Record<string, string> = {
+  "Arábia Saudita": "Saudi Arabia",
+  "Estados Unidos": "United States",
+  "China": "China",
+};
+const trCountry = (s: string | null | undefined, lang: Lang): string => {
+  if (!s) return "—";
+  if (lang === "pt") return s;
+  return COUNTRY_TR[s] ?? s;
+};
+
 interface LotCompliance { lot: Lot; total: number; eligible: number; pct: number }
 
 interface Props {
@@ -115,7 +126,7 @@ export default function CompradorLivestockTab({
                   <tr key={lot.id} className={`hover:bg-[var(--surface-soft)] transition-colors ${idx < lotCompliance.length - 1 ? "border-b border-[var(--border)]" : ""}`}>
                     <td className="px-5 py-4 font-mono text-xs font-bold text-[var(--text-primary)] whitespace-nowrap">{lot.name}</td>
                     <td className="px-5 py-4 text-[var(--text-secondary)]">{lot.porto_embarque ?? "—"}</td>
-                    <td className="px-5 py-4 text-[var(--text-secondary)]">{lot.pais_destino ?? "—"}</td>
+                    <td className="px-5 py-4 text-[var(--text-secondary)]">{trCountry(lot.pais_destino, lang)}</td>
                     <td className="px-5 py-4 text-[var(--text-secondary)] whitespace-nowrap">
                       {fmtDate(lot.data_embarque, locale)}
                       {days != null && <span className="ml-2 text-[10px] font-bold text-purple-600">T−{days}</span>}

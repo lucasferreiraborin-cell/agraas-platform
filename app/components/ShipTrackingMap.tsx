@@ -114,7 +114,20 @@ interface Props {
   lotName: string;
   originPort?: string | null;
   destinationPort?: string | null;
+  lang?: "en" | "pt";
 }
+
+const COUNTRY_TR: Record<string, string> = {
+  "Arábia Saudita": "Saudi Arabia",
+  "Estados Unidos": "United States",
+  "China": "China",
+};
+
+const TRANSLATE_LABEL = (txt: string | null | undefined, lang: "en" | "pt"): string => {
+  if (!txt) return "";
+  if (lang === "pt") return txt;
+  return COUNTRY_TR[txt] ?? txt;
+};
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
@@ -126,6 +139,7 @@ export default function ShipTrackingMap({
   lotName,
   originPort,
   destinationPort,
+  lang = "pt",
 }: Props) {
   const departure = useMemo(() => new Date(departureDate), [departureDate]);
 
@@ -156,10 +170,32 @@ export default function ShipTrackingMap({
   const waypointIcon = useMemo(() => makeIcon("📍", 16), []);
 
   // Status label
+  const TR = lang === "en" ? {
+    awaiting: "Awaiting departure",
+    delivered: "Delivered",
+    inTransit: "In transit",
+    progress: "Progress",
+    status: "Status",
+    daysLeft: "Days remaining",
+    animals: "animals",
+    onBoard: "animals on board",
+    arrived: "Voyage completed",
+  } : {
+    awaiting: "Aguardando embarque",
+    delivered: "Entregue",
+    inTransit: "Em trânsito",
+    progress: "Progresso",
+    status: "Status",
+    daysLeft: "Dias restantes",
+    animals: "animais",
+    onBoard: "animais a bordo",
+    arrived: "Viagem concluída",
+  };
+
   const status =
-    progressClamped <= 0 ? "Aguardando embarque"
-    : progressClamped >= 1 ? "Entregue"
-    : "Em trânsito";
+    progressClamped <= 0 ? TR.awaiting
+    : progressClamped >= 1 ? TR.delivered
+    : TR.inTransit;
 
   return (
     <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#0a0a14]">
@@ -172,13 +208,13 @@ export default function ShipTrackingMap({
               {shipName ?? "Vessel"} — {lotName}
             </p>
             <p className="text-xs text-white/40">
-              {originPort ?? "Santos"} → {destinationPort ?? "Jeddah"} · {animalsOnBoard} animais
+              {originPort ?? "Santos"} → {TRANSLATE_LABEL(destinationPort, lang) || "Jeddah"} · {animalsOnBoard} {TR.animals}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-4 text-xs">
           <div className="text-center">
-            <p className="text-white/35 uppercase tracking-wider text-[10px]">Progresso</p>
+            <p className="text-white/35 uppercase tracking-wider text-[10px]">{TR.progress}</p>
             <p className="font-semibold text-emerald-400">{progressPct}%</p>
           </div>
           <div className="text-center">
@@ -186,14 +222,14 @@ export default function ShipTrackingMap({
             <p className="font-semibold text-white/80">{etaStr}</p>
           </div>
           <div className="text-center">
-            <p className="text-white/35 uppercase tracking-wider text-[10px]">Status</p>
+            <p className="text-white/35 uppercase tracking-wider text-[10px]">{TR.status}</p>
             <p className={`font-semibold ${progressClamped > 0 && progressClamped < 1 ? "text-blue-400" : "text-white/60"}`}>
               {status}
             </p>
           </div>
           {daysLeft > 0 && (
             <div className="text-center">
-              <p className="text-white/35 uppercase tracking-wider text-[10px]">Dias restantes</p>
+              <p className="text-white/35 uppercase tracking-wider text-[10px]">{TR.daysLeft}</p>
               <p className="font-semibold text-amber-400">{daysLeft}d</p>
             </div>
           )}
@@ -262,8 +298,8 @@ export default function ShipTrackingMap({
           <Marker position={WAYPOINTS[WAYPOINTS.length - 1]} icon={portIcon}>
             <Popup>
               <div style={{ fontFamily: "sans-serif", fontSize: 12, minWidth: 140 }}>
-                <strong>⚓ {destinationPort ?? "Jeddah, Arábia Saudita"}</strong><br />
-                ETA: {etaStr}{daysLeft > 0 ? ` (${daysLeft} dias)` : " (entregue)"}
+                <strong>⚓ {TRANSLATE_LABEL(destinationPort, lang) || (lang === "en" ? "Jeddah, Saudi Arabia" : "Jeddah, Arábia Saudita")}</strong><br />
+                ETA: {etaStr}{daysLeft > 0 ? ` (${daysLeft} ${lang === "en" ? "days" : "dias"})` : ` (${TR.delivered.toLowerCase()})`}
               </div>
             </Popup>
           </Marker>
@@ -275,10 +311,10 @@ export default function ShipTrackingMap({
                 <div style={{ fontFamily: "sans-serif", fontSize: 12, minWidth: 160 }}>
                   <strong>🚢 {shipName ?? "Vessel"}</strong><br />
                   <strong>{lotName}</strong><br />
-                  {animalsOnBoard} animais a bordo<br />
-                  Viagem: {progressPct}% concluída<br />
+                  {animalsOnBoard} {TR.onBoard}<br />
+                  {lang === "en" ? "Voyage" : "Viagem"}: {progressPct}%<br />
                   ETA: {etaStr}<br />
-                  {daysLeft > 0 ? `${daysLeft} dias restantes` : "Chegada hoje"}
+                  {daysLeft > 0 ? `${daysLeft} ${TR.daysLeft.toLowerCase()}` : (lang === "en" ? "Arrives today" : "Chegada hoje")}
                 </div>
               </Popup>
             </Marker>
