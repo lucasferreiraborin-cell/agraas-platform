@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { createBrowserClient } from "@supabase/ssr";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Beef, Ship } from "lucide-react";
 import CompradorLivestockTab from "@/app/components/CompradorLivestockTab";
 import CompradorGrainsTab from "@/app/components/CompradorGrainsTab";
@@ -56,8 +56,15 @@ export default function CompradorView({
   const [hoveredRow, setHoveredRow]       = useState<string | null>(null);
   const [utcTime, setUtcTime]             = useState("");
   const router = useRouter();
+  const searchParams = useSearchParams();
   const t      = T[lang];
   const locale = lang === "en" ? "en-GB" : "pt-BR";
+
+  // Sync mainTab with URL ?tab= query param
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab === "grains" || tab === "livestock") setMainTab(tab);
+  }, [searchParams]);
 
   useEffect(() => {
     const tick = () => setUtcTime(new Date().toUTCString().replace(" GMT", " UTC"));
