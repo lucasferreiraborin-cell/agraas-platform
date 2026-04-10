@@ -205,8 +205,8 @@ export default async function PainelPage() {
 
     supabaseServer
       .from("events")
-      .select("animal_id, event_type, notes, event_date")
-      .eq("client_id", clientId)
+      .select("animal_id, event_type, notes, event_date, animals!inner(client_id)")
+      .eq("animals.client_id", clientId)
       .order("event_date", { ascending: false })
       .limit(6),
 
@@ -800,11 +800,11 @@ export default async function PainelPage() {
         </div>
       </section>
 
-      {/* ── 6. Market intelligence ── */}
+      {/* ── 6. Inteligência de Mercado ── */}
       <section className="ag-card p-8">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="ag-section-title">Market intelligence</h2>
+            <h2 className="ag-section-title">Inteligência de Mercado</h2>
             <p className="ag-section-subtitle">
               Ativos mais fortes com leitura comercial imediata.
             </p>

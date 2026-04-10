@@ -362,19 +362,32 @@ function DashboardContent({
           <div className="ag-hero-panel">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">Valor estimado do rebanho</p>
             <p className="mt-4 text-5xl font-semibold tracking-[-0.06em] text-[var(--text-primary)]">
-              {loading ? "—" : `R$ ${Math.round(valorRebanho).toLocaleString("pt-BR")}`}
+              {loading ? "—" : (() => {
+                const v = Math.round(valorRebanho);
+                if (v >= 1_000_000) return `R$ ${(v / 1_000_000).toFixed(1)}M`;
+                if (v >= 10_000)    return `R$ ${(v / 1000).toFixed(1)}k`;
+                return `R$ ${v.toLocaleString("pt-BR")}`;
+              })()}
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${
-                cotacaoMeta.fonte === "cepea"
-                  ? "border-[rgba(93,156,68,0.30)] bg-[var(--primary-soft)] text-[var(--primary-hover)]"
-                  : "border-[rgba(217,163,67,0.30)] bg-[rgba(217,163,67,0.12)] text-[var(--warning)]"
-              }`}>
-                {cotacaoMeta.fonte === "cepea" ? "CEPEA ao vivo" : cotacaoMeta.fonte === "manual" ? "Atualizado manualmente" : "Cotação em cache"}
-              </span>
+              {(() => {
+                const ageHours = cotacaoMeta.updated_at
+                  ? (Date.now() - new Date(cotacaoMeta.updated_at).getTime()) / 3_600_000
+                  : 999;
+                const isFresh = ageHours < 24;
+                return (
+                  <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${
+                    isFresh
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                      : "border-amber-200 bg-amber-50 text-amber-700"
+                  }`}>
+                    {isFresh ? "Atualizado" : "Desatualizado"}
+                  </span>
+                );
+              })()}
               {cotacaoMeta.updated_at && (
                 <span className="text-xs text-[var(--text-muted)]">
-                  {new Date(cotacaoMeta.updated_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                  Atualizado em {new Date(cotacaoMeta.updated_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
                 </span>
               )}
             </div>
