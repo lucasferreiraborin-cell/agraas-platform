@@ -141,7 +141,8 @@ export default async function CompradorPage() {
   const { data: grainFieldsData } = authorizedClientIds.length
     ? await db
         .from("crop_fields")
-        .select("id, farm_id, culture")
+        .select("id, farm_id, culture, client_id")
+        .in("client_id", authorizedClientIds)
     : { data: [] };
 
   const { data: grainQualityData } = grainShipmentIds.length
