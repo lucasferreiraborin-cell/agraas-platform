@@ -1,5 +1,6 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import React from "react";
+import AuditoriaActions from "@/app/components/AuditoriaActions";
 
 const IconCheck = () => (
   <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -131,11 +132,14 @@ function AlertPoint({
 export default async function AuditoriaPage() {
   const supabase = await createSupabaseServerClient();
 
-  const { data: snapshots } = await supabase
-    .from("audit_snapshot")
-    .select("*")
-    .order("snapshot_date", { ascending: false })
-    .limit(1);
+  const [{ data: snapshots }, { data: { user } }] = await Promise.all([
+    supabase.from("audit_snapshot").select("*").order("snapshot_date", { ascending: false }).limit(1),
+    supabase.auth.getUser(),
+  ]);
+
+  const { data: clientData } = user
+    ? await supabase.from("clients").select("name").eq("auth_user_id", user.id).single()
+    : { data: null };
 
   const snap = snapshots?.[0] ?? null;
 
@@ -156,6 +160,10 @@ export default async function AuditoriaPage() {
             </span>
           )}
         </p>
+        <p className="mt-1 text-xs text-[var(--text-muted)]">
+          Base: todas as propriedades · {clientData?.name ?? "Lucas Ferreira Borin"}
+        </p>
+        <AuditoriaActions />
       </section>
 
       {!snap ? (
