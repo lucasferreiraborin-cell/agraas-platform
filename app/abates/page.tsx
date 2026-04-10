@@ -25,7 +25,10 @@ type SlaughterRecord = {
   carcass_weight: number | null;
   classification: string | null;
   document_source: string | null;
+  sif_number: string | null;
 };
+
+type HalalCert = { animal_id: string };
 
 const inputCls = "w-full rounded-xl border border-[var(--border)] bg-white px-3 py-2.5 text-sm outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/10";
 const labelCls = "mb-1.5 block text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]";
@@ -34,6 +37,7 @@ export default function AbatesPage() {
   const [animals,         setAnimals]         = useState<Animal[]>([]);
   const [slaughterhouses, setSlaughterhouses]  = useState<Slaughterhouse[]>([]);
   const [records,         setRecords]         = useState<SlaughterRecord[]>([]);
+  const [halalAnimals,    setHalalAnimals]    = useState<Set<string>>(new Set());
   const [loading,         setLoading]         = useState(true);
   const [submitting,      setSubmitting]      = useState(false);
   const [success,         setSuccess]         = useState("");
@@ -50,20 +54,26 @@ export default function AbatesPage() {
   const [pesoVivo,       setPesoVivo]       = useState("");
   const [pesoCarcaca,    setPesoCarcaca]    = useState("");
   const [classification, setClassification] = useState("");
+  const [sifNumber,      setSifNumber]      = useState("");
 
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const [ar, sr, rr] = await Promise.all([
+      const [ar, sr, rr, hr] = await Promise.all([
         supabase.from("animals").select("id, internal_code").order("created_at", { ascending: false }),
         supabase.from("slaughterhouses").select("id, name").order("name"),
         supabase.from("slaughter_records")
-          .select("id, animal_id, slaughterhouse_id, slaughter_date, carcass_weight, classification, document_source")
+          .select("id, animal_id, slaughterhouse_id, slaughter_date, carcass_weight, classification, document_source, sif_number")
           .order("slaughter_date", { ascending: false }).limit(50),
+        supabase.from("animal_certifications")
+          .select("animal_id")
+          .eq("type", "Halal")
+          .eq("status", "active"),
       ]);
       setAnimals(ar.data ?? []);
       setSlaughterhouses(sr.data ?? []);
       setRecords(rr.data ?? []);
+      setHalalAnimals(new Set(((hr.data ?? []) as HalalCert[]).map(h => h.animal_id)));
       setLoading(false);
     })();
   }, []);
@@ -157,16 +167,17 @@ export default function AbatesPage() {
       slaughter_date:    slaughterDate || null,
       carcass_weight:    pesoCarcaca ? Number(pesoCarcaca) : null,
       classification:    classification || null,
+      sif_number:        sifNumber || null,
       document_source:   documentSource,
     });
 
     if (err) { setError(err.message); setSubmitting(false); return; }
     setSuccess("Abate registrado com sucesso.");
     const { data: newR } = await supabase.from("slaughter_records")
-      .select("id, animal_id, slaughterhouse_id, slaughter_date, carcass_weight, classification, document_source")
+      .select("id, animal_id, slaughterhouse_id, slaughter_date, carcass_weight, classification, document_source, sif_number")
       .order("slaughter_date", { ascending: false }).limit(50);
     setRecords(newR ?? []);
-    setAnimalId(""); setPesoVivo(""); setClassification("");
+    setAnimalId(""); setPesoVivo(""); setClassification(""); setSifNumber("");
     setSlaughterDate(new Date().toISOString().slice(0, 10));
     handleReset();
     setSubmitting(false);
@@ -292,6 +303,15 @@ export default function AbatesPage() {
               <input type="text" value={classification} onChange={e => setClassification(e.target.value)} placeholder="Ex: A, B, Precoce" className={inputCls} />
             </div>
 
+            {/* Número SIF */}
+            <div>
+              <label className={labelCls}>
+                Número SIF
+                <span className="ml-1 text-[10px] normal-case tracking-normal text-[var(--text-muted)]">(obrigatório p/ exportação)</span>
+              </label>
+              <input type="text" value={sifNumber} onChange={e => setSifNumber(e.target.value)} placeholder="Ex.: SIF-1234" className={inputCls} />
+            </div>
+
             {/* Rendimento calculado */}
             {rendimentoLive && (
               <div className="sm:col-span-2 lg:col-span-3">
@@ -340,7 +360,7 @@ export default function AbatesPage() {
       <section className="ag-card-strong p-8 space-y-5">
         <div className="flex items-center justify-between">
           <h2 className="ag-section-title">Histórico de abates</h2>
-          <span className="ag-badge">{records.length} registros</span>
+          <span className="ag-badge">{records.length} {records.length === 1 ? "registro" : "registros"}</span>
         </div>
         {loading ? (
           <div className="flex items-center gap-2 py-8 text-sm text-[var(--text-muted)]"><Loader2 size={14} className="animate-spin" />Carregando…</div>
@@ -358,6 +378,7 @@ export default function AbatesPage() {
                   <th className="text-left">Frigorífico</th>
                   <th className="text-right">Carcaça (kg)</th>
                   <th className="text-center">Classificação</th>
+                  <th className="text-center">Halal</th>
                   <th className="text-center">Rastreabilidade</th>
                 </tr>
               </thead>
@@ -376,12 +397,28 @@ export default function AbatesPage() {
                       {r.classification ? <span className="ag-badge">{r.classification}</span> : "—"}
                     </td>
                     <td className="text-center">
+                      {r.animal_id && halalAnimals.has(r.animal_id) ? (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                          Halal ✓
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700">
+                          Pendente
+                        </span>
+                      )}
+                    </td>
+                    <td className="text-center">
                       {r.document_source ? (
-                        <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 whitespace-nowrap">
+                        <span
+                          title="Verificado via NF-e importada"
+                          className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 whitespace-nowrap"
+                        >
                           ✓ {r.document_source.startsWith("nfe:") ? `NF-e ${r.document_source.split(":")[1]}` : r.document_source}
                         </span>
                       ) : (
-                        <UnverifiedBadge />
+                        <span title="Registro inserido manualmente. Importe a NF-e para verificação automática.">
+                          <UnverifiedBadge />
+                        </span>
                       )}
                     </td>
                   </tr>
