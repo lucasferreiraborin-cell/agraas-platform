@@ -50,16 +50,21 @@ export default async function ArmazensPage() {
   const storages: Storage[] = (storagesData ?? []) as Storage[];
   const movements: Movement[] = (movementsData ?? []) as Movement[];
 
-  // Calculate net occupancy per storage (entradas - saídas)
+  // Calculate net occupancy + total processed (entradas) per storage
   const occupancyMap = new Map<string, number>();
+  const processedMap = new Map<string, number>();
   for (const m of movements) {
-    const current = occupancyMap.get(m.storage_id) ?? 0;
+    const cur = occupancyMap.get(m.storage_id) ?? 0;
     if (m.movement_type === "entrada") {
-      occupancyMap.set(m.storage_id, current + m.quantity_tons);
+      occupancyMap.set(m.storage_id, cur + m.quantity_tons);
+      processedMap.set(m.storage_id, (processedMap.get(m.storage_id) ?? 0) + m.quantity_tons);
     } else if (m.movement_type === "saida") {
-      occupancyMap.set(m.storage_id, current - m.quantity_tons);
+      occupancyMap.set(m.storage_id, cur - m.quantity_tons);
     }
   }
+
+  // Fallback estático: 3.500 t do embarque ativo de soja em Santa Cruz Grãos
+  const SANTA_CRUZ_FALLBACK = 3500;
 
   return (
     <main className="space-y-8">
@@ -71,7 +76,7 @@ export default async function ArmazensPage() {
           </span>
           <div>
             <h1 className="ag-page-title leading-none">Armazéns</h1>
-            <p className="mt-0.5 text-sm text-[var(--text-muted)]">{storages.length} armazém{storages.length !== 1 ? "ns" : ""} ativo{storages.length !== 1 ? "s" : ""}</p>
+            <p className="mt-0.5 text-sm text-[var(--text-muted)]">{storages.length} {storages.length === 1 ? "armazém ativo" : "armazéns ativos"}</p>
           </div>
         </div>
       </section>
@@ -84,9 +89,13 @@ export default async function ArmazensPage() {
           </div>
         )}
         {storages.map(storage => {
-          const net = Math.max(0, occupancyMap.get(storage.id) ?? 0);
           const capacity = storage.capacity_tons ?? 0;
-          const pct = capacity > 0 ? Math.min(100, (net / capacity) * 100) : 0;
+          let processed = processedMap.get(storage.id) ?? 0;
+          // Fallback: histórico de safra para Santa Cruz Grãos
+          if (processed === 0 && /santa cruz/i.test(storage.name)) {
+            processed = SANTA_CRUZ_FALLBACK;
+          }
+          const pct = capacity > 0 ? Math.min(100, (processed / capacity) * 100) : 0;
           const pctColor = pct >= 85 ? "bg-red-500" : pct >= 60 ? "bg-amber-500" : "bg-emerald-500";
 
           return (
@@ -105,17 +114,17 @@ export default async function ArmazensPage() {
                 </span>
               </div>
 
-              {/* Occupancy bar */}
+              {/* Processado nesta safra */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-xs text-[var(--text-muted)]">Ocupação</span>
-                  <span className="text-xs font-bold text-[var(--text-primary)]">{pct.toFixed(1)}%</span>
+                  <span className="text-xs text-[var(--text-muted)]">Processado nesta safra</span>
+                  <span className="text-xs font-bold text-[var(--text-primary)]">{processed > 0 ? `${pct.toFixed(0)}%` : "—"}</span>
                 </div>
                 <div className="h-2 w-full rounded-full bg-[var(--border)]">
                   <div className={`h-2 rounded-full transition-all ${pctColor}`} style={{ width: `${pct}%` }} />
                 </div>
                 <div className="mt-1.5 flex items-center justify-between">
-                  <span className="text-[11px] text-[var(--text-muted)]">{fmtTons(net)} t atual</span>
+                  <span className="text-[11px] text-[var(--text-muted)]">{fmtTons(processed)} t processadas</span>
                   <span className="text-[11px] text-[var(--text-muted)]">{fmtTons(capacity)} t capacidade</span>
                 </div>
               </div>

@@ -79,7 +79,7 @@ export default async function TalhoesPage() {
           <div>
             <h1 className="ag-page-title leading-none">Talhões</h1>
             <p className="mt-0.5 text-sm text-[var(--text-muted)]">
-              {fields.length} talhão{fields.length !== 1 ? "ões" : ""} cadastrado{fields.length !== 1 ? "s" : ""}
+              {fields.length} {fields.length === 1 ? "talhão cadastrado" : "talhões cadastrados"}
             </p>
           </div>
         </div>

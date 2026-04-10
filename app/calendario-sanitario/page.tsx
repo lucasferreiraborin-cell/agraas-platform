@@ -40,7 +40,7 @@ export default async function CalendarioSanitarioPage() {
             </span>
             <div>
               <h1 className="ag-page-title leading-none">Calendário Sanitário</h1>
-              <p className="mt-0.5 text-sm text-[var(--text-muted)]">{entries.length} item{entries.length !== 1 ? "ns" : ""} programado{entries.length !== 1 ? "s" : ""}</p>
+              <p className="mt-0.5 text-sm text-[var(--text-muted)]">{entries.length} {entries.length === 1 ? "item programado" : "itens programados"}</p>
             </div>
           </div>
           <CalendarForm />
