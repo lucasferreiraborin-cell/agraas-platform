@@ -61,11 +61,18 @@ export default async function AssinaturaPage() {
               <p className="mt-0.5 text-sm text-[var(--text-muted)]">{client?.name ?? "—"}</p>
             </div>
           </div>
-          {!exempt && (
+          {plan === "enterprise" ? (
+            <a
+              href="mailto:contato@agraas.com.br?subject=Plano Pilot — interesse"
+              className="ag-button-primary flex items-center gap-2"
+            >
+              <ArrowUpRight size={16} /> Fale conosco sobre o plano Pilot
+            </a>
+          ) : !exempt ? (
             <Link href="/planos" className="ag-button-primary flex items-center gap-2">
               <ArrowUpRight size={16} /> Upgrade
             </Link>
-          )}
+          ) : null}
         </div>
       </section>
 

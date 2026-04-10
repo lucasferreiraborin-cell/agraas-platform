@@ -3,12 +3,23 @@
 import { useState } from "react";
 import { Check, Star, Zap, Crown, Leaf } from "lucide-react";
 
-const PLANS = [
+type Plan = {
+  id: string;
+  name: string;
+  monthlyPrice: number | null; // null = sob consulta
+  icon: typeof Leaf;
+  color: string;
+  bg: string;
+  border: string;
+  popular?: boolean;
+  features: string[];
+};
+
+const PLANS: Plan[] = [
   {
     id: "starter",
     name: "Starter",
-    price: "R$ 299",
-    period: "/mês",
+    monthlyPrice: 299,
     icon: Leaf,
     color: "text-emerald-600",
     bg: "bg-emerald-50",
@@ -24,8 +35,7 @@ const PLANS = [
   {
     id: "pro",
     name: "Pro",
-    price: "R$ 699",
-    period: "/mês",
+    monthlyPrice: 699,
     icon: Zap,
     color: "text-blue-600",
     bg: "bg-blue-50",
@@ -44,8 +54,7 @@ const PLANS = [
   {
     id: "enterprise",
     name: "Enterprise",
-    price: "R$ 1.499",
-    period: "/mês",
+    monthlyPrice: 1499,
     icon: Crown,
     color: "text-indigo-600",
     bg: "bg-indigo-50",
@@ -64,8 +73,7 @@ const PLANS = [
   {
     id: "pilot",
     name: "Pilot",
-    price: "Sob consulta",
-    period: "",
+    monthlyPrice: null,
     icon: Star,
     color: "text-amber-600",
     bg: "bg-amber-50",
@@ -80,8 +88,12 @@ const PLANS = [
   },
 ];
 
+const fmtBRL = (v: number) =>
+  v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
 export default function PlanosPage() {
   const [loading, setLoading] = useState<string | null>(null);
+  const [billing, setBilling] = useState<"mensal" | "anual">("mensal");
 
   async function handleSubscribe(planId: string) {
     if (planId === "pilot") {
@@ -119,11 +131,38 @@ export default function PlanosPage() {
         <p className="mt-3 text-base text-[var(--text-secondary)] max-w-xl mx-auto">
           Rastreabilidade, inteligência e conformidade para fazendas de todos os tamanhos.
         </p>
+
+        {/* Toggle Mensal/Anual */}
+        <div className="mt-6 inline-flex rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] p-1">
+          <button
+            type="button"
+            onClick={() => setBilling("mensal")}
+            className={`px-5 py-2 text-sm font-semibold rounded-xl transition ${
+              billing === "mensal" ? "bg-white text-[var(--text-primary)] shadow-sm" : "text-[var(--text-muted)]"
+            }`}
+          >
+            Mensal
+          </button>
+          <button
+            type="button"
+            onClick={() => setBilling("anual")}
+            className={`relative px-5 py-2 text-sm font-semibold rounded-xl transition ${
+              billing === "anual" ? "bg-white text-[var(--text-primary)] shadow-sm" : "text-[var(--text-muted)]"
+            }`}
+          >
+            Anual
+            <span className="ml-2 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-emerald-700">
+              −20%
+            </span>
+          </button>
+        </div>
       </section>
 
       <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
         {PLANS.map((plan) => {
           const Icon = plan.icon;
+          const isAnual = billing === "anual" && plan.monthlyPrice != null;
+          const discounted = plan.monthlyPrice != null ? Math.round(plan.monthlyPrice * 0.8) : null;
           return (
             <div key={plan.id} className={`ag-card relative flex flex-col p-6 ${plan.popular ? "ring-2 ring-[var(--primary)]" : ""}`}>
               {plan.popular && (
@@ -135,9 +174,26 @@ export default function PlanosPage() {
                 <Icon size={24} className={plan.color} />
               </div>
               <h3 className="mt-4 text-xl font-bold text-[var(--text-primary)]">{plan.name}</h3>
-              <div className="mt-2">
-                <span className="text-3xl font-bold text-[var(--text-primary)]">{plan.price}</span>
-                <span className="text-sm text-[var(--text-muted)]">{plan.period}</span>
+              <div className="mt-2 min-h-[68px]">
+                {plan.monthlyPrice == null ? (
+                  <>
+                    <span className="text-3xl font-bold text-[var(--text-primary)]">Sob consulta</span>
+                  </>
+                ) : isAnual ? (
+                  <>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-sm text-[var(--text-muted)] line-through">{fmtBRL(plan.monthlyPrice)}</span>
+                      <span className="text-3xl font-bold text-[var(--text-primary)]">{fmtBRL(discounted!)}</span>
+                      <span className="text-sm text-[var(--text-muted)]">/mês</span>
+                    </div>
+                    <p className="mt-1 text-[11px] font-medium text-emerald-600">cobrado anualmente · economize 20%</p>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-3xl font-bold text-[var(--text-primary)]">{fmtBRL(plan.monthlyPrice)}</span>
+                    <span className="text-sm text-[var(--text-muted)]">/mês</span>
+                  </>
+                )}
               </div>
               <ul className="mt-6 flex-1 space-y-3">
                 {plan.features.map((f) => (
