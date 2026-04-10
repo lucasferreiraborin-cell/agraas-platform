@@ -25,7 +25,7 @@ const SPECIES_LABEL: Record<string, string> = { frango: "Frango", peru: "Peru", 
 const STATUS_STYLE: Record<string, { bg: string; border: string; badge: string; label: string; dot: string }> = {
   alojado:       { bg: "bg-blue-50",   border: "border-blue-200",   badge: "bg-blue-100 text-blue-700 border-blue-200",     label: "Alojado",         dot: "bg-blue-500"   },
   em_crescimento:{ bg: "bg-emerald-50",border: "border-emerald-200",badge: "bg-emerald-100 text-emerald-700 border-emerald-200", label: "Em crescimento", dot: "bg-emerald-500"},
-  pronto_abate:  { bg: "bg-amber-50",  border: "border-amber-200",  badge: "bg-amber-100 text-amber-700 border-amber-200",   label: "Pronto p/ abate", dot: "bg-amber-500"  },
+  pronto_abate:  { bg: "bg-amber-50",  border: "border-amber-200",  badge: "bg-amber-100 text-amber-700 border-amber-200",   label: "Pronto para abate", dot: "bg-amber-500"  },
   abatido:       { bg: "bg-gray-50",   border: "border-gray-200",   badge: "bg-gray-100 text-gray-600 border-gray-200",      label: "Abatido",         dot: "bg-gray-400"   },
 };
 

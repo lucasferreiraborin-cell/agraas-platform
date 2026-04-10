@@ -26,7 +26,7 @@ const SPECIES_LABEL: Record<string, string> = { frango: "Frango", peru: "Peru", 
 const STATUS_STYLE: Record<string, { bg: string; border: string; badge: string; label: string; dot: string }> = {
   alojado:        { bg: "bg-blue-50",    border: "border-blue-200",    badge: "bg-blue-100 text-blue-700 border-blue-200",       label: "Alojado",         dot: "bg-blue-500"    },
   em_crescimento: { bg: "bg-emerald-50", border: "border-emerald-200", badge: "bg-emerald-100 text-emerald-700 border-emerald-200", label: "Em crescimento", dot: "bg-emerald-500" },
-  pronto_abate:   { bg: "bg-amber-50",   border: "border-amber-200",   badge: "bg-amber-100 text-amber-700 border-amber-200",    label: "Pronto p/ abate", dot: "bg-amber-500"   },
+  pronto_abate:   { bg: "bg-amber-50",   border: "border-amber-200",   badge: "bg-amber-100 text-amber-700 border-amber-200",    label: "Pronto para abate", dot: "bg-amber-500"   },
   abatido:        { bg: "bg-gray-50",    border: "border-gray-200",    badge: "bg-gray-100 text-gray-600 border-gray-200",       label: "Abatido",         dot: "bg-gray-400"    },
 };
 
@@ -122,6 +122,52 @@ export default async function AvesDashboardPage() {
         </div>
       </section>
 
+      {/* ── Comparativo de lotes ── */}
+      {batches.length >= 2 && (
+        <section className="ag-card-strong p-8 space-y-5">
+          <div>
+            <h2 className="ag-section-title">Comparativo de lotes</h2>
+            <p className="ag-section-subtitle">Mortalidade e conversão alimentar lado a lado</p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="ag-table w-full">
+              <thead>
+                <tr>
+                  <th>Lote</th>
+                  <th>Status</th>
+                  <th>Aves</th>
+                  <th>Mortalidade</th>
+                  <th>Conv. alimentar</th>
+                  <th>Idade (dias)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {batches.map(b => {
+                  const mortPct = b.initial_count > 0 ? (b.mortality_count / b.initial_count) * 100 : 0;
+                  const idade = Math.floor((Date.now() - new Date(b.housing_date).getTime()) / 86400000);
+                  return (
+                    <tr key={b.id}>
+                      <td className="font-semibold text-[var(--text-primary)]">{b.batch_code}</td>
+                      <td>
+                        <span className={`rounded-full border px-2.5 py-0.5 text-[10px] font-bold ${(STATUS_STYLE[b.status] ?? STATUS_STYLE.alojado).badge}`}>
+                          {(STATUS_STYLE[b.status] ?? STATUS_STYLE.alojado).label}
+                        </span>
+                      </td>
+                      <td className="tabular-nums">{b.current_count.toLocaleString("pt-BR")}</td>
+                      <td className={`tabular-nums font-bold ${mortPct > 5 ? "text-red-600" : mortPct > 3 ? "text-amber-600" : "text-emerald-600"}`}>
+                        {mortPct.toFixed(1)}%
+                      </td>
+                      <td className="tabular-nums font-medium">{b.feed_conversion ?? "—"}</td>
+                      <td className="tabular-nums">{idade}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
       {/* ── Cards por lote ── */}
       {batches.length === 0 ? (
         <section className="ag-card-strong p-8">
@@ -184,6 +230,9 @@ export default async function AvesDashboardPage() {
                         {mortality}%
                         {highMort && <AlertTriangle size={11} className="inline ml-1" />}
                       </p>
+                      {highMort && (
+                        <p className="mt-0.5 text-[9px] text-[var(--text-muted)]">Referência setor: &lt;5%</p>
+                      )}
                     </div>
                     <div>
                       <p className="text-[10px] uppercase tracking-wide text-[var(--text-muted)]">Conv. alimentar</p>
