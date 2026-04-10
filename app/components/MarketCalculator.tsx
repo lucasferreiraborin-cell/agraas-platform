@@ -28,12 +28,16 @@ export default function MarketCalculator({ totalAnimals, avgWeight }: { totalAni
           <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">
             Preço por arroba (R$/@)
           </label>
-          <input type="number" value={preco} onChange={e => setPreco(Number(e.target.value))} min={100} max={800} step={5}
+          <input type="number" value={preco} onChange={e => setPreco(Number(e.target.value))} min={250} max={450} step={5}
             className="w-full rounded-xl border border-[var(--border)] bg-white px-3 py-2 text-sm outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/10"
           />
-          <input type="range" value={preco} onChange={e => setPreco(Number(e.target.value))} min={100} max={800} step={5}
+          <input type="range" value={preco} onChange={e => setPreco(Number(e.target.value))} min={250} max={450} step={5}
             className="mt-2 w-full accent-[var(--primary)]"
           />
+          <div className="mt-1 flex justify-between text-[10px] font-medium text-[var(--text-muted)]">
+            <span>R$ 250/@</span>
+            <span>R$ 450/@</span>
+          </div>
         </div>
         <div>
           <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">

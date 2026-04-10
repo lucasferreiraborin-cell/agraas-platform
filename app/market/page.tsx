@@ -2,7 +2,7 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import Link from "next/link";
 import { TrendingUp, Weight, ShieldCheck, BarChart3, Info } from "lucide-react";
 import MarketCalculator from "@/app/components/MarketCalculator";
-import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
+import MarketTable, { type MarketRow } from "@/app/components/MarketTable";
 
 type MarketAnimalRow = {
   animal_id: string;
@@ -20,38 +20,55 @@ type MarketAnimalRow = {
 };
 
 type CepeaPrice = { produto: string; preco: string; unidade: string; updated_at: string | null };
-
-function formatSex(v: string | null) {
-  if (!v) return "—";
-  const m: Record<string, string> = { male: "🐂 Macho", female: "🐄 Fêmea", macho: "🐂 Macho", femea: "🐄 Fêmea", "fêmea": "🐄 Fêmea" };
-  return m[v.toLowerCase()] ?? v;
-}
-function formatDate(v: string | null) { return v ? new Date(v).toLocaleDateString("pt-BR") : "—"; }
-function formatStatus(v: string | null) {
-  const m: Record<string, string> = { active: "Ativo", sold: "Vendido", slaughtered: "Abatido", inactive: "Inativo" };
-  return m[(v ?? "").toLowerCase()] ?? (v ?? "—");
-}
-function statusCls(v: string | null) {
-  const n = (v ?? "").toLowerCase();
-  if (n === "active") return "ag-badge ag-badge-green";
-  if (n === "sold")   return "ag-badge bg-blue-50 text-blue-700 border border-blue-200";
-  return "ag-badge";
-}
+type WeightRow = { animal_id: string; weight: number; weighing_date: string | null };
+type HalalCert = { animal_id: string };
 
 export default async function MarketPage() {
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
-    .from("agraas_market_animals")
-    .select("*")
-    .order("total_score", { ascending: false });
+  const [
+    { data, error },
+    { data: weightsData },
+    { data: halalData },
+    { data: settingsData },
+  ] = await Promise.all([
+    supabase
+      .from("agraas_market_animals")
+      .select("*")
+      .order("total_score", { ascending: false }),
+    supabase
+      .from("weights")
+      .select("animal_id, weight, weighing_date")
+      .order("weighing_date", { ascending: false }),
+    supabase
+      .from("animal_certifications")
+      .select("animal_id")
+      .eq("type", "Halal")
+      .eq("status", "active"),
+    supabase
+      .from("platform_settings")
+      .select("key, value, updated_at")
+      .in("key", ["cotacao_arroba", "cotacao_boi_gordo", "cotacao_bezerro", "cotacao_vaca_gorda", "cotacao_novilho_precoce"]),
+  ]);
 
-  const animals: MarketAnimalRow[] = (data as MarketAnimalRow[] | null) ?? [];
+  const rawAnimals: MarketAnimalRow[] = (data as MarketAnimalRow[] | null) ?? [];
 
-  // Fetch real CEPEA prices from platform_settings (populated by /api/cron/cotacao)
-  const { data: settingsData } = await supabase
-    .from("platform_settings")
-    .select("key, value, updated_at")
-    .in("key", ["cotacao_arroba", "cotacao_boi_gordo", "cotacao_bezerro", "cotacao_vaca_gorda", "cotacao_novilho_precoce"]);
+  // Mapa de último peso real por animal
+  const latestWeight = new Map<string, number>();
+  for (const w of (weightsData ?? []) as WeightRow[]) {
+    if (!latestWeight.has(w.animal_id) && w.weight > 0) {
+      latestWeight.set(w.animal_id, w.weight);
+    }
+  }
+
+  // Set de animais com Halal ativo
+  const halalSet = new Set(((halalData ?? []) as HalalCert[]).map(h => h.animal_id));
+
+  // Mescla last_weight real e flag halal
+  const animals = rawAnimals.map(a => ({
+    ...a,
+    last_weight: latestWeight.get(a.animal_id) ?? a.last_weight ?? null,
+    has_halal: halalSet.has(a.animal_id) || (a.certifications?.some(c => c.name?.toLowerCase().includes("halal")) ?? false),
+  }));
 
   const settings = new Map((settingsData ?? []).map((s: { key: string; value: string; updated_at: string | null }) => [s.key, s]));
   const fmtPrice = (v: string | undefined) => v ? `R$ ${Number(v).toFixed(2).replace(".", ",")}` : "—";
@@ -64,7 +81,11 @@ export default async function MarketPage() {
   const totalAnimals   = animals.length;
   const withScore      = animals.filter(a => Number(a.total_score ?? 0) > 0);
   const avgScore       = withScore.length > 0 ? Math.round(withScore.reduce((a, r) => a + Number(r.total_score), 0) / withScore.length) : 0;
-  const avgWeight      = totalAnimals > 0 ? Math.round(animals.reduce((a, r) => a + Number(r.last_weight ?? 0), 0) / totalAnimals) : 0;
+  // Peso médio só de animais com pesagem real (>0)
+  const withWeight     = animals.filter(a => a.last_weight != null && a.last_weight > 0);
+  const avgWeight      = withWeight.length > 0
+    ? Math.round(withWeight.reduce((a, r) => a + Number(r.last_weight), 0) / withWeight.length)
+    : 0;
   const certifiedCount = animals.filter(a => Array.isArray(a.certifications) && a.certifications.length > 0).length;
   const pctCert        = totalAnimals > 0 ? Math.round((certifiedCount / totalAnimals) * 100) : 0;
 
@@ -163,68 +184,7 @@ export default async function MarketPage() {
             <p className="text-sm text-[var(--text-muted)]">Nenhum animal disponível.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="ag-table w-full">
-              <thead>
-                <tr>
-                  <th className="text-left">Animal</th>
-                  <th className="text-left">Fazenda</th>
-                  <th className="text-left">Sexo</th>
-                  <th className="text-right">Peso</th>
-                  <th className="text-center">Score</th>
-                  <th className="text-left">Certificações</th>
-                  <th className="text-center">Status</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {animals.map(a => {
-                  const score = Number(a.total_score ?? 0);
-                  const scoreColor = score >= 70 ? "#5d9c44" : score >= 40 ? "#d9a343" : "#d64545";
-                  return (
-                    <tr key={a.animal_id} className="group">
-                      <td>
-                        <div>
-                          <p className="font-semibold">{a.internal_code ?? a.animal_id}</p>
-                          <p className="text-xs text-[var(--text-muted)]">{formatDate(a.birth_date)}</p>
-                        </div>
-                      </td>
-                      <td className="max-w-[150px] truncate text-[var(--text-secondary)]">{a.property_name ?? "—"}</td>
-                      <td className="text-sm">{formatSex(a.sex)}</td>
-                      <td className="text-right tabular-nums font-medium">{a.last_weight ? `${a.last_weight} kg` : "—"}</td>
-                      <td className="text-center">
-                        <div className="inline-flex items-center justify-center gap-2">
-                          <span className="inline-block rounded-full px-2.5 py-0.5 text-xs font-bold border"
-                            style={{ color: scoreColor, borderColor: scoreColor + "40", backgroundColor: scoreColor + "12" }}>
-                            {score}
-                          </span>
-                          {a.certifications?.some(c => c.name?.toLowerCase().includes("halal"))
-                            ? <HalalBadgeSVG size={32} />
-                            : <div style={{ width: 32, height: 32 }} />
-                          }
-                        </div>
-                      </td>
-                      <td>
-                        <div className="flex flex-wrap gap-1">
-                          {Array.isArray(a.certifications) && a.certifications.length > 0
-                            ? a.certifications.slice(0, 2).map(c => <span key={c.code} className="ag-badge ag-badge-green text-[10px]">{c.name}</span>)
-                            : <span className="ag-badge text-[10px]">Sem certificação</span>
-                          }
-                        </div>
-                      </td>
-                      <td className="text-center"><span className={statusCls(a.status)}>{formatStatus(a.status)}</span></td>
-                      <td>
-                        <Link href={`/animais/${a.animal_id}`}
-                          className="text-xs font-medium text-[var(--primary)] opacity-0 group-hover:opacity-100 transition hover:underline">
-                          Ver →
-                        </Link>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <MarketTable rows={animals as MarketRow[]} />
         )}
       </section>
     </main>
