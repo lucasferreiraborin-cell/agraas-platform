@@ -1,6 +1,7 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import Link from "next/link";
-import { DollarSign, TrendingUp } from "lucide-react";
+import { DollarSign, TrendingUp, Plus } from "lucide-react";
+import CustoProducaoTable, { type CustoRow } from "@/app/components/CustoProducaoTable";
 
 type CostRow = {
   animal_id: string;
@@ -17,16 +18,31 @@ type AnimalRow = {
 
 type WeightRow = { animal_id: string; weight: number };
 type ScoreRow = { animal_id: string; total_score: number | null };
+type AssignRow = { animal_id: string; lot_id: string };
+type LotRow = { id: string; name: string | null };
+
+const fmt = (v: number) =>
+  v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 export default async function CustoProducaoPage() {
   const supabase = await createSupabaseServerClient();
 
-  const [{ data: costsData }, { data: animalsData }, { data: weightsData }, { data: scoresData }, { data: cotacaoData }] = await Promise.all([
+  const [
+    { data: costsData },
+    { data: animalsData },
+    { data: weightsData },
+    { data: scoresData },
+    { data: cotacaoData },
+    { data: assignData },
+    { data: lotsData },
+  ] = await Promise.all([
     supabase.from("animal_cost_summary").select("animal_id, total_input_cost, total_cost"),
     supabase.from("animals").select("id, internal_code, breed, sex").eq("status", "Ativo").order("internal_code"),
     supabase.from("weights").select("animal_id, weight").order("weighing_date", { ascending: false }),
     supabase.from("animal_scores").select("animal_id, total_score"),
     supabase.from("platform_settings").select("value").eq("key", "cotacao_arroba").single(),
+    supabase.from("animal_lot_assignments").select("animal_id, lot_id").is("exit_date", null),
+    supabase.from("lots").select("id, name"),
   ]);
 
   const costMap = new Map((costsData ?? []).map((c: CostRow) => [c.animal_id, c]));
@@ -35,26 +51,46 @@ export default async function CustoProducaoPage() {
     if (!weightMap.has(w.animal_id)) weightMap.set(w.animal_id, w.weight);
   }
   const scoreMap = new Map((scoresData ?? []).map((s: ScoreRow) => [s.animal_id, s.total_score ?? 0]));
+  const lotNameMap = new Map((lotsData ?? []).map((l: LotRow) => [l.id, l.name ?? "—"]));
+  const animalLotMap = new Map<string, string>();
+  for (const a of (assignData ?? []) as AssignRow[]) {
+    if (!animalLotMap.has(a.animal_id)) {
+      animalLotMap.set(a.animal_id, lotNameMap.get(a.lot_id) ?? "Sem lote");
+    }
+  }
   const cotacao = Number(cotacaoData?.value ?? 330);
   const animals = (animalsData ?? []) as AnimalRow[];
 
-  const rows = animals.map(a => {
+  const rows: CustoRow[] = animals.map(a => {
     const cost = costMap.get(a.id);
     const weight = weightMap.get(a.id) ?? 0;
     const arrobas = weight / 30;
     const valorCepea = arrobas * cotacao;
-    const totalCost = cost?.total_cost ?? 0;
+    const totalCost = Number(cost?.total_cost ?? 0);
     const roi = valorCepea - totalCost;
-    const roiPct = totalCost > 0 ? ((roi / totalCost) * 100) : 0;
-    return { ...a, weight, totalCost, valorCepea, roi, roiPct, score: scoreMap.get(a.id) ?? 0 };
+    const roiPct = totalCost > 0 ? (roi / totalCost) * 100 : 0;
+    return {
+      id: a.id,
+      internal_code: a.internal_code,
+      breed: a.breed,
+      weight,
+      score: Number(scoreMap.get(a.id) ?? 0),
+      totalCost,
+      valorCepea,
+      roi,
+      roiPct,
+      lot_code: animalLotMap.get(a.id) ?? "Sem lote",
+    };
   });
 
   const totalInvestido = rows.reduce((s, r) => s + r.totalCost, 0);
   const custoMedio = rows.length > 0 ? totalInvestido / rows.length : 0;
-  const roiMedio = rows.filter(r => r.totalCost > 0).length > 0
-    ? rows.filter(r => r.totalCost > 0).reduce((s, r) => s + r.roiPct, 0) / rows.filter(r => r.totalCost > 0).length : 0;
+  const elegiveis = rows.filter(r => r.totalCost > 0);
+  const roiMedio = elegiveis.length > 0
+    ? elegiveis.reduce((s, r) => s + r.roiPct, 0) / elegiveis.length
+    : 0;
 
-  const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+  const dataHoje = new Date().toLocaleDateString("pt-BR");
 
   return (
     <main className="space-y-8">
@@ -66,10 +102,14 @@ export default async function CustoProducaoPage() {
             </span>
             <div>
               <h1 className="ag-page-title leading-none">Custo de Produção</h1>
-              <p className="mt-0.5 text-sm text-[var(--text-muted)]">ROI projetado pelo valor CEPEA atual (R$ {cotacao.toFixed(0)}/@)</p>
+              <p className="mt-0.5 text-sm text-[var(--text-muted)]">
+                ROI projetado · CEPEA R$ {cotacao.toFixed(0)}/@ · ref. {dataHoje}
+              </p>
             </div>
           </div>
-          <Link href="/custos" className="ag-button-secondary">Registrar custo</Link>
+          <Link href="/custos" className="ag-button-primary flex items-center gap-2">
+            <Plus size={16} /> Registrar custo
+          </Link>
         </div>
       </section>
 
@@ -95,29 +135,7 @@ export default async function CustoProducaoPage() {
           <p className="ag-empty-state-text">Registre aplicações com custo unitário para ver o ROI projetado.</p>
         </div>
       ) : (
-        <section className="ag-card overflow-hidden p-0">
-          <table className="ag-table w-full">
-            <thead>
-              <tr><th>Animal</th><th>Raça</th><th>Peso</th><th>Score</th><th>Custo</th><th>Valor CEPEA</th><th>ROI</th><th>ROI %</th></tr>
-            </thead>
-            <tbody>
-              {rows.map(r => (
-                <tr key={r.id}>
-                  <td className="font-semibold text-[var(--text-primary)]">
-                    <Link href={`/animais/${r.id}`} className="text-[var(--primary-hover)] hover:underline">{r.internal_code ?? r.id.slice(0, 8)}</Link>
-                  </td>
-                  <td className="text-sm">{r.breed ?? "—"}</td>
-                  <td className="text-sm font-medium">{r.weight > 0 ? `${r.weight} kg` : "—"}</td>
-                  <td className="text-sm">{r.score}</td>
-                  <td className="text-sm">{r.totalCost > 0 ? fmt(r.totalCost) : "—"}</td>
-                  <td className="text-sm font-medium">{r.weight > 0 ? fmt(r.valorCepea) : "—"}</td>
-                  <td className={`text-sm font-bold ${r.roi >= 0 ? "text-emerald-600" : "text-red-500"}`}>{r.weight > 0 ? fmt(r.roi) : "—"}</td>
-                  <td className={`text-sm font-bold ${r.roiPct >= 0 ? "text-emerald-600" : "text-red-500"}`}>{r.totalCost > 0 ? `${r.roiPct.toFixed(0)}%` : "—"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </section>
+        <CustoProducaoTable rows={rows} />
       )}
     </main>
   );

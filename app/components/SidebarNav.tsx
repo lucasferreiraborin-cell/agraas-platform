@@ -106,11 +106,11 @@ const menuGroups: NavGroup[] = [
   {
     label: "Financeiro",
     items: [
-      { href: "/custos",           label: "Custos",           icon: DollarSign },
-      { href: "/custos/historico", label: "Histórico Custos", icon: DollarSign,      sub: true },
-      { href: "/compradores",      label: "Compradores",      icon: ArrowUpRight },
-      { href: "/custo-producao",   label: "Custo Produção",   icon: DollarSign,      sub: true },
-      { href: "/vendas",           label: "Vendas",           icon: ArrowUpRight },
+      { href: "/custos",           label: "Custos",            icon: DollarSign },
+      { href: "/custos/historico", label: "Histórico Custos",  icon: DollarSign,      sub: true },
+      { href: "/custo-producao",   label: "Custo de Produção", icon: DollarSign,      sub: true },
+      { href: "/compradores",      label: "Compradores",       icon: ArrowUpRight },
+      { href: "/vendas",           label: "Vendas",            icon: ArrowUpRight },
       { href: "/abates",           label: "Abates",           icon: Scissors },
       { href: "/fiscal",           label: "Fiscal",           icon: Receipt },
       { href: "/fiscal/relatorio", label: "Relatório Fiscal", icon: FileSpreadsheet, sub: true },
