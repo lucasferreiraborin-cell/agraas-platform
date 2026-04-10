@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { createSupabaseServiceClient } from "@/lib/supabase-service";
 import Link from "next/link";
 
 type CertificationRow = {
@@ -36,26 +37,53 @@ type ConsolidatedRow = {
 };
 
 export default async function CertificacoesPage() {
-  const supabase = await createSupabaseServerClient();
+  const authClient = await createSupabaseServerClient();
+  const { data: { user } } = await authClient.auth.getUser();
+  const { data: clientData } = user
+    ? await authClient.from("clients").select("id, role").eq("auth_user_id", user.id).single()
+    : { data: null };
+
+  const isBuyer = clientData?.role === "buyer";
+  const supabase = isBuyer ? createSupabaseServiceClient() : authClient;
+
+  // Buyer: filter to animals from authorized lots only
+  let allowedAnimalIds: string[] | null = null;
+  if (isBuyer && clientData) {
+    const { data: access } = await supabase.from("lot_buyer_access").select("lot_id").eq("buyer_client_id", clientData.id);
+    const lotIds = (access ?? []).map((r: { lot_id: string }) => r.lot_id);
+    if (lotIds.length > 0) {
+      const { data: assigns } = await supabase.from("animal_lot_assignments").select("animal_id").in("lot_id", lotIds);
+      allowedAnimalIds = [...new Set((assigns ?? []).map((r: { animal_id: string }) => r.animal_id))];
+    } else {
+      allowedAnimalIds = [];
+    }
+  }
+
+  const certsQuery = supabase
+    .from("animal_certifications")
+    .select("id, animal_id, certification_code, certification_name, issued_at, status")
+    .order("issued_at", { ascending: false });
+
+  const animalsQuery = supabase.from("animals").select("id, internal_code, agraas_id");
+
+  const passportQuery = supabase
+    .from("agraas_master_passport")
+    .select("animal_id, current_property_name, total_score, current_withdrawal_end_date, active_seals");
+
   const [
     { data: certificationsData, error: certificationsError },
     { data: animalsData, error: animalsError },
     { data: passportData, error: passportError },
   ] = await Promise.all([
-    supabase
-      .from("animal_certifications")
-      .select(
-        "id, animal_id, certification_code, certification_name, issued_at, status"
-      )
-      .order("issued_at", { ascending: false }),
-
-    supabase.from("animals").select("id, internal_code, agraas_id"),
-
-    supabase
-      .from("agraas_master_passport")
-      .select(
-        "animal_id, current_property_name, total_score, current_withdrawal_end_date, active_seals"
-      ),
+    allowedAnimalIds !== null
+      ? (allowedAnimalIds.length > 0 ? certsQuery.in("animal_id", allowedAnimalIds) : Promise.resolve({ data: [], error: null }))
+      : certsQuery,
+    allowedAnimalIds !== null
+      ? (allowedAnimalIds.length > 0 ? animalsQuery.in("id", allowedAnimalIds) : Promise.resolve({ data: [], error: null }))
+      : animalsQuery,
+    allowedAnimalIds !== null
+      ? (allowedAnimalIds.length > 0 ? passportQuery.in("animal_id", allowedAnimalIds) : Promise.resolve({ data: [], error: null }))
+      : passportQuery,
   ]);
 
   const certifications = (certificationsData ?? []) as CertificationRow[];

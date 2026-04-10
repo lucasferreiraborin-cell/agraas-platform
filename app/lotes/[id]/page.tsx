@@ -241,12 +241,13 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
       const score = scoreByAnimal.get(animal.id) ?? 0;
       totalScore += score;
     }
-    const avgGmd = gmdCount > 0 ? (totalGmd / gmdCount).toFixed(3) : null;
+    const avgGmdNum = gmdCount > 0 ? (totalGmd / gmdCount) : null;
+    const avgGmd = avgGmdNum !== null ? avgGmdNum.toFixed(2).replace(".", ",") : null;
     const avgScore = animals.length > 0 ? Math.round(totalScore / animals.length) : null;
     const avgWeight = avgWeights.length > 0 ? avgWeights.reduce((s, w) => s + w, 0) / avgWeights.length : 0;
     let previsaoSaida: string | null = null;
-    if (lot?.target_weight && avgGmd && Number(avgGmd) > 0 && avgWeight < lot.target_weight) {
-      const dias = Math.round((lot.target_weight - avgWeight) / Number(avgGmd));
+    if (lot?.target_weight && avgGmdNum && avgGmdNum > 0 && avgWeight < lot.target_weight) {
+      const dias = Math.round((lot.target_weight - avgWeight) / avgGmdNum);
       const d = new Date(); d.setDate(d.getDate() + dias);
       previsaoSaida = d.toLocaleDateString("pt-BR");
     }
@@ -544,7 +545,7 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
                 <div>
                   <h2 className="ag-section-title">Animais no lote</h2>
                   <p className="ag-section-subtitle">
-                    {animals.length} animal{animals.length !== 1 ? "is" : ""}
+                    {animals.length} {animals.length !== 1 ? "animais" : "animal"}
                     {lot.target_weight && stats.atMeta > 0 ? ` · ${stats.atMeta} atingiram ${lot.target_weight} kg` : ""}
                   </p>
                 </div>
@@ -620,24 +621,38 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
                 <h2 className="ag-section-title">Documentos do lote</h2>
                 <p className="ag-section-subtitle">GTA, certificados sanitários, manifesto de carga e demais anexos</p>
               </div>
-              <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[var(--border)] py-14 text-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--primary-soft)]">
-                  <Upload size={20} className="text-[var(--primary)]" />
-                </div>
-                <div>
-                  <p className="font-medium text-[var(--text-primary)]">Upload de documentos</p>
-                  <p className="mt-1 text-sm text-[var(--text-muted)]">Funcionalidade disponível em breve</p>
-                </div>
-              </div>
+
+              <DocumentUpload lotId={id} />
+
               <div className="space-y-2">
                 <p className="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">Documentos esperados</p>
-                {["GTA — Guia de Trânsito Animal", "Certificado Sanitário Internacional", "Manifesto de Carga", "Certificado Halal", "Laudo de Pesagem"].map(doc => (
-                  <div key={doc} className="flex items-center gap-3 rounded-xl border border-[var(--border)] px-4 py-3">
-                    <FileText size={14} className="text-[var(--text-muted)]" />
-                    <span className="text-sm text-[var(--text-secondary)]">{doc}</span>
-                    <span className="ml-auto rounded-full bg-[var(--surface-soft)] border border-[var(--border)] px-2 py-0.5 text-[10px] text-[var(--text-muted)]">Pendente</span>
-                  </div>
-                ))}
+                {(() => {
+                  // Compute which docs are confirmed based on animal certifications
+                  const certNames = new Set(certifications.filter(c => c.status === "active").map(c => c.certification_name.toLowerCase()));
+                  const docs = [
+                    { label: "GTA — Guia de Trânsito Animal",  matchKey: "gta" },
+                    { label: "Certificado Sanitário Internacional", matchKey: "sif" },
+                    { label: "Manifesto de Carga",                  matchKey: "manifesto" },
+                    { label: "Certificado Halal",                   matchKey: "halal" },
+                    { label: "Laudo de Pesagem",                    matchKey: "pesagem" },
+                  ];
+                  return docs.map(doc => {
+                    const confirmed = certNames.has(doc.matchKey);
+                    return (
+                      <div key={doc.label} className="flex items-center gap-3 rounded-xl border border-[var(--border)] px-4 py-3">
+                        <FileText size={14} className={confirmed ? "text-emerald-600" : "text-[var(--text-muted)]"} />
+                        <span className="text-sm text-[var(--text-secondary)]">{doc.label}</span>
+                        <span className={`ml-auto rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                          confirmed
+                            ? "bg-emerald-50 border border-emerald-200 text-emerald-700"
+                            : "bg-[var(--surface-soft)] border border-[var(--border)] text-[var(--text-muted)]"
+                        }`}>
+                          {confirmed ? "Confirmado ✓" : "Pendente"}
+                        </span>
+                      </div>
+                    );
+                  });
+                })()}
               </div>
             </section>
           </div>
@@ -659,6 +674,59 @@ function KPI({ label, value, sub }: { label: string; value: string | number; sub
       <p className="text-sm text-[var(--text-muted)]">{label}</p>
       <p className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">{value}</p>
       <p className="mt-2 text-xs text-[var(--text-secondary)]">{sub}</p>
+    </div>
+  );
+}
+
+function DocumentUpload({ lotId }: { lotId: string }) {
+  const [uploading, setUploading] = useState(false);
+  const [uploaded, setUploaded] = useState<{ name: string; size: number }[]>([]);
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) { alert("Arquivo maior que 10 MB."); return; }
+    setUploading(true);
+    try {
+      const path = `lots/${lotId}/${Date.now()}-${file.name}`;
+      const { error } = await supabase.storage.from("animal-photos").upload(path, file, { contentType: file.type });
+      if (error) throw error;
+      setUploaded(prev => [...prev, { name: file.name, size: file.size }]);
+    } catch {
+      alert("Erro no upload. Verifique permissões.");
+    }
+    setUploading(false);
+    e.target.value = "";
+  }
+
+  if (uploaded.length === 0) {
+    return (
+      <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[var(--border)] py-14 text-center gap-4 transition hover:border-[var(--primary)] hover:bg-[var(--primary-soft)]">
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--primary-soft)]">
+          <Upload size={22} className="text-[var(--primary)]" />
+        </div>
+        <div>
+          <p className="font-semibold text-[var(--text-primary)]">{uploading ? "Enviando..." : "Nenhum documento anexado"}</p>
+          <p className="mt-1 text-sm text-[var(--text-muted)]">Clique para fazer upload (PDF, JPG, PNG · até 10 MB)</p>
+        </div>
+        <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={handleFile} disabled={uploading} />
+      </label>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {uploaded.map((f, i) => (
+        <div key={i} className="flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+          <FileText size={14} className="text-emerald-600" />
+          <span className="text-sm font-medium text-[var(--text-primary)]">{f.name}</span>
+          <span className="ml-auto text-xs text-[var(--text-muted)]">{(f.size / 1024).toFixed(0)} KB</span>
+        </div>
+      ))}
+      <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-dashed border-[var(--border)] px-4 py-3 text-sm text-[var(--text-muted)] transition hover:border-[var(--primary)] hover:text-[var(--primary)]">
+        <Upload size={14} /> Adicionar mais
+        <input type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={handleFile} disabled={uploading} />
+      </label>
     </div>
   );
 }

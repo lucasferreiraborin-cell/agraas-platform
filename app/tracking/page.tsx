@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { createSupabaseServiceClient } from "@/lib/supabase-service";
 import Link from "next/link";
 import { Truck, MapPin, AlertTriangle } from "lucide-react";
 import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
@@ -38,14 +39,39 @@ const STAGE_LABELS: Record<string, string> = {
 const STAGE_ORDER = ["fazenda","concentracao","transporte","porto_origem","navio","porto_destino","entregue"];
 
 export default async function TrackingPage() {
-  const supabase = await createSupabaseServerClient();
+  const authClient = await createSupabaseServerClient();
+  const { data: { user } } = await authClient.auth.getUser();
+  const { data: clientData } = user
+    ? await authClient.from("clients").select("id, role").eq("auth_user_id", user.id).single()
+    : { data: null };
+
+  const isBuyer = clientData?.role === "buyer";
+
+  // Buyer uses service client + lot_buyer_access filter; others use RLS via cookies
+  const db = isBuyer ? createSupabaseServiceClient() : authClient;
+
+  let allowedLotIds: string[] | null = null;
+  if (isBuyer && clientData) {
+    const { data: access } = await db
+      .from("lot_buyer_access")
+      .select("lot_id")
+      .eq("buyer_client_id", clientData.id);
+    allowedLotIds = (access ?? []).map((r: { lot_id: string }) => r.lot_id);
+  }
+
+  const lotsQuery = db.from("lots").select("id, name, certificacoes_exigidas, ship_name, arrival_date, data_embarque, porto_embarque, pais_destino");
+  const trackingQuery = db
+    .from("shipment_tracking")
+    .select("id, lot_id, stage, timestamp, animals_confirmed, animals_lost, location_name")
+    .order("timestamp", { ascending: false });
 
   const [{ data: trackingData }, { data: lotsData }] = await Promise.all([
-    supabase
-      .from("shipment_tracking")
-      .select("id, lot_id, stage, timestamp, animals_confirmed, animals_lost, location_name")
-      .order("timestamp", { ascending: false }),
-    supabase.from("lots").select("id, name, certificacoes_exigidas, ship_name, arrival_date, data_embarque, porto_embarque, pais_destino"),
+    allowedLotIds && allowedLotIds.length > 0
+      ? trackingQuery.in("lot_id", allowedLotIds)
+      : isBuyer ? Promise.resolve({ data: [] }) : trackingQuery,
+    allowedLotIds && allowedLotIds.length > 0
+      ? lotsQuery.in("id", allowedLotIds)
+      : isBuyer ? Promise.resolve({ data: [] }) : lotsQuery,
   ]);
 
   const trackings: TrackingRow[] = (trackingData ?? []) as TrackingRow[];
