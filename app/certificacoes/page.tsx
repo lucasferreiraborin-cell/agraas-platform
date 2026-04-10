@@ -256,7 +256,7 @@ export default async function CertificacoesPage() {
                 {formatLabel(item.name)}
               </p>
               <p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">
-                Presente em {item.count} animal{item.count > 1 ? "is" : ""} da
+                Presente em {item.count} {item.count > 1 ? "animais" : "animal"} da
                 base certificada.
               </p>
             </div>

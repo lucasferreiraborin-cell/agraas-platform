@@ -205,12 +205,19 @@ export default async function OvinosPage({ searchParams }: PageProps) {
                       )}
                     </td>
                     <td>
-                      <Link
-                        href={`/ovinos/${a.id}`}
-                        className="text-xs font-semibold text-[var(--primary-hover)] hover:underline"
-                      >
-                        Passaporte →
-                      </Link>
+                      <div className="flex items-center justify-end gap-2">
+                        {a.certifications?.includes("Halal") && (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                            Halal ✓
+                          </span>
+                        )}
+                        <Link
+                          href={`/ovinos/${a.id}`}
+                          className="text-xs font-semibold text-[var(--primary-hover)] hover:underline"
+                        >
+                          Passaporte →
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 ))}

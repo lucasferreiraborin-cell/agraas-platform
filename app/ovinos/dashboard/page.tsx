@@ -94,6 +94,18 @@ export default async function OvinosDashboardPage() {
     .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
     .slice(0, 3);
 
+  // Distribuição por espécie
+  const ovinosCount   = animals.filter(a => a.species === "ovino").length;
+  const caprinosCount = animals.filter(a => a.species === "caprino").length;
+  const ovinosPct     = total > 0 ? Math.round((ovinosCount / total) * 100) : 0;
+  const caprinosPct   = total > 0 ? Math.round((caprinosCount / total) * 100) : 0;
+
+  // Status Halal
+  const halalEmProcesso = animals.filter(a =>
+    a.status === "quarantine" && !a.certifications?.includes("Halal")
+  ).length;
+  const semHalal = total - halalCount - halalEmProcesso;
+
   return (
     <main className="space-y-8">
       {/* ── Hero KPIs ── */}
@@ -139,7 +151,7 @@ export default async function OvinosDashboardPage() {
                 <div key={b.label} className="space-y-1.5">
                   <div className="flex items-center justify-between text-sm">
                     <span className="font-medium text-[var(--text-secondary)]">{b.label}</span>
-                    <span className="tabular-nums text-[var(--text-muted)]">{b.count} animal{b.count !== 1 ? "is" : ""}</span>
+                    <span className="tabular-nums text-[var(--text-muted)]">{b.count} {b.count === 1 ? "animal" : "animais"}</span>
                   </div>
                   <div className="h-3 w-full overflow-hidden rounded-full bg-[var(--surface-soft)]">
                     <div className={`h-full rounded-full transition-all ${b.color}`}
@@ -149,6 +161,48 @@ export default async function OvinosDashboardPage() {
               ))}
             </div>
           )}
+        </section>
+
+        {/* ── Distribuição por Espécie ── */}
+        <section className="ag-card-strong p-8 space-y-5">
+          <div>
+            <h2 className="ag-section-title">Distribuição por Espécie</h2>
+            <p className="ag-section-subtitle">Composição do rebanho</p>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+              <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Ovinos</p>
+              <p className="mt-2 text-3xl font-bold tracking-tight text-emerald-700">{ovinosCount}</p>
+              <p className="mt-1 text-xs text-emerald-600">{ovinosPct}% do rebanho</p>
+            </div>
+            <div className="rounded-2xl border border-blue-200 bg-blue-50 p-5">
+              <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">Caprinos</p>
+              <p className="mt-2 text-3xl font-bold tracking-tight text-blue-700">{caprinosCount}</p>
+              <p className="mt-1 text-xs text-blue-600">{caprinosPct}% do rebanho</p>
+            </div>
+          </div>
+        </section>
+
+        {/* ── Status Halal ── */}
+        <section className="ag-card-strong p-8 space-y-5">
+          <div>
+            <h2 className="ag-section-title">Status Halal</h2>
+            <p className="ag-section-subtitle">Certificação para exportação Oriente Médio</p>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-center">
+              <p className="text-2xl font-bold text-emerald-700">{halalCount}</p>
+              <p className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-emerald-700">Certificados</p>
+            </div>
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-center">
+              <p className="text-2xl font-bold text-amber-700">{halalEmProcesso}</p>
+              <p className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-amber-700">Em processo</p>
+            </div>
+            <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-center">
+              <p className="text-2xl font-bold text-gray-600">{Math.max(0, semHalal)}</p>
+              <p className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-gray-600">Sem certificação</p>
+            </div>
+          </div>
         </section>
 
         {/* ── Top 3 por score ── */}
