@@ -20,10 +20,20 @@ type DisplayRow = {
   id: string;
   animal_code: string;
   movement_type: string;
+  movement_type_raw: string;
   origin_ref: string;
   destination_ref: string;
   movement_date: string | null;
   notes: string;
+};
+
+const TYPE_BADGE: Record<string, string> = {
+  "Transferência": "bg-blue-50 text-blue-700 border-blue-200",
+  "Nascimento":    "bg-teal-50 text-teal-700 border-teal-200",
+  "Venda":         "bg-orange-50 text-orange-700 border-orange-200",
+  "Abate":         "bg-red-50 text-red-700 border-red-200",
+  "Sanitária":     "bg-purple-50 text-purple-700 border-purple-200",
+  "Entrada em lote": "bg-blue-50 text-blue-700 border-blue-200",
 };
 
 export default async function MovimentacoesHistoricoPage() {
@@ -62,11 +72,17 @@ export default async function MovimentacoesHistoricoPage() {
     id: movement.id,
     animal_code: animalMap.get(movement.animal_id) ?? movement.animal_id,
     movement_type: formatMovementType(movement.movement_type),
+    movement_type_raw: movement.movement_type,
     origin_ref: movement.origin_ref ?? "-",
     destination_ref: movement.destination_ref ?? "-",
     movement_date: movement.movement_date ?? null,
     notes: movement.notes ?? "-",
   }));
+
+  const distinctTypes = new Set(rows.map(r => r.movement_type)).size;
+  const lastDate = rows[0]?.movement_date
+    ? new Date(rows[0].movement_date).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })
+    : "—";
 
   return (
     <main className="space-y-8">
@@ -108,14 +124,14 @@ export default async function MovimentacoesHistoricoPage() {
                 subtitle="ativos com evento de movimentação"
               />
               <MetricCard
-                label="Origens"
-                value={new Set(rows.map((row) => row.origin_ref)).size}
-                subtitle="pontos de origem mapeados"
+                label="Tipos"
+                value={distinctTypes}
+                subtitle="tipos distintos de movimentação"
               />
               <MetricCard
-                label="Destinos"
-                value={new Set(rows.map((row) => row.destination_ref)).size}
-                subtitle="pontos de destino mapeados"
+                label="Último registro"
+                value={lastDate}
+                subtitle="data da movimentação mais recente"
               />
             </div>
           </div>
@@ -155,16 +171,23 @@ export default async function MovimentacoesHistoricoPage() {
               </thead>
 
               <tbody>
-                {rows.map((row) => (
-                  <tr key={row.id}>
-                    <td>{row.animal_code}</td>
-                    <td>{row.movement_type}</td>
-                    <td>{row.origin_ref}</td>
-                    <td>{row.destination_ref}</td>
-                    <td>{formatDate(row.movement_date)}</td>
-                    <td>{row.notes}</td>
-                  </tr>
-                ))}
+                {rows.map((row) => {
+                  const cls = TYPE_BADGE[row.movement_type] ?? "bg-gray-50 text-gray-600 border-gray-200";
+                  return (
+                    <tr key={row.id}>
+                      <td>{row.animal_code}</td>
+                      <td>
+                        <span className={`rounded-full border px-2.5 py-0.5 text-[10px] font-bold ${cls}`}>
+                          {row.movement_type}
+                        </span>
+                      </td>
+                      <td>{row.origin_ref}</td>
+                      <td>{row.destination_ref}</td>
+                      <td>{formatDate(row.movement_date)}</td>
+                      <td>{row.notes}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           )}
@@ -205,9 +228,15 @@ function formatMovementType(value: string) {
   const map: Record<string, string> = {
     lot_entry: "Entrada em lote",
     ownership_transfer: "Transferência",
+    "Transferência": "Transferência",
     sale: "Venda",
+    Venda: "Venda",
     slaughter: "Abate",
     birth: "Nascimento",
+    Nascimento: "Nascimento",
+    sanitary: "Sanitária",
+    Sanitária: "Sanitária",
+    Retorno: "Transferência",
   };
 
   return map[value] ?? value;

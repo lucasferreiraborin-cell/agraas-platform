@@ -2,20 +2,21 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
-);
+import { supabase } from "@/lib/supabase";
 
 type AnimalRow = {
   id: string;
   internal_code: string | null;
 };
 
+type PropertyRow = {
+  id: string;
+  name: string | null;
+};
+
 export default function MovimentacoesPage() {
   const [animals, setAnimals] = useState<AnimalRow[]>([]);
+  const [properties, setProperties] = useState<PropertyRow[]>([]);
   const [animalId, setAnimalId] = useState("");
   const [movementType, setMovementType] = useState("");
   const [originRef, setOriginRef] = useState("");
@@ -26,23 +27,31 @@ export default function MovimentacoesPage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    async function loadAnimals() {
+    async function loadData() {
       setLoading(true);
 
-      const { data, error } = await supabase
-        .from("animals")
-        .select("id, internal_code")
-        .order("internal_code", { ascending: true });
+      const [{ data: animalsData, error: animalsError }, { data: propsData }] = await Promise.all([
+        supabase
+          .from("animals")
+          .select("id, internal_code, status")
+          .eq("status", "Ativo")
+          .order("internal_code", { ascending: true }),
+        supabase
+          .from("properties")
+          .select("id, name")
+          .order("name", { ascending: true }),
+      ]);
 
-      if (error) {
-        console.error("Erro ao buscar animais:", error);
+      if (animalsError) {
+        console.error("Erro ao buscar animais:", animalsError);
       }
 
-      setAnimals((data ?? []) as AnimalRow[]);
+      setAnimals((animalsData ?? []) as AnimalRow[]);
+      setProperties((propsData ?? []) as PropertyRow[]);
       setLoading(false);
     }
 
-    loadAnimals();
+    loadData();
   }, []);
 
   async function createMovement() {
@@ -117,9 +126,9 @@ export default function MovimentacoesPage() {
                 subtitle="ativos disponíveis para registro"
               />
               <MetricCard
-                label="Timeline"
-                value="ativa"
-                subtitle="movimentações entram no passaporte"
+                label="Tipos"
+                value={5}
+                subtitle="tipos distintos de movimentação"
               />
               <MetricCard
                 label="Rastreabilidade"
@@ -127,9 +136,9 @@ export default function MovimentacoesPage() {
                 subtitle="movimento integrado à trilha do animal"
               />
               <MetricCard
-                label="Módulo"
-                value="operacional"
-                subtitle="base para gestão pecuária"
+                label="Propriedades"
+                value={properties.length}
+                subtitle="cadastradas para origem/destino"
               />
             </div>
           </div>
@@ -182,11 +191,11 @@ export default function MovimentacoesPage() {
                 className="w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-[var(--text-primary)]"
               >
                 <option value="">Selecione o tipo</option>
-                <option value="lot_entry">Entrada em lote</option>
                 <option value="ownership_transfer">Transferência</option>
+                <option value="birth">Nascimento</option>
                 <option value="sale">Venda</option>
                 <option value="slaughter">Abate</option>
-                <option value="birth">Nascimento</option>
+                <option value="sanitary">Sanitária</option>
               </select>
             </label>
 
@@ -195,9 +204,10 @@ export default function MovimentacoesPage() {
                 Origem
               </div>
               <input
+                list="properties-list"
                 value={originRef}
                 onChange={(e) => setOriginRef(e.target.value)}
-                placeholder="Ex.: Lote Recria A"
+                placeholder="Ex.: Pasto Norte"
                 className="w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-[var(--text-primary)]"
               />
             </label>
@@ -207,11 +217,17 @@ export default function MovimentacoesPage() {
                 Destino
               </div>
               <input
+                list="properties-list"
                 value={destinationRef}
                 onChange={(e) => setDestinationRef(e.target.value)}
-                placeholder="Ex.: Lote Engorda B"
+                placeholder="Ex.: Pasto Sul"
                 className="w-full rounded-2xl border border-[var(--border)] bg-white px-4 py-3 text-[var(--text-primary)]"
               />
+              <datalist id="properties-list">
+                {properties.map(p => p.name && (
+                  <option key={p.id} value={p.name} />
+                ))}
+              </datalist>
             </label>
 
             <label>
