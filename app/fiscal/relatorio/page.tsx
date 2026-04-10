@@ -27,6 +27,21 @@ function calcRisk(notes: Note[], alertsByNote: Map<string, Alert[]>) {
 
 const MONTHS = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 
+const ALERT_LABEL_MAP: Record<string, string> = {
+  "cfop_divergente":      "CFOP Divergente",
+  "cfop divergente":      "CFOP Divergente",
+  "pdf_revisao_manual":   "PDF — Revisão Manual",
+  "pdf revisao manual":   "PDF — Revisão Manual",
+  "ncm_invalido":         "NCM Inválido",
+  "valor_divergente":     "Valor Divergente",
+};
+
+function formatAlertLabel(slug: string): string {
+  if (!slug) return "—";
+  return ALERT_LABEL_MAP[slug.toLowerCase()] ??
+    slug.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+}
+
 export default function FiscalRelatorioPage() {
   const [notes,   setNotes]   = useState<Note[]>([]);
   const [alerts,  setAlerts]  = useState<Alert[]>([]);
@@ -188,7 +203,9 @@ export default function FiscalRelatorioPage() {
               const pct = Math.round((count / (top5[0][1] || 1)) * 100);
               return (
                 <div key={tipo} className="flex items-center gap-3">
-                  <div className="w-32 shrink-0 text-xs text-[var(--text-muted)] truncate">{tipo.replace(/_/g, " ")}</div>
+                  <div className="w-44 shrink-0 text-xs font-medium text-[var(--text-secondary)] truncate" title={formatAlertLabel(tipo)}>
+                    {formatAlertLabel(tipo)}
+                  </div>
                   <div className="flex-1 h-2 rounded-full bg-[var(--border)]">
                     <div className="h-2 rounded-full bg-[var(--primary)] transition-all" style={{ width: `${pct}%` }} />
                   </div>

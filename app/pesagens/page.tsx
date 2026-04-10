@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
+import { Scale as ScaleIcon, TrendingUp as TrendingUpIcon, Weight as WeightIcon, Activity as ActivityIcon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -474,18 +476,10 @@ function PesagemHeroMetrics({ animalsCount }: { animalsCount: number }) {
 
   return (
     <div className="grid gap-4 sm:grid-cols-2">
-      <MetricCard label="Animais" value={animalsCount} subtitle="ativos disponíveis para pesagem" />
-      <MetricCard label="Timeline" value="Ativa" subtitle="pesagens entram no passaporte" />
-      <MetricCard
-        label="GMD médio"
-        value={stats.gmd != null ? `${stats.gmd} g/dia` : "—"}
-        subtitle="ganho médio diário do rebanho"
-      />
-      <MetricCard
-        label="Último peso"
-        value={stats.lastWeight != null ? `${stats.lastWeight} kg` : "—"}
-        subtitle={stats.lastCode ? `${stats.lastCode} — registro mais recente` : "evolução histórica"}
-      />
+      <MetricCard label="Animais" value={animalsCount} subtitle="ativos disponíveis para pesagem" Icon={ScaleIcon} bg="bg-[var(--primary-soft)]" cl="text-[var(--primary)]" />
+      <MetricCard label="GMD médio" value={stats.gmd != null ? `${stats.gmd} g/dia` : "—"} subtitle="ganho médio diário do rebanho" Icon={TrendingUpIcon} bg="bg-emerald-50" cl="text-emerald-600" />
+      <MetricCard label="Último peso" value={stats.lastWeight != null ? `${stats.lastWeight} kg` : "—"} subtitle={stats.lastCode ? `${stats.lastCode} — registro mais recente` : "evolução histórica"} Icon={WeightIcon} bg="bg-blue-50" cl="text-blue-600" />
+      <MetricCard label="Timeline" value="Ativa" subtitle="pesagens entram no passaporte" Icon={ActivityIcon} bg="bg-amber-50" cl="text-amber-600" />
     </div>
   );
 }
@@ -494,20 +488,25 @@ function MetricCard({
   label,
   value,
   subtitle,
+  Icon,
+  bg,
+  cl,
 }: {
   label: string;
   value: string | number;
   subtitle: string;
+  Icon: LucideIcon;
+  bg: string;
+  cl: string;
 }) {
   return (
     <div className="ag-kpi-card">
-      <p className="text-sm text-[var(--text-muted)]">{label}</p>
-      <p className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-[var(--text-primary)]">
-        {value}
-      </p>
-      <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-        {subtitle}
-      </p>
+      <div className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${bg}`}>
+        <Icon size={17} className={cl} />
+      </div>
+      <p className="mt-3 ag-kpi-label">{label}</p>
+      <p className="ag-kpi-value">{value}</p>
+      <p className="sub">{subtitle}</p>
     </div>
   );
 }

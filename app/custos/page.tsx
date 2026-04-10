@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
+import { Beef, Layers, DollarSign, Activity } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -145,20 +147,32 @@ export default function CustosPage() {
                 label="Animais"
                 value={animals.length}
                 subtitle="disponíveis para associação"
+                Icon={Beef}
+                bg="bg-[var(--primary-soft)]"
+                cl="text-[var(--primary)]"
               />
               <MetricCard
                 label="Lotes"
                 value={lots.length}
                 subtitle="grupos disponíveis para custos"
+                Icon={Layers}
+                bg="bg-blue-50"
+                cl="text-blue-600"
               />
               <MetricCard
                 label="Módulo"
                 value="econômico"
                 subtitle="base para rentabilidade"
+                Icon={DollarSign}
+                bg="bg-emerald-50"
+                cl="text-emerald-600"
               />
               <MetricCard
                 label="Fase"
                 value="ativa"
+                Icon={Activity}
+                bg="bg-amber-50"
+                cl="text-amber-600"
                 subtitle="estrutura pronta para análises"
               />
             </div>
@@ -293,20 +307,25 @@ function MetricCard({
   label,
   value,
   subtitle,
+  Icon,
+  bg,
+  cl,
 }: {
   label: string;
   value: string | number;
   subtitle: string;
+  Icon: LucideIcon;
+  bg: string;
+  cl: string;
 }) {
   return (
     <div className="ag-kpi-card">
-      <p className="text-sm text-[var(--text-muted)]">{label}</p>
-      <p className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-[var(--text-primary)]">
-        {value}
-      </p>
-      <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-        {subtitle}
-      </p>
+      <div className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${bg}`}>
+        <Icon size={17} className={cl} />
+      </div>
+      <p className="mt-3 ag-kpi-label">{label}</p>
+      <p className="ag-kpi-value">{value}</p>
+      <p className="sub">{subtitle}</p>
     </div>
   );
 }
