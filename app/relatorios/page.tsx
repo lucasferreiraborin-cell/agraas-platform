@@ -1,6 +1,10 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import Link from "next/link";
 import HerdPdfButton from "@/app/components/HerdPdfButton";
+import {
+  ShieldCheck, TrendingUp, Package, DollarSign, ArrowLeftRight, Bell, Globe, FileText,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 export default async function RelatoriosPage() {
   const supabase = await createSupabaseServerClient();
@@ -16,46 +20,66 @@ export default async function RelatoriosPage() {
     supabase.from("applications").select("*", { count: "exact", head: true }),
     supabase.from("weights").select("*", { count: "exact", head: true }),
     supabase.from("lots").select("*", { count: "exact", head: true }),
-    supabase.from("cost_records").select("*", { count: "exact", head: true }),
+    supabase.from("animal_cost_summary").select("*", { count: "exact", head: true }),
     supabase.from("animal_movements").select("*", { count: "exact", head: true }),
   ]);
 
-  const reports = [
+  const reports: { title: string; description: string; href: string; cta: string; icon: LucideIcon }[] = [
     {
       title: "Relatório sanitário",
       description: "Aplicações, estoque e histórico sanitário da operação.",
       href: "/aplicacoes/historico",
       cta: "Abrir histórico sanitário",
+      icon: ShieldCheck,
     },
     {
       title: "Relatório produtivo",
       description: "Pesagens, desempenho e acompanhamento da evolução do rebanho.",
       href: "/pesagens/historico",
       cta: "Abrir histórico de pesagens",
+      icon: TrendingUp,
     },
     {
       title: "Relatório de lotes",
       description: "Estrutura de grupos operacionais e vínculos de animais.",
       href: "/lotes",
       cta: "Abrir lotes",
+      icon: Package,
     },
     {
       title: "Relatório econômico",
       description: "Custos por categoria, animal e lote.",
       href: "/custos/historico",
       cta: "Abrir histórico de custos",
+      icon: DollarSign,
     },
     {
       title: "Relatório operacional",
       description: "Movimentações e eventos recentes da fazenda.",
       href: "/movimentacoes/historico",
       cta: "Abrir histórico de movimentações",
+      icon: ArrowLeftRight,
     },
     {
       title: "Relatório de alertas",
       description: "Pontos críticos de estoque, vencimento e pesagem.",
       href: "/alertas",
       cta: "Abrir alertas",
+      icon: Bell,
+    },
+    {
+      title: "Relatório de Exportação",
+      description: "Conformidade Halal, passaportes emitidos e embarques ativos.",
+      href: "/exportacao",
+      cta: "Abrir central de exportação",
+      icon: Globe,
+    },
+    {
+      title: "Relatório Fiscal",
+      description: "NF-e importadas, alertas fiscais e validações do período.",
+      href: "/fiscal/relatorio",
+      cta: "Abrir relatório fiscal",
+      icon: FileText,
     },
   ];
 
@@ -100,20 +124,26 @@ export default async function RelatoriosPage() {
       </section>
 
       <section className="grid gap-6 md:grid-cols-2">
-        {reports.map((report) => (
-          <div key={report.title} className="ag-card p-8">
-            <h2 className="ag-section-title">{report.title}</h2>
-            <p className="mt-3 text-sm leading-7 text-[var(--text-secondary)]">
-              {report.description}
-            </p>
+        {reports.map((report) => {
+          const Icon = report.icon;
+          return (
+            <div key={report.title} className="ag-card p-8">
+              <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50">
+                <Icon size={22} className="text-emerald-700" />
+              </span>
+              <h2 className="ag-section-title mt-4">{report.title}</h2>
+              <p className="mt-3 text-sm leading-7 text-[var(--text-secondary)]">
+                {report.description}
+              </p>
 
-            <div className="mt-6">
-              <Link href={report.href} className="ag-button-secondary">
-                {report.cta}
-              </Link>
+              <div className="mt-6">
+                <Link href={report.href} className="ag-button-secondary">
+                  {report.cta}
+                </Link>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </section>
     </main>
   );
