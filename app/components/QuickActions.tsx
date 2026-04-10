@@ -23,8 +23,7 @@ export default function QuickActions() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  if (pathname.startsWith("/comprador")) return null;
-
+  // ⚠️ Rules of Hooks: todos os hooks ANTES de qualquer return condicional.
   useEffect(() => {
     function onMouseDown(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) {
@@ -34,6 +33,8 @@ export default function QuickActions() {
     if (open) document.addEventListener("mousedown", onMouseDown);
     return () => document.removeEventListener("mousedown", onMouseDown);
   }, [open]);
+
+  if (pathname.startsWith("/comprador")) return null;
 
   return (
     <div ref={ref} className="fixed bottom-6 right-[92px] z-50 flex flex-col items-end gap-2">
