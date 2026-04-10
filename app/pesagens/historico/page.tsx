@@ -13,11 +13,13 @@ type WeightRow = {
 type AnimalRow = {
   id: string;
   internal_code: string | null;
+  agraas_id: string | null;
 };
 
 type DisplayRow = {
   id: string;
   animal_code: string;
+  agraas_id: string | null;
   weight: number;
   weighing_date: string | null;
   notes: string;
@@ -36,7 +38,7 @@ export default async function PesagensHistoricoPage() {
 
     supabase
       .from("animals")
-      .select("id, internal_code"),
+      .select("id, internal_code, agraas_id"),
   ]);
 
   if (weightsError) {
@@ -50,18 +52,24 @@ export default async function PesagensHistoricoPage() {
   const weights = (weightsData ?? []) as WeightRow[];
   const animals = (animalsData ?? []) as AnimalRow[];
 
-  const animalMap = new Map<string, string>();
+  const animalMap = new Map<string, AnimalRow>();
   for (const animal of animals) {
-    animalMap.set(animal.id, animal.internal_code ?? animal.id);
+    animalMap.set(animal.id, animal);
   }
 
-  const rows: DisplayRow[] = weights.map((item) => ({
-    id: item.id,
-    animal_code: animalMap.get(item.animal_id) ?? item.animal_id,
-    weight: Number(item.weight ?? 0),
-    weighing_date: item.weighing_date ?? item.created_at ?? null,
-    notes: item.notes ?? "-",
-  }));
+  const rows: DisplayRow[] = weights.map((item) => {
+    const a = animalMap.get(item.animal_id);
+    return {
+      id: item.id,
+      animal_code: a?.internal_code ?? item.animal_id,
+      agraas_id: a?.agraas_id ?? null,
+      weight: Number(item.weight ?? 0),
+      weighing_date: item.weighing_date ?? item.created_at ?? null,
+      notes: item.notes ?? "",
+    };
+  });
+
+  const showNotes = rows.some(r => r.notes && r.notes.trim() !== "");
 
   const totalWeights = rows.length;
   const animalsWeighed = new Set(rows.map((row) => row.animal_code)).size;
@@ -147,17 +155,27 @@ export default async function PesagensHistoricoPage() {
                   <th>Animal</th>
                   <th>Peso</th>
                   <th>Data</th>
-                  <th>Observações</th>
+                  {showNotes && <th>Observações</th>}
+                  <th></th>
                 </tr>
               </thead>
 
               <tbody>
                 {rows.map((row) => (
                   <tr key={row.id}>
-                    <td>{row.animal_code}</td>
+                    <td className="font-medium text-[var(--text-primary)]">{row.animal_code}</td>
                     <td>{`${row.weight} kg`}</td>
                     <td>{formatDate(row.weighing_date)}</td>
-                    <td>{row.notes}</td>
+                    {showNotes && <td className="text-sm text-[var(--text-muted)]">{row.notes || "—"}</td>}
+                    <td className="text-right">
+                      {row.agraas_id ? (
+                        <Link href={`/passaporte/${row.agraas_id}`} className="text-sm font-semibold text-[var(--primary-hover)] hover:underline">
+                          Ver →
+                        </Link>
+                      ) : (
+                        <span className="text-xs text-[var(--text-muted)]">—</span>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>

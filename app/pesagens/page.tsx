@@ -38,6 +38,7 @@ export default function PesagensPage() {
         const { data, error } = await supabase
           .from("animals")
           .select("id, internal_code, agraas_id")
+          .eq("status", "Ativo")
           .order("internal_code", { ascending: true });
 
         if (error) {
@@ -170,28 +171,7 @@ export default function PesagensPage() {
           </div>
 
           <div className="ag-hero-panel">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <MetricCard
-                label="Animais"
-                value={animals.length}
-                subtitle="ativos disponíveis para pesagem"
-              />
-              <MetricCard
-                label="Timeline"
-                value="ativa"
-                subtitle="pesagens entram no passaporte"
-              />
-              <MetricCard
-                label="Módulo"
-                value="produtivo"
-                subtitle="base para performance do rebanho"
-              />
-              <MetricCard
-                label="Peso"
-                value="track"
-                subtitle="evolução histórica do animal"
-              />
-            </div>
+            <PesagemHeroMetrics animalsCount={animals.length} />
           </div>
         </div>
       </section>
@@ -452,6 +432,61 @@ function GmdSection({ animals }: { animals: AnimalRow[] }) {
         </div>
       )}
     </section>
+  );
+}
+
+function PesagemHeroMetrics({ animalsCount }: { animalsCount: number }) {
+  const [stats, setStats] = useState<{ gmd: number | null; lastWeight: number | null; lastCode: string | null }>({ gmd: null, lastWeight: null, lastCode: null });
+
+  useEffect(() => {
+    async function load() {
+      const { data: weights } = await supabase.from("weights")
+        .select("animal_id, weight, weighing_date")
+        .order("weighing_date", { ascending: false })
+        .limit(200);
+
+      if (!weights || weights.length === 0) return;
+
+      const byAnimal = new Map<string, { weight: number; date: string }[]>();
+      for (const w of weights) {
+        const arr = byAnimal.get(w.animal_id) ?? [];
+        arr.push({ weight: w.weight, date: w.weighing_date });
+        byAnimal.set(w.animal_id, arr);
+      }
+
+      const gmds: number[] = [];
+      for (const [, ws] of byAnimal) {
+        if (ws.length >= 2) {
+          const sorted = ws.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+          const days = (new Date(sorted[0].date).getTime() - new Date(sorted[1].date).getTime()) / 86400000;
+          if (days > 0) gmds.push(((sorted[0].weight - sorted[1].weight) / days) * 1000);
+        }
+      }
+      const avgGmd = gmds.length > 0 ? Math.round(gmds.reduce((s, v) => s + v, 0) / gmds.length) : null;
+
+      const latest = weights[0];
+      const { data: animal } = await supabase.from("animals").select("internal_code").eq("id", latest.animal_id).single();
+
+      setStats({ gmd: avgGmd, lastWeight: latest.weight, lastCode: animal?.internal_code ?? null });
+    }
+    load();
+  }, []);
+
+  return (
+    <div className="grid gap-4 sm:grid-cols-2">
+      <MetricCard label="Animais" value={animalsCount} subtitle="ativos disponíveis para pesagem" />
+      <MetricCard label="Timeline" value="Ativa" subtitle="pesagens entram no passaporte" />
+      <MetricCard
+        label="GMD médio"
+        value={stats.gmd != null ? `${stats.gmd} g/dia` : "—"}
+        subtitle="ganho médio diário do rebanho"
+      />
+      <MetricCard
+        label="Último peso"
+        value={stats.lastWeight != null ? `${stats.lastWeight} kg` : "—"}
+        subtitle={stats.lastCode ? `${stats.lastCode} — registro mais recente` : "evolução histórica"}
+      />
+    </div>
   );
 }
 

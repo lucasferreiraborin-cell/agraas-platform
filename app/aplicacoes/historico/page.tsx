@@ -7,6 +7,8 @@ type ApplicationRow = {
   product_id: string | null;
   batch_id: string | null;
   dose: number | null;
+  unit: string | null;
+  product_name: string | null;
   application_date: string | null;
   created_at: string | null;
 };
@@ -32,6 +34,7 @@ type DisplayRow = {
   product_name: string;
   batch_number: string;
   dose: number | null;
+  unit: string;
   application_date: string | null;
 };
 
@@ -45,7 +48,7 @@ export default async function AplicacoesHistoricoPage() {
   ] = await Promise.all([
     supabase
       .from("applications")
-      .select("id, animal_id, product_id, batch_id, dose, application_date, created_at")
+      .select("id, animal_id, product_id, batch_id, dose, unit, product_name, application_date, created_at")
       .order("application_date", { ascending: false }),
 
     supabase.from("products").select("id, name"),
@@ -94,13 +97,15 @@ export default async function AplicacoesHistoricoPage() {
   const rows: DisplayRow[] = applications.map((application) => ({
     id: application.id,
     animal_code: animalMap.get(application.animal_id) ?? application.animal_id,
-    product_name: application.product_id
-      ? productMap.get(application.product_id) ?? "Produto"
-      : "Produto",
+    product_name:
+      application.product_name
+      ?? (application.product_id ? productMap.get(application.product_id) : null)
+      ?? "Aplicação manual",
     batch_number: application.batch_id
-      ? batchMap.get(application.batch_id) ?? "-"
-      : "-",
+      ? batchMap.get(application.batch_id) ?? "—"
+      : "Aplicação manual",
     dose: application.dose ?? null,
+    unit: application.unit ?? "ml",
     application_date:
       application.application_date ?? application.created_at ?? null,
   }));
@@ -199,7 +204,7 @@ export default async function AplicacoesHistoricoPage() {
                     <td>{row.animal_code}</td>
                     <td>{row.product_name}</td>
                     <td>{row.batch_number}</td>
-                    <td>{row.dose ?? "-"}</td>
+                    <td>{row.dose != null ? `${row.dose} ${row.unit}` : "—"}</td>
                     <td>{formatDate(row.application_date)}</td>
                   </tr>
                 ))}

@@ -57,6 +57,7 @@ export default function AplicacoesPage() {
       const { data: animalsData, error: animalsError } = await supabase
         .from("animals")
         .select("id, internal_code")
+        .eq("status", "Ativo")
         .order("internal_code", { ascending: true });
 
       if (animalsError) {
