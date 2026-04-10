@@ -13,14 +13,34 @@ type ChainRow = {
 
 export default async function CadeiaPage() {
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
-    .from("agraas_master_passport")
-    .select(
-      "animal_id, internal_code, current_property_name, current_lot_code, slaughterhouse_name, animal_status, total_score"
-    )
-    .order("total_score", { ascending: false });
+  const [{ data, error }, { data: assignsData }, { data: lotsData }] = await Promise.all([
+    supabase
+      .from("agraas_master_passport")
+      .select(
+        "animal_id, internal_code, current_property_name, current_lot_code, slaughterhouse_name, animal_status, total_score"
+      )
+      .order("total_score", { ascending: false }),
+    supabase
+      .from("animal_lot_assignments")
+      .select("animal_id, lot_id")
+      .is("exit_date", null),
+    supabase.from("lots").select("id, name"),
+  ]);
 
-  const rows = (data ?? []) as ChainRow[];
+  // Mapa animal → nome do lote ativo (fallback quando view não retorna)
+  const lotNameById = new Map(((lotsData ?? []) as { id: string; name: string }[]).map(l => [l.id, l.name]));
+  const animalLotName = new Map<string, string>();
+  for (const a of (assignsData ?? []) as { animal_id: string; lot_id: string }[]) {
+    if (!animalLotName.has(a.animal_id)) {
+      animalLotName.set(a.animal_id, lotNameById.get(a.lot_id) ?? "");
+    }
+  }
+
+  const rawRows = (data ?? []) as ChainRow[];
+  const rows: ChainRow[] = rawRows.map(r => ({
+    ...r,
+    current_lot_code: r.current_lot_code ?? animalLotName.get(r.animal_id) ?? null,
+  }));
 
   const propertiesCount = new Set(
     rows.map((row) => row.current_property_name).filter(Boolean)
@@ -134,7 +154,11 @@ export default async function CadeiaPage() {
                       <span>→</span>
                       <ChainPill label="Propriedade" value={row.current_property_name ?? "-"} />
                       <span>→</span>
-                      <ChainPill label="Lote" value={row.current_lot_code ?? "-"} />
+                      <ChainPill
+                        label="Lote"
+                        value={row.current_lot_code ?? "—"}
+                        title={row.current_lot_code ? undefined : "Sem lote atribuído"}
+                      />
                       <span>→</span>
                       <ChainPill label="Destino" value={row.slaughterhouse_name ?? "-"} />
                     </div>
@@ -171,9 +195,9 @@ function MetricCard({
   );
 }
 
-function ChainPill({ label, value }: { label: string; value: string }) {
+function ChainPill({ label, value, title }: { label: string; value: string; title?: string }) {
   return (
-    <span className="inline-flex items-center gap-2 rounded-2xl border border-[var(--border)] bg-white px-3 py-2">
+    <span title={title} className="inline-flex items-center gap-2 rounded-2xl border border-[var(--border)] bg-white px-3 py-2">
       <span className="text-xs uppercase tracking-[0.12em] text-[var(--text-muted)]">
         {label}
       </span>

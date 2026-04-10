@@ -145,11 +145,13 @@ export default async function CertificacoesPage() {
 
   const totalCertified = rows.length;
 
+  // Score médio: só animais certificados COM score > 0 (ignora null/zero)
+  const scoredCertified = rows.filter(r => Number(r.total_score ?? 0) > 0);
   const averageScore =
-    rows.length > 0
+    scoredCertified.length > 0
       ? Math.round(
-          rows.reduce((acc, row) => acc + Number(row.total_score ?? 0), 0) /
-            rows.length
+          scoredCertified.reduce((acc, row) => acc + Number(row.total_score), 0) /
+            scoredCertified.length
         )
       : 0;
 
@@ -331,20 +333,23 @@ export default async function CertificacoesPage() {
                       </td>
 
                       <td>
-                        {row.active_seals.length > 0 ? (
-                          <div className="flex flex-wrap gap-2">
-                            {row.active_seals.slice(0, 2).map((seal) => (
-                              <span
-                                key={seal}
-                                className="ag-badge ag-badge-green"
-                              >
-                                {formatLabel(seal)}
-                              </span>
-                            ))}
-                          </div>
-                        ) : (
-                          "-"
-                        )}
+                        {(() => {
+                          // Fallback: usa certifications como selos quando active_seals está vazio
+                          const seals = row.active_seals.length > 0
+                            ? row.active_seals
+                            : row.certifications;
+                          return seals.length > 0 ? (
+                            <div className="flex flex-wrap gap-2">
+                              {seals.slice(0, 2).map((seal) => (
+                                <span key={seal} className="ag-badge ag-badge-green">
+                                  {formatLabel(seal)}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            "—"
+                          );
+                        })()}
                       </td>
 
                       <td>
@@ -365,11 +370,26 @@ export default async function CertificacoesPage() {
                       </td>
 
                       <td>
-                        {row.current_withdrawal_end_date
-                          ? new Date(
-                              row.current_withdrawal_end_date
-                            ).toLocaleDateString("pt-BR")
-                          : "-"}
+                        {(() => {
+                          const end = row.current_withdrawal_end_date;
+                          if (!end) {
+                            return (
+                              <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700">
+                                Livre
+                              </span>
+                            );
+                          }
+                          const isFuture = new Date(end).getTime() > Date.now();
+                          return isFuture ? (
+                            <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-[10px] font-bold text-amber-700">
+                              {new Date(end).toLocaleDateString("pt-BR")}
+                            </span>
+                          ) : (
+                            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700">
+                              Livre
+                            </span>
+                          );
+                        })()}
                       </td>
 
                       <td>
