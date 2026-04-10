@@ -22,11 +22,14 @@ const CAT_LABEL: Record<string, string> = {
 };
 
 const CAT_CLS: Record<string, string> = {
-  vacina: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  medicamento: "bg-blue-50 text-blue-700 border-blue-200",
-  insumo: "bg-amber-50 text-amber-700 border-amber-200",
-  racao: "bg-orange-50 text-orange-700 border-orange-200",
-  outro: "bg-gray-50 text-gray-600 border-gray-200",
+  vacina:       "bg-[#DCFCE7] text-[#166534] border-emerald-200",
+  medicamento:  "bg-[#DBEAFE] text-[#1E40AF] border-blue-200",
+  insumo:       "bg-[#FFEDD5] text-[#9A3412] border-orange-200",
+  racao:        "bg-amber-50 text-amber-700 border-amber-200",
+  fertilizante: "bg-yellow-50 text-yellow-700 border-yellow-200",
+  semente:      "bg-lime-50 text-lime-700 border-lime-200",
+  equipamento:  "bg-slate-50 text-slate-700 border-slate-200",
+  outro:        "bg-gray-50 text-gray-600 border-gray-200",
 };
 
 export default async function FornecedoresPage() {
@@ -64,7 +67,7 @@ export default async function FornecedoresPage() {
           <p className="ag-empty-state-text">Cadastre seus fornecedores para vincular a produtos e notas fiscais.</p>
         </div>
       ) : (
-        <section className="ag-card overflow-hidden p-0">
+        <section className="ag-card overflow-hidden p-0 pb-20">
           <table className="ag-table w-full">
             <thead>
               <tr>
@@ -73,6 +76,7 @@ export default async function FornecedoresPage() {
                 <th>Contato</th>
                 <th>Categoria</th>
                 <th>Produtos</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -87,6 +91,11 @@ export default async function FornecedoresPage() {
                     </span>
                   </td>
                   <td className="text-sm font-medium">{s.products?.length ?? 0}</td>
+                  <td className="text-right">
+                    <button className="text-sm font-medium text-[var(--primary-hover)] hover:underline" type="button">
+                      Editar
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>

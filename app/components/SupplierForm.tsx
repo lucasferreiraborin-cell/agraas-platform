@@ -29,11 +29,12 @@ export default function SupplierForm() {
   const [cnpj, setCnpj] = useState("");
   const [contactName, setContactName] = useState("");
   const [contactPhone, setContactPhone] = useState("");
-  const [category, setCategory] = useState("outro");
+  const [category, setCategory] = useState("");
   const router = useRouter();
 
   async function handleSubmit() {
     if (!name.trim()) { showToast("Informe o nome do fornecedor.", "error"); return; }
+    if (!category) { showToast("Selecione uma categoria.", "error"); return; }
     setSaving(true);
 
     const { data: { user } } = await supabase.auth.getUser();
@@ -55,7 +56,7 @@ export default function SupplierForm() {
 
     showToast("Fornecedor cadastrado.");
     setOpen(false);
-    setName(""); setCnpj(""); setContactName(""); setContactPhone(""); setCategory("outro");
+    setName(""); setCnpj(""); setContactName(""); setContactPhone(""); setCategory("");
     router.refresh();
   }
 
@@ -69,7 +70,15 @@ export default function SupplierForm() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setOpen(false)}>
-      <div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-2xl" onClick={e => e.stopPropagation()}>
+      <div className="relative w-full max-w-md rounded-3xl bg-white p-8 shadow-2xl" onClick={e => e.stopPropagation()}>
+        <button
+          onClick={() => setOpen(false)}
+          className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-[var(--text-muted)] transition hover:bg-[var(--surface-soft)] hover:text-[var(--text-primary)]"
+          aria-label="Fechar"
+          type="button"
+        >
+          ✕
+        </button>
         <h2 className="text-xl font-semibold text-[var(--text-primary)]">Novo Fornecedor</h2>
         <div className="mt-6 space-y-4">
           <div>
@@ -95,9 +104,10 @@ export default function SupplierForm() {
             </div>
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-[var(--text-primary)]">Categoria</label>
+            <label className="mb-1 block text-sm font-medium text-[var(--text-primary)]">Categoria *</label>
             <select value={category} onChange={e => setCategory(e.target.value)}
               className="w-full rounded-xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none focus:border-[var(--primary)]">
+              <option value="">Selecione uma categoria</option>
               {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
             </select>
           </div>
