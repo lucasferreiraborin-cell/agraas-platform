@@ -9,14 +9,28 @@ type Product = {
   unit: string | null;
   category: string | null;
   withdrawal_days: number | null;
+  notes: string | null;
   active: boolean;
   supplier: { name: string } | null;
 };
 
 const CAT_LABEL: Record<string, string> = {
   vacina: "Vacina", vermifugo: "Vermífugo", antibiotico: "Antibiótico",
-  antiparasitario: "Antiparasitário", suplemento: "Suplemento",
+  antiparasitario: "Antiparasitário", suplemento: "Suplemento", medicamento: "Medicamento",
   racao: "Ração", fertilizante: "Fertilizante", semente: "Semente", outro: "Outro",
+};
+
+const CAT_CLS: Record<string, string> = {
+  vermifugo:        "bg-emerald-50 text-emerald-700 border-emerald-200",
+  antiparasitario:  "bg-blue-50 text-blue-700 border-blue-200",
+  vacina:           "bg-purple-50 text-purple-700 border-purple-200",
+  medicamento:      "bg-orange-50 text-orange-700 border-orange-200",
+  antibiotico:      "bg-orange-50 text-orange-700 border-orange-200",
+  suplemento:       "bg-teal-50 text-teal-700 border-teal-200",
+  racao:            "bg-amber-50 text-amber-700 border-amber-200",
+  fertilizante:     "bg-yellow-50 text-yellow-700 border-yellow-200",
+  semente:          "bg-lime-50 text-lime-700 border-lime-200",
+  outro:            "bg-gray-50 text-gray-600 border-gray-200",
 };
 
 function getJoin<T>(val: T | T[] | null): T | null {
@@ -29,7 +43,7 @@ export default async function ProdutosPage() {
 
   const { data: productsData } = await supabase
     .from("products")
-    .select("id, name, ncm, unit, category, withdrawal_days, active, supplier:suppliers(name)")
+    .select("id, name, ncm, unit, category, withdrawal_days, notes, active, supplier:suppliers(name)")
     .eq("active", true)
     .order("name");
 
@@ -62,7 +76,7 @@ export default async function ProdutosPage() {
           <p className="ag-empty-state-text">Cadastre vacinas, vermífugos e outros produtos para vincular às aplicações.</p>
         </div>
       ) : (
-        <section className="ag-card overflow-hidden p-0">
+        <section className="ag-card overflow-hidden p-0 pb-20">
           <table className="ag-table w-full">
             <thead>
               <tr>
@@ -71,22 +85,42 @@ export default async function ProdutosPage() {
                 <th>Unidade</th>
                 <th>Categoria</th>
                 <th>Carência</th>
+                <th>Registro MAPA</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
-              {products.map(p => (
-                <tr key={p.id}>
-                  <td className="font-semibold text-[var(--text-primary)]">{p.name}</td>
-                  <td className="text-sm">{p.supplier?.name ?? "—"}</td>
-                  <td className="text-sm">{p.unit ?? "—"}</td>
-                  <td>
-                    <span className="rounded-full border border-[var(--border)] bg-[var(--surface-soft)] px-2.5 py-0.5 text-[10px] font-bold text-[var(--text-muted)]">
-                      {CAT_LABEL[p.category ?? ""] ?? p.category ?? "—"}
-                    </span>
-                  </td>
-                  <td className="text-sm">{p.withdrawal_days ? `${p.withdrawal_days} dias` : "Sem carência"}</td>
-                </tr>
-              ))}
+              {products.map(p => {
+                const catKey = p.category ?? "outro";
+                const catCls = CAT_CLS[catKey] ?? CAT_CLS.outro;
+                const carenciaCls = p.withdrawal_days
+                  ? "border-amber-200 bg-amber-50 text-amber-700"
+                  : "border-emerald-200 bg-emerald-50 text-emerald-700";
+                const carenciaLabel = p.withdrawal_days ? `${p.withdrawal_days} dias` : "Sem carência";
+                return (
+                  <tr key={p.id}>
+                    <td className="font-semibold text-[var(--text-primary)]">{p.name}</td>
+                    <td className="text-sm">{p.supplier?.name ?? "—"}</td>
+                    <td className="text-sm">{p.unit ?? "—"}</td>
+                    <td>
+                      <span className={`rounded-full border px-2.5 py-0.5 text-[10px] font-bold ${catCls}`}>
+                        {CAT_LABEL[catKey] ?? p.category ?? "—"}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`rounded-full border px-2.5 py-0.5 text-[10px] font-bold ${carenciaCls}`}>
+                        {carenciaLabel}
+                      </span>
+                    </td>
+                    <td className="font-mono text-xs text-[var(--text-muted)]">{p.notes ?? "—"}</td>
+                    <td className="text-right">
+                      <button className="text-sm font-medium text-[var(--primary-hover)] hover:underline" type="button">
+                        Editar
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </section>
