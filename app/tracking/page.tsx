@@ -47,35 +47,46 @@ export default async function TrackingPage() {
 
   const isBuyer = clientData?.role === "buyer";
 
-  // Buyer uses service client + lot_buyer_access filter; others use RLS via cookies
-  const db = isBuyer ? createSupabaseServiceClient() : authClient;
+  let trackingData: TrackingRow[] = [];
+  let lotsData: LotRow[] = [];
 
-  let allowedLotIds: string[] | null = null;
   if (isBuyer && clientData) {
+    // Buyer: service client + filter by lot_buyer_access
+    const db = createSupabaseServiceClient();
     const { data: access } = await db
       .from("lot_buyer_access")
       .select("lot_id")
       .eq("buyer_client_id", clientData.id);
-    allowedLotIds = (access ?? []).map((r: { lot_id: string }) => r.lot_id);
+    const allowedLotIds = (access ?? []).map((r: { lot_id: string }) => r.lot_id);
+
+    if (allowedLotIds.length > 0) {
+      const [trackingRes, lotsRes] = await Promise.all([
+        db.from("shipment_tracking")
+          .select("id, lot_id, stage, timestamp, animals_confirmed, animals_lost, location_name")
+          .in("lot_id", allowedLotIds)
+          .order("timestamp", { ascending: false }),
+        db.from("lots")
+          .select("id, name, certificacoes_exigidas, ship_name, arrival_date, data_embarque, porto_embarque, pais_destino")
+          .in("id", allowedLotIds),
+      ]);
+      trackingData = (trackingRes.data ?? []) as TrackingRow[];
+      lotsData = (lotsRes.data ?? []) as LotRow[];
+    }
+  } else {
+    // Admin/client: RLS via cookies
+    const [trackingRes, lotsRes] = await Promise.all([
+      authClient.from("shipment_tracking")
+        .select("id, lot_id, stage, timestamp, animals_confirmed, animals_lost, location_name")
+        .order("timestamp", { ascending: false }),
+      authClient.from("lots")
+        .select("id, name, certificacoes_exigidas, ship_name, arrival_date, data_embarque, porto_embarque, pais_destino"),
+    ]);
+    trackingData = (trackingRes.data ?? []) as TrackingRow[];
+    lotsData = (lotsRes.data ?? []) as LotRow[];
   }
 
-  const lotsQuery = db.from("lots").select("id, name, certificacoes_exigidas, ship_name, arrival_date, data_embarque, porto_embarque, pais_destino");
-  const trackingQuery = db
-    .from("shipment_tracking")
-    .select("id, lot_id, stage, timestamp, animals_confirmed, animals_lost, location_name")
-    .order("timestamp", { ascending: false });
-
-  const [{ data: trackingData }, { data: lotsData }] = await Promise.all([
-    allowedLotIds && allowedLotIds.length > 0
-      ? trackingQuery.in("lot_id", allowedLotIds)
-      : isBuyer ? Promise.resolve({ data: [] }) : trackingQuery,
-    allowedLotIds && allowedLotIds.length > 0
-      ? lotsQuery.in("id", allowedLotIds)
-      : isBuyer ? Promise.resolve({ data: [] }) : lotsQuery,
-  ]);
-
-  const trackings: TrackingRow[] = (trackingData ?? []) as TrackingRow[];
-  const lots: LotRow[] = (lotsData ?? []) as LotRow[];
+  const trackings: TrackingRow[] = trackingData;
+  const lots: LotRow[] = lotsData;
   const lotMap = new Map(lots.map(l => [l.id, l]));
   const lotName = (id: string) => lotMap.get(id)?.name ?? id;
   const lotHasHalal = (id: string) => lotMap.get(id)?.certificacoes_exigidas?.includes("Halal") ?? false;
@@ -90,13 +101,19 @@ export default async function TrackingPage() {
 
   const lotSummaries = Array.from(byLot.entries()).map(([lotId, rows]) => {
     const completedStages = new Set(rows.map(r => r.stage));
-    const currentStageIdx = STAGE_ORDER.findIndex(s => !completedStages.has(s));
-    const currentStage = currentStageIdx === -1 ? "entregue" : STAGE_ORDER[currentStageIdx];
+    // currentStage = highest completed stage index + 1 (skips gaps)
+    let highestDoneIdx = -1;
+    for (let i = STAGE_ORDER.length - 1; i >= 0; i--) {
+      if (completedStages.has(STAGE_ORDER[i])) { highestDoneIdx = i; break; }
+    }
+    const currentStageIdx = highestDoneIdx + 1 >= STAGE_ORDER.length ? STAGE_ORDER.length - 1 : highestDoneIdx + 1;
+    const currentStage = STAGE_ORDER[currentStageIdx];
     const lastRow = rows[0];
     const totalLost = rows.reduce((s, r) => s + (r.animals_lost ?? 0), 0);
     const lastConfirmed = lastRow?.animals_confirmed ?? null;
     const started = rows.find(r => r.stage === "fazenda")?.animals_confirmed ?? null;
-    const pctSurvival = started && lastConfirmed ? Math.round((lastConfirmed / started) * 100) : null;
+    // Survival = vivos atuais / animais iniciais (com 1 decimal)
+    const pctSurvival = started && lastConfirmed != null ? Math.round((lastConfirmed / started) * 1000) / 10 : null;
     const lot = lotMap.get(lotId);
     return {
       lotId,

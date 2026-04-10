@@ -105,7 +105,7 @@ export default function ExportacaoPage() {
   const scoreByAnimal = useMemo(() => {
     const map = new Map<string, number>();
     for (const s of scores) {
-      const val = (s.score_json as any)?.overall;
+      const val = (s.score_json as any)?.total_score ?? (s.score_json as any)?.overall;
       if (val != null) map.set(s.animal_id, Number(val));
     }
     return map;

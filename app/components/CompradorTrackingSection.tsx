@@ -44,7 +44,12 @@ export default function CompradorTrackingSection({ lots, trackingCheckpoints, la
             const cps = trackingCheckpoints.filter(c => c.lot_id === lot.id);
             if (!cps.length) return null;
             const completedSet = new Set(cps.map(c => c.stage));
-            const currentIdx   = TRACKING_STAGES.findIndex(s => !completedSet.has(s.key));
+            // currentIdx = highest completed stage index + 1 (skip gaps)
+            let highestDone = -1;
+            for (let i = TRACKING_STAGES.length - 1; i >= 0; i--) {
+              if (completedSet.has(TRACKING_STAGES[i].key)) { highestDone = i; break; }
+            }
+            const currentIdx = highestDone + 1 >= TRACKING_STAGES.length ? TRACKING_STAGES.length - 1 : highestDone + 1;
             const totalLost    = cps.reduce((s, c) => s + (c.animals_lost ?? 0), 0);
             const lastConfCp   = [...cps].reverse().find(c => c.animals_confirmed != null);
 
@@ -92,8 +97,10 @@ export default function CompradorTrackingSection({ lots, trackingCheckpoints, la
                 {/* Horizontal stage bar */}
                 <div className="flex items-start">
                   {TRACKING_STAGES.map((stage, i) => {
-                    const isDone    = completedSet.has(stage.key);
-                    const isCurrent = currentIdx === i;
+                    // Treat any stage at or below highest completed as "done"
+                    // (handles gaps where intermediate stages were skipped in data)
+                    const isDone    = i <= highestDone;
+                    const isCurrent = currentIdx === i && !isDone;
                     const cp        = cps.find(c => c.stage === stage.key);
                     const isLast    = i === TRACKING_STAGES.length - 1;
 

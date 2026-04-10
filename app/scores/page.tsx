@@ -199,9 +199,22 @@ export default async function ScoresPage() {
                   <p className="mt-3 font-semibold text-[var(--text-primary)]">{item.internal_code ?? item.animal_id}</p>
                   <p className="text-xs text-[var(--text-muted)] mt-0.5">{item.current_property_name ?? "—"}</p>
                   <div className="mt-3 flex flex-wrap gap-1">
-                    {(item.active_certifications ?? []).slice(0, 2).map(c => (
-                      <span key={c} className="ag-badge ag-badge-green text-[10px]">{c}</span>
-                    ))}
+                    {(() => {
+                      const raw = item.active_certifications ?? [];
+                      const canonical = new Set<string>();
+                      for (const c of raw) {
+                        const lower = c.toLowerCase();
+                        if (lower.includes("halal"))         canonical.add("Halal");
+                        else if (lower.includes("sif"))      canonical.add("SIF");
+                        else if (lower.includes("mapa"))     canonical.add("MAPA");
+                        else if (lower.includes("gta"))      canonical.add("GTA");
+                        else if (lower.includes("propriedade") || lower.includes("prc")) canonical.add("PRC");
+                        else canonical.add(c.split("-")[0].slice(0, 8));
+                      }
+                      return [...canonical].slice(0, 3).map(c => (
+                        <span key={c} className="ag-badge ag-badge-green text-[10px]">{c} ✓</span>
+                      ));
+                    })()}
                   </div>
                 </Link>
               );
