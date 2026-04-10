@@ -1,6 +1,7 @@
 import "./globals.css";
 import LogoutButton from "./components/LogoutButton";
 import SidebarNav from "./components/SidebarNav";
+import BuyerSidebarNav from "./components/BuyerSidebarNav";
 import MobileDrawer from "./components/MobileDrawer";
 import { ToastContainer } from "./components/Toast";
 import AgroAssistant from "./components/AgroAssistant";
@@ -15,6 +16,12 @@ export default async function RootLayout({
 }>) {
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
+
+  // Detect buyer role for sidebar customization
+  const { data: clientData } = user
+    ? await supabase.from("clients").select("role").eq("auth_user_id", user.id).single()
+    : { data: null };
+  const isBuyer = clientData?.role === "buyer";
 
   const environmentLabel =
     process.env.NODE_ENV === "production" ? "Agraas MVP" : "Ambiente local";
@@ -77,37 +84,40 @@ export default async function RootLayout({
                 </div>
               </div>
 
-              <SidebarNav />
+              {isBuyer ? <BuyerSidebarNav /> : <SidebarNav />}
 
               <div className="border-t border-white/10 p-5">
                 <div className="rounded-[28px] border border-white/10 bg-white/8 p-5 ring-1 ring-white/8 backdrop-blur-xl">
                   <p className="text-[11px] uppercase tracking-[0.18em] text-white/42">
-                    Visão
+                    {isBuyer ? "Vision" : "Visão"}
                   </p>
                   <p className="mt-3 text-sm leading-6 text-white/82">
-                    Rastreabilidade, performance produtiva, identidade digital
-                    animal e inteligência operacional para a cadeia pecuária.
+                    {isBuyer
+                      ? "Traceability, productive performance, animal digital identity and operational intelligence for the food supply chain."
+                      : "Rastreabilidade, performance produtiva, identidade digital animal e inteligência operacional para a cadeia pecuária."}
                   </p>
 
-                  <div className="mt-5 grid grid-cols-2 gap-3">
-                    <div className="rounded-2xl border border-white/8 bg-white/8 p-3">
+                  {isBuyer ? (
+                    <div className="mt-5 rounded-2xl border border-white/8 bg-white/8 p-3">
                       <p className="text-[11px] uppercase tracking-[0.12em] text-white/42">
-                        Stack
+                        Infrastructure
                       </p>
                       <p className="mt-2 text-sm font-medium text-white">
-                        Next + Supabase
+                        Enterprise · ISO 27001
                       </p>
                     </div>
-
-                    <div className="rounded-2xl border border-white/8 bg-white/8 p-3">
-                      <p className="text-[11px] uppercase tracking-[0.12em] text-white/42">
-                        Fase
-                      </p>
-                      <p className="mt-2 text-sm font-medium text-white">
-                        Fase 1 entregue
-                      </p>
+                  ) : (
+                    <div className="mt-5 grid grid-cols-2 gap-3">
+                      <div className="rounded-2xl border border-white/8 bg-white/8 p-3">
+                        <p className="text-[11px] uppercase tracking-[0.12em] text-white/42">Stack</p>
+                        <p className="mt-2 text-sm font-medium text-white">Next + Supabase</p>
+                      </div>
+                      <div className="rounded-2xl border border-white/8 bg-white/8 p-3">
+                        <p className="text-[11px] uppercase tracking-[0.12em] text-white/42">Fase</p>
+                        <p className="mt-2 text-sm font-medium text-white">Fase 1 entregue</p>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
             </aside>

@@ -44,8 +44,8 @@ export type RiskData = {
 export const TRACKING_STAGES = [
   { key: "fazenda",       en: "Farm",        pt: "Fazenda" },
   { key: "concentracao",  en: "Staging",     pt: "Concentração" },
-  { key: "transporte",    en: "Transport",   pt: "Transporte" },
   { key: "porto_origem",  en: "Origin Port", pt: "Porto Origem" },
+  { key: "transporte",    en: "Transport",   pt: "Transporte" },
   { key: "navio",         en: "At Sea",      pt: "Navio" },
   { key: "porto_destino", en: "Dest. Port",  pt: "Porto Destino" },
   { key: "entregue",      en: "Delivered",   pt: "Entregue" },

@@ -120,7 +120,8 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full rounded-xl bg-[var(--primary)] py-3 text-sm font-semibold text-white transition hover:bg-[var(--primary-hover)] disabled:opacity-60"
+                  style={{ backgroundColor: "#5d9c44" }}
+                  className="w-full rounded-xl py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
                 >
                   {loading ? "Entrando..." : "Entrar"}
                 </button>
@@ -180,7 +181,8 @@ export default function LoginPage() {
                   <button
                     type="submit"
                     disabled={resetLoading}
-                    className="w-full rounded-xl bg-[var(--primary)] py-3 text-sm font-semibold text-white transition hover:bg-[var(--primary-hover)] disabled:opacity-60"
+                    style={{ backgroundColor: "#5d9c44" }}
+                    className="w-full rounded-xl py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
                   >
                     {resetLoading ? "Enviando..." : "Enviar link de redefinição"}
                   </button>

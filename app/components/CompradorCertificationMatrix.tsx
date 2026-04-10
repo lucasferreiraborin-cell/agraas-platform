@@ -98,8 +98,8 @@ export default function CompradorCertificationMatrix({
                         {cert === "Halal" && certs.has(cert) && status === "eligible" ? (
                           <div className="flex justify-center"><HalalBadgeSVG size={40} /></div>
                         ) : (
-                          <span className={`inline-flex h-6 w-6 items-center justify-center rounded-md border text-[10px] font-bold ${certs.has(cert) ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-[var(--border)] bg-[var(--surface-soft)] text-[var(--text-muted)]"}`}>
-                            {certs.has(cert) ? "✓" : "—"}
+                          <span className={`inline-flex h-6 w-6 items-center justify-center rounded-md border text-[10px] font-bold ${certs.has(cert) ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-amber-200 bg-amber-50 text-amber-600"}`} title={certs.has(cert) ? "Certified" : "Pending"}>
+                            {certs.has(cert) ? "✓" : "⏳"}
                           </span>
                         )}
                       </td>
@@ -109,7 +109,9 @@ export default function CompradorCertificationMatrix({
                         ? <span className="text-xs font-semibold text-emerald-600">{t.matrix.clear}</span>
                         : <span className="text-xs font-semibold text-red-600">{new Date(withdrawals[0]).toLocaleDateString(locale, { day: "2-digit", month: "short" })}</span>}
                     </td>
-                    <td className={`px-4 py-3 text-center text-base font-bold ${score >= 75 ? "text-emerald-600" : score >= 60 ? "text-amber-600" : sc}`}>{score > 0 ? score : "—"}</td>
+                    <td className={`px-4 py-3 text-center text-base font-bold ${score >= 75 ? "text-emerald-600" : score >= 60 ? "text-amber-600" : sc}`}>
+                      {score > 0 ? <>{score}<span className="text-xs font-medium text-[var(--text-muted)]">/100</span></> : <span className="text-amber-600" title="Pending">⏳</span>}
+                    </td>
                     <td className="px-4 py-3 text-center">
                       <span className={`rounded-full border px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.14em] ${sbadge}`}>{sl}</span>
                     </td>
