@@ -267,6 +267,15 @@ export default async function AlertasPage() {
           <Brain size={16} className="text-violet-400" />
           <h2 className="ag-section-title mb-0">Alertas preditivos IA</h2>
           <span className="ag-badge ag-badge-dark ml-2">últimas 24h</span>
+          <span
+            className={`ml-2 rounded-full border px-2.5 py-0.5 text-[10px] font-bold ${
+              aiAlerts.length === 0
+                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                : "border-red-200 bg-red-50 text-red-700"
+            }`}
+          >
+            {aiAlerts.length === 0 ? "Tudo OK" : `${aiAlerts.length} ${aiAlerts.length === 1 ? "alerta ativo" : "alertas ativos"}`}
+          </span>
         </div>
 
         {aiAlerts.length === 0 ? (
