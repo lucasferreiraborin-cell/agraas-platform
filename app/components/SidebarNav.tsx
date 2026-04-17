@@ -39,6 +39,7 @@ import {
   Wheat,
   Layers,
   Ship,
+  ShoppingBag,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -144,6 +145,12 @@ const menuGroups: NavGroup[] = [
       { href: "/agricultura/embarques",label: "Embarques",  icon: Ship,      sub: true },
       { href: "/agricultura/insumos",  label: "Insumos",    icon: Boxes,     sub: true },
       { href: "/agricultura/fiscal",   label: "Fiscal Agrícola", icon: Receipt, sub: true },
+    ],
+  },
+  {
+    label: "Marketplace",
+    items: [
+      { href: "/marketplace",   label: "Marketplace",   icon: ShoppingBag, highlight: true },
     ],
   },
   {
