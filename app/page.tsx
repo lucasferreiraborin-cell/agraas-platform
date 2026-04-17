@@ -3,6 +3,7 @@ import { createSupabaseServiceClient } from "@/lib/supabase-service";
 import PublicNav from "@/app/components/PublicNav";
 import CounterAnimation from "@/app/components/CounterAnimation";
 import ScrollReveal from "@/app/components/ScrollReveal";
+import JourneySection from "@/app/components/JourneySection";
 import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
 import { Tractor, Globe, Handshake, FileText, BarChart2, Wheat, ShoppingBag, MapPin, ChevronRight } from "lucide-react";
 
@@ -124,6 +125,9 @@ export default async function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* ════ JOURNEY SCROLLYTELLING ═════════════════════════════════════════ */}
+      <JourneySection />
 
       {/* ════ MARKETPLACE PREVIEW ═════════════════════════════════════════════ */}
       {mkItems.length > 0 && (
