@@ -14,7 +14,7 @@ export default function PublicNav() {
   const [open, setOpen] = useState(false);
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-white/[.06] bg-[#071a0e]/80 backdrop-blur-2xl">
+    <nav className="sticky top-0 z-50 border-b border-white/[.06] bg-[#1a3a12]/80 backdrop-blur-2xl">
       <div className="mx-auto flex h-[72px] max-w-[1200px] items-center justify-between px-6">
         <Link href="/" className="text-[1.4rem] font-semibold tracking-[-.05em] text-white">
           Agraas
@@ -46,7 +46,7 @@ export default function PublicNav() {
       </div>
 
       {open && (
-        <div className="animate-[fadeIn_.2s_ease] border-t border-white/[.06] bg-[#071a0e] px-6 pb-6 pt-4 md:hidden">
+        <div className="animate-[fadeIn_.2s_ease] border-t border-white/[.06] bg-[#1a3a12] px-6 pb-6 pt-4 md:hidden">
           <div className="flex flex-col gap-4">
             {LINKS.map(l => (
               <Link key={l.href} href={l.href} onClick={() => setOpen(false)}
