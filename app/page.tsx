@@ -5,11 +5,10 @@ import CounterAnimation from "@/app/components/CounterAnimation";
 import ScrollReveal from "@/app/components/ScrollReveal";
 import JourneySection from "@/app/components/JourneySection";
 import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
-import { Tractor, Globe, Handshake, FileText, BarChart2, Wheat, ShoppingBag, MapPin, ChevronRight } from "lucide-react";
+import { FileText, BarChart2, Wheat, ShoppingBag, MapPin, ArrowRight } from "lucide-react";
 
 type ListingRow = { id: string; title: string; listing_type: string; price_per_unit: number; unit: string; location_city: string | null; location_state: string | null; halal_certified: boolean; score_agraas: number | null };
-
-const TYPE_LABEL: Record<string, string> = { animal: "Animal", safra: "Safra", insumo: "Insumo", maquinario: "Maquinário", equipamento: "Equipamento", epi: "EPI", outro: "Outro" };
+const TYPE_LABEL: Record<string, string> = { animal: "Animal", safra: "Safra", insumo: "Insumo", maquinario: "Maquinário", equipamento: "Equipamento" };
 const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
 export default async function LandingPage() {
@@ -18,188 +17,181 @@ export default async function LandingPage() {
   const mkItems = (listings ?? []) as ListingRow[];
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#071a0e]">
       <PublicNav />
 
-      {/* ════ HERO ════════════════════════════════════════════════════════════ */}
-      <section className="relative overflow-hidden bg-[linear-gradient(135deg,#3d762c_0%,#294f1d_60%,#1e3a1b_100%)]">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_70%_30%,rgba(93,156,68,0.15),transparent)]" />
-        <div className="mx-auto grid max-w-7xl gap-12 px-6 py-20 lg:grid-cols-[1.1fr_0.9fr] lg:py-28">
-          {/* Left */}
-          <div className="flex flex-col justify-center">
-            <p className="text-[13px] font-semibold uppercase tracking-[0.25em] text-[var(--primary)]/70">Plataforma Agraas</p>
-            <h1 className="mt-4 text-[clamp(2.5rem,5vw,4rem)] font-extrabold leading-[1.08] tracking-[-0.04em] text-white">
-              O agronegócio brasileiro<br />em um único ecossistema.
-            </h1>
-            <p className="mt-6 max-w-lg text-[1.1rem] leading-8 text-emerald-100/70">
-              Rastreabilidade verificada, certificação Halal e o maior marketplace de animais, safras e insumos do Brasil.
-            </p>
-            <div className="mt-10 flex flex-wrap gap-4">
-              <Link href="/marketplace"
-                className="rounded-2xl bg-white px-8 py-4 text-[15px] font-bold text-[#294f1d] shadow-lg hover:bg-emerald-50 transition">
-                Explorar o Marketplace
-              </Link>
-              <Link href="/login"
-                className="rounded-2xl border-2 border-white/30 px-8 py-4 text-[15px] font-bold text-white hover:bg-white/10 transition">
-                Acessar a plataforma
-              </Link>
-            </div>
+      {/* ══ HERO ══════════════════════════════════════════════════════════════ */}
+      <section className="relative overflow-hidden">
+        <div className="pointer-events-none absolute inset-0" style={{
+          backgroundImage: "linear-gradient(hsla(0,0%,100%,.03) 1px, transparent 1px), linear-gradient(90deg, hsla(0,0%,100%,.03) 1px, transparent 1px)",
+          backgroundSize: "5rem 5rem",
+        }} />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_0%,rgba(93,156,68,.12),transparent)]" />
+
+        <div className="relative mx-auto max-w-[1200px] px-6 pb-24 pt-[clamp(5rem,10vw,8rem)]">
+          <p className="font-mono text-[.6875rem] font-medium uppercase tracking-[.2em] text-[#5d9c44]">
+            Plataforma Agraas
+          </p>
+
+          <h1 className="mt-6 max-w-[900px] text-[clamp(2.5rem,6.5vw,5.2rem)] font-medium leading-[.94] tracking-[-.04em] text-white">
+            Rastreabilidade do<br />campo ao mundo.
+          </h1>
+
+          <p className="mt-8 max-w-[500px] text-[1.0625rem] leading-[1.75] text-white/40">
+            Certificação Halal verificada, score de qualidade por animal e o maior marketplace de animais, safras e insumos do Brasil.
+          </p>
+
+          <div className="mt-10 flex flex-wrap gap-4">
+            <Link href="/marketplace"
+              className="group flex items-center gap-2.5 rounded-lg bg-white px-6 py-3.5 text-[.875rem] font-semibold text-[#071a0e] shadow-[0_4px_24px_rgba(255,255,255,.08)] transition-all duration-300 hover:shadow-[0_8px_32px_rgba(255,255,255,.12)]">
+              Explorar Marketplace <ArrowRight size={15} className="transition-transform duration-300 group-hover:translate-x-0.5" />
+            </Link>
+            <Link href="/login"
+              className="rounded-lg border border-white/[.15] px-6 py-3.5 text-[.875rem] font-medium text-white/70 transition-all duration-200 hover:border-white/30 hover:text-white">
+              Acessar plataforma
+            </Link>
           </div>
 
-          {/* Right — stat cards */}
-          <div className="grid grid-cols-2 gap-4 self-center">
+          {/* Stat strip */}
+          <div className="mt-20 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-white/[.06] bg-white/[.06] sm:grid-cols-4">
             {[
-              { value: 78, suffix: "", label: "páginas", sub: "Plataforma completa" },
-              { value: 2300, suffix: "", label: "cabeças", sub: "Fazenda piloto ativa" },
-              { value: 4, suffix: "", label: "engines", sub: "Score por animal" },
-              { value: 100, suffix: "%", label: "Halal", sub: "Certificação verificada" },
+              { end: 2300, label: "cabeças rastreadas", suffix: "" },
+              { end: 78, label: "módulos da plataforma", suffix: "" },
+              { end: 4, label: "score engines", suffix: "" },
+              { end: 100, label: "certificação Halal", suffix: "%" },
             ].map((s, i) => (
-              <div key={i} className="rounded-2xl border border-white/15 bg-white/8 p-6 backdrop-blur-sm">
-                <p className="text-[2.2rem] font-extrabold leading-none text-[var(--primary)]">
-                  <CounterAnimation end={s.value} suffix={s.suffix} />
+              <div key={i} className="bg-[#071a0e] px-6 py-6">
+                <p className="font-mono text-[1.75rem] font-medium leading-none text-white">
+                  <CounterAnimation end={s.end} suffix={s.suffix} />
                 </p>
-                <p className="mt-1 text-[13px] font-semibold text-white/80">{s.label}</p>
-                <p className="mt-0.5 text-[11px] text-white/40">{s.sub}</p>
+                <p className="mt-2 text-[.75rem] text-white/35">{s.label}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ════ PARA QUEM É ═════════════════════════════════════════════════════ */}
-      <section className="mx-auto max-w-6xl px-6 py-24">
-        <ScrollReveal>
-          <p className="text-center text-[13px] font-semibold uppercase tracking-[0.2em] text-[var(--text-muted)]">Para quem é</p>
-          <h2 className="mt-3 text-center text-[2rem] font-bold tracking-[-0.03em] text-[var(--text-primary)]">A Agraas foi construída para toda a cadeia</h2>
-        </ScrollReveal>
+      {/* ══ CAPABILITIES ══════════════════════════════════════════════════════ */}
+      <section className="relative border-t border-white/[.04] bg-[#091f10]">
+        <div className="mx-auto max-w-[1200px] px-6 py-[clamp(5rem,10vw,8rem)]">
+          <ScrollReveal>
+            <p className="font-mono text-[.6875rem] font-medium uppercase tracking-[.2em] text-[#5d9c44]">A plataforma</p>
+            <h2 className="mt-4 max-w-[700px] text-[clamp(1.6rem,3vw,2.4rem)] font-medium leading-[1.15] tracking-[-.03em] text-white">
+              Quatro camadas de inteligência para o agronegócio brasileiro.
+            </h2>
+          </ScrollReveal>
 
-        <div className="mt-14 grid gap-8 md:grid-cols-3">
-          {[
-            { Icon: Tractor, title: "Para quem produz", text: "Gerencie o rebanho, emita passaportes digitais e certifique para exportação Halal. Venda direto para compradores verificados.", cta: "Começar a rastrear" },
-            { Icon: Globe, title: "Para quem compra", text: "Acesse animais e safras com rastreabilidade individual, score de qualidade Agraas e certificação Halal do Brasil para o mundo.", cta: "Comprar com confiança" },
-            { Icon: Handshake, title: "Para quem fornece", text: "Distribua insumos, maquinário e tecnologia para fazendas de todo o Brasil. Seu produto onde o agronegócio está.", cta: "Ser parceiro" },
-          ].map((c, i) => (
-            <ScrollReveal key={c.title} delay={i * 100}>
-              <div className="group rounded-3xl border border-[var(--border)] bg-white p-8 transition hover:border-[var(--primary)]/30 hover:shadow-[var(--shadow-card)]">
-                <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--primary-soft)]">
-                  <c.Icon size={22} className="text-[var(--primary)]" />
+          <div className="mt-16 grid gap-px overflow-hidden rounded-xl border border-white/[.06] bg-white/[.06] sm:grid-cols-2">
+            {[
+              { Icon: FileText, title: "Passaporte Digital", text: "ID único por animal com histórico sanitário, nutricional e de conformidade Halal." },
+              { Icon: BarChart2, title: "Score Agraas", text: "Algoritmo em 5 dimensões. O score é a moeda de precificação no marketplace." },
+              { Icon: Wheat, title: "Grain ID", text: "Soja, milho e trigo rastreados da fazenda ao navio em 7 etapas documentadas." },
+              { Icon: ShoppingBag, title: "Marketplace", text: "Compre e venda com dados verificados. NF-e automática. Score integrado." },
+            ].map((c, i) => (
+              <ScrollReveal key={c.title} delay={i * 80}>
+                <div className="group flex gap-5 bg-[#091f10] p-8 transition-colors duration-300 hover:bg-white/[.02]">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/[.08] bg-white/[.03]">
+                    <c.Icon size={18} className="text-[#5d9c44]" />
+                  </div>
+                  <div>
+                    <h3 className="text-[.9375rem] font-medium text-white">{c.title}</h3>
+                    <p className="mt-2 text-[.8125rem] leading-[1.7] text-white/35">{c.text}</p>
+                  </div>
                 </div>
-                <h3 className="mt-5 text-lg font-bold text-[var(--text-primary)]">{c.title}</h3>
-                <p className="mt-3 text-[14px] leading-7 text-[var(--text-secondary)]">{c.text}</p>
-                <Link href="/cadastro" className="mt-4 inline-flex items-center gap-1.5 text-[14px] font-semibold text-[var(--primary)] hover:underline">
-                  {c.cta} <ChevronRight size={14} />
+              </ScrollReveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ══ JOURNEY ═══════════════════════════════════════════════════════════ */}
+      <JourneySection />
+
+      {/* ══ MARKETPLACE ═══════════════════════════════════════════════════════ */}
+      {mkItems.length > 0 && (
+        <section className="relative border-t border-white/[.04] bg-[#091f10]">
+          <div className="mx-auto max-w-[1200px] px-6 py-[clamp(5rem,10vw,8rem)]">
+            <ScrollReveal>
+              <p className="font-mono text-[.6875rem] font-medium uppercase tracking-[.2em] text-[#5d9c44]">Marketplace</p>
+              <h2 className="mt-4 max-w-[600px] text-[clamp(1.6rem,3vw,2.4rem)] font-medium leading-[1.15] tracking-[-.03em] text-white">
+                Animais, safras e insumos com dados verificados.
+              </h2>
+            </ScrollReveal>
+
+            <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {mkItems.map((l, i) => (
+                <ScrollReveal key={l.id} delay={i * 60}>
+                  <Link href="/marketplace" className="group block rounded-xl border border-white/[.06] bg-white/[.02] p-6 transition-all duration-300 hover:border-white/[.12] hover:bg-white/[.04]">
+                    <div className="flex items-center justify-between">
+                      <span className="rounded-md bg-[#5d9c44]/10 px-2.5 py-1 text-[.6875rem] font-semibold text-[#5d9c44]">
+                        {TYPE_LABEL[l.listing_type] ?? l.listing_type}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        {l.halal_certified && <HalalBadgeSVG size={20} />}
+                        {l.score_agraas != null && (
+                          <span className="font-mono text-[.6875rem] font-semibold text-white/40">{l.score_agraas}</span>
+                        )}
+                      </div>
+                    </div>
+                    <h4 className="mt-4 text-[.9375rem] font-medium leading-snug text-white/80 line-clamp-2 transition-colors group-hover:text-white">{l.title}</h4>
+                    <p className="mt-3 text-[1.125rem] font-semibold text-white">
+                      {fmt(l.price_per_unit)}<span className="ml-1 text-[.75rem] font-normal text-white/30">/{l.unit}</span>
+                    </p>
+                    {l.location_city && (
+                      <div className="mt-3 flex items-center gap-1.5 text-[.75rem] text-white/25">
+                        <MapPin size={11} />{l.location_city}-{l.location_state}
+                      </div>
+                    )}
+                  </Link>
+                </ScrollReveal>
+              ))}
+            </div>
+
+            <ScrollReveal delay={400}>
+              <div className="mt-12 text-center">
+                <Link href="/marketplace"
+                  className="group inline-flex items-center gap-2 rounded-lg border border-white/[.12] px-6 py-3 text-[.875rem] font-medium text-white/60 transition-all duration-200 hover:border-white/25 hover:text-white">
+                  Ver todos os anúncios <ArrowRight size={14} className="transition-transform group-hover:translate-x-0.5" />
                 </Link>
               </div>
             </ScrollReveal>
-          ))}
-        </div>
-      </section>
-
-      {/* ════ O QUE É ═════════════════════════════════════════════════════════ */}
-      <section className="bg-[var(--bg)] px-6 py-24">
-        <div className="mx-auto max-w-6xl">
-          <ScrollReveal>
-            <p className="text-[13px] font-semibold uppercase tracking-[0.2em] text-[var(--text-muted)]">A plataforma</p>
-            <h2 className="mt-3 text-[2rem] font-bold tracking-[-0.03em] text-[var(--text-primary)]">Infraestrutura digital para o agronegócio brasileiro</h2>
-          </ScrollReveal>
-
-          <div className="mt-14 grid gap-6 sm:grid-cols-2">
-            {[
-              { Icon: FileText, title: "Passaporte Digital", text: "Cada animal recebe um ID Agraas com histórico completo — sanitário, nutricional, genético e de conformidade Halal." },
-              { Icon: BarChart2, title: "Score Agraas", text: "Algoritmo em 5 dimensões que pontua cada animal. Score vira referência de precificação no marketplace." },
-              { Icon: Wheat, title: "Grain ID", text: "Rastreabilidade de soja, milho e trigo da fazenda ao navio em 7 etapas documentadas." },
-              { Icon: ShoppingBag, title: "Marketplace Integrado", text: "Compre, venda e encontre fornecedores com dados verificados. Transações seguras com NF-e automática." },
-            ].map((b, i) => (
-              <ScrollReveal key={b.title} delay={i * 80}>
-                <div className="flex gap-5 rounded-2xl border-l-[3px] border-l-[var(--primary)] bg-white p-6 shadow-sm">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--primary-soft)]">
-                    <b.Icon size={20} className="text-[var(--primary)]" />
-                  </div>
-                  <div>
-                    <h4 className="text-[15px] font-bold text-[var(--text-primary)]">{b.title}</h4>
-                    <p className="mt-1.5 text-[13px] leading-6 text-[var(--text-secondary)]">{b.text}</p>
-                  </div>
-                </div>
-              </ScrollReveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ════ JOURNEY SCROLLYTELLING ═════════════════════════════════════════ */}
-      <JourneySection />
-
-      {/* ════ MARKETPLACE PREVIEW ═════════════════════════════════════════════ */}
-      {mkItems.length > 0 && (
-        <section className="mx-auto max-w-6xl px-6 py-24">
-          <ScrollReveal>
-            <p className="text-center text-[13px] font-semibold uppercase tracking-[0.2em] text-[var(--text-muted)]">Marketplace</p>
-            <h2 className="mt-3 text-center text-[2rem] font-bold tracking-[-0.03em] text-[var(--text-primary)]">O marketplace do agronegócio</h2>
-            <p className="mt-2 text-center text-[15px] text-[var(--text-secondary)]">Compre e venda animais, safras, insumos e equipamentos com dados verificados.</p>
-          </ScrollReveal>
-
-          <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {mkItems.map((l, i) => (
-              <ScrollReveal key={l.id} delay={i * 60}>
-                <Link href="/marketplace" className="group block rounded-2xl border border-[var(--border)] bg-white p-6 shadow-sm transition hover:shadow-[var(--shadow-card)] hover:-translate-y-0.5">
-                  <div className="flex items-center justify-between">
-                    <span className="rounded-full bg-[var(--primary-soft)] px-3 py-1 text-[11px] font-bold text-[var(--primary)]">{TYPE_LABEL[l.listing_type] ?? l.listing_type}</span>
-                    <div className="flex items-center gap-1.5">
-                      {l.halal_certified && <HalalBadgeSVG size={22} />}
-                      {l.score_agraas != null && <span className="text-[11px] font-bold text-[var(--primary)]">Score {l.score_agraas}</span>}
-                    </div>
-                  </div>
-                  <h4 className="mt-4 text-[15px] font-semibold text-[var(--text-primary)] leading-snug line-clamp-2 group-hover:text-[var(--primary)]">{l.title}</h4>
-                  <p className="mt-2 text-lg font-bold text-[var(--primary)]">{fmt(l.price_per_unit)}<span className="text-[12px] font-normal text-[var(--text-muted)]">/{l.unit}</span></p>
-                  {l.location_city && (
-                    <div className="mt-2 flex items-center gap-1 text-[12px] text-[var(--text-muted)]">
-                      <MapPin size={11} />{l.location_city}-{l.location_state}
-                    </div>
-                  )}
-                </Link>
-              </ScrollReveal>
-            ))}
-          </div>
-
-          <div className="mt-10 text-center">
-            <Link href="/marketplace" className="rounded-2xl bg-[var(--primary)] px-8 py-3.5 text-[14px] font-bold text-white shadow-sm hover:bg-[var(--primary-hover)] transition">
-              Ver todos os anuncios
-            </Link>
           </div>
         </section>
       )}
 
-      {/* ════ CLIENTE PILOTO ══════════════════════════════════════════════════ */}
-      <section className="bg-[linear-gradient(135deg,#3d762c_0%,#294f1d_100%)] px-6 py-24">
-        <div className="mx-auto max-w-5xl">
+      {/* ══ SOCIAL PROOF ══════════════════════════════════════════════════════ */}
+      <section className="relative border-t border-white/[.04]">
+        <div className="mx-auto max-w-[1200px] px-6 py-[clamp(5rem,10vw,8rem)]">
           <ScrollReveal>
-            <p className="text-[13px] font-semibold uppercase tracking-[0.2em] text-white/50">Em operacao no campo</p>
-            <h2 className="mt-3 text-[2rem] font-bold tracking-[-0.03em] text-white">Ja em operacao no campo</h2>
+            <p className="font-mono text-[.6875rem] font-medium uppercase tracking-[.2em] text-[#5d9c44]">Em operação</p>
+            <h2 className="mt-4 max-w-[600px] text-[clamp(1.6rem,3vw,2.4rem)] font-medium leading-[1.15] tracking-[-.03em] text-white">
+              Já no campo.
+            </h2>
           </ScrollReveal>
 
           <ScrollReveal delay={150}>
-            <div className="mt-10 rounded-3xl border border-white/15 bg-white/8 p-8 backdrop-blur-sm lg:p-10">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <p className="text-xl font-bold text-white">Fazenda Sao Joao da Boa Esperanca</p>
-                  <div className="mt-1 flex items-center gap-2 text-[14px] text-white/60">
-                    <MapPin size={13} />Jandaia, Goias
+            <div className="mt-12 rounded-xl border border-white/[.06] bg-white/[.02] p-8 lg:p-12">
+              <div className="flex flex-wrap items-start justify-between gap-6">
+                <div className="max-w-lg">
+                  <h3 className="text-[1.25rem] font-medium text-white">Fazenda São João da Boa Esperança</h3>
+                  <div className="mt-2 flex items-center gap-2 text-[.875rem] text-white/40">
+                    <MapPin size={13} />Jandaia, Goiás
                   </div>
-                  <p className="mt-4 max-w-lg text-[14px] leading-7 text-white/70">
-                    Primeira fazenda com Passaporte Agraas ativo. Lote de exportacao confirmado para o segundo trimestre de 2026.
+                  <p className="mt-5 text-[.9375rem] leading-[1.8] text-white/35">
+                    Primeira fazenda com Passaporte Agraas ativo e lote certificado Halal para exportação à Arábia Saudita. Segundo trimestre de 2026.
                   </p>
                 </div>
                 <HalalBadgeSVG size={56} />
               </div>
 
-              <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
+              <div className="mt-10 grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-white/[.06] bg-white/[.06] sm:grid-cols-4">
                 {[
-                  { v: "2.300", l: "cabecas" }, { v: "Nelore", l: "raca" },
+                  { v: "2.300", l: "cabeças" }, { v: "Nelore", l: "raça" },
                   { v: "Halal", l: "certificado" }, { v: "Q2 2026", l: "embarque" },
                 ].map(m => (
-                  <div key={m.l} className="rounded-2xl border border-white/10 bg-white/5 p-4 text-center">
-                    <p className="text-xl font-bold text-[var(--primary)]">{m.v}</p>
-                    <p className="mt-1 text-[12px] text-white/50">{m.l}</p>
+                  <div key={m.l} className="bg-[#071a0e] p-5 text-center">
+                    <p className="text-[1.125rem] font-medium text-white">{m.v}</p>
+                    <p className="mt-1 text-[.6875rem] text-white/30">{m.l}</p>
                   </div>
                 ))}
               </div>
@@ -208,67 +200,64 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* ════ PARCEIROS ═══════════════════════════════════════════════════════ */}
-      <section className="mx-auto max-w-6xl px-6 py-20">
-        <ScrollReveal>
-          <h2 className="text-center text-[1.5rem] font-bold tracking-[-0.02em] text-[var(--text-primary)]">Parceiros e certificadoras</h2>
-          <p className="mt-2 text-center text-[14px] text-[var(--text-muted)]">Em breve</p>
-        </ScrollReveal>
-        <div className="mt-10 flex flex-wrap justify-center gap-4">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="flex h-16 w-36 items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 text-[13px] text-gray-300">
-              Em breve
+      {/* ══ CTA ═══════════════════════════════════════════════════════════════ */}
+      <section className="relative border-t border-white/[.04]">
+        <div className="mx-auto max-w-[1200px] px-6 py-[clamp(5rem,12vw,10rem)] text-center">
+          <ScrollReveal>
+            <h2 className="mx-auto max-w-[600px] text-[clamp(1.8rem,4vw,3rem)] font-medium leading-[1.1] tracking-[-.03em] text-white">
+              Faça parte do ecossistema.
+            </h2>
+            <p className="mx-auto mt-5 max-w-[400px] text-[1rem] leading-[1.7] text-white/35">
+              Fazendeiro, comprador, fornecedor ou parceiro — há um lugar para você.
+            </p>
+            <div className="mt-10 flex flex-wrap justify-center gap-4">
+              <Link href="/cadastro"
+                className="group flex items-center gap-2.5 rounded-lg bg-[#5d9c44] px-7 py-3.5 text-[.875rem] font-semibold text-white shadow-[0_4px_20px_rgba(93,156,68,.3)] transition-all duration-300 hover:bg-[#4f8a38] hover:shadow-[0_8px_32px_rgba(93,156,68,.4)]">
+                Criar conta gratuitamente <ArrowRight size={15} className="transition-transform group-hover:translate-x-0.5" />
+              </Link>
+              <a href="mailto:contato@agraas.com.br"
+                className="rounded-lg border border-white/[.12] px-7 py-3.5 text-[.875rem] font-medium text-white/50 transition-all duration-200 hover:border-white/25 hover:text-white">
+                Fale com a gente
+              </a>
             </div>
-          ))}
+          </ScrollReveal>
         </div>
       </section>
 
-      {/* ════ CTA FINAL ══════════════════════════════════════════════════════ */}
-      <section className="bg-[#1e3a1b] px-6 py-24 text-center">
-        <ScrollReveal>
-          <h2 className="text-[2.2rem] font-bold tracking-[-0.03em] text-white">Faca parte do ecossistema</h2>
-          <p className="mx-auto mt-4 max-w-md text-[16px] text-[var(--primary)]">
-            Fazendeiro, comprador, fornecedor ou parceiro.
-          </p>
-          <Link href="/cadastro"
-            className="mt-8 inline-block rounded-2xl bg-[var(--primary)] px-10 py-4 text-[15px] font-bold text-white shadow-lg hover:bg-[var(--primary-hover)] transition">
-            Criar conta gratuitamente
-          </Link>
-        </ScrollReveal>
-      </section>
-
-      {/* ════ FOOTER ═════════════════════════════════════════════════════════ */}
-      <footer className="bg-[#111827] px-6 py-14">
-        <div className="mx-auto grid max-w-6xl gap-10 sm:grid-cols-4">
+      {/* ══ FOOTER ════════════════════════════════════════════════════════════ */}
+      <footer className="border-t border-white/[.04] bg-[#050f08]">
+        <div className="mx-auto grid max-w-[1200px] gap-10 px-6 py-16 sm:grid-cols-4">
           <div>
-            <p className="text-lg font-semibold text-white">Agraas</p>
-            <p className="mt-2 text-[13px] leading-6 text-gray-500">Infraestrutura digital do agronegocio brasileiro.</p>
+            <p className="text-[1.1rem] font-semibold tracking-[-.03em] text-white">Agraas</p>
+            <p className="mt-3 text-[.8125rem] leading-[1.7] text-white/25">
+              Infraestrutura digital do agronegócio brasileiro.
+            </p>
           </div>
           <div>
-            <p className="text-[12px] font-semibold uppercase tracking-[0.15em] text-gray-500">Plataforma</p>
-            <div className="mt-3 flex flex-col gap-2.5">
-              <Link href="/marketplace" className="text-[14px] text-gray-400 hover:text-white transition">Marketplace</Link>
-              <Link href="/planos" className="text-[14px] text-gray-400 hover:text-white transition">Planos</Link>
-              <Link href="/login" className="text-[14px] text-gray-400 hover:text-white transition">Login</Link>
+            <p className="font-mono text-[.6875rem] font-medium uppercase tracking-[.15em] text-white/20">Plataforma</p>
+            <div className="mt-4 flex flex-col gap-3">
+              <Link href="/marketplace" className="text-[.875rem] text-white/40 transition hover:text-white">Marketplace</Link>
+              <Link href="/planos" className="text-[.875rem] text-white/40 transition hover:text-white">Planos</Link>
+              <Link href="/login" className="text-[.875rem] text-white/40 transition hover:text-white">Login</Link>
             </div>
           </div>
           <div>
-            <p className="text-[12px] font-semibold uppercase tracking-[0.15em] text-gray-500">Empresa</p>
-            <div className="mt-3 flex flex-col gap-2.5">
-              <Link href="/sobre" className="text-[14px] text-gray-400 hover:text-white transition">Sobre</Link>
-              <a href="mailto:contato@agraas.com.br" className="text-[14px] text-gray-400 hover:text-white transition">Contato</a>
+            <p className="font-mono text-[.6875rem] font-medium uppercase tracking-[.15em] text-white/20">Empresa</p>
+            <div className="mt-4 flex flex-col gap-3">
+              <Link href="/sobre" className="text-[.875rem] text-white/40 transition hover:text-white">Sobre</Link>
+              <a href="mailto:contato@agraas.com.br" className="text-[.875rem] text-white/40 transition hover:text-white">Contato</a>
             </div>
           </div>
           <div>
-            <p className="text-[12px] font-semibold uppercase tracking-[0.15em] text-gray-500">Legal</p>
-            <div className="mt-3 flex flex-col gap-2.5">
-              <span className="text-[14px] text-gray-500">Privacidade</span>
-              <span className="text-[14px] text-gray-500">Termos</span>
+            <p className="font-mono text-[.6875rem] font-medium uppercase tracking-[.15em] text-white/20">Legal</p>
+            <div className="mt-4 flex flex-col gap-3">
+              <span className="text-[.875rem] text-white/20">Privacidade</span>
+              <span className="text-[.875rem] text-white/20">Termos</span>
             </div>
           </div>
         </div>
-        <div className="mx-auto mt-10 max-w-6xl border-t border-gray-800 pt-6">
-          <p className="text-[12px] text-gray-600">2026 Agraas Agritech. Todos os direitos reservados.</p>
+        <div className="mx-auto max-w-[1200px] border-t border-white/[.04] px-6 py-6">
+          <p className="text-[.75rem] text-white/15">© 2026 Agraas Agritech. Todos os direitos reservados.</p>
         </div>
       </footer>
     </div>
