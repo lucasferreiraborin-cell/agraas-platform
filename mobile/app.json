@@ -1,0 +1,14 @@
+{
+  "expo": {
+    "name": "Agraas Campo",
+    "slug": "agraas-campo",
+    "version": "1.0.0",
+    "scheme": "agraas-campo",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "splash": { "backgroundColor": "#3B5E2B" },
+    "ios": { "bundleIdentifier": "com.agraas.campo" },
+    "android": { "package": "com.agraas.campo" },
+    "plugins": ["expo-router", "expo-secure-store"]
+  }
+}
