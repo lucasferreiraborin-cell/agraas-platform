@@ -1,0 +1,11 @@
+codigo_interno,nome,sexo,raca,data_nascimento,peso_kg,rfid,categoria,observacoes
+FSJBE-001,Boi Valente,M,Nelore,2021-03-15,485,,Touro reprodutor,Nelore PO - registro ABCZ
+FSJBE-002,Vaca Estrela,F,Nelore,2020-07-20,410,,Vaca gestante,Gestação confirmada 120 dias
+FSJBE-003,Touro Imperador,M,Nelore,2019-11-10,580,,Touro reprodutor,Nelore PO - repasse
+FSJBE-004,Bezerra Luna,F,Nelore,2025-01-25,165,,Bezerra,Filha de FSJBE-003
+FSJBE-005,Novilho Trovão,M,Nelore x Angus,2022-05-18,445,,Novilho em engorda,Cruzamento industrial F1
+FSJBE-006,Vaca Bonita,F,Nelore,2020-12-03,395,,Vaca seca,Apta para nova IATF
+FSJBE-007,Boi Ventania,M,Nelore,2022-08-14,420,,Novilho em engorda,Lote engorda Q2
+FSJBE-008,Bezerra Mel,F,Nelore,2025-03-10,140,,Bezerra,Desmame previsto jul/2025
+FSJBE-009,Touro Bandeira,M,Nelore,2019-06-22,620,,Touro reprodutor,Nelore PO - sêmen coletado
+FSJBE-010,Vaca Jabuticaba,F,Nelore,2021-02-18,430,,Vaca lactante,Bezerro ao pé - FSJBE-008
