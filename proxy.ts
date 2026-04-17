@@ -33,8 +33,14 @@ export async function proxy(request: NextRequest) {
   const isLoginPage = pathname.startsWith("/login");
   const isPublic    = pathname.startsWith("/reset-password")
                    || pathname.startsWith("/passaporte")
-                   || pathname.startsWith("/planos");
-  if (!user && !isLoginPage && !isPublic) {
+                   || pathname.startsWith("/planos")
+                   || pathname.startsWith("/sobre")
+                   || pathname.startsWith("/cadastro")
+                   || pathname.startsWith("/marketplace");
+  // "/" é landing pública — qualquer um acessa
+  const isLanding = pathname === "/";
+
+  if (!user && !isLoginPage && !isPublic && !isLanding) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
@@ -42,23 +48,21 @@ export async function proxy(request: NextRequest) {
 
   if (user && isLoginPage) {
     const url = request.nextUrl.clone();
-    url.pathname = "/";
+    url.pathname = "/painel";
     return NextResponse.redirect(url);
   }
 
-  // Buyer acessando "/" → redireciona para /comprador
-  if (user && request.nextUrl.pathname === "/") {
+  // User logado acessando "/" → vai para o painel (buyer → /comprador)
+  if (user && isLanding) {
     const { data: clientData } = await supabase
       .from("clients")
       .select("role")
       .eq("auth_user_id", user.id)
       .single();
 
-    if (clientData?.role === "buyer") {
-      const url = request.nextUrl.clone();
-      url.pathname = "/comprador";
-      return NextResponse.redirect(url);
-    }
+    const url = request.nextUrl.clone();
+    url.pathname = clientData?.role === "buyer" ? "/comprador" : "/painel";
+    return NextResponse.redirect(url);
   }
 
   // Não-buyer tentando acessar /comprador → redireciona para /
@@ -71,7 +75,7 @@ export async function proxy(request: NextRequest) {
 
     if (clientData?.role !== "buyer") {
       const url = request.nextUrl.clone();
-      url.pathname = "/";
+      url.pathname = "/painel";
       return NextResponse.redirect(url);
     }
   }

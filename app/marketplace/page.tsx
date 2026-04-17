@@ -1,5 +1,7 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { createSupabaseServiceClient } from "@/lib/supabase-service";
 import { ShoppingBag } from "lucide-react";
+import PublicNav from "@/app/components/PublicNav";
 import MarketplaceTabs from "@/app/components/marketplace/MarketplaceTabs";
 import type { Listing, Offer, Transaction } from "@/app/components/marketplace/MarketplaceTabs";
 
@@ -11,12 +13,17 @@ export default async function MarketplacePage() {
     : { data: null };
 
   const clientId = clientData?.id ?? "";
+  const isPublic = !user;
+
+  // Listings públicos: usa service client para bypass RLS (listings ativos são públicos)
+  const db = createSupabaseServiceClient();
+  const listingsQuery = db.from("marketplace_listings").select("*").eq("status", "ativo").order("created_at", { ascending: false });
 
   const [{ data: listingsData }, { data: myListingsData }, { data: offersData }, { data: txData }] = await Promise.all([
-    supabase.from("marketplace_listings").select("*").eq("status", "ativo").order("created_at", { ascending: false }),
-    supabase.from("marketplace_listings").select("*").eq("client_id", clientId).order("created_at", { ascending: false }),
-    supabase.from("marketplace_offers").select("*, listing:marketplace_listings(title)").eq("buyer_client_id", clientId).order("created_at", { ascending: false }),
-    supabase.from("marketplace_transactions").select("*, listing:marketplace_listings(title)").or(`seller_client_id.eq.${clientId},buyer_client_id.eq.${clientId}`).order("created_at", { ascending: false }),
+    listingsQuery,
+    isPublic ? { data: [] } : supabase.from("marketplace_listings").select("*").eq("client_id", clientId).order("created_at", { ascending: false }),
+    isPublic ? { data: [] } : supabase.from("marketplace_offers").select("*, listing:marketplace_listings(title)").eq("buyer_client_id", clientId).order("created_at", { ascending: false }),
+    isPublic ? { data: [] } : supabase.from("marketplace_transactions").select("*, listing:marketplace_listings(title)").or(`seller_client_id.eq.${clientId},buyer_client_id.eq.${clientId}`).order("created_at", { ascending: false }),
   ]);
 
   const listings: Listing[] = (listingsData ?? []) as Listing[];
@@ -35,7 +42,9 @@ export default async function MarketplacePage() {
   const activeCount = listings.length;
 
   return (
-    <main className="space-y-6">
+    <>
+    {isPublic && <PublicNav />}
+    <main className={`space-y-6 ${isPublic ? "mx-auto max-w-[1600px] px-6 py-8" : ""}`}>
       <section className="ag-card-strong overflow-hidden">
         <div className="grid gap-0 xl:grid-cols-[1.1fr_0.9fr]">
           <div className="relative p-8 lg:p-10">
@@ -82,5 +91,6 @@ export default async function MarketplacePage() {
         currentClientId={clientId}
       />
     </main>
+    </>
   );
 }
