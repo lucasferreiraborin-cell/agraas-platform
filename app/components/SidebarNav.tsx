@@ -106,6 +106,7 @@ const menuGroups: NavGroup[] = [
   {
     label: "Financeiro",
     items: [
+      { href: "/financeiro",      label: "Painel Financeiro", icon: DollarSign, highlight: true },
       { href: "/custos",           label: "Custos",            icon: DollarSign },
       { href: "/custos/historico", label: "Histórico Custos",  icon: DollarSign,      sub: true },
       { href: "/custo-producao",   label: "Custo de Produção", icon: DollarSign,      sub: true },
