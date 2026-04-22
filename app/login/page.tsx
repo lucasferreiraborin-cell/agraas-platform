@@ -1,9 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 import { useRouter } from "next/navigation";
-import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
+import Link from "next/link";
+import { ArrowRight, Loader2 } from "lucide-react";
+import AuthShell from "@/app/components/ui/AuthShell";
+
+const SIDEBAR_MESSAGES_LOGIN = [
+  "Do pasto brasileiro ao comprador do outro lado do mundo.",
+  "Cada animal, cada saca, auditável em tempo real.",
+  "A camada de confiança do agro brasileiro.",
+];
+
+const SIDEBAR_MESSAGES_RESET = [
+  "Recuperar o acesso é simples. Enviamos um link direto para seu e-mail.",
+];
 
 export default function LoginPage() {
   const [email, setEmail]       = useState("");
@@ -11,18 +23,19 @@ export default function LoginPage() {
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState("");
 
-  // Forgot password state
   const [showReset, setShowReset]         = useState(false);
   const [resetEmail, setResetEmail]       = useState("");
   const [resetLoading, setResetLoading]   = useState(false);
   const [resetSent, setResetSent]         = useState(false);
   const [resetError, setResetError]       = useState("");
 
-  const router = useRouter();
+  const [messageIdx, setMessageIdx] = useState(0);
+  const messages = showReset ? SIDEBAR_MESSAGES_RESET : SIDEBAR_MESSAGES_LOGIN;
 
+  const router = useRouter();
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
   );
 
   async function handleLogin(e: React.FormEvent) {
@@ -54,144 +67,178 @@ export default function LoginPage() {
     setResetSent(true);
   }
 
+  useEffect(() => {
+    if (showReset) return;
+    const id = setInterval(() => {
+      setMessageIdx((i) => (i + 1) % SIDEBAR_MESSAGES_LOGIN.length);
+    }, 6000);
+    return () => clearInterval(id);
+  }, [showReset]);
+
+  const inputCls =
+    "w-full rounded-xl border border-[var(--border)] bg-white px-4 py-3 text-sm text-[var(--text-primary)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15";
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#F5F7F4]">
-      <div className="w-full max-w-md px-6">
-        <div className="mb-10 flex items-center justify-center gap-8">
-          <div className="text-center">
-            <p className="text-[11px] uppercase tracking-[0.32em] text-[var(--text-muted)]">
-              Plataforma
-            </p>
-            <h1 className="mt-3 text-[3.5rem] font-semibold leading-none tracking-[-0.07em] text-[var(--text-primary)]">
-              Agraas
+    <AuthShell
+      sidebarMessage={messages[messageIdx]}
+      sidebarBadges={["Halal", "EUDR", "MAPA", "SIF"]}
+    >
+      {!showReset ? (
+        <>
+          <div>
+            <h1 className="text-[1.8rem] font-semibold tracking-[-.02em] text-[var(--text-primary)]">
+              Entrar na plataforma
             </h1>
-            <p className="mt-3 text-base text-[var(--text-secondary)]">
-              Intelligence Layer
+            <p className="mt-2 text-[.9375rem] text-[var(--text-muted)]">
+              Acesse o passaporte digital, scores e marketplace.
             </p>
           </div>
-          <HalalBadgeSVG size={100} />
-        </div>
 
-        <div className="rounded-3xl border border-[var(--border)] bg-white p-8 shadow-[var(--shadow-soft)]">
-          {!showReset ? (
-            <>
-              <h2 className="text-xl font-semibold text-[var(--text-primary)]">
-                Entrar na plataforma
-              </h2>
-              <p className="mt-2 text-sm text-[var(--text-secondary)]">
-                Acesso restrito a usuários cadastrados.
-              </p>
+          <form onSubmit={handleLogin} className="mt-8 space-y-4">
+            <div>
+              <label className="mb-2 block text-[.8125rem] font-semibold text-[var(--text-primary)]">
+                E-mail
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className={inputCls}
+                placeholder="seu@email.com"
+                autoComplete="email"
+              />
+            </div>
 
-              <form onSubmit={handleLogin} className="mt-8 space-y-5">
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-[var(--text-primary)]">
-                    E-mail
-                  </label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    className="w-full rounded-xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none transition focus:border-[var(--primary)]"
-                    placeholder="seu@email.com"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-[var(--text-primary)]">
-                    Senha
-                  </label>
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    className="w-full rounded-xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none transition focus:border-[var(--primary)]"
-                    placeholder="••••••••"
-                  />
-                </div>
-
-                {error && (
-                  <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
-                    {error}
-                  </p>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  style={{ backgroundColor: "#2E8B3E" }}
-                  className="w-full rounded-xl py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
-                >
-                  {loading ? "Entrando..." : "Entrar"}
-                </button>
-
+            <div>
+              <div className="mb-2 flex items-center justify-between">
+                <label className="block text-[.8125rem] font-semibold text-[var(--text-primary)]">
+                  Senha
+                </label>
                 <button
                   type="button"
-                  onClick={() => { setShowReset(true); setResetEmail(email); }}
-                  className="w-full text-center text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition"
+                  onClick={() => {
+                    setShowReset(true);
+                    setResetEmail(email);
+                  }}
+                  className="text-[.75rem] font-medium text-[var(--text-muted)] transition hover:text-[var(--primary)]"
                 >
                   Esqueci minha senha
                 </button>
-              </form>
-            </>
-          ) : (
-            <>
-              <button
-                type="button"
-                onClick={() => { setShowReset(false); setResetSent(false); setResetError(""); }}
-                className="mb-5 flex items-center gap-1.5 text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition"
-              >
-                ← Voltar para o login
-              </button>
+              </div>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className={inputCls}
+                placeholder="••••••••"
+                autoComplete="current-password"
+              />
+            </div>
 
-              <h2 className="text-xl font-semibold text-[var(--text-primary)]">
-                Redefinir senha
-              </h2>
-              <p className="mt-2 text-sm text-[var(--text-secondary)]">
-                Informe seu e-mail e enviaremos um link de redefinição.
-              </p>
+            {error && (
+              <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[.8125rem] text-red-700">
+                {error}
+              </div>
+            )}
 
-              {resetSent ? (
-                <div className="mt-6 rounded-xl bg-green-50 border border-green-200 px-4 py-4 text-sm text-green-700">
-                  ✓ Enviamos um link de redefinição para seu e-mail.
-                </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--primary)] py-3.5 text-[.9375rem] font-semibold text-white shadow-[var(--shadow-green)] transition-all hover:bg-[var(--primary-hover)] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {loading ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  Entrando
+                </>
               ) : (
-                <form onSubmit={handleResetRequest} className="mt-8 space-y-5">
-                  <div>
-                    <label className="mb-2 block text-sm font-medium text-[var(--text-primary)]">
-                      E-mail
-                    </label>
-                    <input
-                      type="email"
-                      value={resetEmail}
-                      onChange={(e) => setResetEmail(e.target.value)}
-                      required
-                      className="w-full rounded-xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none transition focus:border-[var(--primary)]"
-                      placeholder="seu@email.com"
-                    />
-                  </div>
-
-                  {resetError && (
-                    <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">
-                      {resetError}
-                    </p>
-                  )}
-
-                  <button
-                    type="submit"
-                    disabled={resetLoading}
-                    style={{ backgroundColor: "#2E8B3E" }}
-                    className="w-full rounded-xl py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
-                  >
-                    {resetLoading ? "Enviando..." : "Enviar link de redefinição"}
-                  </button>
-                </form>
+                <>
+                  Entrar
+                  <ArrowRight size={15} />
+                </>
               )}
-            </>
+            </button>
+          </form>
+
+          <p className="mt-8 text-center text-[.875rem] text-[var(--text-muted)]">
+            Não tem conta?{" "}
+            <Link
+              href="/cadastro"
+              className="font-semibold text-[var(--primary)] hover:underline"
+            >
+              Criar conta
+            </Link>
+          </p>
+        </>
+      ) : (
+        <>
+          <button
+            type="button"
+            onClick={() => {
+              setShowReset(false);
+              setResetSent(false);
+              setResetError("");
+            }}
+            className="mb-6 inline-flex items-center gap-1.5 text-[.8125rem] font-medium text-[var(--text-muted)] transition hover:text-[var(--text-secondary)]"
+          >
+            ← Voltar para o login
+          </button>
+
+          <div>
+            <h1 className="text-[1.8rem] font-semibold tracking-[-.02em] text-[var(--text-primary)]">
+              Redefinir senha
+            </h1>
+            <p className="mt-2 text-[.9375rem] text-[var(--text-muted)]">
+              Enviaremos um link de redefinição para seu e-mail.
+            </p>
+          </div>
+
+          {resetSent ? (
+            <div className="mt-8 rounded-xl border border-[var(--primary)]/20 bg-[var(--primary-soft)] px-5 py-4 text-[.875rem] text-[var(--primary)]">
+              ✓ Link enviado. Verifique sua caixa de entrada (e o spam).
+            </div>
+          ) : (
+            <form onSubmit={handleResetRequest} className="mt-8 space-y-4">
+              <div>
+                <label className="mb-2 block text-[.8125rem] font-semibold text-[var(--text-primary)]">
+                  E-mail
+                </label>
+                <input
+                  type="email"
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  required
+                  className={inputCls}
+                  placeholder="seu@email.com"
+                />
+              </div>
+
+              {resetError && (
+                <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[.8125rem] text-red-700">
+                  {resetError}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={resetLoading}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--primary)] py-3.5 text-[.9375rem] font-semibold text-white shadow-[var(--shadow-green)] transition-all hover:bg-[var(--primary-hover)] disabled:opacity-60"
+              >
+                {resetLoading ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    Enviando
+                  </>
+                ) : (
+                  "Enviar link"
+                )}
+              </button>
+            </form>
           )}
-        </div>
-      </div>
-    </div>
+        </>
+      )}
+    </AuthShell>
   );
 }
