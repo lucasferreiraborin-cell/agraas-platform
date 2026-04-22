@@ -13,11 +13,11 @@ const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", curren
 
 const IMG = {
   hero: "https://images.unsplash.com/photo-1500595046743-cd271d694d30?w=1920&q=85&auto=format",
-  nelore: "/images/lp/nelore-close.jpg",
+  nelore: "https://images.unsplash.com/photo-1605185189100-4d7c8fffbad1?w=1600&q=85&auto=format",
   pasto: "https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=1600&q=80&auto=format",
-  soja: "/images/lp/silos-milho.jpg",
+  soja: "https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=1600&q=85&auto=format",
   porto: "https://images.unsplash.com/photo-1494412574643-ff11b0a5eb19?w=900&q=80&auto=format",
-  aereo: "/images/lp/colheita-sunset.jpg",
+  aereo: "https://images.unsplash.com/photo-1594771804886-a933bb2d609b?w=1920&q=85&auto=format",
 };
 
 export default async function LandingPage() {

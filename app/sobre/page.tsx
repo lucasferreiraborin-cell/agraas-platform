@@ -9,7 +9,7 @@ export default function SobrePage() {
       <PublicNav />
 
       <section className="relative isolate overflow-hidden">
-        <img src="/images/lp/nelore-close.jpg" alt="Boiada Nelore em pasto brasileiro" className="absolute inset-0 -z-10 h-full w-full object-cover" />
+        <img src="https://images.unsplash.com/photo-1605185189100-4d7c8fffbad1?w=1920&q=85&auto=format" alt="Boiada Nelore em pasto brasileiro" className="absolute inset-0 -z-10 h-full w-full object-cover" />
         <div className="absolute inset-0 -z-10 bg-gradient-to-r from-[#0f3517]/90 via-[#0f3517]/60 to-transparent" />
         <div className="mx-auto max-w-[1200px] px-6 py-28 lg:py-36">
           <ScrollReveal>
@@ -60,7 +60,7 @@ export default function SobrePage() {
       </section>
 
       <section className="relative isolate overflow-hidden px-6 py-28 text-center">
-        <img src="/images/lp/colheita-sunset.jpg" alt="" className="absolute inset-0 -z-10 h-full w-full object-cover" />
+        <img src="https://images.unsplash.com/photo-1594771804886-a933bb2d609b?w=1920&q=85&auto=format" alt="" className="absolute inset-0 -z-10 h-full w-full object-cover" />
         <div className="absolute inset-0 -z-10 bg-gradient-to-br from-[#0f3517]/85 via-[#1E5E26]/80 to-[#0f3517]/90" />
         <ScrollReveal>
           <p className="mx-auto max-w-2xl text-[1.6rem] font-bold leading-10 text-white">
