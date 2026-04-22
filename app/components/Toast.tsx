@@ -41,7 +41,7 @@ export function ToastContainer() {
         <div
           key={item.id}
           className={`flex items-center gap-3 rounded-2xl px-5 py-4 shadow-2xl text-sm font-medium text-white transition-all ${
-            item.type === "success" ? "bg-[#4f8a38]"
+            item.type === "success" ? "bg-[var(--primary-hover)]"
             : item.type === "error" ? "bg-[#c0392b]"
             : "bg-[#2d6a8f]"
           }`}

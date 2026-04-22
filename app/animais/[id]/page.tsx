@@ -547,8 +547,8 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
           <span className="ag-badge ag-badge-dark">Score {calculatedAgraasScore}/100</span>
         </div>
         <div className="mt-6 space-y-4">
-          <ScoreBar label="Sanitário" value={calculatedSanitaryScore} weight={24} color="#5d9c44" />
-          <ScoreBar label="Continuidade" value={calculatedContinuityScore} weight={20} color="#5d9c44" />
+          <ScoreBar label="Sanitário" value={calculatedSanitaryScore} weight={24} color="#2E8B3E" />
+          <ScoreBar label="Continuidade" value={calculatedContinuityScore} weight={20} color="#2E8B3E" />
           <ScoreBar label="Operacional" value={calculatedOperationalScore} weight={18} color="#7db35a" />
           <ScoreBar label="Produtivo" value={latestWeight ? Math.min(100, 35 + Math.round(latestWeight / 10)) : 35} weight={28} color="#8dbc5f" />
           <ScoreBar label="Fator etário" value={ageMonths !== null ? Math.min(100, 40 + Math.round(ageMonths / 2)) : 50} weight={10} color="#a0c878" />

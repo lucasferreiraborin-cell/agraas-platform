@@ -46,7 +46,7 @@ export default function SobrePage() {
         </div>
       </section>
 
-      <section className="bg-[linear-gradient(135deg,#3d762c_0%,#294f1d_100%)] px-6 py-20 text-center">
+      <section className="bg-[linear-gradient(135deg,var(--sidebar)_0%,var(--sidebar-2)_100%)] px-6 py-20 text-center">
         <ScrollReveal>
           <p className="mx-auto max-w-2xl text-[1.6rem] font-bold leading-10 text-white">
             &ldquo;Ser a infraestrutura digital do agronegocio brasileiro — da fazenda a mesa, do Brasil ao mundo.&rdquo;
@@ -58,7 +58,7 @@ export default function SobrePage() {
         <ScrollReveal>
           <h2 className="text-[2rem] font-bold tracking-[-0.03em] text-[var(--text-primary)]">A empresa</h2>
           <div className="mt-8 space-y-5 text-[15px] leading-8 text-[var(--text-secondary)]">
-            <p>A Agraas foi fundada em 2025 em Sao Paulo por um time com raizes no mercado financeiro e no agronegocio goiano. A plataforma foi construida do zero e esta em operacao com o primeiro cliente ativo em Jandaia, Goias.</p>
+            <p>A Agraas foi fundada em 2025 em Sao Paulo por um time com raizes no mercado financeiro e no agronegocio goiano. A plataforma foi construida do zero e esta em operacao com o primeiro cliente ativo em Jussara, Goias.</p>
             <p>Estamos em processo de captacao para escalar a operacao em todo o Brasil.</p>
           </div>
         </ScrollReveal>

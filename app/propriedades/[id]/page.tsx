@@ -398,7 +398,7 @@ export default async function PropriedadeDetailPage({ params }: PageProps) {
 
                               <div className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-[rgba(93,156,68,0.10)]">
                                 <div
-                                  className="h-full rounded-full bg-[linear-gradient(90deg,#8dbc5f_0%,#5d9c44_100%)]"
+                                  className="h-full rounded-full bg-[linear-gradient(90deg,#3DA54C_0%,#2E8B3E_100%)]"
                                   style={{ width: `${scorePercent}%` }}
                                 />
                               </div>
@@ -466,7 +466,7 @@ export default async function PropriedadeDetailPage({ params }: PageProps) {
             {strikePct !== null && (
               <div className="mt-3 h-2 overflow-hidden rounded-full bg-black/8">
                 <div
-                  className="h-full rounded-full bg-[linear-gradient(90deg,#8dbc5f,#5d9c44)]"
+                  className="h-full rounded-full bg-[linear-gradient(90deg,#3DA54C,#2E8B3E)]"
                   style={{ width: `${strikePct}%` }}
                 />
               </div>

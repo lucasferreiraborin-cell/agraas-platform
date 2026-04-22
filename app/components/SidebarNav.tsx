@@ -212,7 +212,7 @@ export default function SidebarNav() {
                     <Icon size={12} className="shrink-0 opacity-50" />
                     <span>{item.label}</span>
                     {active && (
-                      <span className="ml-auto h-1 w-1 rounded-full bg-emerald-300 shadow-[0_0_5px_rgba(110,231,183,0.9)]" />
+                      <span className="ml-auto h-1 w-1 rounded-full bg-[var(--sidebar-accent)] shadow-[0_0_5px_rgba(61,165,76,0.9)]" />
                     )}
                   </Link>
                 );
@@ -226,24 +226,24 @@ export default function SidebarNav() {
                     href={item.href}
                     className={`group flex items-center gap-3 rounded-2xl px-3 py-3 text-[15px] font-medium transition duration-200 ${
                       active
-                        ? "bg-emerald-500/18 text-emerald-300 ring-1 ring-emerald-500/25"
-                        : "text-emerald-400/75 hover:bg-emerald-500/10 hover:text-emerald-300"
+                        ? "bg-[var(--sidebar-accent-bg)] text-white ring-1 ring-[var(--sidebar-accent-border)]"
+                        : "text-white/75 hover:bg-[rgba(61,165,76,0.12)] hover:text-white"
                     }`}
                   >
                     <span
                       className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border transition duration-200 ${
                         active
-                          ? "border-emerald-500/40 bg-emerald-500/22 text-emerald-300 ring-1 ring-emerald-500/20"
-                          : "border-emerald-500/20 bg-emerald-500/10 text-emerald-400 group-hover:bg-emerald-500/16"
+                          ? "border-[var(--sidebar-accent-border)] bg-[rgba(61,165,76,0.22)] text-white ring-1 ring-[var(--sidebar-accent-border)]"
+                          : "border-[rgba(61,165,76,0.22)] bg-[rgba(61,165,76,0.10)] text-white/85 group-hover:bg-[rgba(61,165,76,0.18)]"
                       }`}
                     >
                       <Icon size={16} />
                     </span>
                     <span>{item.label}</span>
                     {active ? (
-                      <span className="ml-auto h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_6px_rgba(110,231,183,0.9)]" />
+                      <span className="ml-auto h-1.5 w-1.5 rounded-full bg-[var(--sidebar-accent)] shadow-[0_0_6px_rgba(61,165,76,0.9)]" />
                     ) : (
-                      <span className="ml-auto rounded-full border border-emerald-500/25 bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-emerald-400/70">
+                      <span className="ml-auto rounded-full border border-[var(--sidebar-accent-border)] bg-[rgba(61,165,76,0.12)] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-white/80">
                         PIF
                       </span>
                     )}
@@ -273,7 +273,7 @@ export default function SidebarNav() {
                   </span>
                   <span>{item.label}</span>
                   {active && (
-                    <span className="ml-auto h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_6px_rgba(110,231,183,0.9)]" />
+                    <span className="ml-auto h-1.5 w-1.5 rounded-full bg-[var(--sidebar-accent)] shadow-[0_0_6px_rgba(61,165,76,0.9)]" />
                   )}
                 </Link>
               );

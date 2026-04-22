@@ -35,7 +35,7 @@ export default function PublicNav() {
             Entrar
           </Link>
           <Link href="/cadastro"
-            className="rounded-lg bg-[#5d9c44] px-4 py-2 text-[.8125rem] font-semibold text-white shadow-[0_2px_8px_rgba(93,156,68,.3)] transition-all duration-200 hover:bg-[#4f8a38] hover:shadow-[0_4px_16px_rgba(93,156,68,.4)]">
+            className="rounded-lg bg-[var(--primary)] px-4 py-2 text-[.8125rem] font-semibold text-white shadow-[0_2px_8px_rgba(46,139,62,.3)] transition-all duration-200 hover:bg-[var(--primary-hover)] hover:shadow-[0_4px_16px_rgba(46,139,62,.4)]">
             Criar conta
           </Link>
         </div>
@@ -56,7 +56,7 @@ export default function PublicNav() {
               <Link href="/login" onClick={() => setOpen(false)}
                 className="rounded-lg border border-white/[.12] py-2.5 text-center text-[.875rem] font-medium text-white/60">Entrar</Link>
               <Link href="/cadastro" onClick={() => setOpen(false)}
-                className="rounded-lg bg-[#5d9c44] py-2.5 text-center text-[.875rem] font-semibold text-white">Criar conta</Link>
+                className="rounded-lg bg-[var(--primary)] py-2.5 text-center text-[.875rem] font-semibold text-white">Criar conta</Link>
             </div>
           </div>
         </div>

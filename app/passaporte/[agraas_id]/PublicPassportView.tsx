@@ -122,11 +122,11 @@ export default function PublicPassportView({
       <header className="border-b border-[#e5e7eb] bg-white px-6 py-4">
         <div className="mx-auto flex max-w-2xl items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#5d9c44] text-white text-sm font-bold">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--primary)] text-white text-sm font-bold">
               A
             </div>
             <span className="text-sm font-semibold text-[#1a1a2e]">Agraas</span>
-            <span className="rounded-full bg-[#f0f7ec] px-2.5 py-0.5 text-[11px] font-semibold text-[#5d9c44]">
+            <span className="rounded-full bg-[#f0f7ec] px-2.5 py-0.5 text-[11px] font-semibold text-[var(--primary)]">
               {t(lang, "publicPassport")}
             </span>
           </div>
@@ -233,7 +233,7 @@ export default function PublicPassportView({
             <div className="flex-1">
               <div className="h-3 overflow-hidden rounded-full bg-[#f3f4f6]">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-[#8dbc5f] to-[#5d9c44] transition-all"
+                  className="h-full rounded-full bg-gradient-to-r from-[#3DA54C] to-[var(--primary)] transition-all"
                   style={{ width: `${scorePercent}%` }}
                 />
               </div>

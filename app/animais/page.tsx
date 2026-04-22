@@ -826,7 +826,7 @@ function EmptyState({ filter }: { filter: FilterKey }) {
   return (
     <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-12 text-center">
       <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-[var(--primary-soft)] shadow-[var(--shadow-soft)]">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#5d9c44" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#2E8B3E" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8">
           <circle cx="11" cy="11" r="8" />
           <line x1="21" y1="21" x2="16.65" y2="16.65" />
         </svg>

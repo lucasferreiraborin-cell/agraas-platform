@@ -62,7 +62,7 @@ export default function CadastroPage() {
 
       <div className="mx-auto flex max-w-5xl">
         {/* Sidebar verde (desktop) */}
-        <aside className="hidden w-72 shrink-0 bg-[linear-gradient(180deg,#3d762c_0%,#294f1d_100%)] px-8 py-16 lg:block" style={{ minHeight: "calc(100vh - 80px)" }}>
+        <aside className="hidden w-72 shrink-0 bg-[linear-gradient(180deg,var(--sidebar)_0%,var(--sidebar-2)_100%)] px-8 py-16 lg:block" style={{ minHeight: "calc(100vh - 80px)" }}>
           <p className="text-[2rem] font-semibold tracking-[-0.06em] text-white">Agraas</p>
           <p className="mt-4 text-[14px] leading-7 text-white/60">
             {profileType === "fazendeiro" ? "Rastreie seu rebanho, certifique para Halal e venda com dados verificados." :
@@ -72,9 +72,9 @@ export default function CadastroPage() {
              "Infraestrutura digital para o agronegocio brasileiro."}
           </p>
           <div className="mt-8 flex items-center gap-2 text-[13px] text-white/40">
-            <span className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold ${step >= 1 ? "bg-white text-[#294f1d]" : "bg-white/20 text-white/50"}`}>1</span>
+            <span className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold ${step >= 1 ? "bg-white text-[var(--sidebar-2)]" : "bg-white/20 text-white/50"}`}>1</span>
             <div className={`h-px w-6 ${step >= 2 ? "bg-white/50" : "bg-white/15"}`} />
-            <span className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold ${step >= 2 ? "bg-white text-[#294f1d]" : "bg-white/20 text-white/50"}`}>2</span>
+            <span className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold ${step >= 2 ? "bg-white text-[var(--sidebar-2)]" : "bg-white/20 text-white/50"}`}>2</span>
           </div>
         </aside>
 

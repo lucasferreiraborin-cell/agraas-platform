@@ -21,7 +21,7 @@ function latToY(lat: number): number {
 }
 
 function pinColor(score: number): string {
-  if (score >= 70) return "#5d9c44";
+  if (score >= 70) return "#2E8B3E";
   if (score >= 50) return "#d97706";
   return "#dc2626";
 }
@@ -70,7 +70,7 @@ export default function BrazilMapSVG({
         />
 
         {/* Subtle grid */}
-        <g opacity="0.06" stroke="#5d9c44" strokeWidth="1">
+        <g opacity="0.06" stroke="#2E8B3E" strokeWidth="1">
           {[100, 200, 300, 400, 500].map((x) => (
             <line key={`v${x}`} x1={x} y1={0} x2={x} y2={650} />
           ))}

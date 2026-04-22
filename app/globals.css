@@ -1,14 +1,20 @@
 @import "tailwindcss";
 
 :root {
-  --primary: #5d9c44;
-  --primary-hover: #4f8a38;
-  --primary-soft: #e8f4e2;
-  --primary-soft-strong: #dcefd2;
+  /* Verde oficial da marca Agraas (do logo) */
+  --primary: #2E8B3E;
+  --primary-hover: #236B2D;
+  --primary-soft: #DCEFCE;
+  --primary-soft-strong: #C9E5B7;
 
-  --sidebar: #3d762c;
-  --sidebar-2: #294f1d;
-  --sidebar-soft: #5b9845;
+  --sidebar: #2E8B3E;
+  --sidebar-2: #1E5E26;
+  --sidebar-soft: #3DA54C;
+
+  /* Sidebar accent tokens (usados em estados ativos de nav interna) */
+  --sidebar-accent: #3DA54C;
+  --sidebar-accent-bg: rgba(46, 139, 62, 0.18);
+  --sidebar-accent-border: rgba(46, 139, 62, 0.40);
 
   --bg: #f4f7f2;
   --bg-deep: #edf3e8;
@@ -30,7 +36,7 @@
 
   --shadow-soft: 0 10px 30px rgba(30, 42, 27, 0.06);
   --shadow-card: 0 18px 40px rgba(30, 42, 27, 0.08);
-  --shadow-green: 0 14px 30px rgba(93, 156, 68, 0.28);
+  --shadow-green: 0 14px 30px rgba(46, 139, 62, 0.28);
   --shadow-strong: 0 24px 60px rgba(30, 42, 27, 0.11);
 }
 
@@ -85,7 +91,7 @@ textarea {
 }
 
 ::selection {
-  background: rgba(93, 156, 68, 0.18);
+  background: rgba(46, 139, 62, 0.18);
 }
 
 .ag-card {
@@ -161,7 +167,7 @@ textarea {
 .ag-input:focus,
 .ag-select:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 4px rgba(93, 156, 68, 0.08);
+  box-shadow: 0 0 0 4px rgba(46, 139, 62, 0.08);
 }
 
 .ag-button-primary {
@@ -169,7 +175,7 @@ textarea {
   align-items: center;
   justify-content: center;
   border-radius: 18px;
-  background: linear-gradient(180deg, #6aa54f 0%, var(--primary) 100%);
+  background: linear-gradient(180deg, #3DA54C 0%, var(--primary) 100%);
   padding: 12px 18px;
   font-size: 0.95rem;
   font-weight: 600;
@@ -179,7 +185,7 @@ textarea {
 }
 
 .ag-button-primary:hover {
-  background: linear-gradient(180deg, #649c4c 0%, var(--primary-hover) 100%);
+  background: linear-gradient(180deg, #2E8B3E 0%, var(--primary-hover) 100%);
   transform: translateY(-1px);
 }
 
@@ -188,7 +194,7 @@ textarea {
   align-items: center;
   justify-content: center;
   border-radius: 18px;
-  border: 1px solid rgba(93, 156, 68, 0.24);
+  border: 1px solid rgba(46, 139, 62, 0.24);
   background: rgba(255, 255, 255, 0.9);
   padding: 12px 18px;
   font-size: 0.95rem;

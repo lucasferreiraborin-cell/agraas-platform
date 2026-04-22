@@ -248,7 +248,7 @@ export default function ExportPassportModal({
           </div>
           <button
             onClick={() => setOpen(true)}
-            className="mt-4 sm:mt-0 flex items-center gap-2.5 rounded-2xl bg-[#3d762c] px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#2d5a20] active:scale-95"
+            className="mt-4 sm:mt-0 flex items-center gap-2.5 rounded-2xl bg-[var(--sidebar)] px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[var(--sidebar-2)] active:scale-95"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
@@ -267,7 +267,7 @@ export default function ExportPassportModal({
           {/* Control bar */}
           <div className="no-print sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-gray-200 bg-white/95 px-6 py-3 shadow-sm backdrop-blur">
             <div className="flex items-center gap-3">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#3d762c] text-white text-xs font-bold">A</div>
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--sidebar)] text-white text-xs font-bold">A</div>
               <span className="text-sm font-semibold text-gray-800">Agraas — {t.trigger}</span>
             </div>
             <div className="flex items-center gap-2">
@@ -283,7 +283,7 @@ export default function ExportPassportModal({
               {/* Print */}
               <button
                 onClick={() => window.print()}
-                className="flex items-center gap-2 rounded-xl bg-[#3d762c] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#2d5a20]"
+                className="flex items-center gap-2 rounded-xl bg-[var(--sidebar)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[var(--sidebar-2)]"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>
@@ -304,7 +304,7 @@ export default function ExportPassportModal({
           <div className="mx-auto my-8 max-w-[820px] bg-white shadow-2xl" style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}>
 
             {/* ── HEADER ───────────────────────────────────────────── */}
-            <div style={{ background: "linear-gradient(135deg,#2d5a20,#3d762c)", padding: "28px 36px" }}>
+            <div style={{ background: "linear-gradient(135deg,#1E5E26,#2E8B3E)", padding: "28px 36px" }}>
               <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
                   <div style={{ width: 48, height: 48, borderRadius: 12, background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, fontWeight: 800, color: "#fff", flexShrink: 0 }}>A</div>
@@ -520,11 +520,11 @@ export default function ExportPassportModal({
                 <p style={{ fontSize: 9, color: "#9ca3af", textAlign: "center", margin: "6px 0 0" }}>{t.scan}</p>
               </div>
               <div style={{ flex: 1, borderLeft: "1px solid #e5e7eb", paddingLeft: 24 }}>
-                <p style={{ fontSize: 11, fontWeight: 700, color: "#3d762c", margin: "0 0 4px" }}>{t.verified}</p>
+                <p style={{ fontSize: 11, fontWeight: 700, color: "#2E8B3E", margin: "0 0 4px" }}>{t.verified}</p>
                 <p style={{ fontSize: 10, color: "#6b7280", margin: "0 0 6px" }}>{t.validity}</p>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  <span style={{ fontSize: 9, background: "#f0f7ec", color: "#3d762c", fontWeight: 700, borderRadius: 4, padding: "2px 8px" }}>agraas.com.br</span>
-                  <span style={{ fontSize: 9, background: "#f0f7ec", color: "#3d762c", fontWeight: 700, borderRadius: 4, padding: "2px 8px" }}>{animal.agraas_id}</span>
+                  <span style={{ fontSize: 9, background: "#f0f7ec", color: "#2E8B3E", fontWeight: 700, borderRadius: 4, padding: "2px 8px" }}>agraas.com.br</span>
+                  <span style={{ fontSize: 9, background: "#f0f7ec", color: "#2E8B3E", fontWeight: 700, borderRadius: 4, padding: "2px 8px" }}>{animal.agraas_id}</span>
                 </div>
               </div>
             </div>

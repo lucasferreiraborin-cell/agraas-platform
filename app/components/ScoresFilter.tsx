@@ -20,7 +20,7 @@ function ScoreCircle({ score }: { score: number }) {
   const r = 18;
   const circ = 2 * Math.PI * r;
   const offset = circ - Math.max(0, Math.min(100, score)) / 100 * circ;
-  const color = score >= 70 ? "#5d9c44" : score >= 40 ? "#d9a343" : "#d64545";
+  const color = score >= 70 ? "#2E8B3E" : score >= 40 ? "#d9a343" : "#d64545";
   const track = score >= 70 ? "#e0f0d8" : score >= 40 ? "#fef3c7" : "#fee2e2";
   return (
     <div className="relative inline-flex items-center justify-center w-[44px] h-[44px]">

@@ -26,8 +26,8 @@ export default function WeightDist({ rows }: { rows: WeightRow[] }) {
         >
           <defs>
             <linearGradient id="weightGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#5d9c44" stopOpacity={1} />
-              <stop offset="100%" stopColor="#8dbc5f" stopOpacity={0.8} />
+              <stop offset="0%" stopColor="#2E8B3E" stopOpacity={1} />
+              <stop offset="100%" stopColor="#3DA54C" stopOpacity={0.8} />
             </linearGradient>
             <linearGradient id="weightGradDim" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#8dbc5f" stopOpacity={0.55} />

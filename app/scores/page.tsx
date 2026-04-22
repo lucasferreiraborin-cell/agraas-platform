@@ -21,7 +21,7 @@ function ScoreCircleLarge({ score, size = 72 }: { score: number; size?: number }
   const r = size / 2 - 5;
   const circ = 2 * Math.PI * r;
   const offset = circ - Math.max(0, Math.min(100, score)) / 100 * circ;
-  const color = score >= 70 ? "#5d9c44" : score >= 40 ? "#d9a343" : "#d64545";
+  const color = score >= 70 ? "#2E8B3E" : score >= 40 ? "#d9a343" : "#d64545";
   const track = score >= 70 ? "#e0f0d8" : score >= 40 ? "#fef3c7" : "#fee2e2";
   return (
     <div className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>
@@ -93,7 +93,7 @@ export default async function ScoresPage() {
   const maxCount = Math.max(...ranges.map(r => r.count), 1);
 
   const colorForRange = (min: number) =>
-    min >= 80 ? "#5d9c44" : min >= 60 ? "#8dbc5f" : min >= 40 ? "#d9a343" : min >= 20 ? "#f59e0b" : "#d64545";
+    min >= 80 ? "#2E8B3E" : min >= 60 ? "#3DA54C" : min >= 40 ? "#d9a343" : min >= 20 ? "#f59e0b" : "#d64545";
 
   // Fazendas únicas para o filtro
   const fazendas = Array.from(new Set(rows.map(r => r.current_property_name).filter(Boolean) as string[])).sort();

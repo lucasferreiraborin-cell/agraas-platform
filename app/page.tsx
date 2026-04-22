@@ -130,7 +130,7 @@ export default async function LandingPage() {
               O Brasil exporta mais proteína Halal do que qualquer outro país do mundo. A Agraas é a infraestrutura que prova a origem — animal por animal, etapa por etapa.
             </p>
             <div className="mx-auto mt-8 flex flex-wrap items-center justify-center gap-4 text-[.8125rem] text-white/40">
-              <span>Jandaia, Goiás</span>
+              <span>Jussara, Goiás</span>
               <span className="h-1 w-1 rounded-full bg-white/20" />
               <span>2.300 cabeças</span>
               <span className="h-1 w-1 rounded-full bg-white/20" />
@@ -155,7 +155,7 @@ export default async function LandingPage() {
 
           <div className="mt-14 grid gap-6 md:grid-cols-3">
             {[
-              { img: IMG.pasto, badge: "Origem", Icon: MapPin, loc: "Jandaia, Goiás", title: "Fazenda São João da Boa Esperança", desc: "2.300 cabeças Nelore com passaporte digital, certificação MAPA e GTA ativas." },
+              { img: IMG.pasto, badge: "Origem", Icon: MapPin, loc: "Jussara, Goiás", title: "Fazenda São João da Boa Esperança", desc: "2.300 cabeças Nelore com passaporte digital, certificação MAPA e GTA ativas." },
               { img: IMG.porto, badge: "Embarque", Icon: Anchor, loc: "Porto de Santos, SP", title: "7 checkpoints de rastreio", desc: "Fazenda → concentração → transporte → porto → navio → destino → entrega." },
               { img: null, badge: "Destino", Icon: Ship, loc: "Jeddah, Arábia Saudita", title: "Conformidade Halal verificável", desc: "O comprador acessa o passaporte por QR e verifica origem, score e cada certificação." },
             ].map((c, i) => (
@@ -278,7 +278,7 @@ export default async function LandingPage() {
                 <div className="p-8 lg:p-12">
                   <div className="ag-badge ag-badge-green">Cliente ativo</div>
                   <h3 className="mt-5 text-[1.5rem] font-semibold tracking-[-.02em] text-[var(--text-primary)]">Fazenda São João da Boa Esperança</h3>
-                  <div className="mt-2 flex items-center gap-2 text-[.875rem] text-[var(--text-muted)]"><MapPin size={13} />Jandaia, Goiás</div>
+                  <div className="mt-2 flex items-center gap-2 text-[.875rem] text-[var(--text-muted)]"><MapPin size={13} />Jussara, Goiás</div>
                   <p className="mt-5 ag-section-subtitle">
                     Primeira fazenda com Passaporte Agraas ativo e lote de exportação certificado Halal confirmado para a Arábia Saudita — segundo trimestre de 2026.
                   </p>

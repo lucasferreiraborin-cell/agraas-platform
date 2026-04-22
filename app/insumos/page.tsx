@@ -131,7 +131,7 @@ export default async function InsumosPage() {
                       <p className="mt-1 text-xs text-[var(--text-muted)]">{pct}% do estoque total</p>
                       <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface-soft)]">
                         <div
-                          className="h-full rounded-full bg-[linear-gradient(90deg,#8dbc5f,#5d9c44)]"
+                          className="h-full rounded-full bg-[linear-gradient(90deg,#3DA54C,#2E8B3E)]"
                           style={{ width: `${pct}%` }}
                         />
                       </div>

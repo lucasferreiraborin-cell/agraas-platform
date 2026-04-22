@@ -14,7 +14,7 @@ const BarChartLazy = dynamic(() => import("recharts").then(m => {
         <Tooltip contentStyle={{ borderRadius: 10, border: "1px solid var(--border)", fontSize: 12 }}
           formatter={(v) => [`R$ ${Number(v ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, ""]} />
         <Legend wrapperStyle={{ fontSize: 12 }} />
-        <Bar dataKey="receita" name="Receita" fill="#5d9c44" radius={[4, 4, 0, 0]} />
+        <Bar dataKey="receita" name="Receita" fill="#2E8B3E" radius={[4, 4, 0, 0]} />
         <Bar dataKey="custo" name="Custo" fill="#d97706" radius={[4, 4, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
@@ -32,11 +32,11 @@ const AreaChartLazy = dynamic(() => import("recharts").then(m => {
         <Tooltip contentStyle={{ borderRadius: 10, border: "1px solid var(--border)", fontSize: 12 }}
           formatter={(v) => [`R$ ${Number(v ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, ""]} />
         {projectionStart > 0 && <ReferenceLine x={data[projectionStart]?.label} stroke="#94a3b8" strokeDasharray="6 4" label={{ value: "Projeção", fill: "#94a3b8", fontSize: 10 }} />}
-        <Area type="monotone" dataKey="saldo" name="Saldo" stroke="#5d9c44" fill="url(#greenGrad)" strokeWidth={2} />
+        <Area type="monotone" dataKey="saldo" name="Saldo" stroke="#2E8B3E" fill="url(#greenGrad)" strokeWidth={2} />
         <defs>
           <linearGradient id="greenGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#5d9c44" stopOpacity={0.3} />
-            <stop offset="100%" stopColor="#5d9c44" stopOpacity={0.02} />
+            <stop offset="0%" stopColor="#2E8B3E" stopOpacity={0.3} />
+            <stop offset="100%" stopColor="#2E8B3E" stopOpacity={0.02} />
           </linearGradient>
         </defs>
       </AreaChart>

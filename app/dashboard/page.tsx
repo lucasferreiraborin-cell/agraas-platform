@@ -581,8 +581,8 @@ function ScoreChart({ data }: { data: { week: string; score: number; label: stri
         <AreaChart data={data} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
           <defs>
             <linearGradient id="scoreGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#5d9c44" stopOpacity={0.25} />
-              <stop offset="100%" stopColor="#5d9c44" stopOpacity={0} />
+              <stop offset="0%" stopColor="#2E8B3E" stopOpacity={0.25} />
+              <stop offset="100%" stopColor="#2E8B3E" stopOpacity={0} />
             </linearGradient>
           </defs>
           <CartesianGrid strokeDasharray="4 4" stroke="rgba(30,42,27,0.06)" />
@@ -592,7 +592,7 @@ function ScoreChart({ data }: { data: { week: string; score: number; label: stri
             contentStyle={{ borderRadius: 12, border: "1px solid rgba(30,42,27,0.08)", fontSize: 13 }}
             formatter={(value) => [`${value} pts`, "Score médio"]}
           />
-          <Area type="monotone" dataKey="score" stroke="#5d9c44" strokeWidth={2.5} fill="url(#scoreGrad)" />
+          <Area type="monotone" dataKey="score" stroke="#2E8B3E" strokeWidth={2.5} fill="url(#scoreGrad)" />
         </AreaChart>
       </ResponsiveContainer>
     </div>

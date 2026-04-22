@@ -72,7 +72,7 @@ export default function MarketTable({ rows }: { rows: MarketRow[] }) {
           <tbody>
             {visible.map(a => {
               const score = Number(a.total_score ?? 0);
-              const scoreColor = score >= 70 ? "#5d9c44" : score >= 40 ? "#d9a343" : "#d64545";
+              const scoreColor = score >= 70 ? "#2E8B3E" : score >= 40 ? "#d9a343" : "#d64545";
               return (
                 <tr key={a.animal_id} className="group">
                   <td>

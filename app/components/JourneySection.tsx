@@ -39,7 +39,7 @@ function ScoreRing({ score, label, sub, d }: { score: number; label: string; sub
     }}>
       <svg width="110" height="110" viewBox="0 0 110 110">
         <circle cx="55" cy="55" r={r} fill="none" stroke="hsla(0,0%,100%,.06)" strokeWidth="3" />
-        <circle cx="55" cy="55" r={r} fill="none" stroke="#5d9c44" strokeWidth="3"
+        <circle cx="55" cy="55" r={r} fill="none" stroke="#2E8B3E" strokeWidth="3"
           strokeDasharray={c} strokeDashoffset={vis ? c - (score / 100) * c : c}
           strokeLinecap="round" transform="rotate(-90 55 55)"
           style={{ transition: `stroke-dashoffset 1.6s cubic-bezier(.19,1,.22,1) ${d + 0.4}s` }} />
@@ -60,7 +60,7 @@ function Dot({ title, sub, d }: { title: string; sub: string; d: number }) {
       transition: `all .8s cubic-bezier(.19,1,.22,1) ${d}s`,
     }}>
       <div className="relative flex flex-col items-center">
-        <div className="h-2.5 w-2.5 rounded-full bg-[#5d9c44] shadow-[0_0_12px_rgba(93,156,68,.5)]" />
+        <div className="h-2.5 w-2.5 rounded-full bg-[var(--primary)] shadow-[0_0_12px_rgba(46,139,62,.5)]" />
         <div className="w-px flex-1 bg-white/[.06]" />
       </div>
       <div className="pb-8">
@@ -84,7 +84,7 @@ export default function JourneySection() {
       {/* ── INTRO ─────────────────────────────────────────────────────── */}
       <div className="relative mx-auto max-w-[1100px] px-6 pb-0 pt-[clamp(6rem,12vw,10rem)]">
         <R>
-          <p className="font-mono text-[.6875rem] font-medium uppercase tracking-[.18em] text-[#5d9c44]">
+          <p className="font-mono text-[.6875rem] font-medium uppercase tracking-[.18em] text-[var(--primary)]">
             A jornada
           </p>
         </R>
@@ -104,7 +104,7 @@ export default function JourneySection() {
       <div className="relative mx-auto mt-[clamp(5rem,10vw,9rem)] grid max-w-[1100px] gap-12 px-6 lg:grid-cols-[.45fr_.55fr] lg:items-center">
         <R>
           <div>
-            <p className="font-mono text-[.6875rem] font-semibold uppercase tracking-[.18em] text-[#5d9c44]">01</p>
+            <p className="font-mono text-[.6875rem] font-semibold uppercase tracking-[.18em] text-[var(--primary)]">01</p>
             <h3 className="mt-4 text-[clamp(1.5rem,2.4vw,2rem)] font-medium leading-[1.15] tracking-[-.02em] text-white">
               Identidade digital<br />desde o primeiro dia.
             </h3>
@@ -157,7 +157,7 @@ export default function JourneySection() {
         </R>
         <R d={0.15}>
           <div>
-            <p className="font-mono text-[.6875rem] font-semibold uppercase tracking-[.18em] text-[#5d9c44]">02</p>
+            <p className="font-mono text-[.6875rem] font-semibold uppercase tracking-[.18em] text-[var(--primary)]">02</p>
             <h3 className="mt-4 text-[clamp(1.5rem,2.4vw,2rem)] font-medium leading-[1.15] tracking-[-.02em] text-white">
               Cada evento<br />vira dado verificável.
             </h3>
@@ -174,7 +174,7 @@ export default function JourneySection() {
       {/* ── BENEFIT 03 — SCORES ───────────────────────────────────────── */}
       <div className="relative mx-auto mt-[clamp(5rem,10vw,9rem)] max-w-[1100px] px-6 text-center">
         <R>
-          <p className="font-mono text-[.6875rem] font-semibold uppercase tracking-[.18em] text-[#5d9c44]">03</p>
+          <p className="font-mono text-[.6875rem] font-semibold uppercase tracking-[.18em] text-[var(--primary)]">03</p>
         </R>
         <R d={0.1}>
           <h3 className="mx-auto mt-4 max-w-[600px] text-[clamp(1.5rem,2.4vw,2rem)] font-medium leading-[1.15] tracking-[-.02em] text-white">
@@ -202,9 +202,9 @@ export default function JourneySection() {
       <div className="relative mx-auto mt-[clamp(5rem,10vw,9rem)] grid max-w-[1100px] gap-12 px-6 pb-[clamp(6rem,12vw,10rem)] lg:grid-cols-[.5fr_.5fr] lg:items-center">
         <R>
           <div>
-            <p className="font-mono text-[.6875rem] font-semibold uppercase tracking-[.18em] text-[#5d9c44]">04</p>
+            <p className="font-mono text-[.6875rem] font-semibold uppercase tracking-[.18em] text-[var(--primary)]">04</p>
             <h3 className="mt-4 text-[clamp(1.8rem,3vw,2.8rem)] font-medium leading-[1.05] tracking-[-.03em] text-white">
-              Santos →<br /><span className="text-[#5d9c44]">o mundo.</span>
+              Santos →<br /><span className="text-[var(--primary)]">o mundo.</span>
             </h3>
             <p className="mt-5 text-[.9375rem] leading-[1.8] text-white/40">
               Do porto de Santos ao comprador institucional. Cada embarque rastreado com checkpoints, certificações e passaporte digital verificável por QR code.
@@ -223,15 +223,15 @@ export default function JourneySection() {
             ].map((d, i) => (
               <R key={d} d={0.2 + i * 0.1}>
                 <div className="flex items-center gap-4 border-b border-white/[.04] py-4 last:border-0">
-                  <div className="h-1.5 w-1.5 rounded-full bg-[#5d9c44] shadow-[0_0_8px_rgba(93,156,68,.6)]" />
+                  <div className="h-1.5 w-1.5 rounded-full bg-[var(--primary)] shadow-[0_0_8px_rgba(46,139,62,.6)]" />
                   <p className="text-[.9375rem] text-white/70">{d}</p>
                 </div>
               </R>
             ))}
 
             <R d={0.8}>
-              <div className="mt-6 flex items-center gap-3 rounded-lg border border-[#5d9c44]/20 bg-[#5d9c44]/[.06] px-4 py-3">
-                <span className="rounded border border-[#5d9c44]/30 bg-[#5d9c44]/10 px-2 py-0.5 text-[.6875rem] font-semibold text-[#5d9c44]">HALAL ✓</span>
+              <div className="mt-6 flex items-center gap-3 rounded-lg border border-[var(--primary)]/20 bg-[var(--primary)]/[.06] px-4 py-3">
+                <span className="rounded border border-[var(--primary)]/30 bg-[var(--primary)]/10 px-2 py-0.5 text-[.6875rem] font-semibold text-[var(--primary)]">HALAL ✓</span>
                 <p className="text-[.8125rem] text-white/50">Certificação verificada em cada etapa</p>
               </div>
             </R>

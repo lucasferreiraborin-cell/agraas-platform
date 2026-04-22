@@ -26,7 +26,7 @@ type Field = {
 };
 
 const CULTURE_COLORS: Record<string, string> = {
-  soja:   "#5d9c44",
+  soja:   "#2E8B3E",
   milho:  "#d4930a",
   trigo:  "#92400e",
   acucar: "#7c3aed",
@@ -74,7 +74,7 @@ export default function AgricultureMap({ farms, fields }: { farms: Farm[]; field
       {fields.map(field => {
         if (!field.polygon_coordinates?.length) return null;
         const positions = field.polygon_coordinates.map(p => [p.lat, p.lng] as [number, number]);
-        const color = CULTURE_COLORS[field.culture] ?? "#5d9c44";
+        const color = CULTURE_COLORS[field.culture] ?? "#2E8B3E";
         return (
           <Polygon
             key={field.id}
@@ -94,7 +94,7 @@ export default function AgricultureMap({ farms, fields }: { farms: Farm[]; field
       {farms.map(farm => {
         const farmFields = fields.filter(f => f.farm_id === farm.id);
         const primaryCulture = farmFields[0]?.culture ?? "soja";
-        const color = CULTURE_COLORS[primaryCulture] ?? "#5d9c44";
+        const color = CULTURE_COLORS[primaryCulture] ?? "#2E8B3E";
         return (
           <Marker key={farm.id} position={[farm.lat, farm.lng]} icon={makeFarmIcon(color)}>
             <Popup>

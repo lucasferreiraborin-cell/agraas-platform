@@ -120,7 +120,7 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  style={{ backgroundColor: "#5d9c44" }}
+                  style={{ backgroundColor: "#2E8B3E" }}
                   className="w-full rounded-xl py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
                 >
                   {loading ? "Entrando..." : "Entrar"}
@@ -181,7 +181,7 @@ export default function LoginPage() {
                   <button
                     type="submit"
                     disabled={resetLoading}
-                    style={{ backgroundColor: "#5d9c44" }}
+                    style={{ backgroundColor: "#2E8B3E" }}
                     className="w-full rounded-xl py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
                   >
                     {resetLoading ? "Enviando..." : "Enviar link de redefinição"}

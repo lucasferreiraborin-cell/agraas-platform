@@ -661,7 +661,7 @@ export default async function PainelPage() {
           {/* Legend */}
           <div className="mt-4 flex items-center gap-6 text-xs text-[var(--text-muted)]">
             <span className="flex items-center gap-1.5">
-              <span className="inline-block h-3 w-3 rounded-full bg-[#5d9c44]" />
+              <span className="inline-block h-3 w-3 rounded-full bg-[var(--primary)]" />
               Score ≥ 70
             </span>
             <span className="flex items-center gap-1.5">
@@ -739,7 +739,7 @@ export default async function PainelPage() {
 
                     <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-[rgba(93,156,68,0.12)]">
                       <div
-                        className="h-full rounded-full bg-[linear-gradient(90deg,#8dbc5f_0%,#5d9c44_100%)]"
+                        className="h-full rounded-full bg-[linear-gradient(90deg,#3DA54C_0%,#2E8B3E_100%)]"
                         style={{ width: `${scorePercent}%` }}
                       />
                     </div>
@@ -999,7 +999,7 @@ function IconAnimal() {
     <svg
       viewBox="0 0 24 24"
       fill="none"
-      stroke="#5d9c44"
+      stroke="#2E8B3E"
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -1016,7 +1016,7 @@ function IconScore() {
     <svg
       viewBox="0 0 24 24"
       fill="none"
-      stroke="#5d9c44"
+      stroke="#2E8B3E"
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -1033,7 +1033,7 @@ function IconWeight() {
     <svg
       viewBox="0 0 24 24"
       fill="none"
-      stroke="#5d9c44"
+      stroke="#2E8B3E"
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -1052,7 +1052,7 @@ function IconCurrency() {
     <svg
       viewBox="0 0 24 24"
       fill="none"
-      stroke="#5d9c44"
+      stroke="#2E8B3E"
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -1071,7 +1071,7 @@ function IconHalal() {
     <svg
       viewBox="0 0 24 24"
       fill="none"
-      stroke="#5d9c44"
+      stroke="#2E8B3E"
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -1087,7 +1087,7 @@ function IconPlane() {
     <svg
       viewBox="0 0 24 24"
       fill="none"
-      stroke="#5d9c44"
+      stroke="#2E8B3E"
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"

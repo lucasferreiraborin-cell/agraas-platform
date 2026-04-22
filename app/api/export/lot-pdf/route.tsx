@@ -24,7 +24,7 @@ import {
 const C = {
   dark:     "#0f0f1a",
   navy:     "#1a1a2e",
-  green:    "#5d9c44",
+  green:    "#2E8B3E",
   greenLight:"#8dbc5f",
   amber:    "#d97706",
   red:      "#dc2626",
