@@ -12,12 +12,12 @@ const TYPE_LABEL: Record<string, string> = { animal: "Animal", safra: "Safra", i
 const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
 const IMG = {
-  hero: "https://images.unsplash.com/photo-1500595046743-cd271d694d30?w=1920&q=85&auto=format",
-  nelore: "https://images.unsplash.com/photo-1605185189100-4d7c8fffbad1?w=1600&q=85&auto=format",
-  pasto: "https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=1600&q=80&auto=format",
-  soja: "https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=1600&q=85&auto=format",
+  hero: "/images/lp/rebanho-nelore.png",
+  nelore: "/images/lp/rebanho-nelore.png",
+  pasto: "/images/lp/rebanho-nelore.png",
+  soja: "/images/lp/silos_1.jpg",
   porto: "https://images.unsplash.com/photo-1494412574643-ff11b0a5eb19?w=900&q=80&auto=format",
-  aereo: "https://images.unsplash.com/photo-1594771804886-a933bb2d609b?w=1920&q=85&auto=format",
+  aereo: "/images/lp/Maquina-agricola-colheita.jpg",
 };
 
 export default async function LandingPage() {
