@@ -311,7 +311,7 @@ export default async function LandingPage() {
       {/* ═══ CTA ════════════════════════════════════════════════════════════ */}
       <section className="relative isolate overflow-hidden">
         <img src={IMG.aereo} alt="" className="absolute inset-0 -z-10 h-full w-full object-cover" />
-        <div className="absolute inset-0 -z-10" style={{ background: "linear-gradient(135deg, var(--sidebar) 0%, var(--sidebar-2) 100%)", opacity: .85 }} />
+        <div className="absolute inset-0 -z-10" style={{ background: "linear-gradient(135deg, #1E5E26 0%, #0f3517 100%)", opacity: .92 }} />
 
         <div className="mx-auto max-w-[800px] px-6 py-28 text-center lg:py-40">
           <ScrollReveal>
@@ -335,7 +335,7 @@ export default async function LandingPage() {
       </section>
 
       {/* ═══ FOOTER ════════════════════════════════════════════════════════ */}
-      <footer style={{ background: "linear-gradient(180deg, var(--sidebar) 0%, var(--sidebar-2) 100%)" }}>
+      <footer style={{ background: "linear-gradient(180deg, #1E5E26 0%, #0f3517 100%)" }}>
         <div className="mx-auto grid max-w-[1200px] gap-10 px-6 py-16 sm:grid-cols-4 lg:px-10">
           <div>
             <p className="text-[1.25rem] font-semibold tracking-[-.04em] text-white">Agraas</p>
