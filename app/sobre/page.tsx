@@ -8,10 +8,23 @@ export default function SobrePage() {
     <div className="min-h-screen bg-white">
       <PublicNav />
 
+      <section className="relative isolate overflow-hidden">
+        <img src="/images/lp/nelore-close.jpg" alt="Boiada Nelore em pasto brasileiro" className="absolute inset-0 -z-10 h-full w-full object-cover" />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-r from-[#0f3517]/90 via-[#0f3517]/60 to-transparent" />
+        <div className="mx-auto max-w-[1200px] px-6 py-28 lg:py-36">
+          <ScrollReveal>
+            <p className="text-[13px] font-semibold uppercase tracking-[0.2em] text-white/70">A empresa</p>
+            <h1 className="mt-4 max-w-[720px] text-[clamp(2rem,5vw,3.4rem)] font-extrabold leading-[1.05] tracking-[-0.04em] text-white">
+              Infraestrutura que transforma dados do campo em confiança verificável.
+            </h1>
+          </ScrollReveal>
+        </div>
+      </section>
+
       <section className="mx-auto max-w-3xl px-6 py-24">
         <ScrollReveal>
-          <p className="text-[13px] font-semibold uppercase tracking-[0.2em] text-[var(--text-muted)]">A empresa</p>
-          <h1 className="mt-3 text-[2.5rem] font-extrabold tracking-[-0.04em] text-[var(--text-primary)]">Por que a Agraas existe</h1>
+          <p className="text-[13px] font-semibold uppercase tracking-[0.2em] text-[var(--text-muted)]">Por que existimos</p>
+          <h2 className="mt-3 text-[2rem] font-extrabold tracking-[-0.04em] text-[var(--text-primary)]">Por que a Agraas existe</h2>
         </ScrollReveal>
         <ScrollReveal delay={100}>
           <div className="mt-10 space-y-6 text-[15px] leading-8 text-[var(--text-secondary)]">
@@ -46,7 +59,9 @@ export default function SobrePage() {
         </div>
       </section>
 
-      <section className="bg-[linear-gradient(135deg,var(--sidebar)_0%,var(--sidebar-2)_100%)] px-6 py-20 text-center">
+      <section className="relative isolate overflow-hidden px-6 py-28 text-center">
+        <img src="/images/lp/colheita-sunset.jpg" alt="" className="absolute inset-0 -z-10 h-full w-full object-cover" />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-br from-[#0f3517]/85 via-[#1E5E26]/80 to-[#0f3517]/90" />
         <ScrollReveal>
           <p className="mx-auto max-w-2xl text-[1.6rem] font-bold leading-10 text-white">
             &ldquo;Ser a infraestrutura digital do agronegocio brasileiro — da fazenda a mesa, do Brasil ao mundo.&rdquo;

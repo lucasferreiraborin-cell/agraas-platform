@@ -13,11 +13,11 @@ const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", curren
 
 const IMG = {
   hero: "https://images.unsplash.com/photo-1500595046743-cd271d694d30?w=1920&q=85&auto=format",
-  nelore: "https://images.unsplash.com/photo-1570042225831-d98fa7577f1d?w=900&q=80&auto=format",
+  nelore: "/images/lp/nelore-close.jpg",
   pasto: "https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=1600&q=80&auto=format",
-  soja: "https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=900&q=80&auto=format",
+  soja: "/images/lp/silos-milho.jpg",
   porto: "https://images.unsplash.com/photo-1494412574643-ff11b0a5eb19?w=900&q=80&auto=format",
-  aereo: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=1600&q=80&auto=format",
+  aereo: "/images/lp/colheita-sunset.jpg",
 };
 
 export default async function LandingPage() {
@@ -201,7 +201,7 @@ export default async function LandingPage() {
       <section className="bg-white">
         <div className="mx-auto grid max-w-[1200px] lg:grid-cols-2">
           <div className="relative hidden min-h-[500px] overflow-hidden lg:block">
-            <img src={IMG.soja} alt="Plantação de soja" className="absolute inset-0 h-full w-full object-cover" />
+            <img src={IMG.soja} alt="Silos e lavoura de milho" className="absolute inset-0 h-full w-full object-cover" />
           </div>
           <div className="flex flex-col justify-center px-6 py-24 lg:pl-20 lg:py-32">
             <ScrollReveal>
