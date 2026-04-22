@@ -55,7 +55,7 @@ export default async function LandingPage() {
                 Explorar Marketplace
               </Link>
               <Link href="/login"
-                className="rounded-xl border border-white/25 px-7 py-[14px] text-[.9375rem] font-semibold text-white/75 transition hover:border-white/40 hover:text-white">
+                className="rounded-xl border border-white/40 px-7 py-[14px] text-[.9375rem] font-semibold text-white transition hover:border-white/70 hover:bg-white/5">
                 Acessar plataforma
               </Link>
             </div>
@@ -326,7 +326,7 @@ export default async function LandingPage() {
                 Criar conta gratuitamente
               </Link>
               <a href="mailto:contato@agraas.com.br"
-                className="rounded-xl border border-white/40 px-8 py-4 text-[.9375rem] font-semibold text-white/90 transition hover:border-white/60 hover:text-white">
+                className="rounded-xl border border-white/40 px-8 py-4 text-[.9375rem] font-semibold text-white transition hover:border-white/70 hover:bg-white/5">
                 Fale com a gente
               </a>
             </div>
@@ -344,16 +344,16 @@ export default async function LandingPage() {
           <div>
             <p className="text-[.6875rem] font-semibold uppercase tracking-[.15em] text-white/60">Plataforma</p>
             <div className="mt-4 flex flex-col gap-3">
-              <Link href="/marketplace" className="text-[.875rem] text-white/85 transition hover:text-white">Marketplace</Link>
-              <Link href="/planos" className="text-[.875rem] text-white/85 transition hover:text-white">Planos</Link>
-              <Link href="/login" className="text-[.875rem] text-white/85 transition hover:text-white">Login</Link>
+              <Link href="/marketplace" className="text-[.875rem] text-white transition hover:text-white/80">Marketplace</Link>
+              <Link href="/planos" className="text-[.875rem] text-white transition hover:text-white/80">Planos</Link>
+              <Link href="/login" className="text-[.875rem] text-white transition hover:text-white/80">Login</Link>
             </div>
           </div>
           <div>
             <p className="text-[.6875rem] font-semibold uppercase tracking-[.15em] text-white/60">Empresa</p>
             <div className="mt-4 flex flex-col gap-3">
-              <Link href="/sobre" className="text-[.875rem] text-white/85 transition hover:text-white">Sobre</Link>
-              <a href="mailto:contato@agraas.com.br" className="text-[.875rem] text-white/85 transition hover:text-white">Contato</a>
+              <Link href="/sobre" className="text-[.875rem] text-white transition hover:text-white/80">Sobre</Link>
+              <a href="mailto:contato@agraas.com.br" className="text-[.875rem] text-white transition hover:text-white/80">Contato</a>
             </div>
           </div>
           <div>
