@@ -318,7 +318,7 @@ export default async function LandingPage() {
             <h2 className="text-[clamp(2rem,4.5vw,3.2rem)] font-semibold leading-[1.08] tracking-[-.04em] text-white">
               Faça parte do ecossistema.
             </h2>
-            <p className="mx-auto mt-5 max-w-[440px] text-[1rem] leading-[1.75] text-white/55">
+            <p className="mx-auto mt-5 max-w-[440px] text-[1rem] leading-[1.75] text-white/85">
               Fazendeiro, comprador, fornecedor ou parceiro — a infraestrutura do agronegócio brasileiro está aqui.
             </p>
             <div className="mt-10 flex flex-wrap justify-center gap-4">
@@ -326,7 +326,7 @@ export default async function LandingPage() {
                 Criar conta gratuitamente
               </Link>
               <a href="mailto:contato@agraas.com.br"
-                className="rounded-xl border border-white/25 px-8 py-4 text-[.9375rem] font-semibold text-white/60 transition hover:border-white/40 hover:text-white">
+                className="rounded-xl border border-white/40 px-8 py-4 text-[.9375rem] font-semibold text-white/90 transition hover:border-white/60 hover:text-white">
                 Fale com a gente
               </a>
             </div>
@@ -339,33 +339,33 @@ export default async function LandingPage() {
         <div className="mx-auto grid max-w-[1200px] gap-10 px-6 py-16 sm:grid-cols-4 lg:px-10">
           <div>
             <p className="text-[1.25rem] font-semibold tracking-[-.04em] text-white">Agraas</p>
-            <p className="mt-3 text-[.8125rem] leading-[1.75] text-white/30">Infraestrutura digital do agronegócio brasileiro.</p>
+            <p className="mt-3 text-[.8125rem] leading-[1.75] text-white/70">Infraestrutura digital do agronegócio brasileiro.</p>
           </div>
           <div>
-            <p className="text-[.6875rem] font-semibold uppercase tracking-[.15em] text-white/25">Plataforma</p>
+            <p className="text-[.6875rem] font-semibold uppercase tracking-[.15em] text-white/60">Plataforma</p>
             <div className="mt-4 flex flex-col gap-3">
-              <Link href="/marketplace" className="text-[.875rem] text-white/45 transition hover:text-white">Marketplace</Link>
-              <Link href="/planos" className="text-[.875rem] text-white/45 transition hover:text-white">Planos</Link>
-              <Link href="/login" className="text-[.875rem] text-white/45 transition hover:text-white">Login</Link>
+              <Link href="/marketplace" className="text-[.875rem] text-white/85 transition hover:text-white">Marketplace</Link>
+              <Link href="/planos" className="text-[.875rem] text-white/85 transition hover:text-white">Planos</Link>
+              <Link href="/login" className="text-[.875rem] text-white/85 transition hover:text-white">Login</Link>
             </div>
           </div>
           <div>
-            <p className="text-[.6875rem] font-semibold uppercase tracking-[.15em] text-white/25">Empresa</p>
+            <p className="text-[.6875rem] font-semibold uppercase tracking-[.15em] text-white/60">Empresa</p>
             <div className="mt-4 flex flex-col gap-3">
-              <Link href="/sobre" className="text-[.875rem] text-white/45 transition hover:text-white">Sobre</Link>
-              <a href="mailto:contato@agraas.com.br" className="text-[.875rem] text-white/45 transition hover:text-white">Contato</a>
+              <Link href="/sobre" className="text-[.875rem] text-white/85 transition hover:text-white">Sobre</Link>
+              <a href="mailto:contato@agraas.com.br" className="text-[.875rem] text-white/85 transition hover:text-white">Contato</a>
             </div>
           </div>
           <div>
-            <p className="text-[.6875rem] font-semibold uppercase tracking-[.15em] text-white/25">Legal</p>
+            <p className="text-[.6875rem] font-semibold uppercase tracking-[.15em] text-white/60">Legal</p>
             <div className="mt-4 flex flex-col gap-3">
-              <span className="text-[.875rem] text-white/20">Privacidade</span>
-              <span className="text-[.875rem] text-white/20">Termos</span>
+              <span className="text-[.875rem] text-white/70">Privacidade</span>
+              <span className="text-[.875rem] text-white/70">Termos</span>
             </div>
           </div>
         </div>
-        <div className="mx-auto max-w-[1200px] border-t border-white/[.08] px-6 py-6">
-          <p className="text-[.75rem] text-white/15">© 2026 Agraas Agritech. Todos os direitos reservados.</p>
+        <div className="mx-auto max-w-[1200px] border-t border-white/[.12] px-6 py-6">
+          <p className="text-[.75rem] text-white/55">© 2026 Agraas Agritech. Todos os direitos reservados.</p>
         </div>
       </footer>
     </div>

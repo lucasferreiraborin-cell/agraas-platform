@@ -23,7 +23,7 @@ export default function PublicNav() {
         <div className="hidden items-center gap-8 md:flex">
           {LINKS.map(l => (
             <Link key={l.href} href={l.href}
-              className="text-[.875rem] font-medium text-white/50 transition-colors duration-200 hover:text-white">
+              className="text-[.875rem] font-medium text-white/85 transition-colors duration-200 hover:text-white">
               {l.label}
             </Link>
           ))}
@@ -31,7 +31,7 @@ export default function PublicNav() {
 
         <div className="hidden items-center gap-3 md:flex">
           <Link href="/login"
-            className="rounded-lg border border-white/[.12] px-4 py-2 text-[.8125rem] font-medium text-white/60 transition-all duration-200 hover:border-white/25 hover:text-white">
+            className="rounded-lg border border-white/30 px-4 py-2 text-[.8125rem] font-medium text-white/90 transition-all duration-200 hover:border-white/50 hover:text-white">
             Entrar
           </Link>
           <Link href="/cadastro"
@@ -50,11 +50,11 @@ export default function PublicNav() {
           <div className="flex flex-col gap-4">
             {LINKS.map(l => (
               <Link key={l.href} href={l.href} onClick={() => setOpen(false)}
-                className="text-[.9375rem] font-medium text-white/50 hover:text-white">{l.label}</Link>
+                className="text-[.9375rem] font-medium text-white/85 hover:text-white">{l.label}</Link>
             ))}
             <div className="mt-2 grid grid-cols-2 gap-3">
               <Link href="/login" onClick={() => setOpen(false)}
-                className="rounded-lg border border-white/[.12] py-2.5 text-center text-[.875rem] font-medium text-white/60">Entrar</Link>
+                className="rounded-lg border border-white/30 py-2.5 text-center text-[.875rem] font-medium text-white/90">Entrar</Link>
               <Link href="/cadastro" onClick={() => setOpen(false)}
                 className="rounded-lg bg-[var(--primary)] py-2.5 text-center text-[.875rem] font-semibold text-white">Criar conta</Link>
             </div>
