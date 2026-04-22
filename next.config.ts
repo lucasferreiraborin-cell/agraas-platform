@@ -11,8 +11,8 @@ const cspHeader = [
   "script-src 'self' 'unsafe-inline' https://browser.sentry-cdn.com",
   // Styles: self + inline (Next.js injects critical CSS)
   "style-src 'self' 'unsafe-inline'",
-  // Images: self + data URIs + Supabase storage + Leaflet/OpenStreetMap + Carto tiles
-  `img-src 'self' data: https://${supabaseHost} https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com`,
+  // Images: self + data URIs + Supabase storage + Leaflet/OpenStreetMap + Carto tiles + Unsplash (fotos LP/sobre)
+  `img-src 'self' data: blob: https://${supabaseHost} https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com https://images.unsplash.com`,
   // Fonts: self
   "font-src 'self'",
   // API connections: self + Supabase + Sentry + OpenStreetMap + Carto (Leaflet tile attribution)
