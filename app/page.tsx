@@ -335,37 +335,37 @@ export default async function LandingPage() {
       </section>
 
       {/* ═══ FOOTER ════════════════════════════════════════════════════════ */}
-      <footer style={{ background: "linear-gradient(180deg, #1E5E26 0%, #0f3517 100%)" }}>
+      <footer style={{ background: "linear-gradient(180deg, #1E5E26 0%, #0f3517 100%)", color: "#ffffff" }}>
         <div className="mx-auto grid max-w-[1200px] gap-10 px-6 py-16 sm:grid-cols-4 lg:px-10">
           <div>
-            <p className="text-[1.25rem] font-semibold tracking-[-.04em] text-white">Agraas</p>
-            <p className="mt-3 text-[.8125rem] leading-[1.75] text-white/70">Infraestrutura digital do agronegócio brasileiro.</p>
+            <p style={{ color: "#ffffff" }} className="text-[1.25rem] font-semibold tracking-[-.04em]">Agraas</p>
+            <p style={{ color: "#ffffff" }} className="mt-3 text-[.8125rem] leading-[1.75] opacity-80">Infraestrutura digital do agronegócio brasileiro.</p>
           </div>
           <div>
-            <p className="text-[.6875rem] font-semibold uppercase tracking-[.15em] text-white/60">Plataforma</p>
+            <p style={{ color: "#ffffff" }} className="text-[.6875rem] font-semibold uppercase tracking-[.15em] opacity-70">Plataforma</p>
             <div className="mt-4 flex flex-col gap-3">
-              <Link href="/marketplace" className="text-[.875rem] text-white transition hover:text-white/80">Marketplace</Link>
-              <Link href="/planos" className="text-[.875rem] text-white transition hover:text-white/80">Planos</Link>
-              <Link href="/login" className="text-[.875rem] text-white transition hover:text-white/80">Login</Link>
+              <Link href="/marketplace" style={{ color: "#ffffff" }} className="text-[.875rem]">Marketplace</Link>
+              <Link href="/planos" style={{ color: "#ffffff" }} className="text-[.875rem]">Planos</Link>
+              <Link href="/login" style={{ color: "#ffffff" }} className="text-[.875rem]">Login</Link>
             </div>
           </div>
           <div>
-            <p className="text-[.6875rem] font-semibold uppercase tracking-[.15em] text-white/60">Empresa</p>
+            <p style={{ color: "#ffffff" }} className="text-[.6875rem] font-semibold uppercase tracking-[.15em] opacity-70">Empresa</p>
             <div className="mt-4 flex flex-col gap-3">
-              <Link href="/sobre" className="text-[.875rem] text-white transition hover:text-white/80">Sobre</Link>
-              <a href="mailto:contato@agraas.com.br" className="text-[.875rem] text-white transition hover:text-white/80">Contato</a>
+              <Link href="/sobre" style={{ color: "#ffffff" }} className="text-[.875rem]">Sobre</Link>
+              <a href="mailto:contato@agraas.com.br" style={{ color: "#ffffff" }} className="text-[.875rem]">Contato</a>
             </div>
           </div>
           <div>
-            <p className="text-[.6875rem] font-semibold uppercase tracking-[.15em] text-white/60">Legal</p>
+            <p style={{ color: "#ffffff" }} className="text-[.6875rem] font-semibold uppercase tracking-[.15em] opacity-70">Legal</p>
             <div className="mt-4 flex flex-col gap-3">
-              <span className="text-[.875rem] text-white/70">Privacidade</span>
-              <span className="text-[.875rem] text-white/70">Termos</span>
+              <span style={{ color: "#ffffff" }} className="text-[.875rem] opacity-80">Privacidade</span>
+              <span style={{ color: "#ffffff" }} className="text-[.875rem] opacity-80">Termos</span>
             </div>
           </div>
         </div>
         <div className="mx-auto max-w-[1200px] border-t border-white/[.12] px-6 py-6">
-          <p className="text-[.75rem] text-white/55">© 2026 Agraas Agritech. Todos os direitos reservados.</p>
+          <p style={{ color: "#ffffff" }} className="text-[.75rem] opacity-70">© 2026 Agraas Agritech. Todos os direitos reservados.</p>
         </div>
       </footer>
     </div>
