@@ -2,13 +2,11 @@
 
 import Link from "next/link";
 import {
-  FileText,
   Receipt,
   Boxes,
   Wallet,
   TrendingUp,
   ArrowRight,
-  Layers,
 } from "lucide-react";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/app/components/ui/Motion";
 
@@ -116,21 +114,18 @@ export default function OperationalSection() {
               }}
             />
             <div className="relative">
-              <div className="flex items-center gap-2 text-white/60">
-                <Layers size={14} />
-                <span className="font-mono text-[.6875rem] font-semibold uppercase tracking-[.18em]">
-                  A cadeia inteira, em uma única plataforma
-                </span>
-              </div>
+              <h3 className="text-[1.25rem] font-semibold leading-[1.3] text-white md:text-[1.4rem]">
+                A cadeia inteira, em uma única plataforma.
+              </h3>
 
               <div className="mt-8 grid gap-px overflow-hidden rounded-2xl border border-white/[.08] bg-white/[.02] md:grid-cols-6">
                 {[
                   { label: "Operacional",  sub: "Manejo e sanitário" },
-                  { label: "Estoque",      sub: "Insumos + carência" },
-                  { label: "Financeiro",   sub: "DRE + fluxo" },
+                  { label: "Estoque",      sub: "Insumos e carência" },
+                  { label: "Financeiro",   sub: "DRE e fluxo de caixa" },
                   { label: "Fiscal",       sub: "NF-e automática" },
-                  { label: "Comercial",    sub: "Vendas + marketplace" },
-                  { label: "Exportação",   sub: "Lotes + rastreio" },
+                  { label: "Comercial",    sub: "Vendas e marketplace" },
+                  { label: "Exportação",   sub: "Lotes e rastreio" },
                 ].map((col, i) => (
                   <div
                     key={col.label}
@@ -140,19 +135,12 @@ export default function OperationalSection() {
                     }}
                   >
                     <div>
-                      <span className="font-mono text-[.6875rem] font-semibold uppercase tracking-[.14em] text-[var(--primary)]">
-                        {String(i + 1).padStart(2, "0")}
-                      </span>
-                      <p className="mt-3 text-[.9375rem] font-semibold text-white">
+                      <p className="text-[.9375rem] font-semibold text-white">
                         {col.label}
                       </p>
-                      <p className="mt-1 text-[.75rem] leading-[1.55] text-white/50">
+                      <p className="mt-1.5 text-[.75rem] leading-[1.55] text-white/50">
                         {col.sub}
                       </p>
-                    </div>
-                    <div className="mt-5 flex items-center gap-1 text-[.6875rem] text-white/45">
-                      <FileText size={10} />
-                      <span>Integrado</span>
                     </div>
                   </div>
                 ))}
