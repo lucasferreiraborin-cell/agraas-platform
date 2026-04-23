@@ -10,6 +10,7 @@ import FSJBECaseSection from "@/app/components/landing/FSJBECaseSection";
 import OperationalSection from "@/app/components/landing/OperationalSection";
 import HowItWorksSection from "@/app/components/landing/HowItWorksSection";
 import FAQSection from "@/app/components/landing/FAQSection";
+import CredibilityStrip from "@/app/components/landing/CredibilityStrip";
 import {
   FadeIn,
   StaggerContainer,
@@ -187,6 +188,9 @@ export default async function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* ═══ CREDIBILITY STRIP (logo após hero) ═══════════════════════════ */}
+      <CredibilityStrip />
 
       {/* ═══ CAPABILITIES ═══════════════════════════════════════════════════ */}
       <section className="bg-white">
