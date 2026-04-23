@@ -15,7 +15,7 @@ interface PublicShellProps {
 
 export default function PublicShell({
   children,
-  showScrollProgress = true,
+  showScrollProgress = false,
   showFooter = true,
   showScrollToTop = true,
   className,
