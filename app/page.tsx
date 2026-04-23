@@ -15,7 +15,6 @@ import {
   FadeIn,
   StaggerContainer,
   StaggerItem,
-  CounterAnimation,
 } from "@/app/components/ui/Motion";
 import HeroParallaxImage from "@/app/components/ui/HeroParallaxImage";
 import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
@@ -121,22 +120,11 @@ export default async function LandingPage() {
         />
         <div className="absolute inset-x-0 bottom-0 -z-10 h-48 bg-gradient-to-t from-[var(--bg)] to-transparent" />
 
-        <div className="mx-auto flex min-h-[94vh] max-w-[1200px] items-center px-6 lg:px-10">
-          <div className="w-full max-w-[680px] py-24">
+        <div className="mx-auto flex min-h-[92vh] max-w-[1200px] items-center px-6 lg:px-10">
+          <div className="w-full max-w-[720px] py-24">
             <FadeIn>
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/[.06] px-3.5 py-1.5 backdrop-blur-sm">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_8px_rgba(110,231,183,.8)]" />
-                <span className="font-mono text-[.6875rem] font-medium uppercase tracking-[.15em] text-white/80">
-                  Plataforma em operação · Jussara-GO
-                </span>
-              </div>
-            </FadeIn>
-
-            <FadeIn delay={0.15}>
-              <h1 className="mt-7 text-[clamp(2.6rem,6.2vw,5rem)] font-medium leading-[.96] tracking-[-.04em] text-white">
-                O agro do Brasil,
-                <br />
-                <span className="italic text-white/90">auditável em tempo real.</span>
+              <h1 className="text-[clamp(2.6rem,6.2vw,5rem)] font-medium leading-[.98] tracking-[-.035em] text-white">
+                A plataforma do agro brasileiro.
               </h1>
             </FadeIn>
 
@@ -165,18 +153,17 @@ export default async function LandingPage() {
             </FadeIn>
 
             <FadeIn delay={0.6}>
-              <div className="mt-20 flex flex-wrap gap-12 border-t border-white/[.12] pt-8">
+              <div className="mt-20 flex flex-wrap gap-10 border-t border-white/[.12] pt-8 sm:gap-14">
                 {[
-                  { end: animalsCount, s: "", l: "animais rastreados" },
-                  { end: fieldsCount,  s: "", l: "talhões monitorados" },
-                  { end: lotsCount,    s: "", l: "lotes de exportação" },
-                ].map((c, i) => (
-                  <div key={i}>
-                    <p className="text-[2.2rem] font-semibold leading-none tracking-[-.02em] text-white">
-                      <CounterAnimation value={c.end} />
-                      {c.s}
+                  { value: animalsCount.toLocaleString("pt-BR"), l: "animais rastreados" },
+                  { value: fieldsCount.toLocaleString("pt-BR"),  l: "talhões monitorados" },
+                  { value: lotsCount.toLocaleString("pt-BR"),    l: "lotes de exportação" },
+                ].map((c) => (
+                  <div key={c.l}>
+                    <p className="text-[2rem] font-semibold leading-none tracking-[-.02em] text-white">
+                      {c.value}
                     </p>
-                    <p className="mt-2 font-mono text-[.6875rem] font-medium uppercase tracking-[.14em] text-white/45">
+                    <p className="mt-2.5 text-[.8125rem] text-white/55">
                       {c.l}
                     </p>
                   </div>
