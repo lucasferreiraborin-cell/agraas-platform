@@ -27,7 +27,6 @@ import {
   FadeIn,
   StaggerContainer,
   StaggerItem,
-  CounterAnimation,
 } from "@/app/components/ui/Motion";
 import type { Listing } from "./MarketplaceTabs";
 import ActivityTicker from "./ActivityTicker";
@@ -167,20 +166,13 @@ export default function MarketplacePublicView({ listings }: { listings: Listing[
           <div className="grid gap-12 lg:grid-cols-[1.1fr_.9fr] lg:items-center">
             <div>
               <FadeIn>
-                <p className="font-mono text-[.6875rem] font-semibold uppercase tracking-[.18em] text-[var(--primary)]">
-                  Agraas Marketplace · Mercado Livre do Agro
-                </p>
-              </FadeIn>
-              <FadeIn delay={0.15}>
-                <h1 className="mt-5 text-[clamp(2.2rem,5.2vw,4rem)] font-medium leading-[.98] tracking-[-.035em] text-white">
-                  Tudo do agro,
-                  <br />
-                  <span className="italic text-white/90">em um só lugar.</span>
+                <h1 className="text-[clamp(2.2rem,5.2vw,4rem)] font-medium leading-[1] tracking-[-.03em] text-white">
+                  O marketplace do agro brasileiro.
                 </h1>
               </FadeIn>
-              <FadeIn delay={0.3}>
+              <FadeIn delay={0.15}>
                 <p className="mt-6 max-w-[560px] text-[1.0625rem] leading-[1.75] text-white/65">
-                  O primeiro marketplace 100% dedicado ao agronegócio brasileiro. Animais, safras, ração, defensivos, sementes, máquinas, brincos RFID, drones, EPIs e serviços — com rastreio Agraas em cada oferta.
+                  Primeiro marketplace 100% dedicado ao agronegócio brasileiro. Animais, safras, ração, defensivos, sementes, máquinas, brincos RFID, drones, EPIs e serviços — com rastreio Agraas em cada oferta.
                 </p>
               </FadeIn>
               <FadeIn delay={0.45}>
@@ -202,44 +194,24 @@ export default function MarketplacePublicView({ listings }: { listings: Listing[
               </FadeIn>
             </div>
 
-            <FadeIn delay={0.4}>
+            <FadeIn delay={0.3}>
               <div className="rounded-2xl border border-white/[.08] bg-white/[.03] p-8 backdrop-blur-sm">
-                <p className="font-mono text-[.6875rem] font-semibold uppercase tracking-[.18em] text-white/40">
-                  Marketplace ao vivo
-                </p>
-                <div className="mt-6 grid grid-cols-2 gap-6">
-                  <div>
-                    <p className="text-[2.4rem] font-semibold leading-none tracking-[-.02em] text-white">
-                      <CounterAnimation value={listings.length} />
-                    </p>
-                    <p className="mt-2 font-mono text-[.6875rem] uppercase tracking-[.14em] text-white/45">
-                      anúncios ativos
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[2.4rem] font-semibold leading-none tracking-[-.02em] text-white">
-                      <CounterAnimation value={halalCount} />
-                    </p>
-                    <p className="mt-2 font-mono text-[.6875rem] uppercase tracking-[.14em] text-white/45">
-                      Halal certificados
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[2.4rem] font-semibold leading-none tracking-[-.02em] text-white">
-                      <CounterAnimation value={stateCount} />
-                    </p>
-                    <p className="mt-2 font-mono text-[.6875rem] uppercase tracking-[.14em] text-white/45">
-                      estados brasileiros
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[2.4rem] font-semibold leading-none tracking-[-.02em] text-white">
-                      <CounterAnimation value={avgScore} />
-                    </p>
-                    <p className="mt-2 font-mono text-[.6875rem] uppercase tracking-[.14em] text-white/45">
-                      score médio
-                    </p>
-                  </div>
+                <div className="grid grid-cols-2 gap-6">
+                  {[
+                    { value: listings.length, label: "anúncios ativos" },
+                    { value: halalCount,      label: "certificados Halal" },
+                    { value: stateCount,      label: "estados brasileiros" },
+                    { value: avgScore,        label: "score médio" },
+                  ].map((k) => (
+                    <div key={k.label}>
+                      <p className="text-[2.2rem] font-semibold leading-none tracking-[-.02em] text-white">
+                        {k.value.toLocaleString("pt-BR")}
+                      </p>
+                      <p className="mt-2.5 text-[.8125rem] text-white/55">
+                        {k.label}
+                      </p>
+                    </div>
+                  ))}
                 </div>
               </div>
             </FadeIn>
