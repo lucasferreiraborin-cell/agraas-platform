@@ -78,13 +78,44 @@ const fmt = (v: number) =>
     maximumFractionDigits: 0,
   });
 
+const UF_OPTIONS = [
+  "SP","MG","GO","MT","MS","PR","RS","SC","BA","MA","TO","PA","PI","RO","ES","RJ",
+];
+
 export default function MarketplacePublicView({ listings }: { listings: Listing[] }) {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("");
   const [halalOnly, setHalalOnly] = useState(false);
   const [minScore, setMinScore] = useState(0);
+  const [priceMin, setPriceMin] = useState("");
+  const [priceMax, setPriceMax] = useState("");
+  const [selectedUFs, setSelectedUFs] = useState<string[]>([]);
   const [sort, setSort] = useState<SortKey>("recentes");
   const [openFilters, setOpenFilters] = useState(false);
+
+  const toggleUF = (uf: string) =>
+    setSelectedUFs((prev) =>
+      prev.includes(uf) ? prev.filter((u) => u !== uf) : [...prev, uf],
+    );
+
+  const clearAllFilters = () => {
+    setSearch("");
+    setTypeFilter("");
+    setHalalOnly(false);
+    setMinScore(0);
+    setPriceMin("");
+    setPriceMax("");
+    setSelectedUFs([]);
+  };
+
+  const activeFilterCount =
+    (search ? 1 : 0) +
+    (typeFilter ? 1 : 0) +
+    (halalOnly ? 1 : 0) +
+    (minScore > 0 ? 1 : 0) +
+    (priceMin ? 1 : 0) +
+    (priceMax ? 1 : 0) +
+    selectedUFs.length;
 
   const stateCount = useMemo(() => {
     const s = new Set<string>();
@@ -132,6 +163,12 @@ export default function MarketplacePublicView({ listings }: { listings: Listing[
     if (halalOnly) r = r.filter((l) => l.halal_certified);
     if (minScore > 0)
       r = r.filter((l) => l.score_agraas != null && l.score_agraas >= minScore);
+    const minVal = priceMin ? parseFloat(priceMin) : null;
+    const maxVal = priceMax ? parseFloat(priceMax) : null;
+    if (minVal != null) r = r.filter((l) => l.price_per_unit >= minVal);
+    if (maxVal != null) r = r.filter((l) => l.price_per_unit <= maxVal);
+    if (selectedUFs.length > 0)
+      r = r.filter((l) => l.location_state && selectedUFs.includes(l.location_state));
 
     const sorted = [...r];
     switch (sort) {
@@ -151,7 +188,7 @@ export default function MarketplacePublicView({ listings }: { listings: Listing[
         break;
     }
     return sorted;
-  }, [listings, search, typeFilter, halalOnly, minScore, sort]);
+  }, [listings, search, typeFilter, halalOnly, minScore, priceMin, priceMax, selectedUFs, sort]);
 
   return (
     <>
@@ -338,8 +375,8 @@ export default function MarketplacePublicView({ listings }: { listings: Listing[
 
       {/* ═══ CATALOG ════════════════════════════════════════════════════ */}
       <section id="catalogo" className="bg-[var(--bg)]">
-        <div className="mx-auto max-w-[1280px] px-6 py-10 lg:px-10 lg:py-14">
-          {/* Category chips — horizontal scroll clickable filter */}
+        <div className="mx-auto max-w-[1400px] px-6 py-10 lg:px-10 lg:py-14">
+          {/* Category chips — horizontal scroll */}
           <div className="-mx-6 overflow-x-auto px-6 pb-4 lg:-mx-10 lg:px-10">
             <div className="flex min-w-max items-center gap-2">
               <button
@@ -375,135 +412,226 @@ export default function MarketplacePublicView({ listings }: { listings: Listing[
             </div>
           </div>
 
-          <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <h2 className="text-[1.25rem] font-semibold text-[var(--text-primary)] md:text-[1.5rem]">
-                {filtered.length.toLocaleString("pt-BR")} {filtered.length === 1 ? "oferta disponível" : "ofertas disponíveis"}
-              </h2>
-              {(typeFilter || halalOnly || minScore > 0) && (
-                <p className="mt-1 text-[.75rem] text-[var(--text-muted)]">
-                  Filtrado por {[typeFilter && TYPE_META[typeFilter]?.label, halalOnly && "Halal", minScore > 0 && `Score ≥ ${minScore}`].filter(Boolean).join(" · ")}
-                </p>
-              )}
+          {/* Search bar + sort + mobile filters */}
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <div className="relative min-w-[240px] flex-1">
+              <Search
+                size={15}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
+              />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar por título, descrição ou cidade..."
+                className="w-full rounded-xl border border-[var(--border)] bg-white py-3 pl-10 pr-3 text-sm outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15"
+              />
             </div>
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value as SortKey)}
+              className="rounded-xl border border-[var(--border)] bg-white px-4 py-3 text-sm outline-none"
+            >
+              {SORT_OPTIONS.map((o) => (
+                <option key={o.key} value={o.key}>
+                  Ordenar: {o.label}
+                </option>
+              ))}
+            </select>
             <button
               type="button"
               onClick={() => setOpenFilters(!openFilters)}
-              className="inline-flex items-center gap-2 rounded-xl border border-[var(--border)] bg-white px-4 py-2.5 text-[.8125rem] font-semibold text-[var(--text-primary)] shadow-[var(--shadow-soft)] transition hover:bg-[var(--surface-soft)] lg:hidden"
+              className="inline-flex items-center gap-2 rounded-xl border border-[var(--border)] bg-white px-4 py-3 text-[.8125rem] font-semibold text-[var(--text-primary)] transition hover:bg-[var(--surface-soft)] lg:hidden"
             >
               <SlidersHorizontal size={14} />
-              Mais filtros {(halalOnly || minScore > 0) && <span className="h-1.5 w-1.5 rounded-full bg-[var(--primary)]" />}
+              Filtros {activeFilterCount > 0 && (
+                <span className="ml-1 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[var(--primary)] px-1.5 text-[.6875rem] font-bold text-white">
+                  {activeFilterCount}
+                </span>
+              )}
             </button>
           </div>
 
-          {/* Filter bar */}
-          <div
-            className={`mt-6 overflow-hidden rounded-2xl border border-[var(--border)] bg-white shadow-[var(--shadow-soft)] transition-[max-height] duration-300 lg:!max-h-none ${
-              openFilters ? "max-h-[400px]" : "max-h-[72px]"
-            }`}
-          >
-            <div className="flex flex-wrap items-center gap-3 p-4">
-              <div className="relative min-w-[220px] flex-1">
-                <Search
-                  size={15}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
-                />
-                <input
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Buscar por título, descrição ou cidade..."
-                  className="w-full rounded-xl border border-[var(--border)] bg-white py-2.5 pl-9 pr-3 text-sm outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15"
-                />
+          {/* Main layout: sidebar + grid */}
+          <div className="mt-6 flex flex-col gap-6 lg:flex-row">
+            {/* ─── Sidebar filters (desktop always visible; mobile collapsible) ─── */}
+            <aside
+              className={`${
+                openFilters ? "block" : "hidden lg:block"
+              } lg:w-[260px] lg:shrink-0`}
+            >
+              <div className="sticky top-[96px] rounded-2xl border border-[var(--border)] bg-white p-5 shadow-[var(--shadow-soft)]">
+                {/* Header row */}
+                <div className="flex items-center justify-between">
+                  <p className="text-[.9375rem] font-semibold text-[var(--text-primary)]">
+                    Filtros
+                  </p>
+                  {activeFilterCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={clearAllFilters}
+                      className="text-[.75rem] font-medium text-[var(--primary)] hover:underline"
+                    >
+                      Limpar tudo
+                    </button>
+                  )}
+                </div>
+
+                {/* Price range */}
+                <div className="mt-5 border-t border-[var(--border)] pt-5">
+                  <p className="mb-3 text-[.8125rem] font-semibold text-[var(--text-primary)]">
+                    Preço
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[.6875rem] text-[var(--text-muted)]">
+                        Mínimo
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        value={priceMin}
+                        onChange={(e) => setPriceMin(e.target.value)}
+                        placeholder="R$ 0"
+                        className="mt-1 w-full rounded-lg border border-[var(--border)] bg-white px-2.5 py-2 text-sm outline-none focus:border-[var(--primary)]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[.6875rem] text-[var(--text-muted)]">
+                        Máximo
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        value={priceMax}
+                        onChange={(e) => setPriceMax(e.target.value)}
+                        placeholder="R$ ∞"
+                        className="mt-1 w-full rounded-lg border border-[var(--border)] bg-white px-2.5 py-2 text-sm outline-none focus:border-[var(--primary)]"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* UF multi-select */}
+                <div className="mt-5 border-t border-[var(--border)] pt-5">
+                  <p className="mb-3 text-[.8125rem] font-semibold text-[var(--text-primary)]">
+                    Estado (UF)
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {UF_OPTIONS.map((uf) => {
+                      const active = selectedUFs.includes(uf);
+                      return (
+                        <button
+                          key={uf}
+                          type="button"
+                          onClick={() => toggleUF(uf)}
+                          className={`rounded-md border px-2 py-1 text-[.75rem] font-semibold transition ${
+                            active
+                              ? "border-[var(--primary)] bg-[var(--primary)] text-white"
+                              : "border-[var(--border)] bg-white text-[var(--text-secondary)] hover:border-[var(--border-strong)]"
+                          }`}
+                        >
+                          {uf}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Halal */}
+                <div className="mt-5 border-t border-[var(--border)] pt-5">
+                  <p className="mb-3 text-[.8125rem] font-semibold text-[var(--text-primary)]">
+                    Certificação
+                  </p>
+                  <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-[var(--border)] bg-white px-3 py-2 text-[.8125rem] transition hover:bg-[var(--surface-soft)]">
+                    <input
+                      type="checkbox"
+                      checked={halalOnly}
+                      onChange={(e) => setHalalOnly(e.target.checked)}
+                      className="h-4 w-4 rounded accent-[var(--primary)]"
+                    />
+                    <HalalBadgeSVG size={16} />
+                    <span className="font-medium text-[var(--text-primary)]">
+                      Halal certificado
+                    </span>
+                  </label>
+                </div>
+
+                {/* Score mín */}
+                <div className="mt-5 border-t border-[var(--border)] pt-5">
+                  <div className="mb-2 flex items-baseline justify-between">
+                    <p className="text-[.8125rem] font-semibold text-[var(--text-primary)]">
+                      Score Agraas mín.
+                    </p>
+                    <span className="font-mono text-[.8125rem] font-semibold text-[var(--primary)]">
+                      {minScore}
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    step={5}
+                    value={minScore}
+                    onChange={(e) => setMinScore(parseInt(e.target.value, 10))}
+                    className="w-full accent-[var(--primary)]"
+                  />
+                  <div className="mt-1 flex justify-between text-[.6875rem] text-[var(--text-muted)]">
+                    <span>0</span>
+                    <span>50</span>
+                    <span>100</span>
+                  </div>
+                </div>
               </div>
-              <select
-                value={typeFilter}
-                onChange={(e) => setTypeFilter(e.target.value)}
-                className="rounded-xl border border-[var(--border)] bg-white px-3 py-2.5 text-sm outline-none"
-              >
-                <option value="">Todos os tipos</option>
-                {Object.entries(TYPE_META).map(([k, v]) => (
-                  <option key={k} value={k}>
-                    {v.label}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={sort}
-                onChange={(e) => setSort(e.target.value as SortKey)}
-                className="rounded-xl border border-[var(--border)] bg-white px-3 py-2.5 text-sm outline-none"
-              >
-                {SORT_OPTIONS.map((o) => (
-                  <option key={o.key} value={o.key}>
-                    Ordenar: {o.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex flex-wrap items-center gap-4 border-t border-[var(--border)] bg-[var(--surface-soft)] px-4 py-3">
-              <label className="inline-flex cursor-pointer items-center gap-2 text-[.8125rem]">
-                <input
-                  type="checkbox"
-                  checked={halalOnly}
-                  onChange={(e) => setHalalOnly(e.target.checked)}
-                  className="h-4 w-4 rounded accent-[var(--primary)]"
-                />
-                <HalalBadgeSVG size={16} /> Halal certificado
-              </label>
-              <div className="flex items-center gap-2 text-[.8125rem]">
-                <span className="text-[var(--text-muted)]">Score mín.:</span>
-                <input
-                  type="range"
-                  min={0}
-                  max={100}
-                  step={10}
-                  value={minScore}
-                  onChange={(e) => setMinScore(parseInt(e.target.value, 10))}
-                  className="w-32 accent-[var(--primary)]"
-                />
-                <span className="font-mono text-[.75rem] font-semibold text-[var(--text-primary)]">
-                  {minScore}
-                </span>
+            </aside>
+
+            {/* ─── Main content: results ─── */}
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-end justify-between gap-4">
+                <div>
+                  <h2 className="text-[1.25rem] font-semibold text-[var(--text-primary)] md:text-[1.5rem]">
+                    {filtered.length.toLocaleString("pt-BR")} {filtered.length === 1 ? "oferta" : "ofertas"}
+                  </h2>
+                  {activeFilterCount > 0 && (
+                    <p className="mt-1 text-[.75rem] text-[var(--text-muted)]">
+                      {activeFilterCount} {activeFilterCount === 1 ? "filtro ativo" : "filtros ativos"}
+                    </p>
+                  )}
+                </div>
               </div>
-              {(search || typeFilter || halalOnly || minScore > 0) && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSearch("");
-                    setTypeFilter("");
-                    setHalalOnly(false);
-                    setMinScore(0);
-                  }}
-                  className="ml-auto text-[.75rem] font-medium text-[var(--text-muted)] underline-offset-2 transition hover:text-[var(--primary)] hover:underline"
+
+              {filtered.length === 0 ? (
+                <div className="mt-8 rounded-2xl border border-dashed border-[var(--border)] bg-white p-16 text-center">
+                  <ShoppingBag size={32} className="mx-auto text-[var(--text-muted)]" />
+                  <p className="mt-4 text-[.9375rem] font-semibold text-[var(--text-primary)]">
+                    Nenhum anúncio encontrado
+                  </p>
+                  <p className="mt-2 text-[.8125rem] text-[var(--text-muted)]">
+                    Ajuste os filtros à esquerda ou limpe tudo pra ver o catálogo completo.
+                  </p>
+                  {activeFilterCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={clearAllFilters}
+                      className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[var(--primary)] px-5 py-2.5 text-[.8125rem] font-semibold text-white transition hover:bg-[var(--primary-hover)]"
+                    >
+                      Limpar filtros
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <StaggerContainer
+                  className="mt-6 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3"
+                  staggerChildren={0.04}
                 >
-                  Limpar filtros
-                </button>
+                  {filtered.map((l) => (
+                    <StaggerItem key={l.id}>
+                      <PublicListingCard listing={l} />
+                    </StaggerItem>
+                  ))}
+                </StaggerContainer>
               )}
             </div>
           </div>
-
-          {/* Grid */}
-          {filtered.length === 0 ? (
-            <div className="mt-10 rounded-2xl border border-dashed border-[var(--border)] bg-white p-16 text-center">
-              <ShoppingBag size={32} className="mx-auto text-[var(--text-muted)]" />
-              <p className="mt-4 text-[.9375rem] font-semibold text-[var(--text-primary)]">
-                Nenhum anúncio encontrado com esses filtros
-              </p>
-              <p className="mt-2 text-[.8125rem] text-[var(--text-muted)]">
-                Tente ajustar a busca ou remover filtros.
-              </p>
-            </div>
-          ) : (
-            <StaggerContainer
-              className="mt-8 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-              staggerChildren={0.04}
-            >
-              {filtered.map((l) => (
-                <StaggerItem key={l.id}>
-                  <PublicListingCard listing={l} />
-                </StaggerItem>
-              ))}
-            </StaggerContainer>
-          )}
         </div>
       </section>
 
