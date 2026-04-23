@@ -124,13 +124,20 @@ textarea {
 }
 
 .ag-badge-green {
+  background: var(--primary);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(46, 139, 62, 0.22);
+}
+
+.ag-badge-soft {
   background: var(--primary-soft);
   color: var(--primary-hover);
 }
 
 .ag-badge-dark {
-  background: rgba(47, 101, 31, 0.1);
-  color: var(--sidebar-2);
+  background: var(--sidebar-2);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(30, 94, 38, 0.28);
 }
 
 .ag-badge-white {
