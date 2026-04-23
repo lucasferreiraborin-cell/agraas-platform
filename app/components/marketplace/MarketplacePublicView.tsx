@@ -506,6 +506,123 @@ export default function MarketplacePublicView({ listings }: { listings: Listing[
         </div>
       </section>
 
+      {/* ═══ HOW IT WORKS ═══════════════════════════════════════════════ */}
+      <section className="bg-white">
+        <div className="mx-auto max-w-[1200px] px-6 py-20 lg:px-10 lg:py-24">
+          <div className="max-w-[720px]">
+            <FadeIn>
+              <p className="font-mono text-[.6875rem] font-semibold uppercase tracking-[.18em] text-[var(--primary)]">
+                Como funciona
+              </p>
+              <h2 className="mt-4 text-[clamp(1.8rem,3.5vw,2.6rem)] font-medium leading-[1.1] tracking-[-.02em] text-[var(--text-primary)]">
+                Três passos do produtor ao comprador.
+              </h2>
+            </FadeIn>
+          </div>
+
+          <StaggerContainer
+            className="mt-14 grid gap-6 md:grid-cols-3"
+            staggerChildren={0.12}
+          >
+            {[
+              {
+                n: "01",
+                title: "Publique com rastreio",
+                text: "O vendedor cria o anúncio em 2 minutos. Score Agraas, certificações e dados do vendedor aparecem automaticamente.",
+              },
+              {
+                n: "02",
+                title: "Negocie com dados, não sorte",
+                text: "Comprador acessa histórico, score e certificações antes de abrir a conversa. Oferta direta pelo marketplace, sem intermediário.",
+              },
+              {
+                n: "03",
+                title: "Feche com NF-e e segurança",
+                text: "Proteção Agraas em todo o fluxo. Transação registrada no sistema, NF-e automática, reputação construída a cada negócio.",
+              },
+            ].map((s) => (
+              <StaggerItem key={s.n}>
+                <div className="group h-full rounded-2xl border border-[var(--border)] bg-white p-7 shadow-[var(--shadow-soft)] transition-all hover:-translate-y-1 hover:border-[var(--primary)]/30 hover:shadow-[var(--shadow-card)]">
+                  <div className="flex items-center gap-3">
+                    <span className="font-mono text-[2.2rem] font-medium text-[var(--primary)]/80 leading-none">
+                      {s.n}
+                    </span>
+                    <div className="h-px flex-1 bg-[var(--border)]" />
+                  </div>
+                  <h3 className="mt-5 text-[1.0625rem] font-semibold leading-[1.3] text-[var(--text-primary)]">
+                    {s.title}
+                  </h3>
+                  <p className="mt-3 text-[.875rem] leading-[1.7] text-[var(--text-muted)]">
+                    {s.text}
+                  </p>
+                </div>
+              </StaggerItem>
+            ))}
+          </StaggerContainer>
+        </div>
+      </section>
+
+      {/* ═══ WHY AGRAAS ═════════════════════════════════════════════════ */}
+      <section className="bg-[var(--bg)]">
+        <div className="mx-auto max-w-[1200px] px-6 py-20 lg:px-10 lg:py-24">
+          <div className="grid gap-12 lg:grid-cols-[.8fr_1.2fr] lg:gap-16">
+            <FadeIn>
+              <div>
+                <p className="font-mono text-[.6875rem] font-semibold uppercase tracking-[.18em] text-[var(--primary)]">
+                  Por que aqui
+                </p>
+                <h2 className="mt-4 text-[clamp(1.8rem,3.5vw,2.6rem)] font-medium leading-[1.1] tracking-[-.02em] text-[var(--text-primary)]">
+                  O único marketplace onde cada oferta é verificável.
+                </h2>
+                <p className="mt-5 text-[.9375rem] leading-[1.7] text-[var(--text-muted)]">
+                  Marketplaces genéricos tratam agro como categoria. A Agraas é infraestrutura do agro — cada detalhe pensado para quem produz e quem compra no setor.
+                </p>
+              </div>
+            </FadeIn>
+
+            <StaggerContainer className="grid gap-4 sm:grid-cols-2" staggerChildren={0.08}>
+              {[
+                {
+                  title: "Score Agraas nativo",
+                  text: "Cada animal ou talhão traz Score do algoritmo Agraas — 5 dimensões, cálculo em tempo real.",
+                },
+                {
+                  title: "Origem certificada",
+                  text: "Propriedade georreferenciada com CAR, GTA e certificações ativas exibidas em todo anúncio.",
+                },
+                {
+                  title: "RLS + dados soberanos",
+                  text: "Row Level Security em PostgreSQL. Seus dados nunca são visíveis a outros clientes, em nenhuma hipótese.",
+                },
+                {
+                  title: "NF-e automática",
+                  text: "Transação fechada no marketplace gera nota fiscal eletrônica automaticamente, pronta para contabilidade.",
+                },
+                {
+                  title: "Reputação do vendedor",
+                  text: "Histórico de anúncios e vendas visível ao comprador. Quem cumpre ganha destaque orgânico.",
+                },
+                {
+                  title: "100% dedicado ao agro",
+                  text: "Sem dispersão com nichos fora do setor. Cada recurso, feature, suporte — pensado para o agronegócio.",
+                },
+              ].map((v) => (
+                <StaggerItem key={v.title}>
+                  <div className="h-full rounded-xl border border-[var(--border)] bg-white p-5 transition-colors hover:border-[var(--primary)]/30">
+                    <p className="text-[.9375rem] font-semibold text-[var(--text-primary)]">
+                      {v.title}
+                    </p>
+                    <p className="mt-2 text-[.8125rem] leading-[1.7] text-[var(--text-muted)]">
+                      {v.text}
+                    </p>
+                  </div>
+                </StaggerItem>
+              ))}
+            </StaggerContainer>
+          </div>
+        </div>
+      </section>
+
       {/* ═══ SELLER CTA ═════════════════════════════════════════════════ */}
       <section className="relative isolate overflow-hidden">
         <div
@@ -532,24 +649,26 @@ export default function MarketplacePublicView({ listings }: { listings: Listing[
           </FadeIn>
           <FadeIn delay={0.15}>
             <h2 className="mt-5 text-[clamp(1.8rem,4vw,2.8rem)] font-medium leading-[1.1] tracking-[-.03em] text-white">
-              Seu animal ou safra
+              Qualquer coisa do agro
               <br />
-              merece o preço justo.
+              merece um marketplace à altura.
             </h2>
           </FadeIn>
           <FadeIn delay={0.3}>
             <p className="mx-auto mt-5 max-w-[560px] text-[1rem] leading-[1.75] text-white/70">
-              Publicar um anúncio leva 2 minutos. O Score Agraas e as certificações aparecem automaticamente — o comprador encontra você por qualidade, não por sorte.
+              Publicar um anúncio leva 2 minutos. Score Agraas, certificações e sua reputação aparecem automaticamente — o comprador encontra você por qualidade, não por sorte.
             </p>
           </FadeIn>
           <FadeIn delay={0.45}>
             <div className="mt-10 flex flex-wrap justify-center gap-4">
               <Link
                 href="/cadastro"
-                className="inline-flex items-center gap-2 rounded-xl bg-white px-8 py-4 text-[.9375rem] font-semibold text-[var(--sidebar-2)] shadow-[0_14px_40px_rgba(0,0,0,.2)] transition-all hover:shadow-[0_20px_50px_rgba(0,0,0,.3)]"
+                className="group relative inline-flex items-center gap-2 overflow-hidden rounded-xl bg-white px-8 py-4 text-[.9375rem] font-semibold text-[var(--sidebar-2)] shadow-[0_14px_40px_rgba(0,0,0,.2)] transition-all hover:shadow-[0_20px_50px_rgba(0,0,0,.3)]"
               >
-                Cadastrar grátis
-                <ArrowRight size={15} />
+                <span className="relative flex items-center gap-2">
+                  Cadastrar grátis
+                  <ArrowRight size={15} className="transition-transform group-hover:translate-x-0.5" />
+                </span>
               </Link>
               <Link
                 href="/planos"
