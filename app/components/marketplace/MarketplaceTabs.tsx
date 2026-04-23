@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { Search, Filter, ShoppingBag, Package, Tag, Truck, Plus, MessageSquare, Clock, CheckCircle } from "lucide-react";
+import { Search, ShoppingBag, Package, Tag, Truck, Plus, MessageSquare, CheckCircle } from "lucide-react";
 import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -173,9 +173,9 @@ export default function MarketplaceTabs({ listings, myListings, myOffers, myTran
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="ag-section-title">Meus anúncios</h3>
-            <button type="button" className="ag-button-primary flex items-center gap-2">
+            <Link href="/marketplace/novo" className="ag-button-primary flex items-center gap-2">
               <Plus size={15} /> Novo anúncio
-            </button>
+            </Link>
           </div>
           {myListings.length === 0 ? (
             <div className="ag-empty-state">
@@ -307,9 +307,9 @@ function ListingCard({ listing: l }: { listing: Listing }) {
       </div>
 
       {/* CTA */}
-      <button type="button" className="mt-4 w-full rounded-xl border border-[var(--primary)] bg-white py-2 text-sm font-semibold text-[var(--primary)] hover:bg-[var(--primary-soft)] transition">
+      <Link href={`/marketplace/${l.id}`} className="mt-4 block w-full rounded-xl border border-[var(--primary)] bg-white py-2 text-center text-sm font-semibold text-[var(--primary)] hover:bg-[var(--primary-soft)] transition">
         Ver detalhes
-      </button>
+      </Link>
     </div>
   );
 }
