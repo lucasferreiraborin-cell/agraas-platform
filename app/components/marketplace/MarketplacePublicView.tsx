@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Search,
@@ -22,7 +22,6 @@ import {
   Wrench,
   Store,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
 import {
   FadeIn,
@@ -62,54 +61,6 @@ const CATEGORIES = [
   { Icon: Package,   label: "Insumos diversos",  examples: "Fertilizantes, corretivos, adjuvantes", color: "text-stone-700",   bg: "bg-stone-50" },
 ] as const;
 
-// Rotating pill pattern showcasing breadth without limiting scope
-const ROTATING_EXAMPLES = [
-  "Brincos RFID para bovinos",
-  "Soja convencional · 500 toneladas",
-  "Ração de confinamento premium",
-  "Trator John Deere 6110J · 2023",
-  "Inseticida sistêmico · 20 L",
-  "Sementes híbridas de milho",
-  "Drone agrícola DJI · pulverização",
-  "Vacina aftosa · 2.000 doses",
-  "Balança rodoviária eletrônica",
-  "Botinas de segurança · NR-31",
-  "Serviço de consultoria técnica",
-  "Novilhas Nelore PO · 18 meses",
-];
-
-function RotatingCategoryPill() {
-  const [i, setI] = useState(0);
-  useEffect(() => {
-    const id = setInterval(
-      () => setI((v) => (v + 1) % ROTATING_EXAMPLES.length),
-      2200,
-    );
-    return () => clearInterval(id);
-  }, []);
-  return (
-    <div className="mt-7 inline-flex items-center gap-2 rounded-full border border-white/[.1] bg-white/[.04] px-4 py-2 backdrop-blur-sm">
-      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--primary)] shadow-[0_0_8px_var(--primary)]" />
-      <span className="font-mono text-[.6875rem] uppercase tracking-[.14em] text-white/50">
-        Hoje no marketplace:
-      </span>
-      <div className="relative h-[1.1em] min-w-[18ch] overflow-hidden">
-        <AnimatePresence mode="wait">
-          <motion.span
-            key={i}
-            initial={{ y: 14, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: -14, opacity: 0 }}
-            transition={{ duration: 0.35, ease: [0.19, 1, 0.22, 1] }}
-            className="absolute inset-0 text-[.8125rem] font-semibold text-white"
-          >
-            {ROTATING_EXAMPLES[i]}
-          </motion.span>
-        </AnimatePresence>
-      </div>
-    </div>
-  );
-}
 
 const SORT_OPTIONS = [
   { key: "recentes",      label: "Mais recentes"       },
@@ -227,12 +178,9 @@ export default function MarketplacePublicView({ listings }: { listings: Listing[
                   <span className="italic text-white/90">em um só lugar.</span>
                 </h1>
               </FadeIn>
-              <FadeIn delay={0.25}>
-                <RotatingCategoryPill />
-              </FadeIn>
-              <FadeIn delay={0.35}>
-                <p className="mt-6 max-w-[540px] text-[1.0625rem] leading-[1.75] text-white/60">
-                  O único marketplace 100% dedicado ao agronegócio brasileiro. Animais, safras, ração, defensivos, sementes, máquinas, brincos RFID, drones, EPIs, serviços — com rastreio Agraas incluso em cada oferta.
+              <FadeIn delay={0.3}>
+                <p className="mt-6 max-w-[560px] text-[1.0625rem] leading-[1.75] text-white/65">
+                  O primeiro marketplace 100% dedicado ao agronegócio brasileiro. Animais, safras, ração, defensivos, sementes, máquinas, brincos RFID, drones, EPIs e serviços — com rastreio Agraas em cada oferta.
                 </p>
               </FadeIn>
               <FadeIn delay={0.45}>

@@ -141,7 +141,7 @@ export default async function RootLayout({
                       Agraas
                     </h1>
                     <p className="mt-3 text-base text-white/72">
-                      Intelligence Layer
+                      Plataforma do agro
                     </p>
                   </div>
                   <HalalBadgeSVG size={56} />
@@ -212,7 +212,7 @@ export default async function RootLayout({
                     <MobileDrawer />
                     <div className="min-w-0">
                       <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--text-muted)]">
-                        Agraas Intelligence Layer
+                        Plataforma Agraas
                       </p>
                       <h2 className="mt-1 truncate text-lg font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
                         {isBuyer

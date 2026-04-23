@@ -81,14 +81,12 @@ export default function OpengraphImage() {
             <span
               style={{
                 color: "rgba(255,255,255,0.5)",
-                fontSize: 13,
+                fontSize: 14,
                 fontWeight: 500,
-                letterSpacing: "0.18em",
-                textTransform: "uppercase",
                 marginTop: 4,
               }}
             >
-              Intelligence Layer
+              Plataforma do agro brasileiro
             </span>
           </div>
         </div>

@@ -51,8 +51,8 @@ export default function AuthShell({
             <p className="text-[2rem] font-semibold tracking-[-0.06em] text-white">
               {sidebarTitle}
             </p>
-            <p className="mt-1 font-mono text-[.6875rem] uppercase tracking-[.2em] text-white/40">
-              Intelligence Layer
+            <p className="mt-1 text-[.8125rem] text-white/50">
+              Plataforma do agro
             </p>
           </Link>
 

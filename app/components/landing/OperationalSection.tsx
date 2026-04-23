@@ -51,21 +51,14 @@ export default function OperationalSection() {
       />
 
       <div className="relative mx-auto max-w-[1200px] px-6 py-24 lg:px-10 lg:py-32">
-        <div className="mx-auto max-w-[820px] text-center">
+        <div className="max-w-[820px]">
           <FadeIn>
-            <p className="font-mono text-[.6875rem] font-semibold uppercase tracking-[.18em] text-[var(--primary)]">
-              Cadeia inteira · ERP nativo
-            </p>
-          </FadeIn>
-          <FadeIn delay={0.15}>
-            <h2 className="mt-5 text-[clamp(1.8rem,4vw,2.8rem)] font-medium leading-[1.08] tracking-[-.025em] text-[var(--text-primary)]">
-              Mais que rastreio.
-              <br />
-              <span className="text-[var(--primary)]">Contábil, fiscal e estoque no mesmo lugar.</span>
+            <h2 className="text-[clamp(1.8rem,4vw,2.8rem)] font-medium leading-[1.1] tracking-[-.02em] text-[var(--text-primary)]">
+              Contábil, fiscal e estoque <span className="text-[var(--text-muted)]">no mesmo lugar.</span>
             </h2>
           </FadeIn>
-          <FadeIn delay={0.3}>
-            <p className="mx-auto mt-6 max-w-[600px] text-[1.0625rem] leading-[1.75] text-[var(--text-secondary)]">
+          <FadeIn delay={0.15}>
+            <p className="mt-6 max-w-[640px] text-[1.0625rem] leading-[1.75] text-[var(--text-secondary)]">
               O fazendeiro não precisa de três softwares para administrar uma operação. A Agraas cobre tudo que a cadeia exige — do registro sanitário ao balanço patrimonial — numa camada só, auditável ponta a ponta.
             </p>
           </FadeIn>
