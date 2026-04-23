@@ -285,7 +285,7 @@ export default function PlanosPage() {
                       {plan.persona}
                     </p>
 
-                    <div className="mt-5 min-h-[76px]">
+                    <div className="mt-5 min-h-[100px]">
                       <AnimatePresence mode="wait">
                         {plan.monthlyPrice == null ? (
                           <motion.div
@@ -316,8 +316,11 @@ export default function PlanosPage() {
                                 /mês
                               </span>
                             </div>
-                            <p className="mt-1 text-[.6875rem] font-semibold text-emerald-600">
-                              cobrado anualmente · economize 20%
+                            <p className="mt-1 text-[.75rem] text-[var(--text-secondary)]">
+                              {fmtBRL(discounted! * 12)} pago 1× por ano
+                            </p>
+                            <p className="mt-0.5 text-[.6875rem] font-semibold text-emerald-600">
+                              economize {fmtBRL((plan.monthlyPrice - discounted!) * 12)} vs plano mensal
                             </p>
                           </motion.div>
                         ) : (
@@ -335,6 +338,9 @@ export default function PlanosPage() {
                                 /mês
                               </span>
                             </div>
+                            <p className="mt-1 text-[.75rem] text-[var(--text-secondary)]">
+                              ou {fmtBRL(Math.round(plan.monthlyPrice * 0.8) * 12)} no anual (−20%)
+                            </p>
                           </motion.div>
                         )}
                       </AnimatePresence>

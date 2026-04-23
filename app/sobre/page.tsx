@@ -161,19 +161,89 @@ export default function SobrePage() {
               <p>Estamos em processo de captação para escalar a operação em todo o Brasil.</p>
             </div>
           </FadeIn>
+        </div>
+      </section>
 
-          <FadeIn delay={0.3}>
-            <div className="mt-10 flex flex-wrap gap-4">
+      {/* ═══ TIME (placeholder editorial enquanto fotos/bios não estão prontas) ══ */}
+      <section className="bg-[var(--bg)]">
+        <div className="mx-auto max-w-[1200px] px-6 py-24 lg:px-10 lg:py-28">
+          <div className="max-w-[720px]">
+            <FadeIn>
+              <h2 className="text-[clamp(1.8rem,3.5vw,2.6rem)] font-medium leading-[1.1] tracking-[-.02em] text-[var(--text-primary)]">
+                Quem está construindo a Agraas.
+              </h2>
+            </FadeIn>
+            <FadeIn delay={0.1}>
+              <p className="mt-5 max-w-[620px] text-[1rem] leading-[1.75] text-[var(--text-secondary)]">
+                Um time enxuto com background em mercado financeiro, engenharia de software, agronegócio goiano e comércio exterior. As fotos e bios completas chegam em breve — quer conhecer antes? Fale direto.
+              </p>
+            </FadeIn>
+          </div>
+
+          <StaggerContainer
+            className="mt-14 grid gap-5 md:grid-cols-3"
+            staggerChildren={0.08}
+          >
+            {[
+              { role: "Fundação & produto",       focus: "Plataforma, engenharia, visão" },
+              { role: "Operações & agronegócio",  focus: "Relacionamento com fazendas, compliance, cadeia" },
+              { role: "Captação & estratégia",    focus: "Rodada, parceiros, expansão comercial" },
+            ].map((slot, i) => (
+              <StaggerItem key={slot.role}>
+                <div className="h-full rounded-2xl border border-[var(--border)] bg-white p-7 shadow-[var(--shadow-soft)]">
+                  <div
+                    className="flex h-14 w-14 items-center justify-center rounded-2xl text-white"
+                    style={{
+                      background: [
+                        "linear-gradient(135deg, #2E8B3E 0%, #1E5E26 100%)",
+                        "linear-gradient(135deg, #3DA54C 0%, #2E8B3E 100%)",
+                        "linear-gradient(135deg, #1E5E26 0%, #0f3517 100%)",
+                      ][i],
+                    }}
+                  >
+                    <span className="font-mono text-[.6875rem] font-semibold uppercase tracking-[.14em] opacity-80">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                  </div>
+                  <p className="mt-5 text-[1.0625rem] font-semibold text-[var(--text-primary)]">
+                    {slot.role}
+                  </p>
+                  <p className="mt-2 text-[.875rem] leading-[1.7] text-[var(--text-muted)]">
+                    {slot.focus}
+                  </p>
+                  <p className="mt-6 text-[.75rem] font-medium text-[var(--text-muted)]">
+                    Bio em preparação
+                  </p>
+                </div>
+              </StaggerItem>
+            ))}
+          </StaggerContainer>
+        </div>
+      </section>
+
+      {/* ═══ CTA FINAL ══════════════════════════════════════════════════════ */}
+      <section className="bg-white">
+        <div className="mx-auto max-w-[760px] px-6 py-20 lg:py-24">
+          <FadeIn>
+            <h2 className="text-[clamp(1.6rem,3vw,2.2rem)] font-medium leading-[1.15] tracking-[-.02em] text-[var(--text-primary)]">
+              Vamos construir junto.
+            </h2>
+            <p className="mt-4 max-w-[520px] text-[1rem] leading-[1.75] text-[var(--text-muted)]">
+              Fazendeiro, comprador, fornecedor, parceiro ou investidor — a porta está aberta.
+            </p>
+          </FadeIn>
+          <FadeIn delay={0.15}>
+            <div className="mt-8 flex flex-wrap gap-4">
               <Link
                 href="/cadastro"
-                className="group inline-flex items-center gap-2 rounded-xl bg-[var(--primary)] px-7 py-[14px] text-[.9375rem] font-semibold text-white shadow-[var(--shadow-green)] transition-all hover:bg-[var(--primary-hover)] hover:shadow-[0_20px_50px_rgba(93,156,68,.5)]"
+                className="group inline-flex items-center gap-2 rounded-xl bg-[var(--primary)] px-7 py-[14px] text-[.9375rem] font-semibold text-white shadow-[var(--shadow-green)] transition-all hover:bg-[var(--primary-hover)]"
               >
                 Criar conta
                 <ArrowRight size={15} className="transition-transform group-hover:translate-x-0.5" />
               </Link>
               <a
                 href="mailto:contato@agraas.com.br"
-                className="rounded-xl border border-[var(--border-strong)] px-7 py-[14px] text-[.9375rem] font-semibold text-[var(--text-primary)] transition hover:bg-[var(--surface-soft)]"
+                className="rounded-xl border border-[var(--border-strong)] bg-white px-7 py-[14px] text-[.9375rem] font-semibold text-[var(--text-primary)] transition hover:bg-[var(--surface-soft)]"
               >
                 contato@agraas.com.br
               </a>
