@@ -10,7 +10,6 @@ import OperationalSection from "@/app/components/landing/OperationalSection";
 import HowItWorksSection from "@/app/components/landing/HowItWorksSection";
 import FAQSection from "@/app/components/landing/FAQSection";
 import BrazilAgroSection from "@/app/components/landing/BrazilAgroSection";
-import PassportPreviewVisual from "@/app/components/landing/PassportPreviewVisual";
 import {
   FadeIn,
   StaggerContainer,
@@ -184,9 +183,18 @@ export default async function LandingPage() {
               </FadeIn>
             </div>
 
-            {/* Right: passport preview */}
+            {/* Right: Nelore close-up */}
             <FadeIn delay={0.3}>
-              <PassportPreviewVisual />
+              <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl shadow-[0_30px_80px_rgba(0,0,0,.35)] ring-1 ring-white/10">
+                <Image
+                  src="https://images.unsplash.com/photo-1605185189100-4d7c8fffbad1?w=1600&q=85&auto=format"
+                  alt="Close de boi Nelore"
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 540px"
+                  className="object-cover"
+                  priority
+                />
+              </div>
             </FadeIn>
           </div>
         </div>
