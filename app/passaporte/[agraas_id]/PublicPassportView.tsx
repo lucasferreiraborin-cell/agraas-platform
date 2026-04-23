@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
 import LanguageToggle from "@/app/components/LanguageToggle";
 import {
@@ -166,11 +167,14 @@ export default function PublicPassportView({
 
           {/* Animal photo */}
           {photoUrl && (
-            <div className="border-b border-[#e5e7eb]">
-              <img
+            <div className="relative h-48 w-full border-b border-[#e5e7eb] sm:h-56">
+              <Image
                 src={photoUrl}
                 alt={animal.nickname ?? animal.internal_code ?? animal.agraas_id}
-                className="h-48 w-full object-cover sm:h-56"
+                fill
+                sizes="(min-width: 640px) 700px, 100vw"
+                quality={80}
+                className="object-cover"
               />
             </div>
           )}
