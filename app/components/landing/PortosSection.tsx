@@ -92,20 +92,13 @@ export default function PortosSection() {
         {/* Heading */}
         <div className="mx-auto max-w-[900px] text-center">
           <FadeIn>
-            <p className="font-mono text-[.6875rem] font-semibold uppercase tracking-[.18em] text-[var(--primary)]">
-              Portos brasileiros · o mundo todo
-            </p>
-          </FadeIn>
-          <FadeIn delay={0.15}>
-            <h2 className="mt-6 text-[clamp(2.2rem,5.6vw,4.6rem)] font-medium leading-[.96] tracking-[-.035em] text-white">
-              Começa no Brasil.
-              <br />
-              <span className="italic text-white/85">Vai para qualquer lugar.</span>
+            <h2 className="text-[clamp(2rem,5vw,4rem)] font-medium leading-[1] tracking-[-.03em] text-white">
+              Dos portos brasileiros <span className="text-white/55">para qualquer destino no mundo.</span>
             </h2>
           </FadeIn>
-          <FadeIn delay={0.3}>
-            <p className="mx-auto mt-7 max-w-[620px] text-[1.0625rem] leading-[1.75] text-white/55">
-              De quatro portos brasileiros parte a carne, os grãos e a confiança certificada — com rastreio verificável até o destino final, seja ele Oriente Médio, Europa, Ásia ou América.
+          <FadeIn delay={0.15}>
+            <p className="mx-auto mt-6 max-w-[620px] text-[1.0625rem] leading-[1.75] text-white/55">
+              Santos, Paranaguá, Rio Grande e Itaqui concentram o que o Brasil exporta de carne e grãos. A Agraas rastreia cada embarque desde o carregamento até a entrega — qualquer porto de destino no mundo.
             </p>
           </FadeIn>
         </div>
