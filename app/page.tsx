@@ -6,6 +6,7 @@ import JourneySection from "@/app/components/JourneySection";
 import ScoresSection from "@/app/components/landing/ScoresSection";
 import PortosSection from "@/app/components/landing/PortosSection";
 import FSJBECaseSection from "@/app/components/landing/FSJBECaseSection";
+import OperationalSection from "@/app/components/landing/OperationalSection";
 import {
   FadeIn,
   StaggerContainer,
@@ -245,6 +246,9 @@ export default async function LandingPage() {
 
       {/* ═══ JOURNEY (scrollytelling dark) ══════════════════════════════════ */}
       <JourneySection />
+
+      {/* ═══ OPERATIONAL (cadeia inteira — contábil, fiscal, estoque) ═════ */}
+      <OperationalSection />
 
       {/* ═══ PORTOS BRASILEIROS → MUNDO (dark) ══════════════════════════════ */}
       <PortosSection />
