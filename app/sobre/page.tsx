@@ -51,13 +51,8 @@ export default function SobrePage() {
 
         <div className="mx-auto max-w-[1200px] px-6 py-28 lg:px-10 lg:py-36">
           <FadeIn>
-            <p className="font-mono text-[.6875rem] font-semibold uppercase tracking-[.18em] text-white/70">
-              A empresa
-            </p>
-          </FadeIn>
-          <FadeIn delay={0.15}>
-            <h1 className="mt-5 max-w-[820px] text-[clamp(2.2rem,5.5vw,4.2rem)] font-medium leading-[.98] tracking-[-.035em] text-white">
-              Infraestrutura que transforma dados do campo em confiança verificável.
+            <h1 className="max-w-[880px] text-[clamp(2.2rem,5.2vw,4rem)] font-medium leading-[1] tracking-[-.03em] text-white">
+              A empresa que está construindo a infraestrutura digital do agro brasileiro.
             </h1>
           </FadeIn>
         </div>
@@ -67,10 +62,7 @@ export default function SobrePage() {
       <section className="bg-white">
         <div className="mx-auto max-w-[760px] px-6 py-24 lg:py-32">
           <FadeIn>
-            <p className="font-mono text-[.6875rem] font-semibold uppercase tracking-[.18em] text-[var(--primary)]">
-              Por que existimos
-            </p>
-            <h2 className="mt-4 text-[clamp(1.8rem,3.5vw,2.6rem)] font-medium leading-[1.1] tracking-[-.02em] text-[var(--text-primary)]">
+            <h2 className="text-[clamp(1.8rem,3.5vw,2.6rem)] font-medium leading-[1.1] tracking-[-.02em] text-[var(--text-primary)]">
               A lacuna que ninguém tinha fechado.
             </h2>
           </FadeIn>
@@ -95,10 +87,7 @@ export default function SobrePage() {
       <section className="bg-[var(--bg)]">
         <div className="mx-auto max-w-[1200px] px-6 py-24 lg:px-10 lg:py-32">
           <FadeIn>
-            <p className="text-center font-mono text-[.6875rem] font-semibold uppercase tracking-[.18em] text-[var(--primary)]">
-              Nossas crenças
-            </p>
-            <h2 className="mx-auto mt-4 max-w-[720px] text-center text-[clamp(1.8rem,3.5vw,2.6rem)] font-medium leading-[1.1] tracking-[-.02em] text-[var(--text-primary)]">
+            <h2 className="mx-auto max-w-[720px] text-center text-[clamp(1.8rem,3.5vw,2.6rem)] font-medium leading-[1.1] tracking-[-.02em] text-[var(--text-primary)]">
               No que acreditamos.
             </h2>
           </FadeIn>
@@ -148,12 +137,7 @@ export default function SobrePage() {
 
         <div className="mx-auto max-w-[880px] px-6 py-28 text-center lg:py-36">
           <FadeIn>
-            <p className="font-mono text-[.6875rem] font-semibold uppercase tracking-[.18em] text-white/60">
-              Nossa visão
-            </p>
-          </FadeIn>
-          <FadeIn delay={0.15}>
-            <p className="mx-auto mt-6 max-w-[700px] text-[clamp(1.4rem,3vw,2.2rem)] font-medium leading-[1.35] tracking-[-.015em] text-white">
+            <p className="mx-auto max-w-[720px] text-[clamp(1.4rem,3vw,2.2rem)] font-medium leading-[1.35] tracking-[-.015em] text-white">
               &ldquo;Ser a infraestrutura digital do agronegócio brasileiro — da fazenda à mesa, do Brasil ao mundo.&rdquo;
             </p>
           </FadeIn>
@@ -164,10 +148,7 @@ export default function SobrePage() {
       <section className="bg-white">
         <div className="mx-auto max-w-[760px] px-6 py-24 lg:py-32">
           <FadeIn>
-            <p className="font-mono text-[.6875rem] font-semibold uppercase tracking-[.18em] text-[var(--primary)]">
-              A empresa
-            </p>
-            <h2 className="mt-4 text-[clamp(1.8rem,3.5vw,2.6rem)] font-medium leading-[1.1] tracking-[-.02em] text-[var(--text-primary)]">
+            <h2 className="text-[clamp(1.8rem,3.5vw,2.6rem)] font-medium leading-[1.1] tracking-[-.02em] text-[var(--text-primary)]">
               Fundada em 2025. Em operação no campo.
             </h2>
           </FadeIn>
