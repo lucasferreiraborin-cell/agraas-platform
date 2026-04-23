@@ -1,5 +1,7 @@
 import "./globals.css";
 import type { Metadata, Viewport } from "next";
+import { GeistSans } from "geist/font/sans";
+import { GeistMono } from "geist/font/mono";
 import LogoutButton from "./components/LogoutButton";
 import SidebarNav from "./components/SidebarNav";
 import BuyerSidebarNav from "./components/BuyerSidebarNav";
@@ -97,7 +99,7 @@ export default async function RootLayout({
   // Login e páginas de auth: layout sem sidebar/header
   if (!user) {
     return (
-      <html lang="pt-BR">
+      <html lang="pt-BR" className={`${GeistSans.variable} ${GeistMono.variable}`}>
         <head>
           <link rel="preconnect" href="https://images.unsplash.com" crossOrigin="" />
           <link rel="dns-prefetch" href="https://images.unsplash.com" />
