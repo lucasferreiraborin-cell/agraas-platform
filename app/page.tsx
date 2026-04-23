@@ -25,6 +25,8 @@ import {
   BarChart2,
   Wheat,
   ShoppingBag,
+  ShieldCheck,
+  BadgeCheck,
   MapPin,
   ArrowRight,
 } from "lucide-react";
@@ -296,82 +298,120 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* ═══ MARKETPLACE LIVE ═══════════════════════════════════════════════ */}
+      {/* ═══ MARKETPLACE PREVIEW (6 cards 3×2 + diferenciais + CTA central) ══ */}
       <section className="bg-[var(--bg)]">
         <div className="mx-auto max-w-[1200px] px-6 py-24 lg:px-10 lg:py-28">
           <FadeIn>
-            <div className="flex flex-wrap items-end justify-between gap-4">
-              <div>
-                <h2 className="text-[clamp(1.8rem,3.5vw,2.6rem)] font-medium leading-[1.08] tracking-[-.02em] text-[var(--text-primary)]">
-                  Anúncios no marketplace
-                </h2>
-              </div>
-              <Link
-                href="/marketplace"
-                className="inline-flex items-center gap-1.5 text-[.875rem] font-semibold text-[var(--primary)] hover:underline"
-              >
-                Ver todos
-                <ArrowRight size={14} />
-              </Link>
+            <div className="max-w-[720px]">
+              <h2 className="text-[clamp(1.8rem,3.5vw,2.6rem)] font-medium leading-[1.08] tracking-[-.02em] text-[var(--text-primary)]">
+                O marketplace do agronegócio
+              </h2>
+              <p className="mt-4 max-w-[580px] text-[.9375rem] leading-[1.7] text-[var(--text-muted)]">
+                Animais, safras, insumos e máquinas — cada anúncio com score verificado, vendedor rastreado e NF-e automática no fechamento.
+              </p>
             </div>
           </FadeIn>
 
-          {mkItems.length > 0 ? (
-            <StaggerContainer
-              className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3"
-              staggerChildren={0.06}
-            >
-              {mkItems.map((l) => (
-                <StaggerItem key={l.id}>
-                  <Link
-                    href="/marketplace"
-                    className="group block rounded-2xl border border-[var(--border)] bg-white p-6 shadow-[var(--shadow-soft)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-card)]"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="rounded-md border border-[var(--border)] bg-[var(--surface-soft)] px-2.5 py-1 font-mono text-[.6875rem] uppercase tracking-[.12em] text-[var(--text-secondary)]">
-                        {TYPE_LABEL[l.listing_type] ?? l.listing_type}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        {l.halal_certified && <HalalBadgeSVG size={22} />}
-                        {l.score_agraas != null && (
-                          <span className="rounded-md bg-[var(--primary-soft)] px-2 py-0.5 text-[.6875rem] font-bold text-[var(--primary)]">
-                            {l.score_agraas}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <h4 className="mt-4 line-clamp-2 text-[.9375rem] font-semibold leading-snug text-[var(--text-primary)] transition-colors group-hover:text-[var(--primary)]">
-                      {l.title}
-                    </h4>
-                    <p className="mt-3 text-[1.25rem] font-semibold text-[var(--primary)]">
-                      {fmt(l.price_per_unit)}
-                      <span className="ml-1 text-[.75rem] font-normal text-[var(--text-muted)]">
-                        /{l.unit}
-                      </span>
-                    </p>
-                    {l.location_city && (
-                      <div className="mt-2 flex items-center gap-1.5 text-[.75rem] text-[var(--text-muted)]">
-                        <MapPin size={11} />
-                        {l.location_city}-{l.location_state}
-                      </div>
-                    )}
-                  </Link>
-                </StaggerItem>
-              ))}
-            </StaggerContainer>
-          ) : (
-            <FadeIn delay={0.2}>
-              <div className="mt-10 rounded-2xl border border-dashed border-[var(--border)] bg-white p-12 text-center">
-                <ShoppingBag size={32} className="mx-auto text-[var(--text-muted)]" />
-                <p className="mt-4 text-[.9375rem] font-medium text-[var(--text-primary)]">
-                  Marketplace carregando ofertas
-                </p>
-                <p className="mt-2 text-[.8125rem] text-[var(--text-muted)]">
-                  Os primeiros anúncios estão sendo curados pela equipe Agraas.
-                </p>
+          {/* Diferenciais row — 3 itens em linha */}
+          <div className="mt-10 grid gap-6 border-y border-[var(--border)] py-8 md:grid-cols-3">
+            {[
+              { Icon: ShieldCheck, title: "Score em todo anúncio",  sub: "Qualidade quantificada antes de fechar" },
+              { Icon: BadgeCheck,  title: "Vendedor verificado",    sub: "Fazenda rastreada, origem comprovada" },
+              { Icon: FileText,    title: "NF-e automática",        sub: "Conformidade fiscal no fechamento" },
+            ].map((d) => (
+              <div key={d.title} className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--primary-soft)]">
+                  <d.Icon size={18} className="text-[var(--primary)]" />
+                </div>
+                <div>
+                  <p className="text-[.9375rem] font-semibold text-[var(--text-primary)]">
+                    {d.title}
+                  </p>
+                  <p className="mt-1 text-[.8125rem] leading-[1.55] text-[var(--text-muted)]">
+                    {d.sub}
+                  </p>
+                </div>
               </div>
-            </FadeIn>
-          )}
+            ))}
+          </div>
+
+          {/* Grid 3×2 (6 cards, completa com placeholders se necessário) */}
+          <StaggerContainer
+            className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3"
+            staggerChildren={0.05}
+          >
+            {Array.from({ length: 6 }).map((_, i) => {
+              const l = mkItems[i];
+              if (l) {
+                return (
+                  <StaggerItem key={l.id}>
+                    <Link
+                      href={`/marketplace/${l.id}`}
+                      className="group flex h-full flex-col rounded-2xl border border-[var(--border)] bg-white p-6 shadow-[var(--shadow-soft)] transition-all duration-300 hover:-translate-y-1 hover:border-[var(--primary)]/30 hover:shadow-[var(--shadow-card)]"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="rounded-md border border-[var(--border)] bg-[var(--surface-soft)] px-2.5 py-1 text-[.6875rem] font-semibold uppercase tracking-[.06em] text-[var(--text-secondary)]">
+                          {TYPE_LABEL[l.listing_type] ?? l.listing_type}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          {l.halal_certified && <HalalBadgeSVG size={22} />}
+                          {l.score_agraas != null && (
+                            <span className="rounded-md bg-[var(--primary-soft)] px-2 py-0.5 text-[.6875rem] font-bold text-[var(--primary)]">
+                              Score {l.score_agraas}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <h4 className="mt-4 line-clamp-2 text-[.9375rem] font-semibold leading-snug text-[var(--text-primary)] transition-colors group-hover:text-[var(--primary)]">
+                        {l.title}
+                      </h4>
+                      <p className="mt-3 text-[1.25rem] font-semibold text-[var(--primary)]">
+                        {fmt(l.price_per_unit)}
+                        <span className="ml-1 text-[.75rem] font-normal text-[var(--text-muted)]">
+                          /{l.unit}
+                        </span>
+                      </p>
+                      {l.location_city && (
+                        <div className="mt-auto pt-3 flex items-center gap-1.5 text-[.75rem] text-[var(--text-muted)]">
+                          <MapPin size={11} />
+                          {l.location_city}-{l.location_state}
+                        </div>
+                      )}
+                    </Link>
+                  </StaggerItem>
+                );
+              }
+              // Placeholder elegante
+              return (
+                <StaggerItem key={`placeholder-${i}`}>
+                  <div className="flex h-full flex-col items-center justify-center rounded-2xl border border-dashed border-[var(--border-strong)] bg-white/60 p-6 text-center">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--surface-soft)]">
+                      <ShoppingBag size={18} className="text-[var(--text-muted)]" />
+                    </div>
+                    <span className="mt-4 rounded-full border border-[var(--primary)]/25 bg-[var(--primary-soft)] px-3 py-0.5 text-[.6875rem] font-semibold text-[var(--primary)]">
+                      Em breve
+                    </span>
+                    <p className="mt-3 text-[.8125rem] leading-[1.55] text-[var(--text-muted)]">
+                      Novo anúncio sendo preparado por um vendedor verificado.
+                    </p>
+                  </div>
+                </StaggerItem>
+              );
+            })}
+          </StaggerContainer>
+
+          {/* CTA centralizado abaixo */}
+          <FadeIn delay={0.3}>
+            <div className="mt-12 flex justify-center">
+              <Link
+                href="/marketplace"
+                className="group inline-flex items-center gap-2 rounded-xl bg-[var(--primary)] px-7 py-3.5 text-[.9375rem] font-semibold text-white shadow-[0_10px_30px_rgba(46,139,62,.25)] transition-all hover:bg-[var(--primary-hover)] hover:shadow-[0_14px_40px_rgba(46,139,62,.35)]"
+              >
+                Ver todos os anúncios
+                <ArrowRight size={15} className="transition-transform group-hover:translate-x-0.5" />
+              </Link>
+            </div>
+          </FadeIn>
         </div>
       </section>
 
