@@ -227,13 +227,10 @@ export default function MarketplacePublicView({ listings }: { listings: Listing[
         <div className="mx-auto max-w-[1200px] px-6 py-20 lg:px-10 lg:py-24">
           <div className="max-w-[720px]">
             <FadeIn>
-              <p className="font-mono text-[.6875rem] font-semibold uppercase tracking-[.18em] text-[var(--primary)]">
-                Todas as categorias do agro
-              </p>
-              <h2 className="mt-4 text-[clamp(1.8rem,3.5vw,2.6rem)] font-medium leading-[1.1] tracking-[-.02em] text-[var(--text-primary)]">
+              <h2 className="text-[clamp(1.8rem,3.5vw,2.6rem)] font-medium leading-[1.1] tracking-[-.02em] text-[var(--text-primary)]">
                 Um marketplace construído para a cadeia inteira.
               </h2>
-              <p className="mt-4 max-w-[580px] text-[.9375rem] leading-[1.7] text-[var(--text-muted)]">
+              <p className="mt-5 max-w-[580px] text-[.9375rem] leading-[1.7] text-[var(--text-muted)]">
                 Do produtor ao fornecedor, da revenda ao prestador de serviço — qualquer produto ou serviço do agronegócio pode ser anunciado, negociado e rastreado aqui.
               </p>
             </FadeIn>
@@ -302,10 +299,7 @@ export default function MarketplacePublicView({ listings }: { listings: Listing[
         <div className="mx-auto max-w-[1200px] px-6 py-16 lg:px-10 lg:py-20">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <p className="font-mono text-[.6875rem] font-semibold uppercase tracking-[.18em] text-[var(--primary)]">
-                Catálogo
-              </p>
-              <h2 className="mt-3 text-[clamp(1.6rem,3vw,2.2rem)] font-medium leading-[1.1] tracking-[-.02em] text-[var(--text-primary)]">
+              <h2 className="text-[clamp(1.6rem,3vw,2.2rem)] font-medium leading-[1.1] tracking-[-.02em] text-[var(--text-primary)]">
                 {filtered.length} {filtered.length === 1 ? "oferta disponível" : "ofertas disponíveis"}
               </h2>
             </div>
@@ -435,10 +429,7 @@ export default function MarketplacePublicView({ listings }: { listings: Listing[
         <div className="mx-auto max-w-[1200px] px-6 py-20 lg:px-10 lg:py-24">
           <div className="max-w-[720px]">
             <FadeIn>
-              <p className="font-mono text-[.6875rem] font-semibold uppercase tracking-[.18em] text-[var(--primary)]">
-                Como funciona
-              </p>
-              <h2 className="mt-4 text-[clamp(1.8rem,3.5vw,2.6rem)] font-medium leading-[1.1] tracking-[-.02em] text-[var(--text-primary)]">
+              <h2 className="text-[clamp(1.8rem,3.5vw,2.6rem)] font-medium leading-[1.1] tracking-[-.02em] text-[var(--text-primary)]">
                 Três passos do produtor ao comprador.
               </h2>
             </FadeIn>
@@ -492,10 +483,7 @@ export default function MarketplacePublicView({ listings }: { listings: Listing[
           <div className="grid gap-12 lg:grid-cols-[.8fr_1.2fr] lg:gap-16">
             <FadeIn>
               <div>
-                <p className="font-mono text-[.6875rem] font-semibold uppercase tracking-[.18em] text-[var(--primary)]">
-                  Por que aqui
-                </p>
-                <h2 className="mt-4 text-[clamp(1.8rem,3.5vw,2.6rem)] font-medium leading-[1.1] tracking-[-.02em] text-[var(--text-primary)]">
+                <h2 className="text-[clamp(1.8rem,3.5vw,2.6rem)] font-medium leading-[1.1] tracking-[-.02em] text-[var(--text-primary)]">
                   O único marketplace onde cada oferta é verificável.
                 </h2>
                 <p className="mt-5 text-[.9375rem] leading-[1.7] text-[var(--text-muted)]">
@@ -567,15 +555,8 @@ export default function MarketplacePublicView({ listings }: { listings: Listing[
 
         <div className="mx-auto max-w-[900px] px-6 py-24 text-center">
           <FadeIn>
-            <p className="font-mono text-[.6875rem] font-semibold uppercase tracking-[.18em] text-[var(--primary)]">
-              Para vendedores
-            </p>
-          </FadeIn>
-          <FadeIn delay={0.15}>
-            <h2 className="mt-5 text-[clamp(1.8rem,4vw,2.8rem)] font-medium leading-[1.1] tracking-[-.03em] text-white">
-              Qualquer coisa do agro
-              <br />
-              merece um marketplace à altura.
+            <h2 className="text-[clamp(1.8rem,4vw,2.8rem)] font-medium leading-[1.1] tracking-[-.025em] text-white">
+              Qualquer coisa do agro merece um marketplace à altura.
             </h2>
           </FadeIn>
           <FadeIn delay={0.3}>
