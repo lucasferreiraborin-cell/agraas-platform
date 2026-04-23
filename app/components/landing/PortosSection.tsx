@@ -135,26 +135,6 @@ export default function PortosSection() {
           ))}
         </div>
 
-        {/* Conformity bar */}
-        <FadeIn delay={0.5}>
-          <div className="mt-16 flex flex-wrap items-center gap-3">
-            {[
-              "Halal certificado",
-              "SIF aprovado",
-              "MAPA verificado",
-              "EUDR ready",
-              "QR público por lote",
-              "Checkpoints auditáveis",
-            ].map((b) => (
-              <span
-                key={b}
-                className="rounded-md border border-white/[.08] bg-white/[.04] px-3.5 py-1.5 text-[.75rem] font-medium text-white/60"
-              >
-                {b}
-              </span>
-            ))}
-          </div>
-        </FadeIn>
       </div>
     </section>
   );

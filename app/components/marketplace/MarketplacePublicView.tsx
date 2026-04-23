@@ -404,8 +404,22 @@ export default function MarketplacePublicView({ listings }: { listings: Listing[
       {/* ═══ CATALOG ════════════════════════════════════════════════════ */}
       <section id="catalogo" className="bg-[var(--bg)]">
         <div className="mx-auto max-w-[1400px] px-6 py-10 lg:px-10 lg:py-14">
+          {/* Big search bar — prominente no topo do catálogo */}
+          <div className="relative mx-auto max-w-[760px]">
+            <Search
+              size={20}
+              className="absolute left-5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
+            />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar animais, safras, insumos..."
+              className="w-full rounded-2xl border border-[var(--border)] bg-white py-4 pl-14 pr-5 text-[.9375rem] shadow-[var(--shadow-soft)] outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15"
+            />
+          </div>
+
           {/* Category chips — horizontal scroll */}
-          <div className="-mx-6 overflow-x-auto px-6 pb-4 lg:-mx-10 lg:px-10">
+          <div className="-mx-6 mt-6 overflow-x-auto px-6 pb-4 lg:-mx-10 lg:px-10">
             <div className="flex min-w-max items-center gap-2">
               <button
                 type="button"
@@ -440,20 +454,9 @@ export default function MarketplacePublicView({ listings }: { listings: Listing[
             </div>
           </div>
 
-          {/* Search bar + sort + mobile filters */}
-          <div className="mt-6 flex flex-wrap items-center gap-3">
-            <div className="relative min-w-[240px] flex-1">
-              <Search
-                size={15}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
-              />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar por título, descrição ou cidade..."
-                className="w-full rounded-xl border border-[var(--border)] bg-white py-3 pl-10 pr-3 text-sm outline-none transition focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15"
-              />
-            </div>
+          {/* Sort + mobile filters */}
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <div className="flex-1" />
             <select
               value={sort}
               onChange={(e) => setSort(e.target.value as SortKey)}

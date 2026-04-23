@@ -29,7 +29,7 @@ const PLANS: Plan[] = [
     Icon: Leaf,
     accent: "text-emerald-600",
     bullets: [
-      "Até 500 animais",
+      "Até 300 animais",
       "1 propriedade",
       "Passaporte digital por animal",
       "Score Agraas em tempo real",
@@ -91,7 +91,7 @@ const PLANS: Plan[] = [
 type CellValue = boolean | string | "em-breve";
 
 const COMPARISON_ROWS: { label: string; values: CellValue[] }[] = [
-  { label: "Animais incluídos",             values: ["500",  "2.000", "Ilimitado", "Ilimitado"] },
+  { label: "Animais incluídos",             values: ["300",  "2.000", "Ilimitado", "Ilimitado"] },
   { label: "Passaporte digital PT/EN/AR",   values: [true,   true,    true,        true] },
   { label: "Score Agraas em tempo real",    values: [true,   true,    true,        true] },
   { label: "App mobile Agraas Campo",       values: ["em-breve", true, true,       true] },

@@ -3,14 +3,12 @@ import Link from "next/link";
 import Image from "next/image";
 import { createSupabaseServiceClient } from "@/lib/supabase-service";
 import PublicShell from "@/app/components/ui/PublicShell";
-import JourneySection from "@/app/components/JourneySection";
 import ScoresSection from "@/app/components/landing/ScoresSection";
 import PortosSection from "@/app/components/landing/PortosSection";
 import FSJBECaseSection from "@/app/components/landing/FSJBECaseSection";
 import OperationalSection from "@/app/components/landing/OperationalSection";
 import HowItWorksSection from "@/app/components/landing/HowItWorksSection";
 import FAQSection from "@/app/components/landing/FAQSection";
-import CredibilityStrip from "@/app/components/landing/CredibilityStrip";
 import BrazilAgroSection from "@/app/components/landing/BrazilAgroSection";
 import PassportPreviewVisual from "@/app/components/landing/PassportPreviewVisual";
 import {
@@ -66,10 +64,8 @@ const fmt = (v: number) =>
     maximumFractionDigits: 0,
   });
 
-// ── Imagens distintas + visuais da plataforma (zero redundância) ─────────────
 const IMG = {
   hero:     "/images/lp/rebanho-nelore.png",
-  silos:    "https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=1600&q=85&auto=format",
   colheita: "/images/lp/Maquina-agricola-colheita.jpg",
 };
 
@@ -89,8 +85,6 @@ async function fetchLandingData() {
   };
 }
 
-// Stats de produto (fixos) — representam a profundidade da plataforma,
-// não o volume operacional (que ainda está escalando).
 const HERO_STATS = [
   { value: "82",   label: "módulos operacionais" },
   { value: "4",    label: "score engines nativos" },
@@ -98,207 +92,169 @@ const HERO_STATS = [
   { value: "7",    label: "etapas de rastreio" },
 ];
 
+const CAPABILITIES = [
+  {
+    Icon: FileText,
+    title: "Passaporte Digital",
+    text: "Identidade única por animal e por talhão, acessível via QR público.",
+  },
+  {
+    Icon: BarChart2,
+    title: "Score Agraas",
+    text: "Qualidade verificada em tempo real, em 5 dimensões auditáveis.",
+    href: "#score",
+  },
+  {
+    Icon: Wheat,
+    title: "Grain ID",
+    text: "Soja, milho, trigo, cana e café rastreados do talhão ao navio em 7 etapas. BL e fitossanitário incluídos.",
+  },
+  {
+    Icon: ShoppingBag,
+    title: "Marketplace",
+    text: "Venda com score verificado, NF-e automática e comprador institucional a um clique.",
+    href: "/marketplace",
+  },
+];
+
 export default async function LandingPage() {
   const { mkItems } = await fetchLandingData();
 
   return (
     <PublicShell>
-      {/* ═══ HERO ═══════════════════════════════════════════════════════════ */}
-      <section className="relative isolate min-h-[94vh] overflow-hidden">
+      {/* ═══ [2] HERO — headline + stats + CTAs + passaporte preview ═══════ */}
+      <section className="relative isolate overflow-hidden">
         <HeroParallaxImage src={IMG.hero} alt="" intensity={0.22} />
         <div
           className="absolute inset-0 -z-10"
           style={{
             background:
-              "linear-gradient(110deg, var(--sidebar-2) 0%, rgba(15,53,23,.78) 45%, rgba(15,53,23,.28) 100%)",
+              "linear-gradient(110deg, var(--sidebar-2) 0%, rgba(15,53,23,.85) 40%, rgba(15,53,23,.55) 75%, rgba(15,53,23,.35) 100%)",
           }}
         />
         <div className="absolute inset-x-0 bottom-0 -z-10 h-48 bg-gradient-to-t from-[var(--bg)] to-transparent" />
 
-        <div className="mx-auto flex min-h-[92vh] max-w-[1200px] items-center px-6 lg:px-10">
-          <div className="w-full max-w-[720px] py-24">
-            <FadeIn>
-              <h1 className="text-[clamp(2.6rem,6.2vw,5rem)] font-medium leading-[.98] tracking-[-.035em] text-white">
-                A plataforma do agro brasileiro.
-              </h1>
-            </FadeIn>
+        <div className="relative mx-auto max-w-[1280px] px-6 pt-24 pb-20 lg:px-10 lg:pt-32 lg:pb-28">
+          <div className="grid gap-14 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,.9fr)] lg:items-center lg:gap-10">
+            {/* Left: content */}
+            <div>
+              <FadeIn>
+                <h1 className="text-[clamp(2.4rem,5.8vw,4.6rem)] font-medium leading-[1] tracking-[-.035em] text-white">
+                  A plataforma do agro brasileiro.
+                </h1>
+              </FadeIn>
 
+              <FadeIn delay={0.2}>
+                <p className="mt-7 max-w-[520px] text-[1.0625rem] leading-[1.75] text-white/65">
+                  Pecuária, grãos e exportação sobre uma única camada de dados verificáveis. Do pasto ao porto, do talhão ao comprador institucional.
+                </p>
+              </FadeIn>
+
+              <FadeIn delay={0.35}>
+                <div className="mt-10 flex flex-wrap items-center gap-4">
+                  <Link
+                    href="/marketplace"
+                    className="inline-flex items-center gap-2 rounded-xl bg-[var(--primary)] px-7 py-[14px] text-[.9375rem] font-semibold text-white shadow-[0_10px_30px_rgba(46,139,62,.25)] transition-all hover:bg-[var(--primary-hover)] hover:shadow-[0_14px_40px_rgba(46,139,62,.35)]"
+                  >
+                    Explorar marketplace
+                    <ArrowRight size={15} />
+                  </Link>
+                  <Link
+                    href="/login"
+                    className="rounded-xl border border-white/40 px-7 py-[14px] text-[.9375rem] font-semibold text-white transition hover:border-white/70 hover:bg-white/5"
+                  >
+                    Ver a plataforma
+                  </Link>
+                </div>
+              </FadeIn>
+
+              <FadeIn delay={0.5}>
+                <div className="mt-14 grid grid-cols-2 gap-x-8 gap-y-8 border-t border-white/[.12] pt-8 sm:grid-cols-4">
+                  {HERO_STATS.map((c) => (
+                    <div key={c.label}>
+                      <p className="text-[1.875rem] font-semibold leading-none tracking-[-.02em] text-white sm:text-[2rem]">
+                        {c.value}
+                      </p>
+                      <p className="mt-2.5 text-[.8125rem] leading-[1.45] text-white/55">
+                        {c.label}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </FadeIn>
+            </div>
+
+            {/* Right: passport preview */}
             <FadeIn delay={0.3}>
-              <p className="mt-7 max-w-[520px] text-[1.0625rem] leading-[1.75] text-white/60">
-                Pecuária, grãos e exportação sobre uma única camada de dados verificáveis. Do pasto ao porto, do talhão ao comprador institucional.
-              </p>
-            </FadeIn>
-
-            <FadeIn delay={0.45}>
-              <div className="mt-10 flex flex-wrap items-center gap-4">
-                <Link
-                  href="/marketplace"
-                  className="inline-flex items-center gap-2 rounded-xl bg-[var(--primary)] px-7 py-[14px] text-[.9375rem] font-semibold text-white shadow-[0_10px_30px_rgba(46,139,62,.25)] transition-all hover:bg-[var(--primary-hover)] hover:shadow-[0_14px_40px_rgba(46,139,62,.35)]"
-                >
-                  Explorar marketplace
-                  <ArrowRight size={15} />
-                </Link>
-                <Link
-                  href="/login"
-                  className="rounded-xl border border-white/40 px-7 py-[14px] text-[.9375rem] font-semibold text-white transition hover:border-white/70 hover:bg-white/5"
-                >
-                  Ver a plataforma
-                </Link>
-              </div>
-            </FadeIn>
-
-            <FadeIn delay={0.6}>
-              <div className="mt-20 grid grid-cols-2 gap-x-8 gap-y-8 border-t border-white/[.12] pt-8 sm:grid-cols-4 sm:gap-x-10">
-                {HERO_STATS.map((c) => (
-                  <div key={c.label}>
-                    <p className="text-[1.875rem] font-semibold leading-none tracking-[-.02em] text-white sm:text-[2rem]">
-                      {c.value}
-                    </p>
-                    <p className="mt-2.5 text-[.8125rem] leading-[1.45] text-white/55">
-                      {c.label}
-                    </p>
-                  </div>
-                ))}
-              </div>
+              <PassportPreviewVisual />
             </FadeIn>
           </div>
         </div>
       </section>
 
-      {/* ═══ CREDIBILITY STRIP (logo após hero) ═══════════════════════════ */}
-      <CredibilityStrip />
-
-      {/* ═══ CAPABILITIES ═══════════════════════════════════════════════════ */}
-      <section className="bg-white">
-        <div className="mx-auto grid max-w-[1200px] lg:grid-cols-2">
-          {/* Mobile passport visual (hidden on desktop where it appears to the right) */}
-          <div className="lg:hidden">
-            <PassportPreviewVisual />
-          </div>
-
-          <div className="flex flex-col justify-center px-6 py-20 lg:py-32 lg:pr-20">
-            <FadeIn>
-              <h2 className="text-[clamp(1.8rem,3.5vw,2.6rem)] font-medium leading-[1.08] tracking-[-.02em] text-[var(--text-primary)]">
-                Cada animal tem identidade. Cada safra tem origem.
-              </h2>
-              <p className="mt-5 max-w-[460px] text-[1rem] leading-[1.75] text-[var(--text-secondary)]">
-                Passaporte digital individual, score em cinco dimensões, certificação verificada e rastreabilidade completa — do nascimento ao embarque.
-              </p>
-            </FadeIn>
-
-            <StaggerContainer className="mt-12 space-y-1" staggerChildren={0.08}>
-              {[
-                { Icon: FileText,   t: "Passaporte Digital",  s: "ID único por animal e talhão com todo o histórico sanitário, produtivo e fiscal." },
-                { Icon: BarChart2,  t: "Score Agraas",        s: "Algoritmo proprietário em 5 dimensões. Mesmo número em plataforma e passaporte público." },
-                { Icon: Wheat,      t: "Grain ID",            s: "Rastreabilidade de soja, milho, trigo, cana e café do talhão ao navio em 7 etapas." },
-                { Icon: ShoppingBag, t: "Marketplace Agro",   s: "Compre e venda animais, safras e insumos com dados verificados e NF-e automática." },
-              ].map((c) => (
-                <StaggerItem key={c.t}>
-                  <div className="group flex gap-4 rounded-2xl p-4 transition hover:bg-[var(--surface-soft)]">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--primary-soft)] transition group-hover:bg-[var(--primary)]/15">
-                      <c.Icon size={19} className="text-[var(--primary)]" />
-                    </div>
-                    <div>
-                      <p className="text-[.9375rem] font-semibold text-[var(--text-primary)]">
-                        {c.t}
-                      </p>
-                      <p className="mt-1 text-[.8125rem] leading-[1.7] text-[var(--text-muted)]">
-                        {c.s}
-                      </p>
-                    </div>
-                  </div>
-                </StaggerItem>
-              ))}
-            </StaggerContainer>
-          </div>
-
-          <div className="relative hidden min-h-[620px] lg:block">
-            <PassportPreviewVisual />
-          </div>
-        </div>
-      </section>
-
-      {/* ═══ HOW IT WORKS (3 passos + scroll-linked progress) ══════════════ */}
+      {/* ═══ [3] COMO FUNCIONA ═════════════════════════════════════════════ */}
       <HowItWorksSection />
 
-      {/* ═══ SCORES (dark) ══════════════════════════════════════════════════ */}
-      <ScoresSection />
+      {/* ═══ [4] SCORE AGRAAS — única ocorrência de score na LP ═══════════ */}
+      <div id="score">
+        <ScoresSection />
+      </div>
 
-      {/* ═══ JOURNEY (scrollytelling dark) ══════════════════════════════════ */}
-      <JourneySection />
-
-      {/* ═══ BRASIL NO AGRO MUNDIAL (dados reais) ═══════════════════════════ */}
-      <BrazilAgroSection />
-
-      {/* ═══ OPERATIONAL (cadeia inteira — contábil, fiscal, estoque) ═════ */}
-      <OperationalSection />
-
-      {/* ═══ PORTOS BRASILEIROS → MUNDO (dark) ══════════════════════════════ */}
-      <PortosSection />
-
-      {/* ═══ AGRICULTURA ════════════════════════════════════════════════════ */}
+      {/* ═══ [5] CAPABILITIES — 4 cards simples ════════════════════════════ */}
       <section className="bg-white">
-        <div className="mx-auto grid max-w-[1200px] lg:grid-cols-2">
-          {/* Mobile image (first in source order, only visible <lg) */}
-          <div className="relative order-1 h-56 overflow-hidden sm:h-72 lg:hidden">
-            <Image
-              src={IMG.silos}
-              alt="Silos de armazenamento de grãos no Brasil"
-              fill
-              loading="lazy"
-              sizes="100vw"
-              quality={80}
-              className="object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-white via-white/10 to-transparent" />
-          </div>
+        <div className="mx-auto max-w-[1200px] px-6 py-20 lg:px-10 lg:py-24">
+          <FadeIn>
+            <h2 className="max-w-[720px] text-[clamp(1.8rem,3.5vw,2.6rem)] font-medium leading-[1.1] tracking-[-.02em] text-[var(--text-primary)]">
+              Quatro produtos, uma camada só.
+            </h2>
+          </FadeIn>
 
-          {/* Desktop image (lg+ only, left side) */}
-          <div className="relative order-2 hidden min-h-[520px] overflow-hidden lg:order-1 lg:block">
-            <Image
-              src={IMG.silos}
-              alt="Silos de armazenamento de grãos no Brasil"
-              fill
-              loading="lazy"
-              sizes="(min-width: 1024px) 50vw, 0px"
-              quality={82}
-              className="object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-white/10" />
-          </div>
-          <div className="order-3 flex flex-col justify-center px-6 py-20 lg:order-2 lg:py-32 lg:pl-20">
-            <FadeIn>
-              <h2 className="text-[clamp(1.8rem,3.5vw,2.6rem)] font-medium leading-[1.08] tracking-[-.02em] text-[var(--text-primary)]">
-                Agricultura rastreada <span className="text-[var(--text-muted)]">do talhão ao navio.</span>
-              </h2>
-              <p className="mt-5 max-w-[460px] text-[1rem] leading-[1.75] text-[var(--text-secondary)]">
-                Cada talhão georreferenciado com CAR verificado. Cada embarque com Bill of Lading, certificado fitossanitário e laudo de qualidade.
-              </p>
-              <div className="mt-8 flex flex-wrap gap-2">
-                {["Grain ID", "Laudo de qualidade", "BL verificado", "CAR ativo", "EUDR ready"].map(
-                  (b) => (
-                    <span
-                      key={b}
-                      className="rounded-md border border-[var(--primary)]/25 bg-[var(--primary-soft)] px-3 py-1.5 text-[.75rem] font-semibold text-[var(--primary)]"
-                    >
-                      {b}
-                    </span>
-                  ),
-                )}
-              </div>
-              <Link
-                href="/cadastro"
-                className="group mt-8 inline-flex items-center gap-2 text-[.9375rem] font-semibold text-[var(--primary)] hover:underline"
-              >
-                Rastrear minha produção
-                <ArrowRight size={15} className="transition-transform group-hover:translate-x-0.5" />
-              </Link>
-            </FadeIn>
-          </div>
+          <StaggerContainer
+            className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4"
+            staggerChildren={0.08}
+          >
+            {CAPABILITIES.map((c) => {
+              const inner = (
+                <>
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--primary-soft)]">
+                    <c.Icon size={20} className="text-[var(--primary)]" />
+                  </div>
+                  <p className="mt-6 text-[1rem] font-semibold text-[var(--text-primary)]">
+                    {c.title}
+                  </p>
+                  <p className="mt-2 text-[.875rem] leading-[1.6] text-[var(--text-muted)]">
+                    {c.text}
+                  </p>
+                </>
+              );
+              const cls =
+                "group h-full rounded-2xl border border-[var(--border)] bg-white p-7 shadow-[var(--shadow-soft)] transition-all hover:-translate-y-0.5 hover:border-[var(--primary)]/30 hover:shadow-[var(--shadow-card)]";
+              return (
+                <StaggerItem key={c.title}>
+                  {c.href ? (
+                    <Link href={c.href} className={`block ${cls}`}>
+                      {inner}
+                    </Link>
+                  ) : (
+                    <div className={cls}>{inner}</div>
+                  )}
+                </StaggerItem>
+              );
+            })}
+          </StaggerContainer>
         </div>
       </section>
 
-      {/* ═══ MARKETPLACE PREVIEW (6 cards 3×2 + diferenciais + CTA central) ══ */}
+      {/* ═══ [6] PORTOS BR → MUNDO ═════════════════════════════════════════ */}
+      <PortosSection />
+
+      {/* ═══ [7] BRASIL LÍDER MUNDIAL DO AGRO ══════════════════════════════ */}
+      <BrazilAgroSection />
+
+      {/* ═══ [8] FINANCEIRO / FISCAL / ESTOQUE ═════════════════════════════ */}
+      <OperationalSection />
+
+      {/* ═══ [9] MARKETPLACE PREVIEW ═══════════════════════════════════════ */}
       <section className="bg-[var(--bg)]">
         <div className="mx-auto max-w-[1200px] px-6 py-24 lg:px-10 lg:py-28">
           <FadeIn>
@@ -306,13 +262,10 @@ export default async function LandingPage() {
               <h2 className="text-[clamp(1.8rem,3.5vw,2.6rem)] font-medium leading-[1.08] tracking-[-.02em] text-[var(--text-primary)]">
                 O marketplace do agronegócio
               </h2>
-              <p className="mt-4 max-w-[580px] text-[.9375rem] leading-[1.7] text-[var(--text-muted)]">
-                Animais, safras, insumos e máquinas — cada anúncio com score verificado, vendedor rastreado e NF-e automática no fechamento.
-              </p>
             </div>
           </FadeIn>
 
-          {/* Diferenciais row — 3 itens em linha */}
+          {/* 3 diferenciais */}
           <div className="mt-10 grid gap-6 border-y border-[var(--border)] py-8 md:grid-cols-3">
             {[
               { Icon: ShieldCheck, title: "Score em todo anúncio",  sub: "Qualidade quantificada antes de fechar" },
@@ -335,7 +288,7 @@ export default async function LandingPage() {
             ))}
           </div>
 
-          {/* Grid 3×2 (6 cards, completa com placeholders se necessário) */}
+          {/* Grid 3×2 (6 cards fixos) */}
           <StaggerContainer
             className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3"
             staggerChildren={0.05}
@@ -381,7 +334,6 @@ export default async function LandingPage() {
                   </StaggerItem>
                 );
               }
-              // Placeholder elegante
               return (
                 <StaggerItem key={`placeholder-${i}`}>
                   <div className="flex h-full flex-col items-center justify-center rounded-2xl border border-dashed border-[var(--border-strong)] bg-white/60 p-6 text-center">
@@ -400,7 +352,6 @@ export default async function LandingPage() {
             })}
           </StaggerContainer>
 
-          {/* CTA centralizado abaixo */}
           <FadeIn delay={0.3}>
             <div className="mt-12 flex justify-center">
               <Link
@@ -415,13 +366,13 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* ═══ CASE FSJBE (expandido, timeline + score completo) ═══════════════ */}
+      {/* ═══ [10] FSJBE ════════════════════════════════════════════════════ */}
       <FSJBECaseSection />
 
-      {/* ═══ FAQ ════════════════════════════════════════════════════════════ */}
+      {/* ═══ [11] FAQ ══════════════════════════════════════════════════════ */}
       <FAQSection />
 
-      {/* ═══ CTA FINAL ══════════════════════════════════════════════════════ */}
+      {/* ═══ [12] CTA FINAL ═══════════════════════════════════════════════ */}
       <section className="relative isolate overflow-hidden">
         <Image
           src={IMG.colheita}
@@ -452,12 +403,10 @@ export default async function LandingPage() {
             <div className="mt-10 flex flex-wrap justify-center gap-4">
               <Link
                 href="/cadastro"
-                className="group relative inline-flex items-center gap-2 overflow-hidden rounded-xl bg-white px-8 py-4 text-[.9375rem] font-semibold text-[var(--sidebar-2)] shadow-[0_14px_40px_rgba(0,0,0,.2)] transition-all hover:shadow-[0_20px_50px_rgba(0,0,0,.3)]"
+                className="group inline-flex items-center gap-2 rounded-xl bg-white px-8 py-4 text-[.9375rem] font-semibold text-[var(--sidebar-2)] shadow-[0_14px_40px_rgba(0,0,0,.2)] transition-all hover:shadow-[0_20px_50px_rgba(0,0,0,.3)]"
               >
-                <span className="relative flex items-center gap-2">
-                  Criar conta gratuita
-                  <ArrowRight size={15} className="transition-transform group-hover:translate-x-0.5" />
-                </span>
+                Criar conta gratuita
+                <ArrowRight size={15} className="transition-transform group-hover:translate-x-0.5" />
               </Link>
               <a
                 href="mailto:contato@agraas.com.br"

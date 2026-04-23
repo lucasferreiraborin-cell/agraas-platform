@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { MapPin, ArrowRight, CheckCircle2 } from "lucide-react";
-import ScoreRing from "@/app/components/ui/ScoreRing";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/app/components/ui/Motion";
 
 const STATS = [
@@ -14,18 +13,10 @@ const STATS = [
   { value: "PIF",    label: "comprador institucional vinculado" },
 ];
 
-const SCORE_BREAKDOWN = [
-  { label: "Produtivo",       weight: 28 },
-  { label: "Sanitário",       weight: 24 },
-  { label: "Continuidade",    weight: 20 },
-  { label: "Operacional",     weight: 18 },
-  { label: "Rastreabilidade", weight: 10 },
-];
-
 const DELIVERABLES = [
-  { label: "Passaporte digital",  sub: "ID único por animal, acessível via QR público" },
-  { label: "Score em tempo real", sub: "5 dimensões recalculadas por evento" },
-  { label: "Operacional diário",  sub: "Pesagens, manejo e sanitário registrados no campo" },
+  { label: "Passaporte digital",   sub: "ID único por animal, acessível via QR público" },
+  { label: "Score em tempo real",  sub: "5 dimensões recalculadas por evento" },
+  { label: "Operacional diário",   sub: "Pesagens, manejo e sanitário registrados no campo" },
   { label: "Cadeia de exportação", sub: "Lotes, certificações e comprador institucional vinculados" },
 ];
 
@@ -41,7 +32,7 @@ export default function FSJBECaseSection() {
       />
 
       <div className="relative mx-auto max-w-[1200px] px-6 py-24 lg:px-10 lg:py-32">
-        <div className="max-w-[720px]">
+        <div className="max-w-[760px]">
           <FadeIn>
             <h2 className="text-[clamp(2rem,4.5vw,3.2rem)] font-medium leading-[1.05] tracking-[-.025em] text-[var(--text-primary)]">
               Fazenda São João da Boa Esperança
@@ -66,8 +57,7 @@ export default function FSJBECaseSection() {
           </FadeIn>
         </div>
 
-        {/* Grid: dados operacionais + score */}
-        <div className="mt-16 grid gap-12 lg:grid-cols-[1.3fr_.7fr] lg:gap-16">
+        <div className="mt-16 grid gap-12 lg:grid-cols-[1.3fr_.7fr] lg:gap-16 lg:items-start">
           {/* Operational stats grid */}
           <div>
             <FadeIn>
@@ -92,13 +82,15 @@ export default function FSJBECaseSection() {
                 </StaggerItem>
               ))}
             </StaggerContainer>
+          </div>
 
-            {/* Deliverables list (what platform already delivers) */}
-            <FadeIn delay={0.3}>
-              <div className="mt-10 rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] p-6">
-                <h4 className="text-[.9375rem] font-semibold text-[var(--text-primary)]">
+          {/* Deliverables + CTA (sem ScoreRing — já está na seção Score) */}
+          <div className="space-y-6">
+            <FadeIn delay={0.2}>
+              <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] p-6 shadow-[var(--shadow-soft)]">
+                <h3 className="text-[1rem] font-semibold text-[var(--text-primary)]">
                   O que está ativo
-                </h4>
+                </h3>
                 <ul className="mt-4 space-y-3">
                   {DELIVERABLES.map((d) => (
                     <li key={d.label} className="flex items-start gap-3">
@@ -116,35 +108,8 @@ export default function FSJBECaseSection() {
                 </ul>
               </div>
             </FadeIn>
-          </div>
 
-          {/* Score card + CTA */}
-          <div className="space-y-6">
-            <FadeIn delay={0.2}>
-              <div
-                className="relative overflow-hidden rounded-3xl p-10"
-                style={{
-                  background:
-                    "linear-gradient(135deg, #0f3517 0%, #1E5E26 100%)",
-                }}
-              >
-                <div className="relative flex flex-col items-center">
-                  <p className="text-[.875rem] font-medium text-white/80">
-                    Score médio do rebanho
-                  </p>
-                  <div className="mt-6">
-                    <ScoreRing
-                      score={78}
-                      size="lg"
-                      variant="dark"
-                      breakdown={SCORE_BREAKDOWN}
-                    />
-                  </div>
-                </div>
-              </div>
-            </FadeIn>
-
-            <FadeIn delay={0.4}>
+            <FadeIn delay={0.35}>
               <Link
                 href="/cadastro"
                 className="group inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--primary)]/40 bg-white px-6 py-3.5 text-[.875rem] font-semibold text-[var(--primary)] transition hover:bg-[var(--primary-soft)]"

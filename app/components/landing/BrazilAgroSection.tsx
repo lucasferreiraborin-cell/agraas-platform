@@ -52,10 +52,7 @@ export default function BrazilAgroSection() {
             </FadeIn>
             <FadeIn delay={0.1}>
               <p className="mt-6 text-[1rem] leading-[1.8] text-[var(--text-secondary)]">
-                Somos o maior exportador global de carne bovina, soja, açúcar, café e suco de laranja. Ainda assim, a camada digital que conecta produtor, comprador e conformidade continua fragmentada.
-              </p>
-              <p className="mt-4 text-[1rem] leading-[1.8] text-[var(--text-secondary)]">
-                A Agraas existe para isso — consolidar em uma única plataforma a operação, a rastreabilidade e o acesso ao mercado que o agro brasileiro precisa para competir em posição de força.
+                Somos o maior exportador global de carne bovina, soja, açúcar, café e suco de laranja — e a camada digital que conecta produtor, comprador e conformidade precisa estar à altura desse mercado.
               </p>
             </FadeIn>
           </div>

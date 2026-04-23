@@ -156,7 +156,7 @@ export default function SobrePage() {
           <FadeIn delay={0.15}>
             <div className="mt-8 space-y-5 text-[1.0625rem] leading-[1.85] text-[var(--text-secondary)]">
               <p>
-                A Agraas foi fundada em 2025 em São Paulo por um time com raízes no mercado financeiro e no agronegócio goiano. A plataforma foi construída do zero e está em operação como piloto em Jussara, Goiás — uma fazenda de cria com rebanho Nelore sendo digitalmente rastreada com passaporte individual, score em formação e roadmap de conformidade em execução.
+                A Agraas foi fundada em 2025 em São Paulo por um time com raízes no mercado financeiro e no agronegócio goiano. A plataforma foi construída do zero e está em operação como piloto em Jussara, Goiás — uma fazenda de cria com rebanho Nelore sendo digitalmente rastreada com passaporte individual, score em tempo real e infraestrutura de exportação ativa.
               </p>
               <p>Estamos em processo de captação para escalar a operação em todo o Brasil.</p>
             </div>
@@ -164,7 +164,37 @@ export default function SobrePage() {
         </div>
       </section>
 
-      {/* ═══ TIME (placeholder editorial enquanto fotos/bios não estão prontas) ══ */}
+      {/* ═══ A PLATAFORMA EM NÚMEROS ═══════════════════════════════════════ */}
+      <section className="border-y border-[var(--border)] bg-[var(--bg)]">
+        <div className="mx-auto max-w-[1200px] px-6 py-16 lg:px-10 lg:py-20">
+          <FadeIn>
+            <h2 className="text-[clamp(1.4rem,2.8vw,1.8rem)] font-medium leading-[1.2] tracking-[-.015em] text-[var(--text-primary)]">
+              A plataforma em números
+            </h2>
+          </FadeIn>
+          <div className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              { value: "82",  label: "módulos operacionais" },
+              { value: "104", label: "migrations aplicadas" },
+              { value: "56",  label: "tabelas no banco" },
+              { value: "0",   label: "bugs críticos abertos" },
+            ].map((m, i) => (
+              <FadeIn key={m.label} delay={0.1 + i * 0.06}>
+                <div>
+                  <p className="text-[2.2rem] font-semibold leading-none tracking-[-.025em] text-[var(--text-primary)]">
+                    {m.value}
+                  </p>
+                  <p className="mt-3 text-[.875rem] text-[var(--text-muted)]">
+                    {m.label}
+                  </p>
+                </div>
+              </FadeIn>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ TIME — 5 fundadores reais ═══════════════════════════════════════ */}
       <section className="bg-[var(--bg)]">
         <div className="mx-auto max-w-[1200px] px-6 py-24 lg:px-10 lg:py-28">
           <div className="max-w-[720px]">
@@ -175,45 +205,43 @@ export default function SobrePage() {
             </FadeIn>
             <FadeIn delay={0.1}>
               <p className="mt-5 max-w-[620px] text-[1rem] leading-[1.75] text-[var(--text-secondary)]">
-                Um time enxuto com background em mercado financeiro, engenharia de software, agronegócio goiano e comércio exterior. As fotos e bios completas chegam em breve — quer conhecer antes? Fale direto.
+                Cinco co-founders com background em mercado financeiro, engenharia de software, agronegócio goiano, comércio exterior e genética bovina.
               </p>
             </FadeIn>
           </div>
 
           <StaggerContainer
-            className="mt-14 grid gap-5 md:grid-cols-3"
+            className="mt-12 grid gap-5 md:grid-cols-3"
             staggerChildren={0.08}
           >
             {[
-              { role: "Fundação & produto",       focus: "Plataforma, engenharia, visão" },
-              { role: "Operações & agronegócio",  focus: "Relacionamento com fazendas, compliance, cadeia" },
-              { role: "Captação & estratégia",    focus: "Rodada, parceiros, expansão comercial" },
-            ].map((slot, i) => (
-              <StaggerItem key={slot.role}>
-                <div className="h-full rounded-2xl border border-[var(--border)] bg-white p-7 shadow-[var(--shadow-soft)]">
+              { name: "Lucas Ferreira Borin", initials: "LF", role: "CEO e Co-founder" },
+              { name: "Eduardo de Paola",     initials: "EP", role: "Co-founder" },
+              { name: "Pedro Salim",          initials: "PS", role: "Co-founder" },
+              { name: "Pedro Maluli",         initials: "PM", role: "Co-founder" },
+              { name: "Frederico Maluli",     initials: "FM", role: "Co-founder" },
+            ].map((p) => (
+              <StaggerItem key={p.name}>
+                <div className="flex h-full items-center gap-5 rounded-2xl border border-[var(--border)] bg-white p-6 shadow-[var(--shadow-soft)] transition-colors hover:border-[var(--primary)]/25">
                   <div
-                    className="flex h-14 w-14 items-center justify-center rounded-2xl text-white"
+                    className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full text-white"
                     style={{
-                      background: [
-                        "linear-gradient(135deg, #2E8B3E 0%, #1E5E26 100%)",
-                        "linear-gradient(135deg, #3DA54C 0%, #2E8B3E 100%)",
-                        "linear-gradient(135deg, #1E5E26 0%, #0f3517 100%)",
-                      ][i],
+                      background:
+                        "linear-gradient(135deg, var(--primary) 0%, var(--sidebar-2) 100%)",
                     }}
                   >
-                    <span className="font-mono text-[.6875rem] font-semibold uppercase tracking-[.14em] opacity-80">
-                      {String(i + 1).padStart(2, "0")}
+                    <span className="text-[1rem] font-semibold tracking-[-.01em]">
+                      {p.initials}
                     </span>
                   </div>
-                  <p className="mt-5 text-[1.0625rem] font-semibold text-[var(--text-primary)]">
-                    {slot.role}
-                  </p>
-                  <p className="mt-2 text-[.875rem] leading-[1.7] text-[var(--text-muted)]">
-                    {slot.focus}
-                  </p>
-                  <p className="mt-6 text-[.75rem] font-medium text-[var(--text-muted)]">
-                    Bio em preparação
-                  </p>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[1rem] font-semibold leading-[1.25] tracking-[-.01em] text-[var(--text-primary)]">
+                      {p.name}
+                    </p>
+                    <p className="mt-1.5 text-[.8125rem] text-[var(--text-muted)]">
+                      {p.role}
+                    </p>
+                  </div>
                 </div>
               </StaggerItem>
             ))}
