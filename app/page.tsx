@@ -2,16 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { createSupabaseServiceClient } from "@/lib/supabase-service";
 import PublicShell from "@/app/components/ui/PublicShell";
-
-export const metadata: Metadata = {
-  title: "O agro do Brasil, auditável em tempo real.",
-  description:
-    "Pecuária, grãos e exportação sobre uma única camada de dados verificáveis. Do pasto ao porto, do talhão ao comprador institucional.",
-  alternates: { canonical: "/" },
-};
 import JourneySection from "@/app/components/JourneySection";
 import ScoresSection from "@/app/components/landing/ScoresSection";
 import PortosSection from "@/app/components/landing/PortosSection";
+import FSJBECaseSection from "@/app/components/landing/FSJBECaseSection";
 import {
   FadeIn,
   StaggerContainer,
@@ -26,10 +20,14 @@ import {
   ShoppingBag,
   MapPin,
   ArrowRight,
-  Ship,
-  Shield,
-  CheckCircle,
 } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "O agro do Brasil, auditável em tempo real.",
+  description:
+    "Pecuária, grãos e exportação sobre uma única camada de dados verificáveis. Do pasto ao porto, do talhão ao comprador institucional.",
+  alternates: { canonical: "/" },
+};
 
 type ListingRow = {
   id: string;
@@ -72,15 +70,36 @@ const IMG = {
 
 export const revalidate = 300;
 
-export default async function LandingPage() {
+async function fetchLandingData() {
   const db = createSupabaseServiceClient();
-  const { data: listings } = await db
-    .from("marketplace_listings")
-    .select("id, title, listing_type, price_per_unit, unit, location_city, location_state, halal_certified, score_agraas")
-    .eq("status", "ativo")
-    .order("created_at", { ascending: false })
-    .limit(6);
+  const [
+    { data: listings },
+    { count: animalsCount },
+    { count: fieldsCount },
+    { count: lotsCount },
+  ] = await Promise.all([
+    db
+      .from("marketplace_listings")
+      .select("id, title, listing_type, price_per_unit, unit, location_city, location_state, halal_certified, score_agraas")
+      .eq("status", "ativo")
+      .order("created_at", { ascending: false })
+      .limit(6),
+    db.from("animals").select("id", { count: "exact", head: true }),
+    db.from("crop_fields").select("id", { count: "exact", head: true }),
+    db.from("lots").select("id", { count: "exact", head: true }),
+  ]);
+
   const mkItems = (listings ?? []) as ListingRow[];
+  return {
+    mkItems,
+    animalsCount: animalsCount ?? 0,
+    fieldsCount: fieldsCount ?? 0,
+    lotsCount: lotsCount ?? 0,
+  };
+}
+
+export default async function LandingPage() {
+  const { mkItems, animalsCount, fieldsCount, lotsCount } = await fetchLandingData();
 
   return (
     <PublicShell>
@@ -147,9 +166,9 @@ export default async function LandingPage() {
             <FadeIn delay={0.6}>
               <div className="mt-20 flex flex-wrap gap-12 border-t border-white/[.12] pt-8">
                 {[
-                  { end: 2300, s: "",  l: "cabeças rastreadas" },
-                  { end: 100,  s: "%", l: "certificação Halal" },
-                  { end: 104,  s: "+", l: "módulos ativos" },
+                  { end: animalsCount, s: "", l: "animais rastreados" },
+                  { end: fieldsCount,  s: "", l: "talhões monitorados" },
+                  { end: lotsCount,    s: "", l: "lotes de exportação" },
                 ].map((c, i) => (
                   <div key={i}>
                     <p className="text-[2.2rem] font-semibold leading-none tracking-[-.02em] text-white">
@@ -361,73 +380,8 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* ═══ SOCIAL PROOF ═══════════════════════════════════════════════════ */}
-      <section className="bg-white">
-        <div className="mx-auto max-w-[1200px] px-6 py-20 lg:px-10 lg:py-24">
-          <FadeIn>
-            <div className="overflow-hidden rounded-3xl border border-[var(--border)] bg-white shadow-[var(--shadow-card)]">
-              <div className="grid lg:grid-cols-[1.1fr_.9fr]">
-                <div className="p-8 lg:p-12">
-                  <p className="font-mono text-[.6875rem] font-semibold uppercase tracking-[.18em] text-[var(--primary)]">
-                    Cliente ativo
-                  </p>
-                  <h3 className="mt-4 text-[1.5rem] font-semibold leading-[1.2] tracking-[-.02em] text-[var(--text-primary)]">
-                    Fazenda São João da Boa Esperança
-                  </h3>
-                  <div className="mt-2 flex items-center gap-2 text-[.875rem] text-[var(--text-muted)]">
-                    <MapPin size={13} />
-                    Jussara, Goiás
-                  </div>
-                  <p className="mt-5 text-[.9375rem] leading-[1.75] text-[var(--text-secondary)]">
-                    Primeira fazenda com Passaporte Agraas ativo e lote de exportação certificado Halal confirmado para a Arábia Saudita — segundo trimestre de 2026.
-                  </p>
-                  <div className="mt-6 flex flex-wrap gap-2">
-                    {["MAPA verificado", "GTA ativa", "Halal certificado", "Nelore PO"].map((b) => (
-                      <span
-                        key={b}
-                        className="rounded-md border border-[var(--primary)]/25 bg-[var(--primary-soft)] px-3 py-1.5 text-[.75rem] font-semibold text-[var(--primary)]"
-                      >
-                        {b}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-                <div
-                  className="grid grid-cols-2"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, var(--sidebar) 0%, var(--sidebar-2) 100%)",
-                  }}
-                >
-                  {[
-                    { v: "2.300",    l: "cabeças",   Icon: Shield },
-                    { v: "Nelore",   l: "raça",      Icon: CheckCircle },
-                    { v: "Q2 2026",  l: "embarque",  Icon: Ship },
-                    { v: "78",       l: "score méd.", Icon: BarChart2 },
-                  ].map((m, i) => (
-                    <div
-                      key={m.l}
-                      className="flex flex-col items-center justify-center border-white/[.08] p-8 text-center"
-                      style={{
-                        borderRightWidth: i % 2 === 0 ? 1 : 0,
-                        borderBottomWidth: i < 2 ? 1 : 0,
-                      }}
-                    >
-                      <m.Icon size={18} className="text-white/80" />
-                      <p className="mt-4 text-[1.4rem] font-semibold text-white">
-                        {m.v}
-                      </p>
-                      <p className="mt-1 font-mono text-[.6875rem] uppercase tracking-[.14em] text-white/50">
-                        {m.l}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </FadeIn>
-        </div>
-      </section>
+      {/* ═══ CASE FSJBE (expandido, timeline + score completo) ═══════════════ */}
+      <FSJBECaseSection />
 
       {/* ═══ CTA FINAL ══════════════════════════════════════════════════════ */}
       <section className="relative isolate overflow-hidden">

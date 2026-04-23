@@ -1,33 +1,43 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Anchor, Ship } from "lucide-react";
-import { FadeIn, StaggerContainer, StaggerItem } from "@/app/components/ui/Motion";
+import { Anchor, ShieldCheck, Globe2 } from "lucide-react";
+import { FadeIn } from "@/app/components/ui/Motion";
+import AnimatedGlobe from "./AnimatedGlobe";
 
-const PORTOS_BR = [
-  { city: "Santos",       uf: "SP", hint: "Maior porto do Brasil" },
-  { city: "Paranaguá",    uf: "PR", hint: "2º maior em grãos" },
-  { city: "Rio Grande",   uf: "RS", hint: "Hub da soja sul" },
-  { city: "Itaqui",       uf: "MA", hint: "Porta do MATOPIBA" },
+const HIGHLIGHTS = [
+  {
+    Icon: Anchor,
+    title: "4 portos, toda a logística brasileira",
+    text: "Santos, Paranaguá, Rio Grande e Itaqui — cobertura do sul ao MATOPIBA.",
+  },
+  {
+    Icon: Globe2,
+    title: "Destino livre, rastreio constante",
+    text: "Cada embarque gera QR público com origem, certificações e checkpoints — seu comprador acessa de qualquer lugar do mundo.",
+  },
+  {
+    Icon: ShieldCheck,
+    title: "Conformidade verificada em cada etapa",
+    text: "Halal, SIF, MAPA, EUDR — selos ativos com validade monitorada em tempo real.",
+  },
 ];
 
-const DESTINOS = [
-  { city: "Jeddah",     country: "Arábia Saudita",   flag: "🇸🇦", hint: "Foco PIF" },
-  { city: "Doha",       country: "Qatar",            flag: "🇶🇦", hint: "Golfo" },
-  { city: "Dubai",      country: "Emirados Árabes",  flag: "🇦🇪", hint: "EAU" },
-  { city: "Xangai",     country: "China",            flag: "🇨🇳", hint: "Maior comprador de soja" },
-  { city: "Rotterdam",  country: "Países Baixos",    flag: "🇳🇱", hint: "Maior porto europeu" },
-  { city: "Hamburgo",   country: "Alemanha",         flag: "🇩🇪", hint: "UE EUDR" },
+const PORT_CARDS = [
+  { label: "Santos",       uf: "SP", hint: "Maior porto do Brasil em contêineres e açúcar" },
+  { label: "Paranaguá",    uf: "PR", hint: "Segundo maior em grãos — soja e milho do Sul" },
+  { label: "Rio Grande",   uf: "RS", hint: "Hub da soja e arroz gaúcho, acesso direto ao Atlântico Sul" },
+  { label: "Itaqui",       uf: "MA", hint: "Porta de saída do MATOPIBA para Ásia e Oriente Médio" },
 ];
 
 export default function PortosSection() {
   return (
-    <section className="relative overflow-hidden bg-[#071a0e]">
+    <section className="relative overflow-hidden bg-[#050c06]">
+      {/* Base grid + radial glow */}
       <div
-        className="pointer-events-none absolute inset-0 opacity-[.5]"
+        className="pointer-events-none absolute inset-0 opacity-[.4]"
         style={{
           backgroundImage:
-            "linear-gradient(hsla(0,0%,100%,.03) 1px, transparent 1px), linear-gradient(90deg, hsla(0,0%,100%,.03) 1px, transparent 1px)",
+            "linear-gradient(hsla(0,0%,100%,.025) 1px, transparent 1px), linear-gradient(90deg, hsla(0,0%,100%,.025) 1px, transparent 1px)",
           backgroundSize: "4rem 4rem",
         }}
       />
@@ -35,196 +45,127 @@ export default function PortosSection() {
         className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(ellipse at center, rgba(46,139,62,0.08) 0%, transparent 60%)",
+            "radial-gradient(ellipse 70% 50% at 50% 40%, rgba(46,139,62,0.14) 0%, transparent 60%)",
+        }}
+      />
+      {/* Starfield accent (subtle) */}
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[.35]"
+        style={{
+          backgroundImage:
+            "radial-gradient(1px 1px at 12% 18%, rgba(255,255,255,0.55), transparent 60%)," +
+            "radial-gradient(1px 1px at 82% 22%, rgba(255,255,255,0.4), transparent 60%)," +
+            "radial-gradient(1.5px 1.5px at 64% 74%, rgba(255,255,255,0.5), transparent 60%)," +
+            "radial-gradient(1px 1px at 24% 78%, rgba(255,255,255,0.35), transparent 60%)," +
+            "radial-gradient(1px 1px at 92% 58%, rgba(255,255,255,0.35), transparent 60%)," +
+            "radial-gradient(1px 1px at 6% 48%, rgba(255,255,255,0.35), transparent 60%)",
         }}
       />
 
-      <div className="relative mx-auto max-w-[1200px] px-6 py-[clamp(6rem,12vw,10rem)] lg:px-10">
-        <div className="mb-20 max-w-[820px]">
+      <div className="relative mx-auto max-w-[1280px] px-6 py-[clamp(7rem,14vw,12rem)] lg:px-10">
+        {/* Heading */}
+        <div className="mx-auto max-w-[900px] text-center">
           <FadeIn>
             <p className="font-mono text-[.6875rem] font-semibold uppercase tracking-[.18em] text-[var(--primary)]">
-              Portos brasileiros → o mundo
+              Portos brasileiros · o mundo todo
             </p>
           </FadeIn>
           <FadeIn delay={0.15}>
-            <h2 className="mt-5 text-[clamp(2rem,5.2vw,4rem)] font-medium leading-[.98] tracking-[-.03em] text-white">
-              De Santos, Paranaguá, Rio Grande e Itaqui<br />
-              <span className="text-[var(--primary)]">até Jeddah, Xangai e Rotterdam.</span>
+            <h2 className="mt-6 text-[clamp(2.2rem,5.6vw,4.6rem)] font-medium leading-[.96] tracking-[-.035em] text-white">
+              Começa no Brasil.
+              <br />
+              <span className="italic text-white/85">Vai para qualquer lugar.</span>
             </h2>
           </FadeIn>
           <FadeIn delay={0.3}>
-            <p className="mt-6 max-w-[520px] text-[1rem] leading-[1.8] text-white/40">
-              Cada embarque rastreado com checkpoints, certificações e passaporte digital verificável por QR code. Da lavoura ao porto, do porto ao comprador institucional.
+            <p className="mx-auto mt-7 max-w-[620px] text-[1.0625rem] leading-[1.75] text-white/55">
+              De quatro portos brasileiros parte a carne, os grãos e a confiança certificada — com rastreio verificável até o destino final, seja ele Oriente Médio, Europa, Ásia ou América.
             </p>
           </FadeIn>
         </div>
 
-        <div className="grid gap-8 lg:grid-cols-[minmax(240px,1fr)_minmax(320px,1.4fr)_minmax(240px,1fr)] lg:items-center">
-          {/* ─── ORIGEM ───────────────────────────────────────── */}
-          <StaggerContainer className="space-y-3">
-            <FadeIn>
-              <div className="mb-4 flex items-center gap-2 text-white/50">
-                <Anchor size={14} />
-                <span className="font-mono text-[.6875rem] font-semibold uppercase tracking-[.18em]">
-                  Origem
-                </span>
-              </div>
-            </FadeIn>
-            {PORTOS_BR.map((p) => (
-              <StaggerItem key={p.city} direction="right" distance={20}>
-                <div className="rounded-xl border border-white/[.08] bg-white/[.03] p-4 backdrop-blur-sm transition-colors hover:border-[var(--primary)]/30 hover:bg-[var(--primary)]/[.06]">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <p className="text-[.9375rem] font-medium text-white">
-                      {p.city}
-                    </p>
-                    <span className="font-mono text-[.6875rem] text-white/40">
-                      {p.uf}
-                    </span>
-                  </div>
-                  <p className="mt-1 text-[.75rem] text-white/40">{p.hint}</p>
-                </div>
-              </StaggerItem>
-            ))}
-          </StaggerContainer>
-
-          {/* ─── CONEXÕES ─────────────────────────────────────── */}
-          <div className="flex min-h-[360px] items-center justify-center py-8 lg:py-0">
-            <ConnectionsSVG />
+        {/* Globe */}
+        <FadeIn delay={0.4}>
+          <div className="relative mx-auto mt-20 flex justify-center">
+            <AnimatedGlobe size={640} />
           </div>
+        </FadeIn>
 
-          {/* ─── DESTINO ──────────────────────────────────────── */}
-          <StaggerContainer className="space-y-3" staggerChildren={0.07}>
-            <FadeIn>
-              <div className="mb-4 flex items-center gap-2 text-white/50">
-                <Ship size={14} />
-                <span className="font-mono text-[.6875rem] font-semibold uppercase tracking-[.18em]">
-                  Destino
-                </span>
+        {/* Port cards (grid of 4) */}
+        <FadeIn delay={0.55}>
+          <div className="mt-20 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {PORT_CARDS.map((p) => (
+              <div
+                key={p.label}
+                className="group relative overflow-hidden rounded-2xl border border-white/[.08] bg-white/[.03] p-5 backdrop-blur-sm transition-all hover:border-[var(--primary)]/30 hover:bg-[var(--primary)]/[.05]"
+              >
+                <div
+                  className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full opacity-0 transition-opacity group-hover:opacity-100"
+                  style={{
+                    background:
+                      "radial-gradient(circle, rgba(46,139,62,0.4) 0%, transparent 70%)",
+                  }}
+                />
+                <div className="relative flex items-baseline justify-between gap-2">
+                  <p className="text-[1.0625rem] font-semibold tracking-[-.01em] text-white">
+                    {p.label}
+                  </p>
+                  <span className="font-mono text-[.6875rem] text-white/40">{p.uf}</span>
+                </div>
+                <p className="relative mt-2 text-[.75rem] leading-[1.6] text-white/50">
+                  {p.hint}
+                </p>
+                <div className="relative mt-4 flex items-center gap-1.5 text-[.6875rem] font-medium text-[var(--primary)]/80">
+                  <Anchor size={10} />
+                  Rastreio ativo
+                </div>
               </div>
-            </FadeIn>
-            {DESTINOS.map((d) => (
-              <StaggerItem key={d.city} direction="left" distance={20}>
-                <div className="rounded-xl border border-white/[.08] bg-white/[.03] p-4 backdrop-blur-sm transition-colors hover:border-[var(--primary)]/30 hover:bg-[var(--primary)]/[.06]">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <p className="text-[.9375rem] font-medium text-white">
-                      <span className="mr-1.5">{d.flag}</span>
-                      {d.city}
-                    </p>
-                    <span className="font-mono text-[.6875rem] text-white/40">
-                      {d.hint}
-                    </span>
-                  </div>
-                  <p className="mt-1 text-[.75rem] text-white/40">
-                    {d.country}
+            ))}
+          </div>
+        </FadeIn>
+
+        {/* Feature highlights */}
+        <div className="mt-24 grid gap-10 md:grid-cols-3">
+          {HIGHLIGHTS.map((h, i) => (
+            <FadeIn key={h.title} delay={0.7 + i * 0.1}>
+              <div className="flex gap-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[.08] bg-white/[.03]">
+                  <h.Icon size={18} className="text-[var(--primary)]" />
+                </div>
+                <div>
+                  <p className="text-[.9375rem] font-semibold leading-[1.3] text-white">
+                    {h.title}
+                  </p>
+                  <p className="mt-2 text-[.8125rem] leading-[1.7] text-white/50">
+                    {h.text}
                   </p>
                 </div>
-              </StaggerItem>
-            ))}
-          </StaggerContainer>
+              </div>
+            </FadeIn>
+          ))}
         </div>
 
-        <FadeIn delay={0.4}>
-          <div className="mt-16 flex flex-wrap items-center justify-center gap-3">
-            {["Halal certificado", "SIF aprovado", "MAPA verificado", "EUDR ready", "QR público"].map(
-              (b) => (
-                <span
-                  key={b}
-                  className="rounded-md border border-white/[.08] bg-white/[.04] px-3 py-1.5 font-mono text-[.6875rem] uppercase tracking-[.14em] text-white/60"
-                >
-                  {b}
-                </span>
-              ),
-            )}
+        {/* Conformity bar */}
+        <FadeIn delay={1}>
+          <div className="mt-20 flex flex-wrap items-center justify-center gap-3">
+            {[
+              "Halal certificado",
+              "SIF aprovado",
+              "MAPA verificado",
+              "EUDR ready",
+              "QR público por lote",
+              "Checkpoints auditáveis",
+            ].map((b) => (
+              <span
+                key={b}
+                className="rounded-md border border-white/[.08] bg-white/[.04] px-3.5 py-1.5 font-mono text-[.6875rem] uppercase tracking-[.14em] text-white/60"
+              >
+                {b}
+              </span>
+            ))}
           </div>
         </FadeIn>
       </div>
     </section>
-  );
-}
-
-function ConnectionsSVG() {
-  const points = [
-    { x: 10, y: 15, target: 0 },
-    { x: 10, y: 38, target: 2 },
-    { x: 10, y: 62, target: 3 },
-    { x: 10, y: 85, target: 5 },
-  ];
-  const destinations = [
-    { x: 90, y: 10 },
-    { x: 90, y: 26 },
-    { x: 90, y: 42 },
-    { x: 90, y: 58 },
-    { x: 90, y: 74 },
-    { x: 90, y: 90 },
-  ];
-
-  return (
-    <svg viewBox="0 0 100 100" className="h-[360px] w-full">
-      <defs>
-        <linearGradient id="flow-line" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#2E8B3E" stopOpacity="0.1" />
-          <stop offset="50%" stopColor="#2E8B3E" stopOpacity="0.6" />
-          <stop offset="100%" stopColor="#2E8B3E" stopOpacity="0.1" />
-        </linearGradient>
-        <radialGradient id="dot-glow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#2E8B3E" stopOpacity="1" />
-          <stop offset="100%" stopColor="#2E8B3E" stopOpacity="0" />
-        </radialGradient>
-      </defs>
-
-      {/* Every origin connects to every destination for lattice feel, but fade by distance */}
-      {points.map((p, i) =>
-        destinations.map((d, j) => {
-          const midX = (p.x + d.x) / 2;
-          const midY = (p.y + d.y) / 2 + (i - j) * 2;
-          const path = `M ${p.x} ${p.y} Q ${midX} ${midY} ${d.x} ${d.y}`;
-          return (
-            <motion.path
-              key={`${i}-${j}`}
-              d={path}
-              fill="none"
-              stroke="url(#flow-line)"
-              strokeWidth="0.3"
-              initial={{ pathLength: 0, opacity: 0 }}
-              whileInView={{ pathLength: 1, opacity: 0.7 }}
-              viewport={{ once: true, margin: "-10%" }}
-              transition={{
-                duration: 2,
-                delay: 0.1 + (i * 6 + j) * 0.04,
-                ease: [0.19, 1, 0.22, 1],
-              }}
-            />
-          );
-        }),
-      )}
-
-      {/* Origin dots */}
-      {points.map((p, i) => (
-        <motion.g
-          key={`o-${i}`}
-          initial={{ scale: 0, opacity: 0 }}
-          whileInView={{ scale: 1, opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: i * 0.08 }}
-        >
-          <circle cx={p.x} cy={p.y} r="3" fill="url(#dot-glow)" opacity="0.5" />
-          <circle cx={p.x} cy={p.y} r="1.2" fill="#2E8B3E" />
-        </motion.g>
-      ))}
-
-      {/* Destination dots */}
-      {destinations.map((d, j) => (
-        <motion.g
-          key={`d-${j}`}
-          initial={{ scale: 0, opacity: 0 }}
-          whileInView={{ scale: 1, opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.4 + j * 0.06 }}
-        >
-          <circle cx={d.x} cy={d.y} r="3" fill="url(#dot-glow)" opacity="0.5" />
-          <circle cx={d.x} cy={d.y} r="1.2" fill="#2E8B3E" />
-        </motion.g>
-      ))}
-    </svg>
   );
 }
