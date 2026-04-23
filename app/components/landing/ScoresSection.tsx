@@ -55,19 +55,13 @@ export default function ScoresSection() {
       <div className="relative mx-auto max-w-[1200px] px-6 py-[clamp(6rem,12vw,10rem)] lg:px-10">
         <div className="mb-16 max-w-[780px]">
           <FadeIn>
-            <p className="font-mono text-[.6875rem] font-semibold uppercase tracking-[.18em] text-[var(--primary)]">
-              O score que abre mercados
-            </p>
-          </FadeIn>
-          <FadeIn delay={0.15}>
-            <h2 className="mt-5 text-[clamp(2rem,5.2vw,3.8rem)] font-medium leading-[1] tracking-[-.03em] text-white">
-              Um algoritmo. Três cadeias.<br />
-              <span className="text-[var(--primary)]">Uma mesma linguagem.</span>
+            <h2 className="text-[clamp(2rem,4.8vw,3.4rem)] font-medium leading-[1.05] tracking-[-.025em] text-white">
+              O mesmo score <span className="text-white/55">para pecuária, agricultura e aves.</span>
             </h2>
           </FadeIn>
-          <FadeIn delay={0.3}>
-            <p className="mt-6 max-w-[540px] text-[1rem] leading-[1.8] text-white/40">
-              O Score Agraas é calculado em tempo real a cada evento registrado — pesagem, aplicação sanitária, embarque, certificação. O mesmo número que o investidor lê na plataforma é o que o comprador Halal vê no passaporte público.
+          <FadeIn delay={0.15}>
+            <p className="mt-6 max-w-[560px] text-[1.0625rem] leading-[1.75] text-white/55">
+              O Score Agraas é calculado em tempo real a cada evento registrado — pesagem, aplicação sanitária, embarque, certificação. O mesmo número que aparece na plataforma é o que o comprador vê no passaporte público.
             </p>
           </FadeIn>
         </div>

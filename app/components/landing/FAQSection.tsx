@@ -48,11 +48,8 @@ export default function FAQSection() {
       <div className="mx-auto max-w-[960px] px-6 py-24 lg:py-28">
         <div className="max-w-[720px]">
           <FadeIn>
-            <p className="font-mono text-[.6875rem] font-semibold uppercase tracking-[.18em] text-[var(--primary)]">
-              Dúvidas comuns
-            </p>
-            <h2 className="mt-4 text-[clamp(1.8rem,3.5vw,2.6rem)] font-medium leading-[1.1] tracking-[-.02em] text-[var(--text-primary)]">
-              Respostas curtas para perguntas importantes.
+            <h2 className="text-[clamp(1.8rem,3.5vw,2.6rem)] font-medium leading-[1.1] tracking-[-.02em] text-[var(--text-primary)]">
+              Perguntas frequentes
             </h2>
           </FadeIn>
         </div>

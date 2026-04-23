@@ -209,13 +209,8 @@ export default async function LandingPage() {
 
           <div className="flex flex-col justify-center px-6 py-20 lg:py-32 lg:pr-20">
             <FadeIn>
-              <p className="font-mono text-[.6875rem] font-semibold uppercase tracking-[.18em] text-[var(--primary)]">
-                O que construímos
-              </p>
-              <h2 className="mt-4 text-[clamp(1.8rem,3.5vw,2.6rem)] font-medium leading-[1.08] tracking-[-.02em] text-[var(--text-primary)]">
-                Cada animal tem identidade.
-                <br />
-                Cada safra tem origem.
+              <h2 className="text-[clamp(1.8rem,3.5vw,2.6rem)] font-medium leading-[1.08] tracking-[-.02em] text-[var(--text-primary)]">
+                Cada animal tem identidade. Cada safra tem origem.
               </h2>
               <p className="mt-5 max-w-[460px] text-[1rem] leading-[1.75] text-[var(--text-secondary)]">
                 Passaporte digital individual, score em cinco dimensões, certificação verificada e rastreabilidade completa — do nascimento ao embarque.
@@ -310,11 +305,8 @@ export default async function LandingPage() {
           </div>
           <div className="order-3 flex flex-col justify-center px-6 py-20 lg:order-2 lg:py-32 lg:pl-20">
             <FadeIn>
-              <p className="font-mono text-[.6875rem] font-semibold uppercase tracking-[.18em] text-[var(--primary)]">
-                Agricultura
-              </p>
-              <h2 className="mt-4 text-[clamp(1.8rem,3.5vw,2.6rem)] font-medium leading-[1.08] tracking-[-.02em] text-[var(--text-primary)]">
-                Soja, milho, trigo, cana e café —<br />rastreados do talhão ao navio.
+              <h2 className="text-[clamp(1.8rem,3.5vw,2.6rem)] font-medium leading-[1.08] tracking-[-.02em] text-[var(--text-primary)]">
+                Agricultura rastreada <span className="text-[var(--text-muted)]">do talhão ao navio.</span>
               </h2>
               <p className="mt-5 max-w-[460px] text-[1rem] leading-[1.75] text-[var(--text-secondary)]">
                 Cada talhão georreferenciado com CAR verificado. Cada embarque com Bill of Lading, certificado fitossanitário e laudo de qualidade.
@@ -349,11 +341,8 @@ export default async function LandingPage() {
           <FadeIn>
             <div className="flex flex-wrap items-end justify-between gap-4">
               <div>
-                <p className="font-mono text-[.6875rem] font-semibold uppercase tracking-[.18em] text-[var(--primary)]">
-                  Marketplace ao vivo
-                </p>
-                <h2 className="mt-4 text-[clamp(1.8rem,3.5vw,2.6rem)] font-medium leading-[1.08] tracking-[-.02em] text-[var(--text-primary)]">
-                  Anúncios ativos agora.
+                <h2 className="text-[clamp(1.8rem,3.5vw,2.6rem)] font-medium leading-[1.08] tracking-[-.02em] text-[var(--text-primary)]">
+                  Anúncios no marketplace
                 </h2>
               </div>
               <Link

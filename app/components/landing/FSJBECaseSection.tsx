@@ -62,15 +62,8 @@ export default function FSJBECaseSection() {
       <div className="relative mx-auto max-w-[1200px] px-6 py-24 lg:px-10 lg:py-32">
         <div className="max-w-[720px]">
           <FadeIn>
-            <p className="font-mono text-[.6875rem] font-semibold uppercase tracking-[.18em] text-[var(--primary)]">
-              Case · cliente em operação
-            </p>
-          </FadeIn>
-          <FadeIn delay={0.15}>
-            <h2 className="mt-5 text-[clamp(2rem,4.5vw,3.2rem)] font-medium leading-[1.02] tracking-[-.03em] text-[var(--text-primary)]">
-              Fazenda São João
-              <br />
-              da Boa Esperança.
+            <h2 className="text-[clamp(2rem,4.5vw,3.2rem)] font-medium leading-[1.05] tracking-[-.025em] text-[var(--text-primary)]">
+              Fazenda São João da Boa Esperança
             </h2>
           </FadeIn>
           <FadeIn delay={0.3}>
