@@ -1,9 +1,10 @@
 "use client";
 
-import { Fragment, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, ArrowRight, ChevronDown, Loader2, Leaf, Zap, Crown, Star } from "lucide-react";
+import { Check, ArrowRight, ChevronDown, Loader2, Leaf, Zap, Crown, Star, MapPin, ShieldCheck, Activity } from "lucide-react";
+import ScoreRing from "@/app/components/ui/ScoreRing";
 import type { LucideIcon } from "lucide-react";
 import PublicShell from "@/app/components/ui/PublicShell";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/app/components/ui/Motion";
@@ -23,7 +24,7 @@ const PLANS: Plan[] = [
   {
     id: "starter",
     name: "Starter",
-    persona: "Fazendeiro começando a rastrear",
+    persona: "Para o fazendeiro que quer começar a rastrear seu rebanho e ter o passaporte digital ativo.",
     monthlyPrice: 299,
     Icon: Leaf,
     accent: "text-emerald-600",
@@ -38,7 +39,7 @@ const PLANS: Plan[] = [
   {
     id: "pro",
     name: "Pro",
-    persona: "Operação média com exportação",
+    persona: "Para operações médias com foco em conformidade sanitária, fiscal e acesso ao marketplace.",
     monthlyPrice: 699,
     Icon: Zap,
     accent: "text-[var(--primary)]",
@@ -55,7 +56,7 @@ const PLANS: Plan[] = [
   {
     id: "enterprise",
     name: "Enterprise",
-    persona: "Frigorífico, exportador ou grupo",
+    persona: "Para exportadores e fazendas grandes que precisam de rastreio completo e portal para compradores institucionais.",
     monthlyPrice: 1499,
     Icon: Crown,
     accent: "text-indigo-600",
@@ -73,7 +74,7 @@ const PLANS: Plan[] = [
   {
     id: "pilot",
     name: "Pilot",
-    persona: "Cooperativas e projetos-piloto",
+    persona: "Para cooperativas, grupos de fazendas e operações que querem testar antes de escalar.",
     monthlyPrice: null,
     Icon: Star,
     accent: "text-amber-600",
@@ -87,66 +88,44 @@ const PLANS: Plan[] = [
   },
 ];
 
-const COMPARISON_ROWS: { category: string; rows: { label: string; values: (boolean | string)[] }[] }[] = [
-  {
-    category: "Pecuária",
-    rows: [
-      { label: "Animais incluídos",            values: ["500", "2.000", "Ilimitado", "Ilimitado"] },
-      { label: "Passaporte digital",           values: [true, true, true, true] },
-      { label: "Score Agraas + breakdown",     values: [true, true, true, true] },
-      { label: "Calendário sanitário",         values: [false, true, true, true] },
-      { label: "Metas de peso + GMD",          values: [false, true, true, true] },
-      { label: "Módulo reprodutivo",           values: [false, true, true, true] },
-    ],
-  },
-  {
-    category: "Agricultura",
-    rows: [
-      { label: "Talhões georreferenciados",    values: [true, true, true, true] },
-      { label: "Grain ID (7 etapas)",          values: [false, true, true, true] },
-      { label: "Laudo de qualidade + BL",      values: [false, false, true, true] },
-    ],
-  },
-  {
-    category: "Operação",
-    rows: [
-      { label: "Propriedades",                 values: ["1", "3", "Ilimitado", "Ilimitado"] },
-      { label: "Fornecedores + NF-e",          values: [false, true, true, true] },
-      { label: "Custo de produção + ROI",      values: [false, true, true, true] },
-      { label: "Portal do comprador",          values: [false, false, true, true] },
-    ],
-  },
-  {
-    category: "Inteligência",
-    rows: [
-      { label: "Marketplace Agro",             values: [true, true, true, true] },
-      { label: "IA preditiva + alertas",       values: [false, false, true, true] },
-      { label: "Relatórios em PDF",            values: [false, true, true, true] },
-      { label: "Suporte prioritário",          values: [false, false, true, true] },
-    ],
-  },
+type CellValue = boolean | string | "em-breve";
+
+const COMPARISON_ROWS: { label: string; values: CellValue[] }[] = [
+  { label: "Animais incluídos",             values: ["500",  "2.000", "Ilimitado", "Ilimitado"] },
+  { label: "Passaporte digital PT/EN/AR",   values: [true,   true,    true,        true] },
+  { label: "Score Agraas em tempo real",    values: [true,   true,    true,        true] },
+  { label: "App mobile Agraas Campo",       values: ["em-breve", true, true,       true] },
+  { label: "Módulo fiscal NF-e",            values: [false,  true,    true,        true] },
+  { label: "Grain ID (grãos)",              values: [false,  true,    true,        true] },
+  { label: "Portal comprador institucional",values: [false,  false,   true,        true] },
+  { label: "API pública",                   values: [false,  false,   "em-breve",  "em-breve"] },
+  { label: "Suporte dedicado",              values: [false,  false,   true,        true] },
 ];
 
 const FAQ = [
   {
     q: "Posso trocar de plano a qualquer momento?",
-    a: "Sim. Upgrade é instantâneo e o valor é proporcional. Downgrade passa a valer no próximo ciclo.",
+    a: "Sim. Upgrade é instantâneo, com cobrança proporcional ao ciclo atual. Downgrade passa a valer no próximo mês — você não perde o acesso até o fim do ciclo pago.",
   },
   {
-    q: "Há contrato mínimo?",
-    a: "Não. Mensal é mensal. O plano anual tem 20% de desconto e é cobrado de uma vez por 12 meses.",
+    q: "Como funciona o período de teste?",
+    a: "Starter, Pro e Enterprise têm 14 dias para cancelar sem custo. No Pilot, o período de avaliação é combinado caso a caso — sem cobrança inicial e onboarding dedicado para provar valor antes de comprometer orçamento.",
   },
   {
-    q: "Como funciona o Pilot?",
-    a: "É um período de avaliação com onboarding dedicado, sem cobrança inicial. Indicado para cooperativas, grupos e projetos de pesquisa que precisam provar valor antes de comprometer orçamento.",
+    q: "A migração dos meus dados é gratuita?",
+    a: "Sim. Importação via CSV com template padronizado está inclusa em todos os planos. No Enterprise, o time Agraas faz a importação assistida. Integrações diretas com TOTVS, SAP ou sistemas proprietários são orçadas sob demanda.",
   },
   {
-    q: "Meus dados ficam seguros?",
-    a: "Tudo armazenado em PostgreSQL com RLS (Row Level Security) — seus dados nunca são visíveis a outros clientes. Backups diários. Conformidade LGPD.",
+    q: "O marketplace está incluído em todos os planos?",
+    a: "Sim. Publicar e negociar no marketplace é grátis em todos os planos. A plataforma cobra uma taxa de 2% apenas sobre transações fechadas, paga pelo vendedor — sem surpresa no checkout.",
   },
   {
-    q: "Integra com meu ERP ou software atual?",
-    a: "Oferecemos importação via CSV com template padronizado. Integrações diretas (TOTVS, SAP, sistemas proprietários) estão disponíveis no Enterprise sob demanda.",
+    q: "Como funciona a cobrança?",
+    a: "Cobrança mensal recorrente via Stripe (cartão de crédito ou boleto). O plano anual tem 20% de desconto e é cobrado de uma vez por 12 meses. NF-e da assinatura emitida automaticamente a cada ciclo.",
+  },
+  {
+    q: "Tem desconto para cooperativas?",
+    a: "Sim. Cooperativas e grupos de 5+ fazendas entram pelo plano Pilot com condições comerciais específicas. Entre em contato para avaliar volume e necessidades.",
   },
 ];
 
@@ -212,9 +191,9 @@ export default function PlanosPage() {
               Planos que escalam com sua operação.
             </h1>
           </FadeIn>
-          <FadeIn delay={0.3}>
-            <p className="mx-auto mt-6 max-w-[560px] text-[1.0625rem] leading-[1.75] text-[var(--text-secondary)]">
-              Rastreabilidade, inteligência e conformidade — do produtor iniciante ao exportador institucional.
+          <FadeIn delay={0.15}>
+            <p className="mx-auto mt-6 max-w-[580px] text-[1.0625rem] leading-[1.75] text-[var(--text-secondary)]">
+              Do fazendeiro que começa a rastrear ao exportador com múltiplas fazendas.
             </p>
           </FadeIn>
 
@@ -281,7 +260,7 @@ export default function PlanosPage() {
                     <h3 className="mt-5 text-[1.25rem] font-semibold tracking-[-.01em] text-[var(--text-primary)]">
                       {plan.name}
                     </h3>
-                    <p className="mt-1 text-[.75rem] leading-snug text-[var(--text-muted)]">
+                    <p className="mt-2 min-h-[4.5em] text-[.8125rem] leading-[1.55] text-[var(--text-muted)]">
                       {plan.persona}
                     </p>
 
@@ -425,50 +404,42 @@ export default function PlanosPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {COMPARISON_ROWS.map((section) => (
-                    <Fragment key={section.category}>
-                      <tr className="bg-[var(--bg)]">
+                  {COMPARISON_ROWS.map((row) => (
+                    <tr
+                      key={row.label}
+                      className="border-t border-[var(--border)] transition-colors hover:bg-[var(--surface-soft)]/50"
+                    >
+                      <td className="px-6 py-3.5 text-[.875rem] font-medium text-[var(--text-secondary)]">
+                        {row.label}
+                      </td>
+                      {row.values.map((v, i) => (
                         <td
-                          colSpan={5}
-                          className="px-6 py-2.5 font-mono text-[.6875rem] font-semibold uppercase tracking-[.14em] text-[var(--primary)]"
+                          key={i}
+                          className={`px-4 py-3.5 text-center text-[.8125rem] ${
+                            PLANS[i].popular ? "bg-[var(--primary)]/[.03]" : ""
+                          }`}
                         >
-                          {section.category}
+                          {v === "em-breve" ? (
+                            <span className="inline-flex items-center gap-1 rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-[.625rem] font-bold uppercase tracking-wide text-amber-700">
+                              Em breve
+                            </span>
+                          ) : typeof v === "boolean" ? (
+                            v ? (
+                              <Check
+                                size={16}
+                                className="inline text-[var(--primary)]"
+                              />
+                            ) : (
+                              <span className="text-[var(--border-strong)]">—</span>
+                            )
+                          ) : (
+                            <span className="font-semibold text-[var(--text-primary)]">
+                              {v}
+                            </span>
+                          )}
                         </td>
-                      </tr>
-                      {section.rows.map((row) => (
-                        <tr
-                          key={row.label}
-                          className="border-t border-[var(--border)] transition-colors hover:bg-[var(--surface-soft)]/50"
-                        >
-                          <td className="px-6 py-3.5 text-[.875rem] text-[var(--text-secondary)]">
-                            {row.label}
-                          </td>
-                          {row.values.map((v, i) => (
-                            <td
-                              key={i}
-                              className={`px-4 py-3.5 text-center text-[.8125rem] ${
-                                PLANS[i].popular ? "bg-[var(--primary)]/[.03]" : ""
-                              }`}
-                            >
-                              {typeof v === "boolean" ? (
-                                v ? (
-                                  <Check
-                                    size={16}
-                                    className="inline text-[var(--primary)]"
-                                  />
-                                ) : (
-                                  <span className="text-[var(--border-strong)]">—</span>
-                                )
-                              ) : (
-                                <span className="font-mono font-semibold text-[var(--text-primary)]">
-                                  {v}
-                                </span>
-                              )}
-                            </td>
-                          ))}
-                        </tr>
                       ))}
-                    </Fragment>
+                    </tr>
                   ))}
                 </tbody>
               </table>
@@ -529,6 +500,96 @@ export default function PlanosPage() {
                 </FadeIn>
               );
             })}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ SOCIAL PROOF (case + métricas) ═══════════════════════════════ */}
+      <section className="bg-white">
+        <div className="mx-auto max-w-[1200px] px-6 py-20 lg:px-10 lg:py-24">
+          <div className="grid gap-8 lg:grid-cols-[1.3fr_.7fr] lg:items-center lg:gap-16">
+            {/* Case FSJBE resumido */}
+            <div>
+              <FadeIn>
+                <div className="inline-flex items-center gap-1.5 rounded-md border border-[var(--primary)]/25 bg-[var(--primary-soft)] px-2.5 py-1 text-[.6875rem] font-semibold uppercase tracking-[.08em] text-[var(--primary)]">
+                  <ShieldCheck size={11} />
+                  Cliente ativo
+                </div>
+              </FadeIn>
+              <FadeIn delay={0.1}>
+                <h3 className="mt-4 text-[clamp(1.5rem,3vw,2rem)] font-medium leading-[1.15] tracking-[-.02em] text-[var(--text-primary)]">
+                  Fazenda São João da Boa Esperança
+                </h3>
+                <div className="mt-2 flex flex-wrap items-center gap-3 text-[.8125rem] text-[var(--text-muted)]">
+                  <span className="inline-flex items-center gap-1">
+                    <MapPin size={12} />
+                    Jussara, Goiás
+                  </span>
+                  <span className="h-1 w-1 rounded-full bg-[var(--border-strong)]" />
+                  <span>Rebanho Nelore · Cliente ativo</span>
+                </div>
+              </FadeIn>
+              <FadeIn delay={0.2}>
+                <p className="mt-6 max-w-[520px] text-[.9375rem] leading-[1.8] text-[var(--text-secondary)]">
+                  Opera no Agraas com passaporte digital individual, score em tempo real e lote de exportação ativo para Jeddah. Comprador institucional vinculado via portal dedicado.
+                </p>
+              </FadeIn>
+
+              {/* Métricas de produto */}
+              <FadeIn delay={0.3}>
+                <div className="mt-8 grid gap-6 border-t border-[var(--border)] pt-8 sm:grid-cols-2">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--primary-soft)]">
+                      <Activity size={17} className="text-[var(--primary)]" />
+                    </div>
+                    <div>
+                      <p className="text-[.9375rem] font-semibold text-[var(--text-primary)]">
+                        Plataforma em produção desde 2025
+                      </p>
+                      <p className="mt-1 text-[.75rem] leading-[1.55] text-[var(--text-muted)]">
+                        Operação contínua · 82 módulos ativos · deploys múltiplos por semana
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--primary-soft)]">
+                      <ShieldCheck size={17} className="text-[var(--primary)]" />
+                    </div>
+                    <div>
+                      <p className="text-[.9375rem] font-semibold text-[var(--text-primary)]">
+                        0 bugs críticos em aberto
+                      </p>
+                      <p className="mt-1 text-[.75rem] leading-[1.55] text-[var(--text-muted)]">
+                        Sentry monitorando tempo real · typecheck limpo em cada deploy
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </FadeIn>
+            </div>
+
+            {/* Score demo */}
+            <FadeIn delay={0.15}>
+              <div
+                className="relative overflow-hidden rounded-3xl p-10"
+                style={{
+                  background:
+                    "linear-gradient(135deg, #0f3517 0%, #1E5E26 100%)",
+                }}
+              >
+                <div className="relative flex flex-col items-center">
+                  <p className="text-[.8125rem] font-medium text-white/75">
+                    Score médio do rebanho FSJBE
+                  </p>
+                  <div className="mt-6">
+                    <ScoreRing score={78} size="lg" variant="dark" />
+                  </div>
+                  <p className="mt-6 max-w-[260px] text-center text-[.75rem] leading-[1.6] text-white/50">
+                    O mesmo número aparece no passaporte público, marketplace e dashboard operacional.
+                  </p>
+                </div>
+              </div>
+            </FadeIn>
           </div>
         </div>
       </section>
