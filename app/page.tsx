@@ -12,6 +12,7 @@ import HowItWorksSection from "@/app/components/landing/HowItWorksSection";
 import FAQSection from "@/app/components/landing/FAQSection";
 import CredibilityStrip from "@/app/components/landing/CredibilityStrip";
 import BrazilAgroSection from "@/app/components/landing/BrazilAgroSection";
+import PassportPreviewVisual from "@/app/components/landing/PassportPreviewVisual";
 import {
   FadeIn,
   StaggerContainer,
@@ -63,49 +64,40 @@ const fmt = (v: number) =>
     maximumFractionDigits: 0,
   });
 
-// ── 7 imagens distintas, zero repetição ──────────────────────────────────────
+// ── Imagens distintas + visuais da plataforma (zero redundância) ─────────────
 const IMG = {
-  hero:       "/images/lp/rebanho-nelore.png",
-  neloreClose: "https://images.unsplash.com/photo-1605185189100-4d7c8fffbad1?w=1600&q=85&auto=format",
-  silos:      "https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=1600&q=85&auto=format",
-  colheita:   "/images/lp/Maquina-agricola-colheita.jpg",
-  aereo:      "https://images.unsplash.com/photo-1594771804886-a933bb2d609b?w=1920&q=85&auto=format",
-  porto:      "https://images.unsplash.com/photo-1494412574643-ff11b0a5eb19?w=1600&q=85&auto=format",
-  fazenda:    "https://images.unsplash.com/photo-1500595046743-cd271d694d30?w=1600&q=85&auto=format",
+  hero:     "/images/lp/rebanho-nelore.png",
+  silos:    "https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=1600&q=85&auto=format",
+  colheita: "/images/lp/Maquina-agricola-colheita.jpg",
 };
 
 export const revalidate = 300;
 
 async function fetchLandingData() {
   const db = createSupabaseServiceClient();
-  const [
-    { data: listings },
-    { count: animalsCount },
-    { count: fieldsCount },
-    { count: lotsCount },
-  ] = await Promise.all([
-    db
-      .from("marketplace_listings")
-      .select("id, title, listing_type, price_per_unit, unit, location_city, location_state, halal_certified, score_agraas")
-      .eq("status", "ativo")
-      .order("created_at", { ascending: false })
-      .limit(6),
-    db.from("animals").select("id", { count: "exact", head: true }),
-    db.from("crop_fields").select("id", { count: "exact", head: true }),
-    db.from("lots").select("id", { count: "exact", head: true }),
-  ]);
+  const { data: listings } = await db
+    .from("marketplace_listings")
+    .select("id, title, listing_type, price_per_unit, unit, location_city, location_state, halal_certified, score_agraas")
+    .eq("status", "ativo")
+    .order("created_at", { ascending: false })
+    .limit(6);
 
-  const mkItems = (listings ?? []) as ListingRow[];
   return {
-    mkItems,
-    animalsCount: animalsCount ?? 0,
-    fieldsCount: fieldsCount ?? 0,
-    lotsCount: lotsCount ?? 0,
+    mkItems: (listings ?? []) as ListingRow[],
   };
 }
 
+// Stats de produto (fixos) — representam a profundidade da plataforma,
+// não o volume operacional (que ainda está escalando).
+const HERO_STATS = [
+  { value: "82",   label: "módulos operacionais" },
+  { value: "4",    label: "score engines nativos" },
+  { value: "100%", label: "Halal verificável" },
+  { value: "7",    label: "etapas de rastreio" },
+];
+
 export default async function LandingPage() {
-  const { mkItems, animalsCount, fieldsCount, lotsCount } = await fetchLandingData();
+  const { mkItems } = await fetchLandingData();
 
   return (
     <PublicShell>
@@ -138,34 +130,30 @@ export default async function LandingPage() {
             <FadeIn delay={0.45}>
               <div className="mt-10 flex flex-wrap items-center gap-4">
                 <Link
-                  href="/cadastro"
+                  href="/marketplace"
                   className="inline-flex items-center gap-2 rounded-xl bg-[var(--primary)] px-7 py-[14px] text-[.9375rem] font-semibold text-white shadow-[0_10px_30px_rgba(46,139,62,.25)] transition-all hover:bg-[var(--primary-hover)] hover:shadow-[0_14px_40px_rgba(46,139,62,.35)]"
                 >
-                  Criar conta grátis
+                  Explorar marketplace
                   <ArrowRight size={15} />
                 </Link>
                 <Link
-                  href="/marketplace"
+                  href="/login"
                   className="rounded-xl border border-white/40 px-7 py-[14px] text-[.9375rem] font-semibold text-white transition hover:border-white/70 hover:bg-white/5"
                 >
-                  Ver marketplace
+                  Ver a plataforma
                 </Link>
               </div>
             </FadeIn>
 
             <FadeIn delay={0.6}>
-              <div className="mt-20 flex flex-wrap gap-10 border-t border-white/[.12] pt-8 sm:gap-14">
-                {[
-                  { value: animalsCount.toLocaleString("pt-BR"), l: "animais rastreados" },
-                  { value: fieldsCount.toLocaleString("pt-BR"),  l: "talhões monitorados" },
-                  { value: lotsCount.toLocaleString("pt-BR"),    l: "lotes de exportação" },
-                ].map((c) => (
-                  <div key={c.l}>
-                    <p className="text-[2rem] font-semibold leading-none tracking-[-.02em] text-white">
+              <div className="mt-20 grid grid-cols-2 gap-x-8 gap-y-8 border-t border-white/[.12] pt-8 sm:grid-cols-4 sm:gap-x-10">
+                {HERO_STATS.map((c) => (
+                  <div key={c.label}>
+                    <p className="text-[1.875rem] font-semibold leading-none tracking-[-.02em] text-white sm:text-[2rem]">
                       {c.value}
                     </p>
-                    <p className="mt-2.5 text-[.8125rem] text-white/55">
-                      {c.l}
+                    <p className="mt-2.5 text-[.8125rem] leading-[1.45] text-white/55">
+                      {c.label}
                     </p>
                   </div>
                 ))}
@@ -181,18 +169,9 @@ export default async function LandingPage() {
       {/* ═══ CAPABILITIES ═══════════════════════════════════════════════════ */}
       <section className="bg-white">
         <div className="mx-auto grid max-w-[1200px] lg:grid-cols-2">
-          {/* Mobile-only image banner (hidden on desktop where it appears to the right) */}
-          <div className="relative h-56 overflow-hidden sm:h-72 lg:hidden">
-            <Image
-              src={IMG.neloreClose}
-              alt="Boiada Nelore em pasto brasileiro"
-              fill
-              loading="lazy"
-              sizes="100vw"
-              quality={80}
-              className="object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-white via-white/10 to-transparent" />
+          {/* Mobile passport visual (hidden on desktop where it appears to the right) */}
+          <div className="lg:hidden">
+            <PassportPreviewVisual />
           </div>
 
           <div className="flex flex-col justify-center px-6 py-20 lg:py-32 lg:pr-20">
@@ -231,17 +210,8 @@ export default async function LandingPage() {
             </StaggerContainer>
           </div>
 
-          <div className="relative hidden min-h-[620px] overflow-hidden lg:block">
-            <Image
-              src={IMG.neloreClose}
-              alt="Boiada Nelore em pasto brasileiro"
-              fill
-              loading="lazy"
-              sizes="(min-width: 1024px) 50vw, 0px"
-              quality={82}
-              className="object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-l from-transparent via-transparent to-white/10" />
+          <div className="relative hidden min-h-[620px] lg:block">
+            <PassportPreviewVisual />
           </div>
         </div>
       </section>
