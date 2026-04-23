@@ -296,12 +296,53 @@ export default function MarketplacePublicView({ listings }: { listings: Listing[
 
       {/* ═══ CATALOG ════════════════════════════════════════════════════ */}
       <section id="catalogo" className="bg-[var(--bg)]">
-        <div className="mx-auto max-w-[1200px] px-6 py-16 lg:px-10 lg:py-20">
-          <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="mx-auto max-w-[1280px] px-6 py-10 lg:px-10 lg:py-14">
+          {/* Category chips — horizontal scroll clickable filter */}
+          <div className="-mx-6 overflow-x-auto px-6 pb-4 lg:-mx-10 lg:px-10">
+            <div className="flex min-w-max items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setTypeFilter("")}
+                className={`shrink-0 rounded-full border px-4 py-1.5 text-[.8125rem] font-semibold transition ${
+                  typeFilter === ""
+                    ? "border-[var(--primary)] bg-[var(--primary)] text-white"
+                    : "border-[var(--border)] bg-white text-[var(--text-secondary)] hover:border-[var(--border-strong)]"
+                }`}
+              >
+                Tudo
+              </button>
+              {Object.entries(TYPE_META).map(([k, v]) => {
+                const CatIcon = v.icon;
+                const active = typeFilter === k;
+                return (
+                  <button
+                    key={k}
+                    type="button"
+                    onClick={() => setTypeFilter(active ? "" : k)}
+                    className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-4 py-1.5 text-[.8125rem] font-semibold transition ${
+                      active
+                        ? "border-[var(--primary)] bg-[var(--primary)] text-white"
+                        : "border-[var(--border)] bg-white text-[var(--text-secondary)] hover:border-[var(--border-strong)]"
+                    }`}
+                  >
+                    <CatIcon size={13} />
+                    {v.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
             <div>
-              <h2 className="text-[clamp(1.6rem,3vw,2.2rem)] font-medium leading-[1.1] tracking-[-.02em] text-[var(--text-primary)]">
-                {filtered.length} {filtered.length === 1 ? "oferta disponível" : "ofertas disponíveis"}
+              <h2 className="text-[1.25rem] font-semibold text-[var(--text-primary)] md:text-[1.5rem]">
+                {filtered.length.toLocaleString("pt-BR")} {filtered.length === 1 ? "oferta disponível" : "ofertas disponíveis"}
               </h2>
+              {(typeFilter || halalOnly || minScore > 0) && (
+                <p className="mt-1 text-[.75rem] text-[var(--text-muted)]">
+                  Filtrado por {[typeFilter && TYPE_META[typeFilter]?.label, halalOnly && "Halal", minScore > 0 && `Score ≥ ${minScore}`].filter(Boolean).join(" · ")}
+                </p>
+              )}
             </div>
             <button
               type="button"
@@ -309,7 +350,7 @@ export default function MarketplacePublicView({ listings }: { listings: Listing[
               className="inline-flex items-center gap-2 rounded-xl border border-[var(--border)] bg-white px-4 py-2.5 text-[.8125rem] font-semibold text-[var(--text-primary)] shadow-[var(--shadow-soft)] transition hover:bg-[var(--surface-soft)] lg:hidden"
             >
               <SlidersHorizontal size={14} />
-              Filtros {(typeFilter || halalOnly || minScore > 0) && <span className="h-1.5 w-1.5 rounded-full bg-[var(--primary)]" />}
+              Mais filtros {(halalOnly || minScore > 0) && <span className="h-1.5 w-1.5 rounded-full bg-[var(--primary)]" />}
             </button>
           </div>
 
@@ -411,8 +452,8 @@ export default function MarketplacePublicView({ listings }: { listings: Listing[
             </div>
           ) : (
             <StaggerContainer
-              className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3"
-              staggerChildren={0.05}
+              className="mt-8 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+              staggerChildren={0.04}
             >
               {filtered.map((l) => (
                 <StaggerItem key={l.id}>
@@ -592,77 +633,88 @@ export default function MarketplacePublicView({ listings }: { listings: Listing[
 function PublicListingCard({ listing: l }: { listing: Listing }) {
   const t = TYPE_META[l.listing_type] ?? TYPE_META.outro;
   const Icon = t.icon;
+  // Parcelamento estilo Mercado Livre — calcula em 10x sem juros
+  const installmentValue = l.price_per_unit / 10;
+  const isPremium = (l.score_agraas ?? 0) >= 75;
 
   return (
     <Link
       href={`/marketplace/${l.id}`}
-      className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-white p-6 shadow-[var(--shadow-soft)] transition-all duration-300 hover:-translate-y-1 hover:border-[var(--primary)]/30 hover:shadow-[var(--shadow-card)]"
+      className="group relative flex h-full flex-col overflow-hidden rounded-xl border border-[var(--border)] bg-white shadow-[0_1px_3px_rgba(30,42,27,0.04)] transition-all duration-200 hover:border-[var(--primary)]/40 hover:shadow-[var(--shadow-card)]"
     >
-      {/* Category color stripe (top) */}
+      {/* ─── Image area (placeholder colored block with category icon) ─── */}
       <div
-        aria-hidden
-        className={`pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${t.stripe} opacity-70 transition-opacity group-hover:opacity-100`}
-      />
-      {/* Radial glow on hover */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+        className={`relative flex h-40 items-center justify-center overflow-hidden ${t.bg}`}
         style={{
-          background:
-            "radial-gradient(circle, rgba(46,139,62,0.14) 0%, transparent 70%)",
+          backgroundImage: `
+            radial-gradient(circle at 20% 80%, rgba(255,255,255,0.5) 0%, transparent 50%),
+            radial-gradient(circle at 80% 20%, rgba(255,255,255,0.3) 0%, transparent 50%)
+          `,
         }}
-      />
+      >
+        <Icon size={56} className={`${t.color} opacity-30 transition-transform duration-300 group-hover:scale-110`} />
 
-      <div className="relative flex items-start justify-between gap-2">
-        <span
-          className={`inline-flex h-10 w-10 items-center justify-center rounded-xl ${t.bg} transition-transform group-hover:scale-105`}
-        >
-          <Icon size={18} className={t.color} />
-        </span>
-        <div className="flex items-center gap-1.5">
-          {l.halal_certified && <HalalBadgeSVG size={22} />}
-          {l.score_agraas != null && (
-            <span className="rounded-md bg-[var(--primary-soft)] px-2 py-0.5 font-mono text-[.6875rem] font-bold text-[var(--primary)]">
-              Score {l.score_agraas}
+        {/* Top-left badges */}
+        <div className="absolute left-2 top-2 flex flex-wrap gap-1">
+          {isPremium && (
+            <span className="rounded-sm bg-[var(--primary)] px-1.5 py-0.5 text-[.625rem] font-bold uppercase tracking-wide text-white">
+              Premium
+            </span>
+          )}
+          {l.halal_certified && (
+            <span className="inline-flex items-center gap-1 rounded-sm bg-white/95 px-1.5 py-0.5 text-[.625rem] font-bold text-[var(--primary-hover)]">
+              <HalalBadgeSVG size={10} /> Halal
             </span>
           )}
         </div>
-      </div>
 
-      <h4 className="mt-4 line-clamp-2 text-[.9375rem] font-semibold leading-snug text-[var(--text-primary)] transition-colors group-hover:text-[var(--primary)]">
-        {l.title}
-      </h4>
-      {l.description && (
-        <p className="mt-2 line-clamp-2 text-[.75rem] leading-[1.55] text-[var(--text-muted)]">
-          {l.description}
-        </p>
-      )}
-
-      <div className="mt-4 flex items-baseline gap-1.5">
-        <span className="text-[1.375rem] font-semibold tracking-[-.01em] text-[var(--primary)]">
-          {fmt(l.price_per_unit)}
-        </span>
-        <span className="text-[.75rem] text-[var(--text-muted)]">/{l.unit}</span>
-      </div>
-
-      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[.6875rem] text-[var(--text-muted)]">
-        {l.location_city && l.location_state && (
-          <span className="inline-flex items-center gap-1">
-            <MapPin size={10} />
-            {l.location_city}-{l.location_state}
-          </span>
+        {/* Top-right score */}
+        {l.score_agraas != null && (
+          <div className="absolute right-2 top-2 rounded-sm bg-white/95 px-1.5 py-0.5 text-[.625rem] font-bold text-[var(--primary-hover)]">
+            Score {l.score_agraas}
+          </div>
         )}
-        <span className="inline-flex items-center gap-1">
-          <Package size={10} />
-          {l.quantity_available.toLocaleString("pt-BR")} {l.unit}
-        </span>
       </div>
 
-      <div className="mt-auto pt-5">
-        <span className="inline-flex items-center gap-1 text-[.8125rem] font-semibold text-[var(--primary)] transition-colors group-hover:underline">
-          Ver detalhes
-          <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
-        </span>
+      {/* ─── Content ─── */}
+      <div className="flex flex-1 flex-col p-4">
+        <p className="text-[.625rem] font-medium uppercase tracking-wide text-[var(--text-muted)]">
+          {TYPE_META[l.listing_type]?.label ?? "Outro"}
+        </p>
+        <h4 className="mt-1 line-clamp-2 min-h-[2.6em] text-[.875rem] font-medium leading-[1.3] text-[var(--text-primary)]">
+          {l.title}
+        </h4>
+
+        {/* Price block — Mercado Livre style */}
+        <div className="mt-3">
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-[1.375rem] font-semibold leading-none text-[var(--text-primary)]">
+              {fmt(l.price_per_unit)}
+            </span>
+            <span className="text-[.75rem] text-[var(--text-muted)]">/{l.unit}</span>
+          </div>
+          <p className="mt-1 text-[.6875rem] text-[var(--text-secondary)]">
+            em <span className="font-semibold text-[var(--primary)]">10x {fmt(installmentValue)}</span> sem juros
+          </p>
+        </div>
+
+        {/* Freight / meta */}
+        <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-[.6875rem]">
+          <span className="inline-flex items-center gap-1 font-semibold text-[var(--primary)]">
+            <Truck size={11} /> Frete a combinar
+          </span>
+          {l.location_city && l.location_state && (
+            <span className="inline-flex items-center gap-1 text-[var(--text-muted)]">
+              <MapPin size={10} />
+              {l.location_city}/{l.location_state}
+            </span>
+          )}
+        </div>
+
+        {/* Quantity available */}
+        <p className="mt-2 text-[.6875rem] text-[var(--text-muted)]">
+          {l.quantity_available.toLocaleString("pt-BR")} {l.unit} disponíveis
+        </p>
       </div>
     </Link>
   );
