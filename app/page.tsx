@@ -18,8 +18,6 @@ import {
   CounterAnimation,
 } from "@/app/components/ui/Motion";
 import HeroParallaxImage from "@/app/components/ui/HeroParallaxImage";
-import AuroraGlow from "@/app/components/ui/AuroraGlow";
-import ShimmerButton from "@/app/components/ui/ShimmerButton";
 import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
 import {
   FileText,
@@ -118,12 +116,9 @@ export default async function LandingPage() {
           className="absolute inset-0 -z-10"
           style={{
             background:
-              "linear-gradient(110deg, var(--sidebar-2) 0%, rgba(15,53,23,.82) 45%, rgba(15,53,23,.35) 100%)",
+              "linear-gradient(110deg, var(--sidebar-2) 0%, rgba(15,53,23,.78) 45%, rgba(15,53,23,.28) 100%)",
           }}
         />
-        <div className="absolute inset-0 -z-10 opacity-90">
-          <AuroraGlow intensity="medium" />
-        </div>
         <div className="absolute inset-x-0 bottom-0 -z-10 h-48 bg-gradient-to-t from-[var(--bg)] to-transparent" />
 
         <div className="mx-auto flex min-h-[94vh] max-w-[1200px] items-center px-6 lg:px-10">
@@ -153,10 +148,13 @@ export default async function LandingPage() {
 
             <FadeIn delay={0.45}>
               <div className="mt-10 flex flex-wrap items-center gap-4">
-                <ShimmerButton href="/cadastro" variant="primary">
-                  Começar agora
-                  <ArrowRight size={15} className="transition-transform group-hover:translate-x-0.5" />
-                </ShimmerButton>
+                <Link
+                  href="/cadastro"
+                  className="inline-flex items-center gap-2 rounded-xl bg-[var(--primary)] px-7 py-[14px] text-[.9375rem] font-semibold text-white shadow-[0_10px_30px_rgba(46,139,62,.25)] transition-all hover:bg-[var(--primary-hover)] hover:shadow-[0_14px_40px_rgba(46,139,62,.35)]"
+                >
+                  Criar conta grátis
+                  <ArrowRight size={15} />
+                </Link>
                 <Link
                   href="/marketplace"
                   className="rounded-xl border border-white/40 px-7 py-[14px] text-[.9375rem] font-semibold text-white transition hover:border-white/70 hover:bg-white/5"
@@ -452,10 +450,6 @@ export default async function LandingPage() {
             opacity: 0.92,
           }}
         />
-
-        <div className="absolute inset-0 -z-10 opacity-60">
-          <AuroraGlow intensity="subtle" />
-        </div>
 
         <div className="mx-auto max-w-[880px] px-6 py-28 text-center lg:py-40">
           <FadeIn>

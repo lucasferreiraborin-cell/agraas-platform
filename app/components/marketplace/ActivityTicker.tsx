@@ -74,12 +74,8 @@ export default function ActivityTicker({ listings }: { listings: Listing[] }) {
     <div className="relative border-y border-[var(--border)] bg-white">
       <div className="mx-auto flex max-w-[1200px] items-center gap-4 px-6 py-3.5 lg:px-10">
         <div className="flex shrink-0 items-center gap-2">
-          <span className="relative flex h-2 w-2">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--primary)] opacity-60" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--primary)]" />
-          </span>
-          <span className="font-mono text-[.6875rem] font-semibold uppercase tracking-[.16em] text-[var(--text-muted)]">
-            Marketplace ao vivo
+          <span className="text-[.8125rem] font-semibold text-[var(--text-primary)]">
+            Últimos anúncios
           </span>
         </div>
 
