@@ -1,7 +1,14 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import PublicShell from "@/app/components/ui/PublicShell";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/app/components/ui/Motion";
 import { Shield, Zap, Globe, ArrowRight } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "Sobre a Agraas",
+  description:
+    "Fundada em 2025 em São Paulo. A Agraas é a infraestrutura digital do agronegócio brasileiro — do pasto ao porto, com o primeiro cliente ativo em Jussara, Goiás.",
+};
 
 const IMG = {
   hero:     "https://images.unsplash.com/photo-1500595046743-cd271d694d30?w=1920&q=85&auto=format",

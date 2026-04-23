@@ -1,6 +1,14 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { createSupabaseServiceClient } from "@/lib/supabase-service";
 import PublicShell from "@/app/components/ui/PublicShell";
+
+export const metadata: Metadata = {
+  title: "O agro do Brasil, auditável em tempo real.",
+  description:
+    "Pecuária, grãos e exportação sobre uma única camada de dados verificáveis. Do pasto ao porto, do talhão ao comprador institucional.",
+  alternates: { canonical: "/" },
+};
 import JourneySection from "@/app/components/JourneySection";
 import ScoresSection from "@/app/components/landing/ScoresSection";
 import PortosSection from "@/app/components/landing/PortosSection";

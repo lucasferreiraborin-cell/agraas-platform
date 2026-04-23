@@ -1,4 +1,5 @@
 import "./globals.css";
+import type { Metadata, Viewport } from "next";
 import LogoutButton from "./components/LogoutButton";
 import SidebarNav from "./components/SidebarNav";
 import BuyerSidebarNav from "./components/BuyerSidebarNav";
@@ -8,6 +9,64 @@ import AgroAssistant from "./components/AgroAssistant";
 import QuickActions from "./components/QuickActions";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
+
+const SITE_URL = "https://agraas-platform.vercel.app";
+
+export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "Agraas — O agro do Brasil, auditável em tempo real.",
+    template: "%s · Agraas",
+  },
+  description:
+    "Infraestrutura digital do agronegócio brasileiro. Pecuária, grãos e exportação sobre uma única camada de dados verificáveis — do pasto ao porto.",
+  applicationName: "Agraas",
+  authors: [{ name: "Agraas Agritech" }],
+  keywords: [
+    "rastreabilidade agro",
+    "passaporte digital animal",
+    "Halal exportação",
+    "Grain ID",
+    "soja rastreabilidade",
+    "Nelore exportação",
+    "marketplace agro",
+    "score agronegócio",
+  ],
+  openGraph: {
+    type: "website",
+    locale: "pt_BR",
+    url: SITE_URL,
+    siteName: "Agraas",
+    title: "Agraas — O agro do Brasil, auditável em tempo real.",
+    description:
+      "Pecuária, grãos e exportação sobre uma única camada de dados verificáveis. Do pasto ao porto, do talhão ao comprador institucional.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Agraas — O agro do Brasil, auditável em tempo real.",
+    description:
+      "Infraestrutura digital do agronegócio brasileiro. Pecuária, grãos e exportação em uma só camada.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#2E8B3E" },
+    { media: "(prefers-color-scheme: dark)", color: "#0f3517" },
+  ],
+  width: "device-width",
+  initialScale: 1,
+};
 
 export default async function RootLayout({
   children,
