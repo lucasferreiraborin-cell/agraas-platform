@@ -13,14 +13,19 @@ import {
   ArrowRight,
   TrendingUp,
   Wheat,
-  Droplets,
-  Syringe,
-  Leaf,
-  HardHat,
-  Radio,
+  Beef,
+  Rabbit,
+  Bird,
+  Egg,
+  Coffee,
+  Candy,
   Sprout,
-  Wrench,
-  Store,
+  Tractor,
+  HardHat,
+  MoreHorizontal,
+  ShieldCheck,
+  BadgeCheck,
+  FileText,
 } from "lucide-react";
 import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
 import {
@@ -44,20 +49,21 @@ const TYPE_META: Record<
   outro:       { icon: Package,     label: "Outro",       color: "text-gray-700",    bg: "bg-gray-50",    stripe: "from-gray-400 to-gray-600" },
 };
 
-// Rich categories showcasing marketplace breadth — Mercado Livre do Agro
-const CATEGORIES = [
-  { Icon: Tag,       label: "Animais",           examples: "Nelore, ovinos, aves, reprodutores",    color: "text-emerald-700", bg: "bg-emerald-50" },
-  { Icon: Wheat,     label: "Safras & grãos",    examples: "Soja, milho, café, cana, trigo",        color: "text-amber-700",   bg: "bg-amber-50" },
-  { Icon: Droplets,  label: "Defensivos",        examples: "Herbicidas, fungicidas, inseticidas",   color: "text-blue-700",    bg: "bg-blue-50" },
-  { Icon: Sprout,    label: "Sementes & mudas",  examples: "Híbridas, convencionais, viveiros",     color: "text-lime-700",    bg: "bg-lime-50" },
-  { Icon: Leaf,      label: "Ração & nutrição",  examples: "Confinamento, mineral, creep",          color: "text-green-700",   bg: "bg-green-50" },
-  { Icon: Syringe,   label: "Veterinários",      examples: "Vacinas, antiparasitários, vitaminas",  color: "text-rose-700",    bg: "bg-rose-50" },
-  { Icon: Truck,     label: "Máquinas",          examples: "Tratores, colheitadeiras, plantadeiras", color: "text-purple-700",  bg: "bg-purple-50" },
-  { Icon: Wrench,    label: "Equipamentos",      examples: "Balanças, cochos, silos, contenção",    color: "text-indigo-700",  bg: "bg-indigo-50" },
-  { Icon: Radio,     label: "Tecnologia & IoT",  examples: "Brincos RFID, sensores, drones",        color: "text-cyan-700",    bg: "bg-cyan-50" },
-  { Icon: HardHat,   label: "EPIs & segurança",  examples: "Botinas, máscaras, luvas, capacetes",   color: "text-teal-700",    bg: "bg-teal-50" },
-  { Icon: Store,     label: "Revendas",          examples: "Distribuidores, representantes",        color: "text-orange-700",  bg: "bg-orange-50" },
-  { Icon: Package,   label: "Insumos diversos",  examples: "Fertilizantes, corretivos, adjuvantes", color: "text-stone-700",   bg: "bg-stone-50" },
+// Categorias em 3 linhas × 4 colunas — espécies, culturas, diversos
+// Cada categoria filtra o catálogo abaixo (type + keyword)
+const CATEGORY_GRID = [
+  { label: "Bovinos",  Icon: Beef,     type: "animal",      search: "bovino" },
+  { label: "Ovinos",   Icon: Rabbit,   type: "animal",      search: "ovino" },
+  { label: "Aves",     Icon: Bird,     type: "animal",      search: "aves" },
+  { label: "Suínos",   Icon: Egg,      type: "animal",      search: "suíno" },
+  { label: "Soja",     Icon: Sprout,   type: "safra",       search: "soja" },
+  { label: "Milho",    Icon: Wheat,    type: "safra",       search: "milho" },
+  { label: "Café",     Icon: Coffee,   type: "safra",       search: "café" },
+  { label: "Cana",     Icon: Candy,    type: "safra",       search: "cana" },
+  { label: "Insumos",  Icon: Package,  type: "insumo",      search: "" },
+  { label: "Máquinas", Icon: Tractor,  type: "maquinario",  search: "" },
+  { label: "EPIs",     Icon: HardHat,  type: "epi",         search: "" },
+  { label: "Outros",   Icon: MoreHorizontal, type: "outro", search: "" },
 ] as const;
 
 
@@ -86,6 +92,8 @@ export default function MarketplacePublicView({ listings }: { listings: Listing[
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("");
   const [halalOnly, setHalalOnly] = useState(false);
+  const [mapaOnly, setMapaOnly] = useState(false);
+  const [eudrOnly, setEudrOnly] = useState(false);
   const [minScore, setMinScore] = useState(0);
   const [priceMin, setPriceMin] = useState("");
   const [priceMax, setPriceMax] = useState("");
@@ -102,40 +110,34 @@ export default function MarketplacePublicView({ listings }: { listings: Listing[
     setSearch("");
     setTypeFilter("");
     setHalalOnly(false);
+    setMapaOnly(false);
+    setEudrOnly(false);
     setMinScore(0);
     setPriceMin("");
     setPriceMax("");
     setSelectedUFs([]);
   };
 
+  const handleCategoryClick = (type: string, keyword: string) => {
+    setTypeFilter(type);
+    setSearch(keyword);
+    // Scroll to catalog
+    if (typeof window !== "undefined") {
+      const el = document.getElementById("catalogo");
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
   const activeFilterCount =
     (search ? 1 : 0) +
     (typeFilter ? 1 : 0) +
     (halalOnly ? 1 : 0) +
+    (mapaOnly ? 1 : 0) +
+    (eudrOnly ? 1 : 0) +
     (minScore > 0 ? 1 : 0) +
     (priceMin ? 1 : 0) +
     (priceMax ? 1 : 0) +
     selectedUFs.length;
-
-  const stateCount = useMemo(() => {
-    const s = new Set<string>();
-    listings.forEach((l) => {
-      if (l.location_state) s.add(l.location_state);
-    });
-    return s.size;
-  }, [listings]);
-
-  const avgScore = useMemo(() => {
-    const scored = listings.filter((l) => l.score_agraas != null);
-    if (scored.length === 0) return 0;
-    const total = scored.reduce((s, l) => s + (l.score_agraas ?? 0), 0);
-    return Math.round(total / scored.length);
-  }, [listings]);
-
-  const halalCount = useMemo(
-    () => listings.filter((l) => l.halal_certified).length,
-    [listings],
-  );
 
   const featured = useMemo(() => {
     // Destaques: top 3 por score + halal + mais quantidade
@@ -161,6 +163,19 @@ export default function MarketplacePublicView({ listings }: { listings: Listing[
     }
     if (typeFilter) r = r.filter((l) => l.listing_type === typeFilter);
     if (halalOnly) r = r.filter((l) => l.halal_certified);
+    // MAPA / EUDR: infere via descrição/título (listings ainda não têm flag dedicada)
+    if (mapaOnly)
+      r = r.filter(
+        (l) =>
+          (l.description ?? "").toLowerCase().includes("mapa") ||
+          (l.title ?? "").toLowerCase().includes("mapa"),
+      );
+    if (eudrOnly)
+      r = r.filter(
+        (l) =>
+          (l.description ?? "").toLowerCase().includes("eudr") ||
+          (l.title ?? "").toLowerCase().includes("eudr"),
+      );
     if (minScore > 0)
       r = r.filter((l) => l.score_agraas != null && l.score_agraas >= minScore);
     const minVal = priceMin ? parseFloat(priceMin) : null;
@@ -188,7 +203,7 @@ export default function MarketplacePublicView({ listings }: { listings: Listing[
         break;
     }
     return sorted;
-  }, [listings, search, typeFilter, halalOnly, minScore, priceMin, priceMax, selectedUFs, sort]);
+  }, [listings, search, typeFilter, halalOnly, mapaOnly, eudrOnly, minScore, priceMin, priceMax, selectedUFs, sort]);
 
   return (
     <>
@@ -210,99 +225,112 @@ export default function MarketplacePublicView({ listings }: { listings: Listing[
           }}
         />
 
-        <div className="relative mx-auto max-w-[1200px] px-6 pt-24 pb-16 lg:px-10 lg:pt-32">
-          <div className="grid gap-12 lg:grid-cols-[1.1fr_.9fr] lg:items-center">
-            <div>
-              <FadeIn>
-                <h1 className="text-[clamp(2.2rem,5.2vw,4rem)] font-medium leading-[1] tracking-[-.03em] text-white">
-                  O marketplace do agro brasileiro.
-                </h1>
-              </FadeIn>
-              <FadeIn delay={0.15}>
-                <p className="mt-6 max-w-[560px] text-[1.0625rem] leading-[1.75] text-white/65">
-                  Primeiro marketplace 100% dedicado ao agronegócio brasileiro. Animais, safras, ração, defensivos, sementes, máquinas, brincos RFID, drones, EPIs e serviços — com rastreio Agraas em cada oferta.
-                </p>
-              </FadeIn>
-              <FadeIn delay={0.45}>
-                <div className="mt-10 flex flex-wrap items-center gap-4">
-                  <Link
-                    href="/cadastro"
-                    className="inline-flex items-center gap-2 rounded-xl bg-[var(--primary)] px-7 py-[14px] text-[.9375rem] font-semibold text-white shadow-[0_14px_40px_rgba(93,156,68,.35)] transition-all hover:bg-[var(--primary-hover)]"
-                  >
-                    Vender na Agraas
-                    <ArrowRight size={15} />
-                  </Link>
-                  <a
-                    href="#catalogo"
-                    className="rounded-xl border border-white/40 px-7 py-[14px] text-[.9375rem] font-semibold text-white transition hover:border-white/70 hover:bg-white/5"
-                  >
-                    Explorar catálogo
-                  </a>
-                </div>
-              </FadeIn>
-            </div>
-
+        <div className="relative mx-auto max-w-[1200px] px-6 pt-24 pb-20 lg:px-10 lg:pt-32">
+          <div className="max-w-[860px]">
+            <FadeIn>
+              <h1 className="text-[clamp(2.2rem,5vw,3.8rem)] font-medium leading-[1] tracking-[-.03em] text-white">
+                O marketplace do agronegócio brasileiro.
+              </h1>
+            </FadeIn>
+            <FadeIn delay={0.12}>
+              <p className="mt-6 max-w-[640px] text-[1.0625rem] leading-[1.75] text-white/65">
+                Animais, safras, insumos e máquinas — com score verificado, vendedor rastreado e NF-e automática no fechamento.
+              </p>
+            </FadeIn>
             <FadeIn delay={0.3}>
-              <div className="rounded-2xl border border-white/[.08] bg-white/[.03] p-8 backdrop-blur-sm">
-                <div className="grid grid-cols-2 gap-6">
-                  {[
-                    { value: listings.length, label: "anúncios ativos" },
-                    { value: halalCount,      label: "certificados Halal" },
-                    { value: stateCount,      label: "estados brasileiros" },
-                    { value: avgScore,        label: "score médio" },
-                  ].map((k) => (
-                    <div key={k.label}>
-                      <p className="text-[2.2rem] font-semibold leading-none tracking-[-.02em] text-white">
-                        {k.value.toLocaleString("pt-BR")}
-                      </p>
-                      <p className="mt-2.5 text-[.8125rem] text-white/55">
-                        {k.label}
-                      </p>
-                    </div>
-                  ))}
-                </div>
+              <div className="mt-10 flex flex-wrap items-center gap-4">
+                <a
+                  href="#catalogo"
+                  className="inline-flex items-center gap-2 rounded-xl bg-[var(--primary)] px-7 py-[14px] text-[.9375rem] font-semibold text-white shadow-[0_14px_40px_rgba(93,156,68,.35)] transition-all hover:bg-[var(--primary-hover)]"
+                >
+                  Explorar catálogo
+                  <ArrowRight size={15} />
+                </a>
+                <Link
+                  href="/cadastro"
+                  className="rounded-xl border border-white/40 px-7 py-[14px] text-[.9375rem] font-semibold text-white transition hover:border-white/70 hover:bg-white/5"
+                >
+                  Vender na Agraas
+                </Link>
               </div>
             </FadeIn>
           </div>
+
+          {/* 3 diferenciais em cards horizontais */}
+          <StaggerContainer
+            className="mt-14 grid gap-4 md:grid-cols-3"
+            staggerChildren={0.08}
+          >
+            {[
+              {
+                Icon: ShieldCheck,
+                title: "Score Agraas em todo anúncio",
+                sub: "Qualidade verificada antes de comprar.",
+              },
+              {
+                Icon: BadgeCheck,
+                title: "Vendedor com passaporte ativo",
+                sub: "Fazenda rastreada, origem comprovada.",
+              },
+              {
+                Icon: FileText,
+                title: "NF-e automática no fechamento",
+                sub: "Sem burocracia, conformidade garantida.",
+              },
+            ].map((d) => (
+              <StaggerItem key={d.title}>
+                <div className="h-full rounded-2xl border border-white/[.08] bg-white/[.03] p-6 backdrop-blur-sm transition-colors hover:border-[var(--primary)]/30 hover:bg-[var(--primary)]/[.06]">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--primary)]/15">
+                    <d.Icon size={20} className="text-[var(--primary)]" />
+                  </div>
+                  <p className="mt-5 text-[.9375rem] font-semibold text-white">
+                    {d.title}
+                  </p>
+                  <p className="mt-1.5 text-[.8125rem] leading-[1.6] text-white/55">
+                    {d.sub}
+                  </p>
+                </div>
+              </StaggerItem>
+            ))}
+          </StaggerContainer>
         </div>
       </section>
 
       {/* ═══ ACTIVITY TICKER (live feed) ════════════════════════════════ */}
       <ActivityTicker listings={listings} />
 
-      {/* ═══ CATEGORIES BREADTH ═════════════════════════════════════════ */}
+      {/* ═══ CATEGORIAS (3 linhas × 4 colunas, clicáveis → filtram catálogo) ══ */}
       <section className="bg-white">
-        <div className="mx-auto max-w-[1200px] px-6 py-20 lg:px-10 lg:py-24">
+        <div className="mx-auto max-w-[1200px] px-6 py-16 lg:px-10 lg:py-20">
           <div className="max-w-[720px]">
             <FadeIn>
-              <h2 className="text-[clamp(1.8rem,3.5vw,2.6rem)] font-medium leading-[1.1] tracking-[-.02em] text-[var(--text-primary)]">
-                Um marketplace construído para a cadeia inteira.
+              <h2 className="text-[clamp(1.6rem,3vw,2.2rem)] font-medium leading-[1.1] tracking-[-.02em] text-[var(--text-primary)]">
+                Navegue por categoria
               </h2>
-              <p className="mt-5 max-w-[580px] text-[.9375rem] leading-[1.7] text-[var(--text-muted)]">
-                Do produtor ao fornecedor, da revenda ao prestador de serviço — qualquer produto ou serviço do agronegócio pode ser anunciado, negociado e rastreado aqui.
+              <p className="mt-3 max-w-[560px] text-[.875rem] leading-[1.65] text-[var(--text-muted)]">
+                Clique para filtrar o catálogo pela categoria escolhida.
               </p>
             </FadeIn>
           </div>
 
           <StaggerContainer
-            className="mt-12 grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5"
+            className="mt-10 grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-4"
             staggerChildren={0.04}
           >
-            {CATEGORIES.map((c) => (
+            {CATEGORY_GRID.map((c) => (
               <StaggerItem key={c.label}>
-                <div className="group flex h-full flex-col rounded-2xl border border-[var(--border)] bg-white p-5 transition-all hover:-translate-y-0.5 hover:border-[var(--primary)]/30 hover:shadow-[var(--shadow-soft)]">
-                  <div
-                    className={`flex h-10 w-10 items-center justify-center rounded-xl transition-colors ${c.bg}`}
-                  >
-                    <c.Icon size={18} className={c.color} />
+                <button
+                  type="button"
+                  onClick={() => handleCategoryClick(c.type, c.search)}
+                  className="group flex h-full w-full flex-col items-center gap-3 rounded-2xl border border-[var(--border)] bg-white p-6 text-center transition-all hover:-translate-y-0.5 hover:border-[var(--primary)]/40 hover:shadow-[var(--shadow-card)]"
+                >
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--primary-soft)] transition-colors group-hover:bg-[var(--primary)]/15">
+                    <c.Icon size={24} className="text-[var(--primary)]" />
                   </div>
-                  <p className="mt-4 text-[.8125rem] font-semibold leading-snug text-[var(--text-primary)]">
+                  <p className="text-[.9375rem] font-semibold text-[var(--text-primary)] transition-colors group-hover:text-[var(--primary)]">
                     {c.label}
                   </p>
-                  <p className="mt-1 text-[.6875rem] leading-snug text-[var(--text-muted)]">
-                    {c.examples}
-                  </p>
-                </div>
+                </button>
               </StaggerItem>
             ))}
           </StaggerContainer>
@@ -537,23 +565,49 @@ export default function MarketplacePublicView({ listings }: { listings: Listing[
                   </div>
                 </div>
 
-                {/* Halal */}
+                {/* Certificações multi */}
                 <div className="mt-5 border-t border-[var(--border)] pt-5">
                   <p className="mb-3 text-[.8125rem] font-semibold text-[var(--text-primary)]">
-                    Certificação
+                    Certificações
                   </p>
-                  <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-[var(--border)] bg-white px-3 py-2 text-[.8125rem] transition hover:bg-[var(--surface-soft)]">
-                    <input
-                      type="checkbox"
-                      checked={halalOnly}
-                      onChange={(e) => setHalalOnly(e.target.checked)}
-                      className="h-4 w-4 rounded accent-[var(--primary)]"
-                    />
-                    <HalalBadgeSVG size={16} />
-                    <span className="font-medium text-[var(--text-primary)]">
-                      Halal certificado
-                    </span>
-                  </label>
+                  <div className="space-y-2">
+                    <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-[var(--border)] bg-white px-3 py-2 text-[.8125rem] transition hover:bg-[var(--surface-soft)]">
+                      <input
+                        type="checkbox"
+                        checked={halalOnly}
+                        onChange={(e) => setHalalOnly(e.target.checked)}
+                        className="h-4 w-4 rounded accent-[var(--primary)]"
+                      />
+                      <HalalBadgeSVG size={16} />
+                      <span className="font-medium text-[var(--text-primary)]">
+                        Halal certificado
+                      </span>
+                    </label>
+                    <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-[var(--border)] bg-white px-3 py-2 text-[.8125rem] transition hover:bg-[var(--surface-soft)]">
+                      <input
+                        type="checkbox"
+                        checked={mapaOnly}
+                        onChange={(e) => setMapaOnly(e.target.checked)}
+                        className="h-4 w-4 rounded accent-[var(--primary)]"
+                      />
+                      <ShieldCheck size={14} className="text-[var(--primary)]" />
+                      <span className="font-medium text-[var(--text-primary)]">
+                        MAPA verificado
+                      </span>
+                    </label>
+                    <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-[var(--border)] bg-white px-3 py-2 text-[.8125rem] transition hover:bg-[var(--surface-soft)]">
+                      <input
+                        type="checkbox"
+                        checked={eudrOnly}
+                        onChange={(e) => setEudrOnly(e.target.checked)}
+                        className="h-4 w-4 rounded accent-[var(--primary)]"
+                      />
+                      <BadgeCheck size={14} className="text-[var(--primary)]" />
+                      <span className="font-medium text-[var(--text-primary)]">
+                        EUDR ready
+                      </span>
+                    </label>
+                  </div>
                 </div>
 
                 {/* Score mín */}

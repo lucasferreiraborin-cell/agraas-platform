@@ -122,12 +122,14 @@ export default async function ListingDetailPage({
   if (!listing) notFound();
   const l = listing as ListingDetail;
 
-  // Seller info (name from clients + counts from listings/transactions)
-  const { data: seller } = await db
-    .from("clients")
-    .select("name, created_at")
-    .eq("id", l.client_id)
-    .single();
+  // Seller info + agraas_id do animal (se linkado) para gerar URL do passaporte público
+  const [{ data: seller }, { data: animalInfo }] = await Promise.all([
+    db.from("clients").select("name, created_at").eq("id", l.client_id).single(),
+    l.animal_id
+      ? db.from("animals").select("agraas_id").eq("id", l.animal_id).single()
+      : Promise.resolve({ data: null as { agraas_id?: string } | null }),
+  ]);
+  const passportSlug = animalInfo?.agraas_id ?? null;
 
   const [{ count: activeCount }, { count: dealsCount }] = await Promise.all([
     db
@@ -345,6 +347,20 @@ export default async function ListingDetailPage({
                   maxQty={l.quantity_available}
                   unitPrice={l.price_per_unit}
                 />
+
+                {passportSlug && (
+                  <div className="mt-4 border-t border-[var(--border)] pt-4">
+                    <a
+                      href={`/passaporte/${passportSlug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--primary)]/30 bg-white px-4 py-3 text-[.8125rem] font-semibold text-[var(--primary)] transition hover:bg-[var(--primary-soft)]"
+                    >
+                      Ver passaporte público
+                      <ExternalLink size={13} />
+                    </a>
+                  </div>
+                )}
               </div>
 
               {/* Seller card */}
