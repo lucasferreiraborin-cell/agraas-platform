@@ -11,6 +11,7 @@ import OperationalSection from "@/app/components/landing/OperationalSection";
 import HowItWorksSection from "@/app/components/landing/HowItWorksSection";
 import FAQSection from "@/app/components/landing/FAQSection";
 import CredibilityStrip from "@/app/components/landing/CredibilityStrip";
+import BrazilAgroSection from "@/app/components/landing/BrazilAgroSection";
 import {
   FadeIn,
   StaggerContainer,
@@ -253,6 +254,9 @@ export default async function LandingPage() {
 
       {/* ═══ JOURNEY (scrollytelling dark) ══════════════════════════════════ */}
       <JourneySection />
+
+      {/* ═══ BRASIL NO AGRO MUNDIAL (dados reais) ═══════════════════════════ */}
+      <BrazilAgroSection />
 
       {/* ═══ OPERATIONAL (cadeia inteira — contábil, fiscal, estoque) ═════ */}
       <OperationalSection />
