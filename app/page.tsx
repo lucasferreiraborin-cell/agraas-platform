@@ -12,6 +12,7 @@ import {
   StaggerItem,
   CounterAnimation,
 } from "@/app/components/ui/Motion";
+import HeroParallaxImage from "@/app/components/ui/HeroParallaxImage";
 import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
 import {
   FileText,
@@ -105,12 +106,7 @@ export default async function LandingPage() {
     <PublicShell>
       {/* ═══ HERO ═══════════════════════════════════════════════════════════ */}
       <section className="relative isolate min-h-[94vh] overflow-hidden">
-        <img
-          src={IMG.hero}
-          alt=""
-          loading="eager"
-          className="absolute inset-0 -z-10 h-full w-full object-cover"
-        />
+        <HeroParallaxImage src={IMG.hero} alt="" intensity={0.22} />
         <div
           className="absolute inset-0 -z-10"
           style={{

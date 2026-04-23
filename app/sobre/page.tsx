@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import PublicShell from "@/app/components/ui/PublicShell";
+import HeroParallaxImage from "@/app/components/ui/HeroParallaxImage";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/app/components/ui/Motion";
 import { Shield, Zap, Globe, ArrowRight } from "lucide-react";
 
@@ -38,12 +39,7 @@ export default function SobrePage() {
     <PublicShell>
       {/* ═══ HERO ═══════════════════════════════════════════════════════════ */}
       <section className="relative isolate overflow-hidden">
-        <img
-          src={IMG.hero}
-          alt=""
-          loading="eager"
-          className="absolute inset-0 -z-10 h-full w-full object-cover"
-        />
+        <HeroParallaxImage src={IMG.hero} alt="" intensity={0.2} />
         <div
           className="absolute inset-0 -z-10"
           style={{
