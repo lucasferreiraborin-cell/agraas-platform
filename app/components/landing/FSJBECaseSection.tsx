@@ -90,9 +90,9 @@ export default function FSJBECaseSection() {
           {/* Timeline */}
           <div>
             <FadeIn>
-              <p className="font-mono text-[.6875rem] font-semibold uppercase tracking-[.18em] text-[var(--text-muted)]">
+              <h3 className="text-[1.125rem] font-semibold text-[var(--text-primary)]">
                 Linha do tempo
-              </p>
+              </h3>
             </FadeIn>
             <StaggerContainer className="mt-6" staggerChildren={0.1}>
               {TIMELINE.map((t, i) => (
@@ -117,12 +117,12 @@ export default function FSJBECaseSection() {
                     {/* Content */}
                     <div className="flex-1 pb-2">
                       <div className="flex items-baseline gap-3">
-                        <p className="font-mono text-[.6875rem] font-semibold uppercase tracking-[.14em] text-[var(--primary)]">
+                        <p className="text-[.8125rem] font-semibold text-[var(--primary)]">
                           {t.date}
                         </p>
                         {!t.done && (
-                          <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 font-mono text-[.625rem] font-bold uppercase tracking-[.12em] text-amber-700">
-                            <Calendar size={9} /> Programado
+                          <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[.6875rem] font-semibold text-amber-700">
+                            <Calendar size={10} /> Programado
                           </span>
                         )}
                       </div>
@@ -158,8 +158,8 @@ export default function FSJBECaseSection() {
                   }}
                 />
                 <div className="relative flex flex-col items-center">
-                  <p className="font-mono text-[.6875rem] font-semibold uppercase tracking-[.18em] text-[var(--primary)]">
-                    Score Agraas · demonstração
+                  <p className="text-[.875rem] font-medium text-white/80">
+                    Score em execução na FSJBE
                   </p>
                   <div className="mt-6">
                     <ScoreRing
@@ -169,18 +169,15 @@ export default function FSJBECaseSection() {
                       breakdown={SCORE_BREAKDOWN}
                     />
                   </div>
-                  <p className="mt-5 max-w-[220px] text-center font-mono text-[.6875rem] uppercase tracking-[.12em] text-white/45">
-                    Modelo operacional em execução na FSJBE
-                  </p>
                 </div>
               </div>
             </FadeIn>
 
             <FadeIn delay={0.35}>
               <div className="rounded-2xl border border-[var(--border)] bg-white p-6 shadow-[var(--shadow-soft)]">
-                <p className="font-mono text-[.6875rem] font-semibold uppercase tracking-[.18em] text-[var(--text-muted)]">
+                <h3 className="text-[1rem] font-semibold text-[var(--text-primary)]">
                   O que a plataforma já entrega
-                </p>
+                </h3>
                 <div className="mt-4 space-y-2.5">
                   {[
                     { label: "Passaporte digital", sub: "1 ID único por animal" },
