@@ -35,15 +35,15 @@ import ActivityTicker from "./ActivityTicker";
 
 const TYPE_META: Record<
   string,
-  { icon: typeof Package; label: string; color: string; bg: string }
+  { icon: typeof Package; label: string; color: string; bg: string; stripe: string }
 > = {
-  animal:      { icon: Tag,         label: "Animal",      color: "text-emerald-700", bg: "bg-emerald-50" },
-  safra:       { icon: Wheat,       label: "Safra",       color: "text-amber-700",   bg: "bg-amber-50"   },
-  insumo:      { icon: ShoppingBag, label: "Insumo",      color: "text-blue-700",    bg: "bg-blue-50"    },
-  maquinario:  { icon: Truck,       label: "Maquinário",  color: "text-purple-700",  bg: "bg-purple-50"  },
-  equipamento: { icon: Truck,       label: "Equipamento", color: "text-indigo-700",  bg: "bg-indigo-50"  },
-  epi:         { icon: ShoppingBag, label: "EPI",         color: "text-teal-700",    bg: "bg-teal-50"    },
-  outro:       { icon: Package,     label: "Outro",       color: "text-gray-700",    bg: "bg-gray-50"    },
+  animal:      { icon: Tag,         label: "Animal",      color: "text-emerald-700", bg: "bg-emerald-50", stripe: "from-emerald-400 to-emerald-600" },
+  safra:       { icon: Wheat,       label: "Safra",       color: "text-amber-700",   bg: "bg-amber-50",   stripe: "from-amber-400 to-amber-600" },
+  insumo:      { icon: ShoppingBag, label: "Insumo",      color: "text-blue-700",    bg: "bg-blue-50",    stripe: "from-blue-400 to-blue-600" },
+  maquinario:  { icon: Truck,       label: "Maquinário",  color: "text-purple-700",  bg: "bg-purple-50",  stripe: "from-purple-400 to-purple-600" },
+  equipamento: { icon: Truck,       label: "Equipamento", color: "text-indigo-700",  bg: "bg-indigo-50",  stripe: "from-indigo-400 to-indigo-600" },
+  epi:         { icon: ShoppingBag, label: "EPI",         color: "text-teal-700",    bg: "bg-teal-50",    stripe: "from-teal-400 to-teal-600" },
+  outro:       { icon: Package,     label: "Outro",       color: "text-gray-700",    bg: "bg-gray-50",    stripe: "from-gray-400 to-gray-600" },
 };
 
 // Rich categories showcasing marketplace breadth — Mercado Livre do Agro
@@ -695,11 +695,26 @@ function PublicListingCard({ listing: l }: { listing: Listing }) {
   return (
     <Link
       href={`/marketplace/${l.id}`}
-      className="group flex h-full flex-col rounded-2xl border border-[var(--border)] bg-white p-6 shadow-[var(--shadow-soft)] transition-all duration-300 hover:-translate-y-1 hover:border-[var(--primary)]/30 hover:shadow-[var(--shadow-card)]"
+      className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-white p-6 shadow-[var(--shadow-soft)] transition-all duration-300 hover:-translate-y-1 hover:border-[var(--primary)]/30 hover:shadow-[var(--shadow-card)]"
     >
-      <div className="flex items-start justify-between gap-2">
+      {/* Category color stripe (top) */}
+      <div
+        aria-hidden
+        className={`pointer-events-none absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${t.stripe} opacity-70 transition-opacity group-hover:opacity-100`}
+      />
+      {/* Radial glow on hover */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+        style={{
+          background:
+            "radial-gradient(circle, rgba(46,139,62,0.14) 0%, transparent 70%)",
+        }}
+      />
+
+      <div className="relative flex items-start justify-between gap-2">
         <span
-          className={`inline-flex h-10 w-10 items-center justify-center rounded-xl ${t.bg}`}
+          className={`inline-flex h-10 w-10 items-center justify-center rounded-xl ${t.bg} transition-transform group-hover:scale-105`}
         >
           <Icon size={18} className={t.color} />
         </span>
