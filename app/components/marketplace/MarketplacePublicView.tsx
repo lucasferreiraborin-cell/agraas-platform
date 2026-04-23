@@ -106,6 +106,17 @@ export default function MarketplacePublicView({ listings }: { listings: Listing[
     [listings],
   );
 
+  const featured = useMemo(() => {
+    // Destaques: top 3 por score + halal + mais quantidade
+    return [...listings]
+      .sort((a, b) => {
+        const scoreA = (a.score_agraas ?? 0) + (a.halal_certified ? 10 : 0);
+        const scoreB = (b.score_agraas ?? 0) + (b.halal_certified ? 10 : 0);
+        return scoreB - scoreA;
+      })
+      .slice(0, 3);
+  }, [listings]);
+
   const filtered = useMemo(() => {
     let r = listings;
     if (search.trim()) {
@@ -260,6 +271,37 @@ export default function MarketplacePublicView({ listings }: { listings: Listing[
           </StaggerContainer>
         </div>
       </section>
+
+      {/* ═══ DESTAQUES (featured listings, larger cards) ════════════════ */}
+      {featured.length > 0 && (
+        <section className="bg-white">
+          <div className="mx-auto max-w-[1280px] px-6 py-16 lg:px-10 lg:py-20">
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <h2 className="text-[clamp(1.6rem,3vw,2.2rem)] font-medium leading-[1.1] tracking-[-.02em] text-[var(--text-primary)]">
+                  Destaques da semana
+                </h2>
+                <p className="mt-2 text-[.875rem] text-[var(--text-muted)]">
+                  Anúncios com maior Score Agraas e certificações ativas.
+                </p>
+              </div>
+              <Link
+                href="#catalogo"
+                className="inline-flex items-center gap-1.5 text-[.8125rem] font-semibold text-[var(--primary)] hover:underline"
+              >
+                Ver todo o catálogo
+                <ArrowRight size={13} />
+              </Link>
+            </div>
+
+            <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {featured.map((l) => (
+                <FeaturedListingCard key={l.id} listing={l} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ═══ VALUE PROPS ════════════════════════════════════════════════ */}
       <section className="border-t border-b border-[var(--border)] bg-[var(--surface-soft)]">
@@ -713,6 +755,93 @@ function PublicListingCard({ listing: l }: { listing: Listing }) {
 
         {/* Quantity available */}
         <p className="mt-2 text-[.6875rem] text-[var(--text-muted)]">
+          {l.quantity_available.toLocaleString("pt-BR")} {l.unit} disponíveis
+        </p>
+      </div>
+    </Link>
+  );
+}
+
+function FeaturedListingCard({ listing: l }: { listing: Listing }) {
+  const t = TYPE_META[l.listing_type] ?? TYPE_META.outro;
+  const Icon = t.icon;
+  const installmentValue = l.price_per_unit / 10;
+  const isPremium = (l.score_agraas ?? 0) >= 75;
+
+  return (
+    <Link
+      href={`/marketplace/${l.id}`}
+      className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-white shadow-[var(--shadow-soft)] transition-all duration-200 hover:-translate-y-1 hover:border-[var(--primary)]/40 hover:shadow-[var(--shadow-card)]"
+    >
+      {/* Image area maior para destaque */}
+      <div
+        className={`relative flex h-56 items-center justify-center overflow-hidden ${t.bg}`}
+        style={{
+          backgroundImage: `
+            radial-gradient(circle at 20% 80%, rgba(255,255,255,0.5) 0%, transparent 50%),
+            radial-gradient(circle at 80% 20%, rgba(255,255,255,0.3) 0%, transparent 50%)
+          `,
+        }}
+      >
+        <Icon size={80} className={`${t.color} opacity-35 transition-transform duration-300 group-hover:scale-110`} />
+
+        {/* Destaque badge + category */}
+        <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
+          <span className="rounded-sm bg-amber-500 px-2 py-0.5 text-[.6875rem] font-bold uppercase tracking-wide text-white">
+            ★ Destaque
+          </span>
+          {isPremium && (
+            <span className="rounded-sm bg-[var(--primary)] px-2 py-0.5 text-[.6875rem] font-bold uppercase tracking-wide text-white">
+              Premium
+            </span>
+          )}
+          {l.halal_certified && (
+            <span className="inline-flex items-center gap-1 rounded-sm bg-white/95 px-2 py-0.5 text-[.6875rem] font-bold text-[var(--primary-hover)]">
+              <HalalBadgeSVG size={11} /> Halal
+            </span>
+          )}
+        </div>
+
+        {l.score_agraas != null && (
+          <div className="absolute right-3 top-3 rounded-sm bg-white/95 px-2 py-0.5 text-[.75rem] font-bold text-[var(--primary-hover)]">
+            Score {l.score_agraas}
+          </div>
+        )}
+      </div>
+
+      <div className="flex flex-1 flex-col p-5">
+        <p className="text-[.6875rem] font-medium uppercase tracking-wide text-[var(--text-muted)]">
+          {t.label}
+        </p>
+        <h4 className="mt-1.5 line-clamp-2 min-h-[2.6em] text-[1rem] font-semibold leading-[1.3] text-[var(--text-primary)]">
+          {l.title}
+        </h4>
+
+        <div className="mt-4">
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-[1.75rem] font-semibold leading-none text-[var(--text-primary)]">
+              {fmt(l.price_per_unit)}
+            </span>
+            <span className="text-[.8125rem] text-[var(--text-muted)]">/{l.unit}</span>
+          </div>
+          <p className="mt-1.5 text-[.75rem] text-[var(--text-secondary)]">
+            em <span className="font-semibold text-[var(--primary)]">10x {fmt(installmentValue)}</span> sem juros
+          </p>
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-[.75rem]">
+          <span className="inline-flex items-center gap-1 font-semibold text-[var(--primary)]">
+            <Truck size={12} /> Frete a combinar
+          </span>
+          {l.location_city && l.location_state && (
+            <span className="inline-flex items-center gap-1 text-[var(--text-muted)]">
+              <MapPin size={11} />
+              {l.location_city}/{l.location_state}
+            </span>
+          )}
+        </div>
+
+        <p className="mt-2 text-[.75rem] text-[var(--text-muted)]">
           {l.quantity_available.toLocaleString("pt-BR")} {l.unit} disponíveis
         </p>
       </div>
