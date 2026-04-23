@@ -3,6 +3,7 @@ import PublicNav from "@/app/components/PublicNav";
 import PublicFooter from "@/app/components/ui/PublicFooter";
 import { ScrollProgress } from "@/app/components/ui/Motion";
 import ScrollToTop from "@/app/components/ui/ScrollToTop";
+import MotionProvider from "@/app/components/ui/MotionProvider";
 
 interface PublicShellProps {
   children: ReactNode;
@@ -21,11 +22,13 @@ export default function PublicShell({
 }: PublicShellProps) {
   return (
     <div className={className ?? "min-h-screen"}>
-      {showScrollProgress && <ScrollProgress />}
-      <PublicNav />
-      {children}
-      {showFooter && <PublicFooter />}
-      {showScrollToTop && <ScrollToTop />}
+      <MotionProvider>
+        {showScrollProgress && <ScrollProgress />}
+        <PublicNav />
+        {children}
+        {showFooter && <PublicFooter />}
+        {showScrollToTop && <ScrollToTop />}
+      </MotionProvider>
     </div>
   );
 }

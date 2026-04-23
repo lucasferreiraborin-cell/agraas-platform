@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import PublicShell from "@/app/components/ui/PublicShell";
 import HeroParallaxImage from "@/app/components/ui/HeroParallaxImage";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/app/components/ui/Motion";
@@ -127,11 +128,14 @@ export default function SobrePage() {
 
       {/* ═══ MANIFESTO ═════════════════════════════════════════════════════ */}
       <section className="relative isolate overflow-hidden">
-        <img
+        <Image
           src={IMG.manifest}
           alt=""
+          fill
           loading="lazy"
-          className="absolute inset-0 -z-10 h-full w-full object-cover"
+          sizes="100vw"
+          quality={78}
+          className="absolute inset-0 -z-10 object-cover"
         />
         <div
           className="absolute inset-0 -z-10"

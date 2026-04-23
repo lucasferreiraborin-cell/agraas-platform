@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import Image from "next/image";
 import { motion, useScroll, useTransform } from "framer-motion";
 
 interface HeroParallaxImageProps {
@@ -8,13 +9,17 @@ interface HeroParallaxImageProps {
   alt?: string;
   className?: string;
   intensity?: number; // 0 to 1, default 0.25
+  priority?: boolean;
+  sizes?: string;
 }
 
 export default function HeroParallaxImage({
   src,
   alt = "",
-  className = "absolute inset-0 -z-10 h-full w-full object-cover",
+  className = "absolute inset-0 -z-10 h-full w-full",
   intensity = 0.25,
+  priority = true,
+  sizes = "100vw",
 }: HeroParallaxImageProps) {
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
@@ -28,12 +33,14 @@ export default function HeroParallaxImage({
 
   return (
     <motion.div ref={ref} className={className} style={{ y, scale, opacity }}>
-      <img
+      <Image
         src={src}
         alt={alt}
-        loading="eager"
-        fetchPriority="high"
-        className="h-full w-full object-cover"
+        fill
+        priority={priority}
+        sizes={sizes}
+        quality={85}
+        className="object-cover"
       />
     </motion.div>
   );

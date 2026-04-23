@@ -90,10 +90,24 @@ export default async function RootLayout({
       ? "Fase 1 entregue"
       : "Fase 1 em consolidação final";
 
+  const supabaseHost = process.env.NEXT_PUBLIC_SUPABASE_URL
+    ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).host
+    : null;
+
   // Login e páginas de auth: layout sem sidebar/header
   if (!user) {
     return (
       <html lang="pt-BR">
+        <head>
+          <link rel="preconnect" href="https://images.unsplash.com" crossOrigin="" />
+          <link rel="dns-prefetch" href="https://images.unsplash.com" />
+          {supabaseHost && (
+            <>
+              <link rel="preconnect" href={`https://${supabaseHost}`} crossOrigin="" />
+              <link rel="dns-prefetch" href={`https://${supabaseHost}`} />
+            </>
+          )}
+        </head>
         <body className="min-h-screen bg-[var(--bg)] text-[var(--text-primary)]">
           {children}
         </body>
@@ -103,6 +117,14 @@ export default async function RootLayout({
 
   return (
     <html lang="pt-BR">
+      <head>
+        {supabaseHost && (
+          <>
+            <link rel="preconnect" href={`https://${supabaseHost}`} crossOrigin="" />
+            <link rel="dns-prefetch" href={`https://${supabaseHost}`} />
+          </>
+        )}
+      </head>
       <body>
         <div className="min-h-screen bg-[var(--bg)] text-[var(--text-primary)]">
           <div className="flex min-h-screen">

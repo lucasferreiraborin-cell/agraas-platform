@@ -1,8 +1,34 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { Anchor, ShieldCheck, Globe2 } from "lucide-react";
 import { FadeIn } from "@/app/components/ui/Motion";
-import AnimatedGlobe from "./AnimatedGlobe";
+
+// Dynamic import — three.js/globe.gl only loads when the section is rendered,
+// keeping it out of the initial page bundle (~150kb saved from LCP budget).
+const AnimatedGlobe = dynamic(() => import("./AnimatedGlobe"), {
+  ssr: false,
+  loading: () => <GlobeSkeleton />,
+});
+
+function GlobeSkeleton() {
+  return (
+    <div
+      className="relative mx-auto animate-pulse"
+      style={{ width: "100%", maxWidth: 640, aspectRatio: "1/1" }}
+    >
+      <div
+        className="absolute inset-0 rounded-full"
+        style={{
+          background:
+            "radial-gradient(circle at 50% 50%, rgba(46,139,62,0.16) 0%, rgba(46,139,62,0.04) 40%, transparent 70%)",
+          filter: "blur(20px)",
+        }}
+      />
+      <div className="absolute inset-[15%] rounded-full border border-white/[.06] bg-white/[.02]" />
+    </div>
+  );
+}
 
 const HIGHLIGHTS = [
   {

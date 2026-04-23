@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { createSupabaseServiceClient } from "@/lib/supabase-service";
 import PublicShell from "@/app/components/ui/PublicShell";
 import JourneySection from "@/app/components/JourneySection";
@@ -230,11 +231,14 @@ export default async function LandingPage() {
           </div>
 
           <div className="relative hidden min-h-[620px] overflow-hidden lg:block">
-            <img
+            <Image
               src={IMG.neloreClose}
-              alt="Boiada Nelore frontal"
+              alt="Boiada Nelore em pasto brasileiro"
+              fill
               loading="lazy"
-              className="absolute inset-0 h-full w-full object-cover"
+              sizes="(min-width: 1024px) 50vw, 0px"
+              quality={82}
+              className="object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-l from-transparent via-transparent to-white/10" />
           </div>
@@ -257,11 +261,14 @@ export default async function LandingPage() {
       <section className="bg-white">
         <div className="mx-auto grid max-w-[1200px] lg:grid-cols-2">
           <div className="relative hidden min-h-[520px] overflow-hidden lg:block">
-            <img
+            <Image
               src={IMG.silos}
-              alt="Silos e lavoura"
+              alt="Silos de armazenamento de grãos no Brasil"
+              fill
               loading="lazy"
-              className="absolute inset-0 h-full w-full object-cover"
+              sizes="(min-width: 1024px) 50vw, 0px"
+              quality={82}
+              className="object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-white/10" />
           </div>
@@ -387,11 +394,14 @@ export default async function LandingPage() {
 
       {/* ═══ CTA FINAL ══════════════════════════════════════════════════════ */}
       <section className="relative isolate overflow-hidden">
-        <img
+        <Image
           src={IMG.colheita}
           alt=""
+          fill
           loading="lazy"
-          className="absolute inset-0 -z-10 h-full w-full object-cover"
+          sizes="100vw"
+          quality={78}
+          className="absolute inset-0 -z-10 object-cover"
         />
         <div
           className="absolute inset-0 -z-10"
