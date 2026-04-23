@@ -31,6 +31,7 @@ import {
   CounterAnimation,
 } from "@/app/components/ui/Motion";
 import type { Listing } from "./MarketplaceTabs";
+import ActivityTicker from "./ActivityTicker";
 
 const TYPE_META: Record<
   string,
@@ -297,6 +298,9 @@ export default function MarketplacePublicView({ listings }: { listings: Listing[
           </div>
         </div>
       </section>
+
+      {/* ═══ ACTIVITY TICKER (live feed) ════════════════════════════════ */}
+      <ActivityTicker listings={listings} />
 
       {/* ═══ CATEGORIES BREADTH ═════════════════════════════════════════ */}
       <section className="bg-white">

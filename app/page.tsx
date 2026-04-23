@@ -9,6 +9,7 @@ import PortosSection from "@/app/components/landing/PortosSection";
 import FSJBECaseSection from "@/app/components/landing/FSJBECaseSection";
 import OperationalSection from "@/app/components/landing/OperationalSection";
 import HowItWorksSection from "@/app/components/landing/HowItWorksSection";
+import FAQSection from "@/app/components/landing/FAQSection";
 import {
   FadeIn,
   StaggerContainer,
@@ -395,6 +396,9 @@ export default async function LandingPage() {
 
       {/* ═══ CASE FSJBE (expandido, timeline + score completo) ═══════════════ */}
       <FSJBECaseSection />
+
+      {/* ═══ FAQ ════════════════════════════════════════════════════════════ */}
+      <FAQSection />
 
       {/* ═══ CTA FINAL ══════════════════════════════════════════════════════ */}
       <section className="relative isolate overflow-hidden">
