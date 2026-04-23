@@ -195,7 +195,21 @@ export default async function LandingPage() {
       {/* ═══ CAPABILITIES ═══════════════════════════════════════════════════ */}
       <section className="bg-white">
         <div className="mx-auto grid max-w-[1200px] lg:grid-cols-2">
-          <div className="flex flex-col justify-center px-6 py-24 lg:py-32 lg:pr-20">
+          {/* Mobile-only image banner (hidden on desktop where it appears to the right) */}
+          <div className="relative h-56 overflow-hidden sm:h-72 lg:hidden">
+            <Image
+              src={IMG.neloreClose}
+              alt="Boiada Nelore em pasto brasileiro"
+              fill
+              loading="lazy"
+              sizes="100vw"
+              quality={80}
+              className="object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-white via-white/10 to-transparent" />
+          </div>
+
+          <div className="flex flex-col justify-center px-6 py-20 lg:py-32 lg:pr-20">
             <FadeIn>
               <p className="font-mono text-[.6875rem] font-semibold uppercase tracking-[.18em] text-[var(--primary)]">
                 O que construímos
@@ -269,7 +283,22 @@ export default async function LandingPage() {
       {/* ═══ AGRICULTURA ════════════════════════════════════════════════════ */}
       <section className="bg-white">
         <div className="mx-auto grid max-w-[1200px] lg:grid-cols-2">
-          <div className="relative hidden min-h-[520px] overflow-hidden lg:block">
+          {/* Mobile image (first in source order, only visible <lg) */}
+          <div className="relative order-1 h-56 overflow-hidden sm:h-72 lg:hidden">
+            <Image
+              src={IMG.silos}
+              alt="Silos de armazenamento de grãos no Brasil"
+              fill
+              loading="lazy"
+              sizes="100vw"
+              quality={80}
+              className="object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-white via-white/10 to-transparent" />
+          </div>
+
+          {/* Desktop image (lg+ only, left side) */}
+          <div className="relative order-2 hidden min-h-[520px] overflow-hidden lg:order-1 lg:block">
             <Image
               src={IMG.silos}
               alt="Silos de armazenamento de grãos no Brasil"
@@ -281,7 +310,7 @@ export default async function LandingPage() {
             />
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-white/10" />
           </div>
-          <div className="flex flex-col justify-center px-6 py-24 lg:py-32 lg:pl-20">
+          <div className="order-3 flex flex-col justify-center px-6 py-20 lg:order-2 lg:py-32 lg:pl-20">
             <FadeIn>
               <p className="font-mono text-[.6875rem] font-semibold uppercase tracking-[.18em] text-[var(--primary)]">
                 Agricultura
