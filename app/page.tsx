@@ -8,6 +8,7 @@ import ScoresSection from "@/app/components/landing/ScoresSection";
 import PortosSection from "@/app/components/landing/PortosSection";
 import FSJBECaseSection from "@/app/components/landing/FSJBECaseSection";
 import OperationalSection from "@/app/components/landing/OperationalSection";
+import HowItWorksSection from "@/app/components/landing/HowItWorksSection";
 import {
   FadeIn,
   StaggerContainer,
@@ -244,6 +245,9 @@ export default async function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* ═══ HOW IT WORKS (3 passos + scroll-linked progress) ══════════════ */}
+      <HowItWorksSection />
 
       {/* ═══ SCORES (dark) ══════════════════════════════════════════════════ */}
       <ScoresSection />
