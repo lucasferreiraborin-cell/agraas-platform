@@ -208,15 +208,8 @@ export default function PlanosPage() {
 
         <div className="relative mx-auto max-w-[1200px] px-6 pt-24 pb-12 text-center lg:px-10 lg:pt-32">
           <FadeIn>
-            <p className="font-mono text-[.6875rem] font-semibold uppercase tracking-[.18em] text-[var(--primary)]">
-              Planos Agraas
-            </p>
-          </FadeIn>
-          <FadeIn delay={0.15}>
-            <h1 className="mx-auto mt-5 max-w-[820px] text-[clamp(2.2rem,5.5vw,4rem)] font-medium leading-[.98] tracking-[-.035em] text-[var(--text-primary)]">
-              Planos que escalam
-              <br />
-              com sua operação.
+            <h1 className="mx-auto max-w-[820px] text-[clamp(2.2rem,5vw,3.6rem)] font-medium leading-[1] tracking-[-.03em] text-[var(--text-primary)]">
+              Planos que escalam com sua operação.
             </h1>
           </FadeIn>
           <FadeIn delay={0.3}>
@@ -400,11 +393,8 @@ export default function PlanosPage() {
       <section className="bg-white">
         <div className="mx-auto max-w-[1200px] px-6 py-24 lg:px-10 lg:py-28">
           <FadeIn>
-            <p className="font-mono text-[.6875rem] font-semibold uppercase tracking-[.18em] text-[var(--primary)]">
-              Comparação completa
-            </p>
-            <h2 className="mt-4 text-[clamp(1.8rem,3.5vw,2.6rem)] font-medium leading-[1.1] tracking-[-.02em] text-[var(--text-primary)]">
-              Tudo que está em cada plano.
+            <h2 className="text-[clamp(1.8rem,3.5vw,2.6rem)] font-medium leading-[1.1] tracking-[-.02em] text-[var(--text-primary)]">
+              Comparação completa entre planos
             </h2>
           </FadeIn>
 
@@ -485,11 +475,8 @@ export default function PlanosPage() {
       <section className="bg-[var(--bg)]">
         <div className="mx-auto max-w-[820px] px-6 py-24 lg:py-28">
           <FadeIn>
-            <p className="text-center font-mono text-[.6875rem] font-semibold uppercase tracking-[.18em] text-[var(--primary)]">
+            <h2 className="text-center text-[clamp(1.8rem,3.5vw,2.6rem)] font-medium leading-[1.1] tracking-[-.02em] text-[var(--text-primary)]">
               Perguntas frequentes
-            </p>
-            <h2 className="mt-4 text-center text-[clamp(1.8rem,3.5vw,2.6rem)] font-medium leading-[1.1] tracking-[-.02em] text-[var(--text-primary)]">
-              Dúvidas comuns.
             </h2>
           </FadeIn>
 
