@@ -7,7 +7,7 @@ const SCORES = [
   {
     score: 78,
     label: "Bovino",
-    sub: "Halal · Jussara-GO",
+    sub: "Pecuária de cria",
     breakdown: [
       { label: "Produtivo",      weight: 28 },
       { label: "Sanitário",      weight: 24 },

@@ -63,7 +63,7 @@ const PLANS: Plan[] = [
       "Animais ilimitados",
       "Propriedades ilimitadas",
       "Tudo do Pro",
-      "Portal PIF (acesso do comprador)",
+      "Portal do comprador (acesso dedicado)",
       "Exportação + rastreio de embarques",
       "IA preditiva + alertas",
       "Fornecedores + NF-e automática",
@@ -113,7 +113,7 @@ const COMPARISON_ROWS: { category: string; rows: { label: string; values: (boole
       { label: "Propriedades",                 values: ["1", "3", "Ilimitado", "Ilimitado"] },
       { label: "Fornecedores + NF-e",          values: [false, true, true, true] },
       { label: "Custo de produção + ROI",      values: [false, true, true, true] },
-      { label: "Portal PIF (comprador)",       values: [false, false, true, true] },
+      { label: "Portal do comprador",          values: [false, false, true, true] },
     ],
   },
   {

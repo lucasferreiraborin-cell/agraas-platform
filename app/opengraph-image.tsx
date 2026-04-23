@@ -150,9 +150,9 @@ export default function OpengraphImage() {
           }}
         >
           {[
-            { v: "2.300", l: "cabeças rastreadas" },
-            { v: "100%", l: "certificação Halal" },
-            { v: "104+", l: "módulos ativos" },
+            { v: "5", l: "cadeias integradas" },
+            { v: "104+", l: "módulos na plataforma" },
+            { v: "1", l: "passaporte por animal" },
           ].map((k) => (
             <div key={k.l} style={{ display: "flex", flexDirection: "column" }}>
               <span

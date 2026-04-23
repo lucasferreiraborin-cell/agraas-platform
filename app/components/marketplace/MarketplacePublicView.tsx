@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Search,
@@ -13,7 +13,16 @@ import {
   ArrowRight,
   TrendingUp,
   Wheat,
+  Droplets,
+  Syringe,
+  Leaf,
+  HardHat,
+  Radio,
+  Sprout,
+  Wrench,
+  Store,
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
 import {
   FadeIn,
@@ -35,6 +44,71 @@ const TYPE_META: Record<
   epi:         { icon: ShoppingBag, label: "EPI",         color: "text-teal-700",    bg: "bg-teal-50"    },
   outro:       { icon: Package,     label: "Outro",       color: "text-gray-700",    bg: "bg-gray-50"    },
 };
+
+// Rich categories showcasing marketplace breadth — Mercado Livre do Agro
+const CATEGORIES = [
+  { Icon: Tag,       label: "Animais",           examples: "Nelore, ovinos, aves, reprodutores",    color: "text-emerald-700", bg: "bg-emerald-50" },
+  { Icon: Wheat,     label: "Safras & grãos",    examples: "Soja, milho, café, cana, trigo",        color: "text-amber-700",   bg: "bg-amber-50" },
+  { Icon: Droplets,  label: "Defensivos",        examples: "Herbicidas, fungicidas, inseticidas",   color: "text-blue-700",    bg: "bg-blue-50" },
+  { Icon: Sprout,    label: "Sementes & mudas",  examples: "Híbridas, convencionais, viveiros",     color: "text-lime-700",    bg: "bg-lime-50" },
+  { Icon: Leaf,      label: "Ração & nutrição",  examples: "Confinamento, mineral, creep",          color: "text-green-700",   bg: "bg-green-50" },
+  { Icon: Syringe,   label: "Veterinários",      examples: "Vacinas, antiparasitários, vitaminas",  color: "text-rose-700",    bg: "bg-rose-50" },
+  { Icon: Truck,     label: "Máquinas",          examples: "Tratores, colheitadeiras, plantadeiras", color: "text-purple-700",  bg: "bg-purple-50" },
+  { Icon: Wrench,    label: "Equipamentos",      examples: "Balanças, cochos, silos, contenção",    color: "text-indigo-700",  bg: "bg-indigo-50" },
+  { Icon: Radio,     label: "Tecnologia & IoT",  examples: "Brincos RFID, sensores, drones",        color: "text-cyan-700",    bg: "bg-cyan-50" },
+  { Icon: HardHat,   label: "EPIs & segurança",  examples: "Botinas, máscaras, luvas, capacetes",   color: "text-teal-700",    bg: "bg-teal-50" },
+  { Icon: Store,     label: "Revendas",          examples: "Distribuidores, representantes",        color: "text-orange-700",  bg: "bg-orange-50" },
+  { Icon: Package,   label: "Insumos diversos",  examples: "Fertilizantes, corretivos, adjuvantes", color: "text-stone-700",   bg: "bg-stone-50" },
+] as const;
+
+// Rotating pill pattern showcasing breadth without limiting scope
+const ROTATING_EXAMPLES = [
+  "Brincos RFID para bovinos",
+  "Soja convencional · 500 toneladas",
+  "Ração de confinamento premium",
+  "Trator John Deere 6110J · 2023",
+  "Inseticida sistêmico · 20 L",
+  "Sementes híbridas de milho",
+  "Drone agrícola DJI · pulverização",
+  "Vacina aftosa · 2.000 doses",
+  "Balança rodoviária eletrônica",
+  "Botinas de segurança · NR-31",
+  "Serviço de consultoria técnica",
+  "Novilhas Nelore PO · 18 meses",
+];
+
+function RotatingCategoryPill() {
+  const [i, setI] = useState(0);
+  useEffect(() => {
+    const id = setInterval(
+      () => setI((v) => (v + 1) % ROTATING_EXAMPLES.length),
+      2200,
+    );
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <div className="mt-7 inline-flex items-center gap-2 rounded-full border border-white/[.1] bg-white/[.04] px-4 py-2 backdrop-blur-sm">
+      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--primary)] shadow-[0_0_8px_var(--primary)]" />
+      <span className="font-mono text-[.6875rem] uppercase tracking-[.14em] text-white/50">
+        Hoje no marketplace:
+      </span>
+      <div className="relative h-[1.1em] min-w-[18ch] overflow-hidden">
+        <AnimatePresence mode="wait">
+          <motion.span
+            key={i}
+            initial={{ y: 14, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -14, opacity: 0 }}
+            transition={{ duration: 0.35, ease: [0.19, 1, 0.22, 1] }}
+            className="absolute inset-0 text-[.8125rem] font-semibold text-white"
+          >
+            {ROTATING_EXAMPLES[i]}
+          </motion.span>
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+}
 
 const SORT_OPTIONS = [
   { key: "recentes",      label: "Mais recentes"       },
@@ -142,19 +216,22 @@ export default function MarketplacePublicView({ listings }: { listings: Listing[
             <div>
               <FadeIn>
                 <p className="font-mono text-[.6875rem] font-semibold uppercase tracking-[.18em] text-[var(--primary)]">
-                  Agraas Marketplace
+                  Agraas Marketplace · Mercado Livre do Agro
                 </p>
               </FadeIn>
               <FadeIn delay={0.15}>
                 <h1 className="mt-5 text-[clamp(2.2rem,5.2vw,4rem)] font-medium leading-[.98] tracking-[-.035em] text-white">
-                  O Mercado do Agro
+                  Tudo do agro,
                   <br />
-                  <span className="italic text-white/90">com rastreio incluso.</span>
+                  <span className="italic text-white/90">em um só lugar.</span>
                 </h1>
               </FadeIn>
-              <FadeIn delay={0.3}>
-                <p className="mt-6 max-w-[520px] text-[1.0625rem] leading-[1.75] text-white/60">
-                  Animais, safras, insumos e equipamentos — cada anúncio traz Score Agraas, certificação Halal e histórico do vendedor.
+              <FadeIn delay={0.25}>
+                <RotatingCategoryPill />
+              </FadeIn>
+              <FadeIn delay={0.35}>
+                <p className="mt-6 max-w-[540px] text-[1.0625rem] leading-[1.75] text-white/60">
+                  O único marketplace 100% dedicado ao agronegócio brasileiro. Animais, safras, ração, defensivos, sementes, máquinas, brincos RFID, drones, EPIs, serviços — com rastreio Agraas incluso em cada oferta.
                 </p>
               </FadeIn>
               <FadeIn delay={0.45}>
@@ -221,24 +298,66 @@ export default function MarketplacePublicView({ listings }: { listings: Listing[
         </div>
       </section>
 
+      {/* ═══ CATEGORIES BREADTH ═════════════════════════════════════════ */}
+      <section className="bg-white">
+        <div className="mx-auto max-w-[1200px] px-6 py-20 lg:px-10 lg:py-24">
+          <div className="max-w-[720px]">
+            <FadeIn>
+              <p className="font-mono text-[.6875rem] font-semibold uppercase tracking-[.18em] text-[var(--primary)]">
+                Todas as categorias do agro
+              </p>
+              <h2 className="mt-4 text-[clamp(1.8rem,3.5vw,2.6rem)] font-medium leading-[1.1] tracking-[-.02em] text-[var(--text-primary)]">
+                Um marketplace construído para a cadeia inteira.
+              </h2>
+              <p className="mt-4 max-w-[580px] text-[.9375rem] leading-[1.7] text-[var(--text-muted)]">
+                Do produtor ao fornecedor, da revenda ao prestador de serviço — qualquer produto ou serviço do agronegócio pode ser anunciado, negociado e rastreado aqui.
+              </p>
+            </FadeIn>
+          </div>
+
+          <StaggerContainer
+            className="mt-12 grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5"
+            staggerChildren={0.04}
+          >
+            {CATEGORIES.map((c) => (
+              <StaggerItem key={c.label}>
+                <div className="group flex h-full flex-col rounded-2xl border border-[var(--border)] bg-white p-5 transition-all hover:-translate-y-0.5 hover:border-[var(--primary)]/30 hover:shadow-[var(--shadow-soft)]">
+                  <div
+                    className={`flex h-10 w-10 items-center justify-center rounded-xl transition-colors ${c.bg}`}
+                  >
+                    <c.Icon size={18} className={c.color} />
+                  </div>
+                  <p className="mt-4 text-[.8125rem] font-semibold leading-snug text-[var(--text-primary)]">
+                    {c.label}
+                  </p>
+                  <p className="mt-1 text-[.6875rem] leading-snug text-[var(--text-muted)]">
+                    {c.examples}
+                  </p>
+                </div>
+              </StaggerItem>
+            ))}
+          </StaggerContainer>
+        </div>
+      </section>
+
       {/* ═══ VALUE PROPS ════════════════════════════════════════════════ */}
-      <section className="border-b border-[var(--border)] bg-white">
+      <section className="border-t border-b border-[var(--border)] bg-[var(--surface-soft)]">
         <div className="mx-auto grid max-w-[1200px] gap-6 px-6 py-12 md:grid-cols-3 lg:px-10">
           {[
             {
               Icon: HalalShield,
               title: "Rastreio verificável",
-              text: "Cada anúncio linka ao passaporte digital — você acessa o histórico completo antes de comprar.",
+              text: "Cada anúncio linka ao passaporte digital — histórico completo antes de fechar.",
             },
             {
               Icon: TrendingUp,
               title: "Score Agraas integrado",
-              text: "Algoritmo proprietário avalia cada animal e talhão em 5 dimensões. Score alto = menos risco.",
+              text: "Animais, talhões e lotes trazem Score próprio. Transparência quantitativa por oferta.",
             },
             {
               Icon: MapPin,
               title: "Origem brasileira comprovada",
-              text: "Propriedade georreferenciada com CAR, GTA e certificações ativas exibidas no card.",
+              text: "Propriedade, UF e certificações ativas exibidas. CAR, GTA e NF-e prontas para export.",
             },
           ].map((v) => (
             <div key={v.title} className="flex gap-4">

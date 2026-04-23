@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { MapPin, Calendar, ArrowRight, CheckCircle2, Shield, Ship } from "lucide-react";
+import { MapPin, ArrowRight, CheckCircle2, Sparkles, Cpu, Rocket, Calendar } from "lucide-react";
 import ScoreRing from "@/app/components/ui/ScoreRing";
 import {
   FadeIn,
@@ -11,31 +11,31 @@ import {
 
 const TIMELINE = [
   {
-    date: "Jan 2025",
-    title: "Fazenda ativa na Agraas",
-    text: "Onboarding completo com importação do rebanho existente em 72 horas.",
+    date: "2025",
+    title: "Selecionada como piloto MVP",
+    text: "Primeira fazenda a integrar a plataforma — rebanho de cria Nelore escolhido como referência operacional para o produto.",
+    Icon: Sparkles,
+    done: true,
+  },
+  {
+    date: "Em curso",
+    title: "Rebanho em digitalização",
+    text: "Cadastro individual dos animais, pesagens históricas e estrutura de passaporte digital sendo montada com o time do campo.",
+    Icon: Cpu,
+    done: true,
+  },
+  {
+    date: "Próximos passos",
+    title: "Scores completos + integrações sanitárias",
+    text: "Algoritmo Agraas calculando em tempo real as 5 dimensões e conectando eventos sanitários à agenda operacional.",
     Icon: CheckCircle2,
-    done: true,
+    done: false,
   },
   {
-    date: "Mar 2025",
-    title: "2.300 Nelore com passaporte individual",
-    text: "Cada animal ganha ID, histórico sanitário, pesagens automatizadas e score em tempo real.",
-    Icon: Shield,
-    done: true,
-  },
-  {
-    date: "Ago 2025",
-    title: "Certificação Halal + SIF aprovada",
-    text: "Cadeia completa auditada — fazenda, abatedouro e documentação fiscal verificados.",
-    Icon: Shield,
-    done: true,
-  },
-  {
-    date: "Q2 2026",
-    title: "Primeiro embarque Santos → Jeddah",
-    text: "Lote de exportação com rastreio em 7 checkpoints e QR público para comprador institucional.",
-    Icon: Ship,
+    date: "Roadmap",
+    title: "Caminho para exportação",
+    text: "Conforme a fazenda evolui para exportação, a infraestrutura Agraas já acompanha — rastreio de embarques, conformidade Halal e certificações ficam prontas para ativar.",
+    Icon: Rocket,
     done: false,
   },
 ];
@@ -80,14 +80,14 @@ export default function FSJBECaseSection() {
                 Jussara, Goiás
               </span>
               <span className="h-1 w-1 rounded-full bg-[var(--border-strong)]" />
-              <span>2.300 cabeças Nelore</span>
+              <span>Rebanho Nelore de cria</span>
               <span className="h-1 w-1 rounded-full bg-[var(--border-strong)]" />
-              <span>Primeiro cliente institucional</span>
+              <span>Piloto MVP</span>
             </div>
           </FadeIn>
           <FadeIn delay={0.4}>
             <p className="mt-8 max-w-[620px] text-[1.0625rem] leading-[1.8] text-[var(--text-secondary)]">
-              A FSJBE é a primeira fazenda em operação com passaporte digital individual ativo e lote Halal confirmado para exportação. Do cadastro inicial ao primeiro embarque previsto para Santos em Q2 2026, cada etapa é rastreada pela infraestrutura Agraas.
+              A FSJBE é a primeira fazenda a rodar a plataforma Agraas como piloto operacional. Rebanho em digitalização, scores em formação e infraestrutura completa pronta para escalar — do manejo do dia a dia ao futuro roadmap de exportação.
             </p>
           </FadeIn>
         </div>
@@ -166,7 +166,7 @@ export default function FSJBECaseSection() {
                 />
                 <div className="relative flex flex-col items-center">
                   <p className="font-mono text-[.6875rem] font-semibold uppercase tracking-[.18em] text-[var(--primary)]">
-                    Score médio do rebanho
+                    Score Agraas · demonstração
                   </p>
                   <div className="mt-6">
                     <ScoreRing
@@ -176,6 +176,9 @@ export default function FSJBECaseSection() {
                       breakdown={SCORE_BREAKDOWN}
                     />
                   </div>
+                  <p className="mt-5 max-w-[220px] text-center font-mono text-[.6875rem] uppercase tracking-[.12em] text-white/45">
+                    Modelo operacional em execução na FSJBE
+                  </p>
                 </div>
               </div>
             </FadeIn>
@@ -183,14 +186,14 @@ export default function FSJBECaseSection() {
             <FadeIn delay={0.35}>
               <div className="rounded-2xl border border-[var(--border)] bg-white p-6 shadow-[var(--shadow-soft)]">
                 <p className="font-mono text-[.6875rem] font-semibold uppercase tracking-[.18em] text-[var(--text-muted)]">
-                  Certificações ativas
+                  O que a plataforma já entrega
                 </p>
                 <div className="mt-4 space-y-2.5">
                   {[
-                    { label: "MAPA", sub: "Inspeção federal", active: true },
-                    { label: "GTA", sub: "Guia de trânsito vigente", active: true },
-                    { label: "Halal SAMS-KSA", sub: "Cadeia validada", active: true },
-                    { label: "SIF", sub: "Abatedouro aprovado", active: true },
+                    { label: "Passaporte digital", sub: "1 ID único por animal" },
+                    { label: "Score em tempo real", sub: "5 dimensões recalculadas por evento" },
+                    { label: "Operacional diário", sub: "Pesagens, manejo e sanitário registrados" },
+                    { label: "Pronto para escala", sub: "Lotes, exportação e certificações disponíveis" },
                   ].map((c) => (
                     <div
                       key={c.label}
