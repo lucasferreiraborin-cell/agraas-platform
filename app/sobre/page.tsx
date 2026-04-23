@@ -7,7 +7,7 @@ import { FadeIn, StaggerContainer, StaggerItem } from "@/app/components/ui/Motio
 import { Shield, Zap, Globe, ArrowRight } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Sobre a Agraas",
+  title: "Sobre nós",
   description:
     "Fundada em 2025 em São Paulo. A Agraas é a infraestrutura digital do agronegócio brasileiro — do pasto ao porto, com o primeiro cliente ativo em Jussara, Goiás.",
 };

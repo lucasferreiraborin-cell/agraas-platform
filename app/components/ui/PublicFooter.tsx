@@ -43,7 +43,7 @@ export default function PublicFooter() {
           </p>
           <div className="mt-4 flex flex-col gap-3">
             <Link href="/sobre" style={WHITE} className="text-[.875rem] transition-opacity hover:opacity-80">
-              Sobre
+              Sobre nós
             </Link>
             <a href="mailto:contato@agraas.com.br" style={WHITE} className="text-[.875rem] transition-opacity hover:opacity-80">
               Contato

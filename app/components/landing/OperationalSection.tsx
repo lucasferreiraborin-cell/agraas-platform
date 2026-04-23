@@ -102,62 +102,44 @@ export default function OperationalSection() {
           ))}
         </StaggerContainer>
 
-        {/* Full-chain visualization */}
+        {/* Cadeia inteira — editorial (não mais dark tech-dashboard) */}
         <FadeIn delay={0.4}>
-          <div className="relative mt-20 overflow-hidden rounded-3xl border border-[var(--border)] bg-gradient-to-br from-[#0f3517] to-[#1E5E26] p-8 lg:p-12">
-            <div
-              className="pointer-events-none absolute inset-0 opacity-40"
-              style={{
-                backgroundImage:
-                  "linear-gradient(hsla(0,0%,100%,.035) 1px, transparent 1px), linear-gradient(90deg, hsla(0,0%,100%,.035) 1px, transparent 1px)",
-                backgroundSize: "3rem 3rem",
-              }}
-            />
-            <div className="relative">
-              <h3 className="text-[1.25rem] font-semibold leading-[1.3] text-white md:text-[1.4rem]">
-                A cadeia inteira, em uma única plataforma.
-              </h3>
+          <div className="mt-20 border-t border-[var(--border)] pt-14">
+            <h3 className="max-w-[720px] text-[1.25rem] font-medium leading-[1.35] text-[var(--text-primary)] md:text-[1.5rem]">
+              Os seis pilares conversam entre si — uma aplicação sanitária debita estoque, gera custo no animal e alimenta o score. Sem digitar duas vezes.
+            </h3>
 
-              <div className="mt-8 grid gap-px overflow-hidden rounded-2xl border border-white/[.08] bg-white/[.02] md:grid-cols-6">
-                {[
-                  { label: "Operacional",  sub: "Manejo e sanitário" },
-                  { label: "Estoque",      sub: "Insumos e carência" },
-                  { label: "Financeiro",   sub: "DRE e fluxo de caixa" },
-                  { label: "Fiscal",       sub: "NF-e automática" },
-                  { label: "Comercial",    sub: "Vendas e marketplace" },
-                  { label: "Exportação",   sub: "Lotes e rastreio" },
-                ].map((col, i) => (
-                  <div
-                    key={col.label}
-                    className="flex flex-col justify-between border-white/[.08] bg-[rgba(7,26,14,0.6)] p-5"
-                    style={{
-                      borderRightWidth: i < 5 ? 1 : 0,
-                    }}
-                  >
-                    <div>
-                      <p className="text-[.9375rem] font-semibold text-white">
-                        {col.label}
-                      </p>
-                      <p className="mt-1.5 text-[.75rem] leading-[1.55] text-white/50">
-                        {col.sub}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
-                <p className="max-w-[460px] text-[.8125rem] leading-[1.7] text-white/55">
-                  Todos os módulos se conversam. Uma aplicação sanitária debita estoque, gera custo e alimenta o score — sem digitar duas vezes.
-                </p>
-                <Link
-                  href="/cadastro"
-                  className="group inline-flex items-center gap-2 rounded-xl border border-white/30 bg-white/[.04] px-5 py-2.5 text-[.8125rem] font-semibold text-white transition-all hover:border-white/60 hover:bg-white/[.08]"
+            <div className="mt-10 grid gap-5 md:grid-cols-3 lg:grid-cols-6">
+              {[
+                { label: "Operacional",  sub: "Manejo e sanitário" },
+                { label: "Estoque",      sub: "Insumos e carência" },
+                { label: "Financeiro",   sub: "DRE e fluxo de caixa" },
+                { label: "Fiscal",       sub: "NF-e automática" },
+                { label: "Comercial",    sub: "Vendas e marketplace" },
+                { label: "Exportação",   sub: "Lotes e rastreio" },
+              ].map((col) => (
+                <div
+                  key={col.label}
+                  className="border-l-2 border-[var(--primary)]/30 pl-4"
                 >
-                  Ver a plataforma completa
-                  <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
-                </Link>
-              </div>
+                  <p className="text-[.9375rem] font-semibold text-[var(--text-primary)]">
+                    {col.label}
+                  </p>
+                  <p className="mt-1.5 text-[.8125rem] leading-[1.55] text-[var(--text-muted)]">
+                    {col.sub}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-10">
+              <Link
+                href="/cadastro"
+                className="group inline-flex items-center gap-2 rounded-xl border border-[var(--border-strong)] bg-white px-5 py-2.5 text-[.8125rem] font-semibold text-[var(--text-primary)] transition hover:bg-[var(--surface-soft)]"
+              >
+                Ver a plataforma completa
+                <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />
+              </Link>
             </div>
           </div>
         </FadeIn>

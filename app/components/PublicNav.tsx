@@ -7,7 +7,7 @@ import { Menu, X } from "lucide-react";
 const LINKS = [
   { href: "/marketplace", label: "Marketplace" },
   { href: "/planos", label: "Planos" },
-  { href: "/sobre", label: "Sobre" },
+  { href: "/sobre", label: "Sobre nós" },
 ];
 
 const NAV_STYLE = {
