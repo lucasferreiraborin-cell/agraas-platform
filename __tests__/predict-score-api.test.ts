@@ -95,7 +95,7 @@ describe("GET /api/predict-score", () => {
 
   it("returns { cached: false } when no cached prediction exists", async () => {
     mockMaybeSingle.mockResolvedValue({ data: null, error: null });
-    const req = makeRequest("GET", "http://localhost/api/predict-score?animalId=test-animal-id");
+    const req = makeRequest("GET", "http://localhost/api/predict-score?animalId=11111111-1111-4111-8111-111111111111");
     const res = await GET(req);
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -104,11 +104,11 @@ describe("GET /api/predict-score", () => {
 
   it("returns { cached: true, prediction } when cache hit", async () => {
     const fakePrediction = {
-      id: "pred-1", animal_id: "test-animal-id",
+      id: "pred-1", animal_id: "11111111-1111-4111-8111-111111111111",
       risk_level: "low", alerts: [], recommendations: [], predicted_score_30d: 82,
     };
     mockMaybeSingle.mockResolvedValue({ data: fakePrediction, error: null });
-    const req = makeRequest("GET", "http://localhost/api/predict-score?animalId=test-animal-id");
+    const req = makeRequest("GET", "http://localhost/api/predict-score?animalId=11111111-1111-4111-8111-111111111111");
     const res = await GET(req);
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -126,7 +126,7 @@ describe("POST /api/predict-score", () => {
 
   it("returns 401 when user is not authenticated", async () => {
     mockGetUser.mockResolvedValue({ data: { user: null } });
-    const req = makeRequest("POST", "http://localhost/api/predict-score", { animalId: "abc" });
+    const req = makeRequest("POST", "http://localhost/api/predict-score", { animalId: "11111111-1111-4111-8111-111111111111" });
     const res = await POST(req);
     expect(res.status).toBe(401);
   });
