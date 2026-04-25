@@ -7,10 +7,10 @@ import { FadeIn, StaggerContainer, StaggerItem } from "@/app/components/ui/Motio
 const STATS = [
   { value: "Nelore", label: "Rebanho passaportado individual" },
   { value: "2.300",  label: "cabeças sob rastreio digital" },
-  { value: "Ativo",  label: "Pesagens e eventos registrados" },
-  { value: "Completo", label: "Protocolo sanitário rastreado" },
+  { value: "19",     label: "pesagens registradas" },
+  { value: "21",     label: "aplicações sanitárias rastreadas" },
   { value: "1",      label: "lote de exportação ativo → Jeddah" },
-  { value: "Halal",  label: "Certificação ativa para mercado árabe" },
+  { value: "Halal",  label: "certificado para mercado árabe" },
 ];
 
 const DELIVERABLES = [

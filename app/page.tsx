@@ -136,55 +136,36 @@ export default async function LandingPage() {
         />
         <div className="absolute inset-x-0 bottom-0 -z-10 h-32 bg-gradient-to-t from-[var(--bg)] to-transparent" />
 
-        <div className="relative mx-auto max-w-[1280px] px-6 pt-14 pb-16 lg:px-10 lg:pt-20 lg:pb-24">
-          <div className="grid gap-12 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,.9fr)] lg:items-center lg:gap-10">
-            {/* Left: content */}
-            <div>
-              <FadeIn>
-                <h1 className="text-[clamp(2.4rem,5.8vw,4.6rem)] font-medium leading-[1] tracking-[-.035em] text-white">
-                  A plataforma do agro brasileiro.
-                </h1>
-              </FadeIn>
+        <div className="relative mx-auto max-w-[1100px] px-6 pt-20 pb-24 lg:px-10 lg:pt-28 lg:pb-32">
+          <FadeIn>
+            <h1 className="max-w-[820px] text-[clamp(2.4rem,5.8vw,4.6rem)] font-medium leading-[1] tracking-[-.035em] text-white">
+              A plataforma do agro brasileiro.
+            </h1>
+          </FadeIn>
 
-              <FadeIn delay={0.2}>
-                <p className="mt-7 max-w-[520px] text-[1.0625rem] leading-[1.75] text-white/65">
-                  Pecuária, grãos e exportação sobre uma única camada de dados verificáveis. Do pasto ao porto, do talhão ao comprador institucional.
-                </p>
-              </FadeIn>
+          <FadeIn delay={0.2}>
+            <p className="mt-7 max-w-[600px] text-[1.0625rem] leading-[1.75] text-white/70">
+              Pecuária, grãos e exportação sobre uma única camada de dados verificáveis. Do pasto ao porto, do talhão ao comprador institucional.
+            </p>
+          </FadeIn>
 
-              <FadeIn delay={0.35}>
-                <div className="mt-10 flex flex-wrap items-center gap-4">
-                  <Link
-                    href="/marketplace"
-                    className="inline-flex items-center gap-2 rounded-xl bg-[var(--primary)] px-7 py-[14px] text-[.9375rem] font-semibold text-white shadow-[0_10px_30px_rgba(46,139,62,.25)] transition-all hover:bg-[var(--primary-hover)] hover:shadow-[0_14px_40px_rgba(46,139,62,.35)]"
-                  >
-                    Explorar marketplace
-                    <ArrowRight size={15} />
-                  </Link>
-                  <Link
-                    href="/login"
-                    className="rounded-xl border border-white/60 px-7 py-[14px] text-[.9375rem] font-semibold text-white transition hover:border-white hover:bg-white/10"
-                  >
-                    Ver a plataforma
-                  </Link>
-                </div>
-              </FadeIn>
+          <FadeIn delay={0.35}>
+            <div className="mt-10 flex flex-wrap items-center gap-4">
+              <Link
+                href="/marketplace"
+                className="inline-flex items-center gap-2 rounded-xl bg-[var(--primary)] px-7 py-[14px] text-[.9375rem] font-semibold text-white shadow-[0_10px_30px_rgba(46,139,62,.25)] transition-all hover:bg-[var(--primary-hover)] hover:shadow-[0_14px_40px_rgba(46,139,62,.35)]"
+              >
+                Explorar marketplace
+                <ArrowRight size={15} />
+              </Link>
+              <Link
+                href="/login"
+                className="rounded-xl border border-white/60 px-7 py-[14px] text-[.9375rem] font-semibold text-white transition hover:border-white hover:bg-white/10"
+              >
+                Ver a plataforma
+              </Link>
             </div>
-
-            {/* Right: Nelore close-up */}
-            <FadeIn delay={0.3}>
-              <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl shadow-[0_30px_80px_rgba(0,0,0,.35)] ring-1 ring-white/10">
-                <Image
-                  src="https://images.unsplash.com/photo-1605185189100-4d7c8fffbad1?w=1600&q=85&auto=format"
-                  alt="Close de boi Nelore"
-                  fill
-                  sizes="(max-width: 1024px) 100vw, 540px"
-                  className="object-cover"
-                  priority
-                />
-              </div>
-            </FadeIn>
-          </div>
+          </FadeIn>
         </div>
       </section>
 
@@ -264,10 +245,13 @@ export default async function LandingPage() {
       <section className="bg-[var(--bg)]">
         <div className="mx-auto max-w-[1200px] px-6 py-24 lg:px-10 lg:py-28">
           <FadeIn>
-            <div className="max-w-[720px]">
+            <div className="max-w-[820px]">
               <h2 className="text-[clamp(1.8rem,3.5vw,2.6rem)] font-medium leading-[1.08] tracking-[-.02em] text-[var(--text-primary)]">
                 O marketplace do agronegócio
               </h2>
+              <p className="mt-5 max-w-[680px] text-[1rem] leading-[1.8] text-[var(--text-secondary)]">
+                Animais, safras, insumos e máquinas — cada anúncio com score verificado, vendedor rastreado e NF-e automática.
+              </p>
             </div>
           </FadeIn>
 
@@ -409,7 +393,7 @@ export default async function LandingPage() {
             <div className="mt-10 flex flex-wrap justify-center gap-4">
               <Link
                 href="/cadastro"
-                className="group inline-flex items-center gap-2 rounded-xl bg-white px-8 py-4 text-[.9375rem] font-semibold text-[var(--sidebar-2)] shadow-[0_14px_40px_rgba(0,0,0,.2)] transition-all hover:shadow-[0_20px_50px_rgba(0,0,0,.3)]"
+                className="group inline-flex items-center gap-2 rounded-xl bg-[var(--primary)] px-8 py-4 text-[.9375rem] font-semibold text-white shadow-[0_14px_40px_rgba(46,139,62,.35)] transition-all hover:bg-[var(--primary-hover)] hover:shadow-[0_20px_50px_rgba(46,139,62,.5)]"
               >
                 Criar conta gratuita
                 <ArrowRight size={15} className="transition-transform group-hover:translate-x-0.5" />
