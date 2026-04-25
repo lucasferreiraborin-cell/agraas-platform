@@ -29,6 +29,31 @@ const MACRO_STATS = [
     label: "de empregos",
     sub: "direta ou indiretamente gerados pelo agronegócio brasileiro",
   },
+  {
+    value: "44%",
+    label: "da proteína bovina saudita",
+    sub: "das importações de carne da Arábia Saudita vêm do Brasil",
+  },
+  {
+    value: "108 Mi t",
+    label: "de soja exportadas",
+    sub: "em 2025 — cerca de 40% da produção global",
+  },
+  {
+    value: "R$ 1,2 tri",
+    label: "de PIB agro",
+    sub: "o maior do mundo em termos relativos para uma economia emergente",
+  },
+  {
+    value: "230 Mi",
+    label: "cabeças bovinas",
+    sub: "maior rebanho comercial do planeta",
+  },
+  {
+    value: "2027",
+    label: "PNIB obrigatória",
+    sub: "rastreabilidade vira exigência legal — janela estratégica aberta agora",
+  },
 ];
 
 export default function BrazilAgroSection() {
@@ -79,12 +104,12 @@ export default function BrazilAgroSection() {
           </StaggerContainer>
         </div>
 
-        {/* Macro stats band */}
-        <div className="mt-16 grid gap-10 border-t border-[var(--border)] pt-14 md:grid-cols-3">
+        {/* Macro stats band — 4×2 com novos números estratégicos */}
+        <div className="mt-16 grid gap-x-10 gap-y-12 border-t border-[var(--border)] pt-14 sm:grid-cols-2 lg:grid-cols-4">
           {MACRO_STATS.map((s, i) => (
-            <FadeIn key={s.label} delay={0.1 + i * 0.08}>
+            <FadeIn key={s.label} delay={0.1 + i * 0.05}>
               <div>
-                <p className="text-[2rem] font-semibold leading-none tracking-[-.025em] text-[var(--text-primary)]">
+                <p className="text-[1.875rem] font-semibold leading-none tracking-[-.025em] text-[var(--text-primary)]">
                   {s.value}
                 </p>
                 <p className="mt-3 text-[.9375rem] font-medium text-[var(--text-primary)]">
@@ -98,8 +123,17 @@ export default function BrazilAgroSection() {
           ))}
         </div>
 
+        {/* Closing paragraph */}
+        <FadeIn delay={0.2}>
+          <div className="mt-16 max-w-[860px] border-l-4 border-[var(--primary)] pl-6">
+            <p className="text-[1.0625rem] leading-[1.8] text-[var(--text-primary)]">
+              Nenhum outro país concentra essa escala de produção, essa diversidade de commodities e essa convergência regulatória simultânea. O Brasil não precisa de mais produção — precisa de infraestrutura que prove o que já produz.
+            </p>
+          </div>
+        </FadeIn>
+
         <p className="mt-10 text-[.75rem] text-[var(--text-muted)]">
-          Fontes: CNA, MAPA, CEPEA, ABIEC, CONAB (valores aproximados, referência 2023–2024).
+          Fontes: CNA, MAPA, CEPEA, ABIEC, CONAB, USDA, MAPA-PNIB (valores aproximados, referência 2023–2025).
         </p>
       </div>
     </section>

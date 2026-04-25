@@ -49,16 +49,18 @@ export default function OperationalSection() {
       />
 
       <div className="relative mx-auto max-w-[1200px] px-6 py-24 lg:px-10 lg:py-32">
-        <div className="max-w-[820px]">
+        <div className="max-w-[860px]">
           <FadeIn>
             <h2 className="text-[clamp(1.8rem,4vw,2.8rem)] font-medium leading-[1.1] tracking-[-.02em] text-[var(--text-primary)]">
               Contábil, fiscal e estoque <span className="text-[var(--text-muted)]">no mesmo lugar.</span>
             </h2>
           </FadeIn>
-          <FadeIn delay={0.15}>
-            <p className="mt-6 max-w-[640px] text-[1.0625rem] leading-[1.75] text-[var(--text-secondary)]">
-              O fazendeiro não precisa de três softwares para administrar uma operação. A Agraas cobre tudo que a cadeia exige — do registro sanitário ao balanço patrimonial — numa camada só, auditável ponta a ponta.
-            </p>
+          <FadeIn delay={0.12}>
+            <div className="mt-6 max-w-[720px] rounded-2xl border-l-4 border-[var(--primary)] bg-[var(--surface-soft)] p-6">
+              <p className="text-[1.0625rem] leading-[1.8] text-[var(--text-primary)]">
+                O fazendeiro brasileiro usa em média 3 a 4 softwares para administrar uma operação. Um para gestão animal, um para fiscal, um para financeiro, um para estoque. Nenhum conversa com o outro. A Agraas substitui todos.
+              </p>
+            </div>
           </FadeIn>
         </div>
 
@@ -130,6 +132,12 @@ export default function OperationalSection() {
                   </p>
                 </div>
               ))}
+            </div>
+
+            <div className="mt-12 max-w-[860px] rounded-2xl border border-[var(--border)] bg-white p-7 shadow-[var(--shadow-soft)]">
+              <p className="text-[1rem] leading-[1.8] text-[var(--text-secondary)]">
+                Para o contador do produtor, a Agraas entrega DRE mensal automático, NF-e de entrada e saída validadas, posição de estoque por lote e validade, e custo acumulado por animal — sem precisar pedir nada ao cliente. Tudo gerado pela operação diária.
+              </p>
             </div>
 
             <div className="mt-10">

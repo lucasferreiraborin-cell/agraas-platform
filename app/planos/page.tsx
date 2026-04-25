@@ -629,7 +629,7 @@ export default function PlanosPage() {
               </Link>
               <a
                 href="mailto:contato@agraas.com.br"
-                className="rounded-xl border border-white/40 px-8 py-4 text-[.9375rem] font-semibold text-white transition hover:border-white/70 hover:bg-white/5"
+                className="rounded-xl border border-white/60 px-8 py-4 text-[.9375rem] font-semibold text-white transition hover:border-white hover:bg-white/10"
               >
                 Agendar demo
               </a>

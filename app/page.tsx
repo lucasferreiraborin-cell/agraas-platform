@@ -15,17 +15,15 @@ import {
   StaggerContainer,
   StaggerItem,
 } from "@/app/components/ui/Motion";
-import HeroParallaxImage from "@/app/components/ui/HeroParallaxImage";
 import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
 import {
-  FileText,
+  Fingerprint,
   BarChart2,
   Wheat,
   ShoppingBag,
-  ShieldCheck,
-  BadgeCheck,
   MapPin,
   ArrowRight,
+  CheckCircle2,
 } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -84,34 +82,31 @@ async function fetchLandingData() {
   };
 }
 
-const HERO_STATS = [
-  { value: "82",   label: "módulos operacionais" },
-  { value: "4",    label: "score engines nativos" },
-  { value: "100%", label: "Halal verificável" },
-  { value: "7",    label: "etapas de rastreio" },
-];
-
 const CAPABILITIES = [
   {
-    Icon: FileText,
-    title: "Passaporte Digital",
-    text: "Identidade única por animal e por talhão, acessível via QR público.",
+    Icon: Fingerprint,
+    title: "Identidade e Rastreio",
+    p1: "Passaporte digital individual para cada animal e cada talhão. ID único vitalício, histórico completo, QR público verificável por qualquer comprador no mundo.",
+    p2: "Trilíngue em português, inglês e árabe com suporte RTL nativo. Construído para o mercado Halal.",
   },
   {
     Icon: BarChart2,
-    title: "Score Agraas",
-    text: "Qualidade verificada em tempo real, em 5 dimensões auditáveis.",
+    title: "Score e Inteligência",
+    p1: "Algoritmo proprietário em 5 dimensões recalculado em tempo real a cada evento. O mesmo número no passaporte público, no dashboard e no marketplace.",
+    p2: "Nenhum concorrente calcula score individual por animal. É o diferencial que transforma dado operacional em valor de mercado.",
     href: "#score",
   },
   {
     Icon: Wheat,
     title: "Grain ID",
-    text: "Soja, milho, trigo, cana e café rastreados do talhão ao navio em 7 etapas. BL e fitossanitário incluídos.",
+    p1: "Soja, milho, trigo, cana e café rastreados do talhão ao navio em 7 etapas documentadas. BL, certificado fitossanitário e laudo de qualidade incluídos.",
+    p2: "Conformidade com o Regulamento Europeu sobre Desmatamento (EUDR) e com os requisitos da SFDA — os dois maiores mercados de destino do agro brasileiro.",
   },
   {
     Icon: ShoppingBag,
-    title: "Marketplace",
-    text: "Venda com score verificado, NF-e automática e comprador institucional a um clique.",
+    title: "Marketplace Integrado",
+    p1: "Compre e venda animais, safras e insumos com score verificado, vendedor rastreado e NF-e automática no fechamento. Sem intermediário, sem burocracia.",
+    p2: "O único marketplace do agro onde o histórico do animal e da fazenda acompanha o anúncio. Qualidade comprovada antes de fechar.",
     href: "/marketplace",
   },
 ];
@@ -121,9 +116,17 @@ export default async function LandingPage() {
 
   return (
     <PublicShell>
-      {/* ═══ [2] HERO — headline + stats + CTAs + passaporte preview ═══════ */}
+      {/* ═══ [2] HERO — headline + CTAs + Nelore close ═══════════════════ */}
       <section className="relative isolate overflow-hidden">
-        <HeroParallaxImage src={IMG.hero} alt="" intensity={0.22} />
+        <Image
+          src={IMG.hero}
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          quality={85}
+          className="absolute inset-0 -z-10 object-cover"
+        />
         <div
           className="absolute inset-0 -z-10"
           style={{
@@ -131,10 +134,10 @@ export default async function LandingPage() {
               "linear-gradient(110deg, var(--sidebar-2) 0%, rgba(15,53,23,.85) 40%, rgba(15,53,23,.55) 75%, rgba(15,53,23,.35) 100%)",
           }}
         />
-        <div className="absolute inset-x-0 bottom-0 -z-10 h-48 bg-gradient-to-t from-[var(--bg)] to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 -z-10 h-32 bg-gradient-to-t from-[var(--bg)] to-transparent" />
 
-        <div className="relative mx-auto max-w-[1280px] px-6 pt-24 pb-20 lg:px-10 lg:pt-32 lg:pb-28">
-          <div className="grid gap-14 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,.9fr)] lg:items-center lg:gap-10">
+        <div className="relative mx-auto max-w-[1280px] px-6 pt-14 pb-16 lg:px-10 lg:pt-20 lg:pb-24">
+          <div className="grid gap-12 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,.9fr)] lg:items-center lg:gap-10">
             {/* Left: content */}
             <div>
               <FadeIn>
@@ -160,25 +163,10 @@ export default async function LandingPage() {
                   </Link>
                   <Link
                     href="/login"
-                    className="rounded-xl border border-white/40 px-7 py-[14px] text-[.9375rem] font-semibold text-white transition hover:border-white/70 hover:bg-white/5"
+                    className="rounded-xl border border-white/60 px-7 py-[14px] text-[.9375rem] font-semibold text-white transition hover:border-white hover:bg-white/10"
                   >
                     Ver a plataforma
                   </Link>
-                </div>
-              </FadeIn>
-
-              <FadeIn delay={0.5}>
-                <div className="mt-14 grid grid-cols-2 gap-x-8 gap-y-8 border-t border-white/[.12] pt-8 sm:grid-cols-4">
-                  {HERO_STATS.map((c) => (
-                    <div key={c.label}>
-                      <p className="text-[1.875rem] font-semibold leading-none tracking-[-.02em] text-white sm:text-[2rem]">
-                        {c.value}
-                      </p>
-                      <p className="mt-2.5 text-[.8125rem] leading-[1.45] text-white/55">
-                        {c.label}
-                      </p>
-                    </div>
-                  ))}
                 </div>
               </FadeIn>
             </div>
@@ -208,35 +196,45 @@ export default async function LandingPage() {
         <ScoresSection />
       </div>
 
-      {/* ═══ [5] CAPABILITIES — 4 cards simples ════════════════════════════ */}
+      {/* ═══ [5] CAPABILITIES — narrativa 2x2 ═════════════════════════════ */}
       <section className="bg-white">
-        <div className="mx-auto max-w-[1200px] px-6 py-20 lg:px-10 lg:py-24">
-          <FadeIn>
-            <h2 className="max-w-[720px] text-[clamp(1.8rem,3.5vw,2.6rem)] font-medium leading-[1.1] tracking-[-.02em] text-[var(--text-primary)]">
-              Quatro produtos, uma camada só.
-            </h2>
-          </FadeIn>
+        <div className="mx-auto max-w-[1200px] px-6 py-24 lg:px-10 lg:py-28">
+          <div className="max-w-[820px]">
+            <FadeIn>
+              <h2 className="text-[clamp(1.8rem,3.5vw,2.6rem)] font-medium leading-[1.1] tracking-[-.02em] text-[var(--text-primary)]">
+                Uma plataforma. A cadeia inteira do agro.
+              </h2>
+            </FadeIn>
+            <FadeIn delay={0.12}>
+              <p className="mt-5 max-w-[720px] text-[1rem] leading-[1.8] text-[var(--text-secondary)]">
+                Cada módulo foi construído para conversar com os outros. Uma aplicação sanitária debita estoque, gera custo no animal, alimenta o score e aparece no relatório do contador — sem digitar duas vezes.
+              </p>
+            </FadeIn>
+          </div>
 
           <StaggerContainer
-            className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4"
+            className="mt-14 grid gap-6 md:grid-cols-2"
             staggerChildren={0.08}
           >
             {CAPABILITIES.map((c) => {
               const inner = (
                 <>
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--primary-soft)]">
-                    <c.Icon size={20} className="text-[var(--primary)]" />
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--primary-soft)]">
+                    <c.Icon size={22} className="text-[var(--primary)]" />
                   </div>
-                  <p className="mt-6 text-[1rem] font-semibold text-[var(--text-primary)]">
+                  <h3 className="mt-6 text-[1.125rem] font-semibold tracking-[-.01em] text-[var(--text-primary)]">
                     {c.title}
+                  </h3>
+                  <p className="mt-3 text-[.9375rem] leading-[1.75] text-[var(--text-muted)]">
+                    {c.p1}
                   </p>
-                  <p className="mt-2 text-[.875rem] leading-[1.6] text-[var(--text-muted)]">
-                    {c.text}
+                  <p className="mt-3 text-[.9375rem] leading-[1.75] text-[var(--text-muted)]">
+                    {c.p2}
                   </p>
                 </>
               );
               const cls =
-                "group h-full rounded-2xl border border-[var(--border)] bg-white p-7 shadow-[var(--shadow-soft)] transition-all hover:-translate-y-0.5 hover:border-[var(--primary)]/30 hover:shadow-[var(--shadow-card)]";
+                "group relative h-full rounded-2xl border border-[var(--border)] border-l-4 border-l-[var(--primary)] bg-white p-8 shadow-[var(--shadow-soft)] transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-card)]";
               return (
                 <StaggerItem key={c.title}>
                   {c.href ? (
@@ -273,28 +271,28 @@ export default async function LandingPage() {
             </div>
           </FadeIn>
 
-          {/* 3 diferenciais */}
-          <div className="mt-10 grid gap-6 border-y border-[var(--border)] py-8 md:grid-cols-3">
-            {[
-              { Icon: ShieldCheck, title: "Score em todo anúncio",  sub: "Qualidade quantificada antes de fechar" },
-              { Icon: BadgeCheck,  title: "Vendedor verificado",    sub: "Fazenda rastreada, origem comprovada" },
-              { Icon: FileText,    title: "NF-e automática",        sub: "Conformidade fiscal no fechamento" },
-            ].map((d) => (
-              <div key={d.title} className="flex items-start gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--primary-soft)]">
-                  <d.Icon size={18} className="text-[var(--primary)]" />
-                </div>
-                <div>
-                  <p className="text-[.9375rem] font-semibold text-[var(--text-primary)]">
-                    {d.title}
-                  </p>
-                  <p className="mt-1 text-[.8125rem] leading-[1.55] text-[var(--text-muted)]">
-                    {d.sub}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
+          {/* 4 pills exclusivas — Só na Agraas */}
+          <FadeIn delay={0.12}>
+            <div className="mt-10 flex flex-wrap items-center gap-3 border-y border-[var(--border)] py-6">
+              <span className="text-[.75rem] font-semibold uppercase tracking-[.12em] text-[var(--text-muted)]">
+                Só na Agraas:
+              </span>
+              {[
+                "Score em todo anúncio",
+                "Histórico do animal no listing",
+                "NF-e automática no fechamento",
+                "Vendedor com passaporte ativo",
+              ].map((p) => (
+                <span
+                  key={p}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-[var(--primary)]/25 bg-[var(--primary-soft)] px-3.5 py-1.5 text-[.8125rem] font-semibold text-[var(--primary)]"
+                >
+                  <CheckCircle2 size={13} />
+                  {p}
+                </span>
+              ))}
+            </div>
+          </FadeIn>
 
           {/* Grid 3×2 (6 cards fixos) */}
           <StaggerContainer
@@ -418,7 +416,7 @@ export default async function LandingPage() {
               </Link>
               <a
                 href="mailto:contato@agraas.com.br"
-                className="rounded-xl border border-white/40 px-8 py-4 text-[.9375rem] font-semibold text-white transition hover:border-white/70 hover:bg-white/5"
+                className="rounded-xl border border-white/60 px-8 py-4 text-[.9375rem] font-semibold text-white transition hover:border-white hover:bg-white/10"
               >
                 Fale com a gente
               </a>

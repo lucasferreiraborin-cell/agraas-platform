@@ -1,51 +1,22 @@
 "use client";
 
-import { Anchor, ShieldCheck, Globe2 } from "lucide-react";
+import { Anchor, MapPin } from "lucide-react";
+import { motion } from "framer-motion";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/app/components/ui/Motion";
 
-const HIGHLIGHTS = [
-  {
-    Icon: Anchor,
-    title: "4 portos, toda a logística brasileira",
-    text: "Santos, Paranaguá, Rio Grande e Itaqui — cobertura do sul ao MATOPIBA.",
-  },
-  {
-    Icon: Globe2,
-    title: "Destino livre, rastreio constante",
-    text: "Cada embarque gera QR público com origem, certificações e checkpoints — seu comprador acessa de qualquer lugar do mundo.",
-  },
-  {
-    Icon: ShieldCheck,
-    title: "Conformidade verificada em cada etapa",
-    text: "Halal, SIF, MAPA, EUDR — selos ativos com validade monitorada em tempo real.",
-  },
+const PORTS = [
+  { label: "Santos",     uf: "SP" },
+  { label: "Paranaguá",  uf: "PR" },
+  { label: "Rio Grande", uf: "RS" },
+  { label: "Itaqui",     uf: "MA" },
 ];
 
-const PORTS = [
-  {
-    label: "Santos",
-    uf: "SP",
-    hint: "Maior porto do Brasil em contêineres e açúcar",
-    volume: "150 Mt/ano",
-  },
-  {
-    label: "Paranaguá",
-    uf: "PR",
-    hint: "Segundo maior em grãos — soja e milho do Sul",
-    volume: "58 Mt/ano",
-  },
-  {
-    label: "Rio Grande",
-    uf: "RS",
-    hint: "Hub da soja e arroz gaúcho, acesso direto ao Atlântico Sul",
-    volume: "43 Mt/ano",
-  },
-  {
-    label: "Itaqui",
-    uf: "MA",
-    hint: "Porta de saída do MATOPIBA para Ásia e Oriente Médio",
-    volume: "32 Mt/ano",
-  },
+const DESTINATIONS = [
+  { city: "Jeddah",    country: "Arábia Saudita" },
+  { city: "Rotterdam", country: "Países Baixos" },
+  { city: "Dubai",     country: "Emirados Árabes" },
+  { city: "Doha",      country: "Catar" },
+  { city: "Xangai",    country: "China" },
 ];
 
 export default function PortosSection() {
@@ -68,73 +39,104 @@ export default function PortosSection() {
       />
 
       <div className="relative mx-auto max-w-[1280px] px-6 py-[clamp(6rem,12vw,10rem)] lg:px-10">
-        <div className="max-w-[820px]">
+        <div className="max-w-[860px]">
           <FadeIn>
-            <h2 className="text-[clamp(2rem,5vw,4rem)] font-medium leading-[1] tracking-[-.03em] text-white">
-              Dos portos brasileiros <span className="text-white/55">para qualquer destino no mundo.</span>
+            <h2 className="text-[clamp(2rem,5vw,3.6rem)] font-medium leading-[1.05] tracking-[-.025em] text-white">
+              O Brasil exporta para o mundo. <span className="text-white/55">A Agraas rastreia cada embarque.</span>
             </h2>
           </FadeIn>
           <FadeIn delay={0.15}>
-            <p className="mt-6 max-w-[620px] text-[1.0625rem] leading-[1.75] text-white/55">
-              Santos, Paranaguá, Rio Grande e Itaqui concentram o que o Brasil exporta de carne e grãos. A Agraas rastreia cada embarque desde o carregamento até a entrega — qualquer porto de destino no mundo.
+            <p className="mt-6 max-w-[680px] text-[1.0625rem] leading-[1.8] text-white/60">
+              De qualquer porto brasileiro a qualquer destino no mundo — cada embarque com QR público, certificações ativas e 7 checkpoints auditáveis. O comprador verifica a origem sem precisar confiar na palavra de ninguém.
             </p>
           </FadeIn>
         </div>
 
-        {/* Port cards — grid maior, cada porto como protagonista */}
-        <StaggerContainer
-          className="mt-16 grid gap-5 sm:grid-cols-2 lg:grid-cols-4"
-          staggerChildren={0.08}
-        >
-          {PORTS.map((p) => (
-            <StaggerItem key={p.label}>
-              <div className="group relative h-full overflow-hidden rounded-2xl border border-white/[.08] bg-white/[.03] p-7 backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:border-[var(--primary)]/30 hover:bg-[var(--primary)]/[.05]">
-                <div className="flex items-baseline justify-between gap-2">
-                  <div>
-                    <p className="text-[1.5rem] font-semibold leading-none tracking-[-.02em] text-white">
-                      {p.label}
-                    </p>
-                    <p className="mt-2 text-[.8125rem] font-medium text-white/50">
-                      {p.uf}
-                    </p>
+        {/* Rota visual: BR → MUNDO */}
+        <div className="mt-16 grid gap-12 lg:grid-cols-[.4fr_1fr] lg:items-stretch lg:gap-10">
+          {/* Origem: portos BR */}
+          <FadeIn delay={0.2}>
+            <div className="rounded-3xl border border-white/[.08] bg-white/[.02] p-7 backdrop-blur-sm">
+              <p className="text-[.6875rem] font-semibold uppercase tracking-[.18em] text-[var(--primary)]">
+                Origem · Brasil
+              </p>
+              <h3 className="mt-3 text-[1.25rem] font-medium text-white">
+                4 portos
+              </h3>
+              <div className="mt-6 space-y-3">
+                {PORTS.map((p) => (
+                  <div
+                    key={p.label}
+                    className="flex items-center gap-3 rounded-xl border border-white/[.06] bg-white/[.03] px-4 py-3"
+                  >
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--primary)]/15">
+                      <Anchor size={16} className="text-[var(--primary)]" />
+                    </div>
+                    <div>
+                      <p className="text-[.9375rem] font-semibold text-white">
+                        {p.label}
+                      </p>
+                      <p className="text-[.6875rem] text-white/45">{p.uf}</p>
+                    </div>
                   </div>
-                  <Anchor size={18} className="text-[var(--primary)]/70" />
-                </div>
-                <p className="mt-6 text-[.875rem] leading-[1.6] text-white/60">
-                  {p.hint}
-                </p>
-                <div className="mt-6 border-t border-white/[.06] pt-4">
-                  <p className="text-[.6875rem] text-white/40">Movimentação</p>
-                  <p className="mt-1 text-[.9375rem] font-semibold text-white">
-                    {p.volume}
-                  </p>
-                </div>
+                ))}
               </div>
-            </StaggerItem>
-          ))}
-        </StaggerContainer>
+            </div>
+          </FadeIn>
 
-        {/* Feature highlights */}
-        <div className="mt-20 grid gap-10 md:grid-cols-3">
-          {HIGHLIGHTS.map((h, i) => (
-            <FadeIn key={h.title} delay={0.3 + i * 0.08}>
-              <div className="flex gap-4">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[.08] bg-white/[.03]">
-                  <h.Icon size={18} className="text-[var(--primary)]" />
-                </div>
-                <div>
-                  <p className="text-[.9375rem] font-semibold leading-[1.3] text-white">
-                    {h.title}
-                  </p>
-                  <p className="mt-2 text-[.8125rem] leading-[1.7] text-white/50">
-                    {h.text}
-                  </p>
-                </div>
-              </div>
-            </FadeIn>
-          ))}
+          {/* Linhas + destinos */}
+          <div className="relative">
+            {/* SVG com rotas animadas */}
+            <svg
+              className="pointer-events-none absolute inset-0 hidden h-full w-full lg:block"
+              viewBox="0 0 600 380"
+              preserveAspectRatio="none"
+              fill="none"
+              aria-hidden
+            >
+              {[60, 130, 200, 270, 340].map((y, i) => (
+                <motion.path
+                  key={y}
+                  d={`M 0 190 Q 250 ${190 - (y - 190) * 0.6} 600 ${y}`}
+                  stroke="var(--primary)"
+                  strokeWidth="1.4"
+                  strokeOpacity="0.55"
+                  strokeDasharray="4 6"
+                  initial={{ pathLength: 0, opacity: 0 }}
+                  whileInView={{ pathLength: 1, opacity: 1 }}
+                  viewport={{ once: true, margin: "-15%" }}
+                  transition={{ duration: 1.6, delay: 0.2 + i * 0.12, ease: [0.19, 1, 0.22, 1] }}
+                />
+              ))}
+            </svg>
+
+            <StaggerContainer
+              className="relative grid gap-3 sm:grid-cols-2 lg:grid-cols-1 lg:items-stretch"
+              staggerChildren={0.08}
+            >
+              {DESTINATIONS.map((d) => (
+                <StaggerItem key={d.city}>
+                  <div className="group flex items-center gap-4 rounded-2xl border border-white/[.08] bg-white/[.03] px-5 py-4 backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:border-[var(--primary)]/30 hover:bg-[var(--primary)]/[.06]">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--primary)]/15">
+                      <MapPin size={18} className="text-[var(--primary)]" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[1rem] font-semibold text-white">
+                        {d.city}
+                      </p>
+                      <p className="mt-0.5 text-[.8125rem] text-white/55">
+                        {d.country}
+                      </p>
+                    </div>
+                    <span className="ml-auto rounded-md border border-white/[.1] px-2 py-0.5 text-[.6875rem] font-semibold uppercase tracking-[.08em] text-white/55">
+                      Destino ativo
+                    </span>
+                  </div>
+                </StaggerItem>
+              ))}
+            </StaggerContainer>
+          </div>
         </div>
-
       </div>
     </section>
   );

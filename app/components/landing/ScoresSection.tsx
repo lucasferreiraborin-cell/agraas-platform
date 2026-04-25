@@ -2,6 +2,7 @@
 
 import ScoreRing from "@/app/components/ui/ScoreRing";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/app/components/ui/Motion";
+import { motion } from "framer-motion";
 import { QrCode, ShoppingBag, FileCheck, TrendingUp } from "lucide-react";
 
 const DIMENSIONS = [
@@ -74,15 +75,15 @@ export default function ScoresSection() {
 
       <div className="relative mx-auto max-w-[1280px] px-6 py-[clamp(6rem,12vw,10rem)] lg:px-10">
         {/* Headline + intro */}
-        <div className="max-w-[820px]">
+        <div className="max-w-[860px]">
           <FadeIn>
-            <h2 className="text-[clamp(2rem,4.8vw,3.4rem)] font-medium leading-[1.05] tracking-[-.025em] text-white">
-              O Score Agraas <span className="text-white/55">é o mesmo em todo lugar.</span>
+            <h2 className="text-[clamp(2.2rem,5.2vw,3.8rem)] font-medium leading-[1.05] tracking-[-.025em] text-white">
+              O Score que <span className="text-[var(--primary)]">nenhum concorrente</span> tem.
             </h2>
           </FadeIn>
           <FadeIn delay={0.12}>
-            <p className="mt-6 max-w-[620px] text-[1.0625rem] leading-[1.75] text-white/60">
-              Um número de 0 a 100 calculado em tempo real a cada evento que acontece no rebanho, no talhão ou no lote. O que você vê no passaporte público é exatamente o que aparece no dashboard, no marketplace e nos relatórios de exportação.
+            <p className="mt-6 max-w-[680px] text-[1.0625rem] leading-[1.8] text-white/65">
+              Calculado automaticamente a cada evento. O mesmo número no passaporte público, no dashboard, no marketplace e nos relatórios de exportação. Uma linguagem única para toda a cadeia.
             </p>
           </FadeIn>
         </div>
@@ -119,7 +120,7 @@ export default function ScoresSection() {
             </div>
           </FadeIn>
 
-          {/* 5 dimensions list */}
+          {/* 5 dimensions list with animated bars */}
           <div>
             <FadeIn>
               <p className="text-[.8125rem] font-semibold uppercase tracking-[.1em] text-[var(--primary)]">
@@ -131,7 +132,7 @@ export default function ScoresSection() {
             </FadeIn>
 
             <StaggerContainer className="mt-8 space-y-3" staggerChildren={0.07}>
-              {DIMENSIONS.map((d) => (
+              {DIMENSIONS.map((d, i) => (
                 <StaggerItem key={d.label}>
                   <div className="rounded-xl border border-white/[.08] bg-white/[.03] p-5">
                     <div className="flex items-baseline justify-between gap-3">
@@ -140,11 +141,13 @@ export default function ScoresSection() {
                         {d.weight}% do score
                       </span>
                     </div>
-                    {/* Progress weight bar */}
-                    <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-white/[.06]">
-                      <div
+                    <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-white/[.06]">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        whileInView={{ width: `${d.weight * 3.3}%` }}
+                        viewport={{ once: true, margin: "-15%" }}
+                        transition={{ duration: 1.1, delay: 0.15 + i * 0.08, ease: [0.19, 1, 0.22, 1] }}
                         className="h-full rounded-full bg-[var(--primary)]"
-                        style={{ width: `${d.weight * 3.3}%` }}
                       />
                     </div>
                     <p className="mt-3 text-[.8125rem] leading-[1.65] text-white/55">
@@ -154,31 +157,37 @@ export default function ScoresSection() {
                 </StaggerItem>
               ))}
             </StaggerContainer>
+
+            <FadeIn delay={0.4}>
+              <p className="mt-8 rounded-xl border border-white/[.08] bg-white/[.03] p-5 text-[.9375rem] leading-[1.7] text-white/70">
+                Cada evento recalcula. Cada recálculo é auditável. Nenhuma nota pode ser manipulada retroativamente.
+              </p>
+            </FadeIn>
           </div>
         </div>
 
         {/* Where the score appears */}
-        <div className="mt-20">
+        <div className="mt-24">
           <FadeIn>
-            <h3 className="text-[1.25rem] font-medium text-white md:text-[1.5rem]">
+            <h3 className="text-[1.5rem] font-medium text-white md:text-[1.875rem]">
               Onde o score aparece
             </h3>
-            <p className="mt-3 max-w-[620px] text-[.9375rem] leading-[1.7] text-white/55">
+            <p className="mt-3 max-w-[680px] text-[.9375rem] leading-[1.7] text-white/55">
               Consistência total entre quem produz e quem compra. O mesmo número acompanha o animal ou o talhão em toda interação externa.
             </p>
           </FadeIn>
 
-          <StaggerContainer className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4" staggerChildren={0.06}>
+          <StaggerContainer className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-4" staggerChildren={0.06}>
             {APPARITIONS.map((a) => (
               <StaggerItem key={a.title}>
-                <div className="flex h-full flex-col rounded-xl border border-white/[.08] bg-white/[.03] p-5">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--primary)]/10">
-                    <a.Icon size={18} className="text-[var(--primary)]" />
+                <div className="flex h-full flex-col rounded-2xl border border-white/[.08] bg-white/[.04] p-7 transition-colors hover:border-[var(--primary)]/30 hover:bg-[var(--primary)]/[.06]">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--primary)]/15">
+                    <a.Icon size={22} className="text-[var(--primary)]" />
                   </div>
-                  <p className="mt-4 text-[.9375rem] font-semibold text-white">
+                  <p className="mt-5 text-[1rem] font-semibold text-white">
                     {a.title}
                   </p>
-                  <p className="mt-2 text-[.8125rem] leading-[1.65] text-white/55">
+                  <p className="mt-2.5 text-[.875rem] leading-[1.7] text-white/55">
                     {a.text}
                   </p>
                 </div>

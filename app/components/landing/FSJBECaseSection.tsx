@@ -5,19 +5,19 @@ import { MapPin, ArrowRight, CheckCircle2 } from "lucide-react";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/app/components/ui/Motion";
 
 const STATS = [
-  { value: "5",      label: "animais passaportados" },
-  { value: "19",     label: "pesagens registradas" },
-  { value: "21",     label: "aplicações sanitárias" },
-  { value: "78/100", label: "score médio do rebanho" },
+  { value: "Nelore", label: "Rebanho passaportado individual" },
+  { value: "2.300",  label: "cabeças sob rastreio digital" },
+  { value: "Ativo",  label: "Pesagens e eventos registrados" },
+  { value: "Completo", label: "Protocolo sanitário rastreado" },
   { value: "1",      label: "lote de exportação ativo → Jeddah" },
-  { value: "PIF",    label: "comprador institucional vinculado" },
+  { value: "Halal",  label: "Certificação ativa para mercado árabe" },
 ];
 
 const DELIVERABLES = [
   { label: "Passaporte digital",   sub: "ID único por animal, acessível via QR público" },
-  { label: "Score em tempo real",  sub: "5 dimensões recalculadas por evento" },
-  { label: "Operacional diário",   sub: "Pesagens, manejo e sanitário registrados no campo" },
-  { label: "Cadeia de exportação", sub: "Lotes, certificações e comprador institucional vinculados" },
+  { label: "Operação no campo",    sub: "Pesagens, manejo e sanitário registrados pelo time" },
+  { label: "Cadeia de exportação", sub: "Lote ativo com rastreio completo até o porto" },
+  { label: "Conformidade Halal",   sub: "Certificação verificável para mercado árabe" },
 ];
 
 export default function FSJBECaseSection() {
@@ -32,7 +32,7 @@ export default function FSJBECaseSection() {
       />
 
       <div className="relative mx-auto max-w-[1200px] px-6 py-24 lg:px-10 lg:py-32">
-        <div className="max-w-[760px]">
+        <div className="max-w-[820px]">
           <FadeIn>
             <h2 className="text-[clamp(2rem,4.5vw,3.2rem)] font-medium leading-[1.05] tracking-[-.025em] text-[var(--text-primary)]">
               Fazenda São João da Boa Esperança
@@ -51,9 +51,14 @@ export default function FSJBECaseSection() {
             </div>
           </FadeIn>
           <FadeIn delay={0.25}>
-            <p className="mt-8 max-w-[620px] text-[1.0625rem] leading-[1.8] text-[var(--text-secondary)]">
-              A FSJBE opera no Agraas com passaporte digital individual, score em tempo real e um lote de exportação ativo para Jeddah. O comprador institucional tem acesso direto à cadeia via portal dedicado.
-            </p>
+            <div className="mt-8 max-w-[720px] space-y-5 text-[1.0625rem] leading-[1.85] text-[var(--text-secondary)]">
+              <p>
+                A Fazenda São João da Boa Esperança foi a primeira fazenda a operar na plataforma Agraas. Com 2.300 cabeças de Nelore em Jussara, Goiás, a FSJBE tem passaporte digital individual para cada animal, rastreio completo do manejo diário e um lote de exportação ativo com certificação Halal para o mercado árabe.
+              </p>
+              <p className="font-medium text-[var(--text-primary)]">
+                É a prova de que a Agraas funciona no campo real — não em laboratório.
+              </p>
+            </div>
           </FadeIn>
         </div>
 
@@ -72,7 +77,7 @@ export default function FSJBECaseSection() {
               {STATS.map((s) => (
                 <StaggerItem key={s.label}>
                   <div className="rounded-2xl border border-[var(--border)] bg-white p-5 shadow-[var(--shadow-soft)] transition-colors hover:border-[var(--primary)]/25">
-                    <p className="text-[1.75rem] font-semibold leading-none tracking-[-.02em] text-[var(--text-primary)]">
+                    <p className="text-[1.5rem] font-semibold leading-tight tracking-[-.02em] text-[var(--text-primary)]">
                       {s.value}
                     </p>
                     <p className="mt-3 text-[.8125rem] leading-[1.55] text-[var(--text-muted)]">
@@ -84,7 +89,7 @@ export default function FSJBECaseSection() {
             </StaggerContainer>
           </div>
 
-          {/* Deliverables + CTA (sem ScoreRing — já está na seção Score) */}
+          {/* Deliverables + CTA */}
           <div className="space-y-6">
             <FadeIn delay={0.2}>
               <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] p-6 shadow-[var(--shadow-soft)]">

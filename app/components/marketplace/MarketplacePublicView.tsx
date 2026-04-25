@@ -248,7 +248,7 @@ export default function MarketplacePublicView({ listings }: { listings: Listing[
                 </a>
                 <Link
                   href="/cadastro"
-                  className="rounded-xl border border-white/40 px-7 py-[14px] text-[.9375rem] font-semibold text-white transition hover:border-white/70 hover:bg-white/5"
+                  className="rounded-xl border border-white/60 px-7 py-[14px] text-[.9375rem] font-semibold text-white transition hover:border-white hover:bg-white/10"
                 >
                   Vender na Agraas
                 </Link>
@@ -845,7 +845,7 @@ export default function MarketplacePublicView({ listings }: { listings: Listing[
               </Link>
               <Link
                 href="/planos"
-                className="rounded-xl border border-white/40 px-8 py-4 text-[.9375rem] font-semibold text-white transition hover:border-white/70 hover:bg-white/5"
+                className="rounded-xl border border-white/60 px-8 py-4 text-[.9375rem] font-semibold text-white transition hover:border-white hover:bg-white/10"
               >
                 Ver planos
               </Link>

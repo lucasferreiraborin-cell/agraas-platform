@@ -1,27 +1,27 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, ScanLine, Activity, Ship } from "lucide-react";
+import { ArrowRight, Fingerprint, ActivitySquare, Globe } from "lucide-react";
 import { FadeIn } from "@/app/components/ui/Motion";
 
 const STEPS = [
   {
-    Icon: ScanLine,
-    title: "Identifique uma vez",
-    text: "Cada animal nasce ou entra na propriedade com ID único, GPS, genealogia e certificações iniciais. Cada talhão ganha polígono georreferenciado com CAR. O passaporte digital começa aqui.",
-    tags: ["RFID bolus", "GPS do talhão", "CAR verificado"],
+    Icon: Fingerprint,
+    title: "Identidade desde o primeiro dia",
+    text: "Cada animal nasce com um ID Agraas único. Cada talhão ganha um polígono georeferenciado com CAR verificado. A rastreabilidade começa antes da primeira pesagem — e nunca para. O produtor sabe exatamente o que tem, onde está e o que vale.",
+    tags: ["RFID bolus", "GPS talhão", "CAR verificado", "ID único vitalício"],
   },
   {
-    Icon: Activity,
-    title: "Opere no automático",
-    text: "Pesagens, aplicações sanitárias, movimentações, colheitas e notas de insumos são registradas em segundos. O Score recalcula sozinho, o estoque debita sozinho, o custo acumula sozinho.",
-    tags: ["Score automático", "Estoque ligado", "Custo por animal"],
+    Icon: ActivitySquare,
+    title: "Operação que vira dado automático",
+    text: "Pesagens, vacinações, movimentações, colheitas, notas fiscais de insumos — tudo registrado em segundos pelo produtor ou pelo peão no campo, via app mobile. O Score recalcula sozinho. O estoque debita sozinho. O custo acumula sozinho. O contador tem o DRE pronto sem precisar pedir.",
+    tags: ["Score automático", "Estoque ligado", "Custo por animal", "DRE em tempo real"],
   },
   {
-    Icon: Ship,
-    title: "Venda com rastreio",
-    text: "Anuncie no marketplace com score e certificações automáticos. Feche a venda com NF-e gerada. Embarque via porto brasileiro com rastreio em 7 checkpoints — e o comprador final verifica origem pelo QR público.",
-    tags: ["Marketplace integrado", "NF-e automática", "QR público"],
+    Icon: Globe,
+    title: "Venda com rastreio, chegue ao mundo",
+    text: "Animais e safras anunciados no marketplace com score e certificações automáticos. Venda fechada com NF-e gerada. Embarque via porto brasileiro com rastreio em 7 checkpoints. O comprador em Jeddah, Rotterdam ou Xangai verifica a origem pelo QR público — sem precisar de intermediário, sem precisar confiar na palavra de ninguém.",
+    tags: ["Marketplace integrado", "NF-e automática", "QR público", "7 checkpoints de embarque"],
   },
 ];
 
@@ -29,15 +29,15 @@ export default function HowItWorksSection() {
   return (
     <section className="bg-[var(--bg)]">
       <div className="mx-auto max-w-[1200px] px-6 py-24 lg:px-10 lg:py-28">
-        <div className="max-w-[760px]">
+        <div className="max-w-[820px]">
           <FadeIn>
             <h2 className="text-[clamp(1.8rem,4vw,2.8rem)] font-medium leading-[1.1] tracking-[-.02em] text-[var(--text-primary)]">
-              Como funciona na prática
+              A Agraas está em toda a cadeia.
             </h2>
           </FadeIn>
           <FadeIn delay={0.1}>
-            <p className="mt-5 max-w-[580px] text-[1rem] leading-[1.75] text-[var(--text-secondary)]">
-              Configurar leva minutos. Operar vira rotina automática. Vender com rastreabilidade se torna o padrão.
+            <p className="mt-6 max-w-[680px] text-[1rem] leading-[1.8] text-[var(--text-secondary)]">
+              Do nascimento do animal ao comprador no outro lado do mundo — cada etapa da cadeia produtiva brasileira conectada, verificada e auditável.
             </p>
           </FadeIn>
         </div>
@@ -46,8 +46,8 @@ export default function HowItWorksSection() {
           {STEPS.map((step, i) => (
             <FadeIn key={step.title} delay={i * 0.1}>
               <div className="flex h-full flex-col rounded-2xl border border-[var(--border)] bg-white p-7 shadow-[var(--shadow-soft)] transition-colors hover:border-[var(--primary)]/25">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--primary-soft)]">
-                  <step.Icon size={20} className="text-[var(--primary)]" />
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--primary-soft)]">
+                  <step.Icon size={22} className="text-[var(--primary)]" />
                 </div>
                 <h3 className="mt-5 text-[1.125rem] font-semibold leading-[1.3] text-[var(--text-primary)]">
                   {step.title}
