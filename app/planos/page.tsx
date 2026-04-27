@@ -104,10 +104,6 @@ const COMPARISON_ROWS: { label: string; values: CellValue[] }[] = [
 
 const FAQ = [
   {
-    q: "O que diferencia a Agraas de outras plataformas de gestão rural?",
-    a: "A maioria das plataformas registra o que acontece na fazenda. A Agraas transforma esses registros em prova verificável de origem, qualidade e conformidade — para compradores institucionais no Brasil e no mundo. É a diferença entre gestão e infraestrutura de confiança.",
-  },
-  {
     q: "Posso trocar de plano a qualquer momento?",
     a: "Sim. Upgrade é instantâneo, com cobrança proporcional ao ciclo atual. Downgrade passa a valer no próximo mês — você não perde o acesso até o fim do ciclo pago.",
   },
@@ -535,7 +531,7 @@ export default function PlanosPage() {
               </FadeIn>
               <FadeIn delay={0.2}>
                 <p className="mt-6 max-w-[520px] text-[.9375rem] leading-[1.8] text-[var(--text-secondary)]">
-                  Opera no Agraas com passaporte digital individual, score em tempo real e rebanho sendo preparado para exportação.
+                  Opera no Agraas com passaporte digital individual, score em tempo real e lote de exportação ativo para Jeddah. Comprador institucional vinculado via portal dedicado.
                 </p>
               </FadeIn>
 
@@ -551,7 +547,7 @@ export default function PlanosPage() {
                         Plataforma em produção desde 2025
                       </p>
                       <p className="mt-1 text-[.75rem] leading-[1.55] text-[var(--text-muted)]">
-                        Operação contínua · uptime monitorado 24/7
+                        Operação contínua · 82 módulos ativos · deploys múltiplos por semana
                       </p>
                     </div>
                   </div>
@@ -564,7 +560,7 @@ export default function PlanosPage() {
                         0 bugs críticos em aberto
                       </p>
                       <p className="mt-1 text-[.75rem] leading-[1.55] text-[var(--text-muted)]">
-                        Monitoramento ativo · qualidade verificada a cada deploy
+                        Sentry monitorando tempo real · typecheck limpo em cada deploy
                       </p>
                     </div>
                   </div>

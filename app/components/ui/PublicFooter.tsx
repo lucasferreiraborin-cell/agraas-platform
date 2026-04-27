@@ -63,30 +63,9 @@ export default function PublicFooter() {
       </div>
 
       <div className="mx-auto max-w-[1200px] border-t border-white/[.12] px-6 py-6">
-        <div
-          style={WHITE}
-          className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[.75rem] opacity-70"
-        >
-          <a
-            href="mailto:contato@agraas.com.br"
-            style={WHITE}
-            className="transition-opacity hover:opacity-100"
-          >
-            contato@agraas.com.br
-          </a>
-          <a
-            href="https://linkedin.com/company/agraas"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={WHITE}
-            className="transition-opacity hover:opacity-100"
-          >
-            LinkedIn
-          </a>
-          <span>CNPJ em registro</span>
-          <span>© 2026 Agraas Agritech</span>
-          <span>Dados protegidos — LGPD</span>
-        </div>
+        <p style={WHITE} className="text-[.75rem] opacity-70">
+          © 2026 Agraas Agritech. Todos os direitos reservados.
+        </p>
       </div>
     </footer>
   );

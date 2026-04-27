@@ -13,15 +13,7 @@ const RANKINGS = [
   { rank: "Top 5", produto: "Algodão",     context: "entre os maiores produtores" },
 ];
 
-type MacroStat = {
-  value: string;
-  label: string;
-  sub: string;
-  featured?: boolean;
-  badge?: string;
-};
-
-const MACRO_STATS: MacroStat[] = [
+const MACRO_STATS = [
   {
     value: "~27%",
     label: "do PIB brasileiro",
@@ -51,20 +43,16 @@ const MACRO_STATS: MacroStat[] = [
     value: "R$ 1,2 tri",
     label: "de PIB agro",
     sub: "o maior do mundo em termos relativos para uma economia emergente",
-    featured: true,
   },
   {
     value: "230 Mi",
     label: "cabeças bovinas",
     sub: "maior rebanho comercial do planeta",
-    featured: true,
   },
   {
     value: "2027",
     label: "PNIB obrigatória",
     sub: "rastreabilidade vira exigência legal — janela estratégica aberta agora",
-    featured: true,
-    badge: "Marco regulatório",
   },
 ];
 
@@ -79,7 +67,7 @@ export default function BrazilAgroSection() {
         }}
       />
 
-      <div className="relative mx-auto max-w-[1200px] px-6 py-16 lg:px-10 lg:py-20">
+      <div className="relative mx-auto max-w-[1200px] px-6 py-24 lg:px-10 lg:py-28">
         <div className="grid gap-12 lg:grid-cols-[.8fr_1.2fr] lg:gap-20">
           <div>
             <FadeIn>
@@ -121,20 +109,9 @@ export default function BrazilAgroSection() {
           {MACRO_STATS.map((s, i) => (
             <FadeIn key={s.label} delay={0.1 + i * 0.05}>
               <div>
-                <p
-                  className={`leading-none tracking-[-.025em] text-[var(--text-primary)] ${
-                    s.featured
-                      ? "text-5xl font-bold"
-                      : "text-4xl font-semibold"
-                  }`}
-                >
+                <p className="text-[1.875rem] font-semibold leading-none tracking-[-.025em] text-[var(--text-primary)]">
                   {s.value}
                 </p>
-                {s.badge && (
-                  <span className="mt-3 inline-flex items-center rounded-md border border-[var(--primary)]/25 bg-[var(--primary-soft)] px-2 py-0.5 text-[.6875rem] font-semibold text-[var(--primary)]">
-                    {s.badge}
-                  </span>
-                )}
                 <p className="mt-3 text-[.9375rem] font-medium text-[var(--text-primary)]">
                   {s.label}
                 </p>

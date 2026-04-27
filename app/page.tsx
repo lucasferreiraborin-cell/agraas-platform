@@ -87,22 +87,26 @@ const CAPABILITIES = [
     Icon: Fingerprint,
     title: "Identidade e Rastreio",
     p1: "Passaporte digital individual para cada animal e cada talhão. ID único vitalício, histórico completo, QR público verificável por qualquer comprador no mundo.",
+    p2: "Trilíngue em português, inglês e árabe com suporte RTL nativo. Construído para o mercado Halal.",
   },
   {
     Icon: BarChart2,
     title: "Score e Inteligência",
     p1: "Algoritmo proprietário em 5 dimensões recalculado em tempo real a cada evento. O mesmo número no passaporte público, no dashboard e no marketplace.",
+    p2: "Nenhum concorrente calcula score individual por animal. É o diferencial que transforma dado operacional em valor de mercado.",
     href: "#score",
   },
   {
     Icon: Wheat,
     title: "Grain ID",
     p1: "Soja, milho, trigo, cana e café rastreados do talhão ao navio em 7 etapas documentadas. BL, certificado fitossanitário e laudo de qualidade incluídos.",
+    p2: "Conformidade com o Regulamento Europeu sobre Desmatamento (EUDR) e com os requisitos da SFDA — os dois maiores mercados de destino do agro brasileiro.",
   },
   {
     Icon: ShoppingBag,
     title: "Marketplace Integrado",
     p1: "Compre e venda animais, safras e insumos com score verificado, vendedor rastreado e NF-e automática no fechamento. Sem intermediário, sem burocracia.",
+    p2: "O único marketplace do agro onde o histórico do animal e da fazenda acompanha o anúncio. Qualidade comprovada antes de fechar.",
     href: "/marketplace",
   },
 ];
@@ -140,7 +144,7 @@ export default async function LandingPage() {
           </FadeIn>
 
           <FadeIn delay={0.2}>
-            <p className="mt-7 max-w-[600px] text-[1.0625rem] leading-[1.75] text-white/85">
+            <p className="mt-7 max-w-[600px] text-[1.0625rem] leading-[1.75] text-white/70">
               Pecuária, grãos e exportação sobre uma única camada de dados verificáveis. Do pasto ao porto, do talhão ao comprador institucional.
             </p>
           </FadeIn>
@@ -162,13 +166,6 @@ export default async function LandingPage() {
               </Link>
             </div>
           </FadeIn>
-
-          <FadeIn delay={0.5}>
-            <div className="mt-6 flex items-center gap-2 text-[.875rem] text-white/60">
-              <span className="h-2 w-2 animate-pulse rounded-full bg-green-400" />
-              <span>Plataforma em operação · Primeiro cliente ativo em Goiás</span>
-            </div>
-          </FadeIn>
         </div>
       </section>
 
@@ -182,7 +179,7 @@ export default async function LandingPage() {
 
       {/* ═══ [5] CAPABILITIES — narrativa 2x2 ═════════════════════════════ */}
       <section className="bg-white">
-        <div className="mx-auto max-w-[1200px] px-6 py-16 lg:px-10 lg:py-20">
+        <div className="mx-auto max-w-[1200px] px-6 py-24 lg:px-10 lg:py-28">
           <div className="max-w-[820px]">
             <FadeIn>
               <h2 className="text-[clamp(1.8rem,3.5vw,2.6rem)] font-medium leading-[1.1] tracking-[-.02em] text-[var(--text-primary)]">
@@ -212,15 +209,13 @@ export default async function LandingPage() {
                   <p className="mt-3 text-[.9375rem] leading-[1.75] text-[var(--text-muted)]">
                     {c.p1}
                   </p>
-                  {c.href && (
-                    <p className="mt-5 text-[.8125rem] font-semibold text-[var(--primary)]">
-                      Saiba mais →
-                    </p>
-                  )}
+                  <p className="mt-3 text-[.9375rem] leading-[1.75] text-[var(--text-muted)]">
+                    {c.p2}
+                  </p>
                 </>
               );
               const cls =
-                "group relative h-full rounded-2xl border border-[var(--border)] border-l-2 border-l-[var(--primary)] bg-white p-8 shadow-[var(--shadow-soft)] transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-card)]";
+                "group relative h-full rounded-2xl border border-[var(--border)] border-l-4 border-l-[var(--primary)] bg-white p-8 shadow-[var(--shadow-soft)] transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-card)]";
               return (
                 <StaggerItem key={c.title}>
                   {c.href ? (
@@ -303,16 +298,6 @@ export default async function LandingPage() {
                         </span>
                         <div className="flex items-center gap-2">
                           {l.halal_certified && <HalalBadgeSVG size={22} />}
-                          {l.listing_type === "animal" && !l.halal_certified && (
-                            <span className="rounded-md border border-[var(--primary)]/25 bg-[var(--primary-soft)] px-2 py-0.5 text-[.6875rem] font-semibold text-[var(--primary)]">
-                              MAPA verificado
-                            </span>
-                          )}
-                          {(l.listing_type === "insumo" || l.listing_type === "maquinario" || l.listing_type === "equipamento" || l.listing_type === "epi") && (
-                            <span className="rounded-md border border-[var(--primary)]/25 bg-[var(--primary-soft)] px-2 py-0.5 text-[.6875rem] font-semibold text-[var(--primary)]">
-                              Produto verificado
-                            </span>
-                          )}
                           {l.score_agraas != null && (
                             <span className="rounded-md bg-[var(--primary-soft)] px-2 py-0.5 text-[.6875rem] font-bold text-[var(--primary)]">
                               Score {l.score_agraas}

@@ -9,7 +9,7 @@ import { Shield, Zap, Globe, ArrowRight } from "lucide-react";
 export const metadata: Metadata = {
   title: "Sobre nós",
   description:
-    "Fundada em 2025 em São Paulo. A Agraas é a infraestrutura digital do agronegócio brasileiro — do pasto ao porto, com o primeiro cliente ativo em Jandaia, Goiás.",
+    "Fundada em 2025 em São Paulo. A Agraas é a infraestrutura digital do agronegócio brasileiro — do pasto ao porto, com o primeiro cliente ativo em Jussara, Goiás.",
 };
 
 const IMG = {
@@ -156,7 +156,7 @@ export default function SobrePage() {
           <FadeIn delay={0.15}>
             <div className="mt-8 space-y-5 text-[1.0625rem] leading-[1.85] text-[var(--text-secondary)]">
               <p>
-                A Agraas foi fundada em 2025 em São Paulo por um time com raízes no mercado financeiro e no agronegócio goiano. A plataforma foi construída do zero e está em operação como piloto em Jandaia, Goiás — uma fazenda de cria com rebanho Nelore sendo digitalmente rastreada com passaporte individual, score em tempo real e infraestrutura preparada para exportação.
+                A Agraas foi fundada em 2025 em São Paulo por um time com raízes no mercado financeiro e no agronegócio goiano. A plataforma foi construída do zero e está em operação como piloto em Jussara, Goiás — uma fazenda de cria com rebanho Nelore sendo digitalmente rastreada com passaporte individual, score em tempo real e infraestrutura de exportação ativa.
               </p>
               <p>Estamos em processo de captação para escalar a operação em todo o Brasil.</p>
             </div>
@@ -174,10 +174,10 @@ export default function SobrePage() {
           </FadeIn>
           <div className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
             {[
-              { value: "2.300", label: "cabeças rastreadas no piloto" },
-              { value: "5",     label: "passaportes digitais emitidos" },
-              { value: "78",    label: "score médio do rebanho" },
-              { value: "0",     label: "bugs críticos em aberto" },
+              { value: "82",  label: "módulos operacionais" },
+              { value: "104", label: "migrations aplicadas" },
+              { value: "56",  label: "tabelas no banco" },
+              { value: "0",   label: "bugs críticos abertos" },
             ].map((m, i) => (
               <FadeIn key={m.label} delay={0.1 + i * 0.06}>
                 <div>

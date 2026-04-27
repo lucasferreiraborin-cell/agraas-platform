@@ -55,12 +55,7 @@ export default function OperationalSection() {
               Contábil, fiscal e estoque <span className="text-[var(--text-muted)]">no mesmo lugar.</span>
             </h2>
           </FadeIn>
-          <FadeIn delay={0.08}>
-            <p className="mt-5 max-w-[720px] text-[1rem] leading-[1.8] text-[var(--text-secondary)]">
-              Além da rastreabilidade, a Agraas centraliza toda a gestão operacional e financeira — para que o produtor e o contador tenham tudo no mesmo lugar.
-            </p>
-          </FadeIn>
-          <FadeIn delay={0.16}>
+          <FadeIn delay={0.12}>
             <div className="mt-6 max-w-[720px] rounded-2xl border-l-4 border-[var(--primary)] bg-[var(--surface-soft)] p-6">
               <p className="text-[1.0625rem] leading-[1.8] text-[var(--text-primary)]">
                 O fazendeiro brasileiro usa em média 3 a 4 softwares para administrar uma operação. Um para gestão animal, um para fiscal, um para financeiro, um para estoque. Nenhum conversa com o outro. A Agraas substitui todos.
@@ -145,10 +140,7 @@ export default function OperationalSection() {
               </p>
             </div>
 
-            <div className="mt-6">
-              <p className="mb-3 text-[.8125rem] text-[var(--text-muted)]">
-                Explore todos os módulos da plataforma
-              </p>
+            <div className="mt-10">
               <Link
                 href="/cadastro"
                 className="group inline-flex items-center gap-2 rounded-xl border border-[var(--border-strong)] bg-white px-5 py-2.5 text-[.8125rem] font-semibold text-[var(--text-primary)] transition hover:bg-[var(--surface-soft)]"

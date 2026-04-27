@@ -7,10 +7,6 @@ import { FadeIn } from "@/app/components/ui/Motion";
 
 const FAQ = [
   {
-    q: "O que diferencia a Agraas de outras plataformas de gestão rural?",
-    a: "A maioria das plataformas registra o que acontece na fazenda. A Agraas transforma esses registros em prova verificável de origem, qualidade e conformidade — para compradores institucionais no Brasil e no mundo. É a diferença entre gestão e infraestrutura de confiança.",
-  },
-  {
     q: "A Agraas substitui meu ERP agrícola ou complementa?",
     a: "Substitui. A plataforma cobre toda a cadeia — rastreabilidade, operacional, financeiro (DRE, fluxo, balanço), fiscal (NF-e automática), estoque com carência MAPA, custo por animal e ROI. Quem migra reduz de 3-4 softwares para 1.",
   },
