@@ -9,7 +9,7 @@ import { Shield, Zap, Globe, ArrowRight } from "lucide-react";
 export const metadata: Metadata = {
   title: "Sobre nós",
   description:
-    "Fundada em 2025 em São Paulo. A Agraas é a infraestrutura digital do agronegócio brasileiro — do pasto ao porto, com o primeiro cliente ativo em Jussara, Goiás.",
+    "Fundada em 2025 em São Paulo. A Agraas é a infraestrutura digital do agronegócio brasileiro — do pasto ao porto, com o primeiro cliente ativo em Jandaia, Goiás.",
 };
 
 const IMG = {
@@ -156,7 +156,7 @@ export default function SobrePage() {
           <FadeIn delay={0.15}>
             <div className="mt-8 space-y-5 text-[1.0625rem] leading-[1.85] text-[var(--text-secondary)]">
               <p>
-                A Agraas foi fundada em 2025 em São Paulo por um time com raízes no mercado financeiro e no agronegócio goiano. A plataforma foi construída do zero e está em operação como piloto em Jussara, Goiás — uma fazenda de cria com rebanho Nelore sendo digitalmente rastreada com passaporte individual, score em tempo real e infraestrutura de exportação ativa.
+                A Agraas foi fundada em 2025 em São Paulo por um time com raízes no mercado financeiro e no agronegócio goiano. A plataforma foi construída do zero e está em operação como piloto em Jandaia, Goiás — uma fazenda de cria com rebanho Nelore sendo digitalmente rastreada com passaporte individual, score em tempo real e infraestrutura preparada para exportação.
               </p>
               <p>Estamos em processo de captação para escalar a operação em todo o Brasil.</p>
             </div>
@@ -174,10 +174,10 @@ export default function SobrePage() {
           </FadeIn>
           <div className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
             {[
-              { value: "82",  label: "módulos operacionais" },
-              { value: "104", label: "migrations aplicadas" },
-              { value: "56",  label: "tabelas no banco" },
-              { value: "0",   label: "bugs críticos abertos" },
+              { value: "2.300", label: "cabeças rastreadas no piloto" },
+              { value: "5",     label: "passaportes digitais emitidos" },
+              { value: "78",    label: "score médio do rebanho" },
+              { value: "0",     label: "bugs críticos em aberto" },
             ].map((m, i) => (
               <FadeIn key={m.label} delay={0.1 + i * 0.06}>
                 <div>
@@ -211,18 +211,43 @@ export default function SobrePage() {
           </div>
 
           <StaggerContainer
-            className="mt-12 grid gap-5 md:grid-cols-3"
+            className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3"
             staggerChildren={0.08}
           >
             {[
-              { name: "Lucas Ferreira Borin", initials: "LF", role: "CEO e Co-founder" },
-              { name: "Eduardo de Paola",     initials: "EP", role: "Co-founder" },
-              { name: "Pedro Salim",          initials: "PS", role: "Co-founder" },
-              { name: "Pedro Maluli",         initials: "PM", role: "Co-founder" },
-              { name: "Frederico Maluli",     initials: "FM", role: "Co-founder" },
+              {
+                name: "Lucas Ferreira Borin",
+                initials: "LF",
+                role: "CEO & CTO",
+                bio: "Construiu a plataforma do zero. Economia IBMEC SP. Santander Brasil e Guide Investimentos. Cert. ANBIMA.",
+              },
+              {
+                name: "Eduardo de Paola",
+                initials: "EP",
+                role: "COO",
+                bio: "Ecossistema Tivit — R$ 2,1Bi, 10 países, adquirida por R$ 873M.",
+              },
+              {
+                name: "Pedro Salim",
+                initials: "PS",
+                role: "Diretor Comercial",
+                bio: "Multi-Family Office e Wealth Management. Rede pecuária em Goiás.",
+              },
+              {
+                name: "Pedro Maluli",
+                initials: "PM",
+                role: "Operações Agro",
+                bio: "Co-proprietário da FSJBE — primeira fazenda piloto ativa.",
+              },
+              {
+                name: "Frederico Maluli",
+                initials: "FM",
+                role: "Parcerias Agro",
+                bio: "Rede em genética bovina, Allflex e cooperativas do Centro-Oeste.",
+              },
             ].map((p) => (
               <StaggerItem key={p.name}>
-                <div className="flex h-full items-center gap-5 rounded-2xl border border-[var(--border)] bg-white p-6 shadow-[var(--shadow-soft)] transition-colors hover:border-[var(--primary)]/25">
+                <div className="flex h-full items-start gap-5 rounded-2xl border border-[var(--border)] bg-white p-6 shadow-[var(--shadow-soft)] transition-colors hover:border-[var(--primary)]/25">
                   <div
                     className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full text-white"
                     style={{
@@ -238,8 +263,11 @@ export default function SobrePage() {
                     <p className="text-[1rem] font-semibold leading-[1.25] tracking-[-.01em] text-[var(--text-primary)]">
                       {p.name}
                     </p>
-                    <p className="mt-1.5 text-[.8125rem] text-[var(--text-muted)]">
+                    <p className="mt-1.5 text-[.8125rem] font-medium text-[var(--primary)]">
                       {p.role}
+                    </p>
+                    <p className="mt-2.5 text-[.8125rem] leading-[1.55] text-[var(--text-muted)]">
+                      {p.bio}
                     </p>
                   </div>
                 </div>
