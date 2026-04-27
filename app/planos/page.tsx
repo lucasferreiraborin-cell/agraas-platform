@@ -104,6 +104,10 @@ const COMPARISON_ROWS: { label: string; values: CellValue[] }[] = [
 
 const FAQ = [
   {
+    q: "O que diferencia a Agraas de outras plataformas de gestão rural?",
+    a: "A maioria das plataformas registra o que acontece na fazenda. A Agraas transforma esses registros em prova verificável de origem, qualidade e conformidade — para compradores institucionais no Brasil e no mundo. É a diferença entre gestão e infraestrutura de confiança.",
+  },
+  {
     q: "Posso trocar de plano a qualquer momento?",
     a: "Sim. Upgrade é instantâneo, com cobrança proporcional ao ciclo atual. Downgrade passa a valer no próximo mês — você não perde o acesso até o fim do ciclo pago.",
   },
@@ -346,7 +350,7 @@ export default function PlanosPage() {
                       className={`mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl py-3 text-[.875rem] font-semibold transition disabled:opacity-60 ${
                         plan.popular
                           ? "bg-[var(--primary)] text-white shadow-[var(--shadow-green)] hover:bg-[var(--primary-hover)]"
-                          : "border border-[var(--border-strong)] bg-white text-[var(--text-primary)] hover:bg-[var(--surface-soft)]"
+                          : "border-2 border-[var(--primary)] bg-white text-[var(--primary)] hover:bg-[var(--primary-soft)]"
                       }`}
                     >
                       {loading === plan.id ? (
@@ -531,7 +535,7 @@ export default function PlanosPage() {
               </FadeIn>
               <FadeIn delay={0.2}>
                 <p className="mt-6 max-w-[520px] text-[.9375rem] leading-[1.8] text-[var(--text-secondary)]">
-                  Opera no Agraas com passaporte digital individual, score em tempo real e lote de exportação ativo para Jeddah. Comprador institucional vinculado via portal dedicado.
+                  Opera no Agraas com passaporte digital individual, score em tempo real e rebanho sendo preparado para exportação.
                 </p>
               </FadeIn>
 
@@ -547,7 +551,7 @@ export default function PlanosPage() {
                         Plataforma em produção desde 2025
                       </p>
                       <p className="mt-1 text-[.75rem] leading-[1.55] text-[var(--text-muted)]">
-                        Operação contínua · 82 módulos ativos · deploys múltiplos por semana
+                        Operação contínua · uptime monitorado 24/7
                       </p>
                     </div>
                   </div>
@@ -560,7 +564,7 @@ export default function PlanosPage() {
                         0 bugs críticos em aberto
                       </p>
                       <p className="mt-1 text-[.75rem] leading-[1.55] text-[var(--text-muted)]">
-                        Sentry monitorando tempo real · typecheck limpo em cada deploy
+                        Monitoramento ativo · qualidade verificada a cada deploy
                       </p>
                     </div>
                   </div>
@@ -629,7 +633,7 @@ export default function PlanosPage() {
               </Link>
               <a
                 href="mailto:contato@agraas.com.br"
-                className="rounded-xl border border-white/60 px-8 py-4 text-[.9375rem] font-semibold text-white transition hover:border-white hover:bg-white/10"
+                className="rounded-xl border-2 border-white bg-transparent px-8 py-4 text-[.9375rem] font-semibold text-white transition-colors duration-200 hover:bg-white/10"
               >
                 Agendar demo
               </a>
