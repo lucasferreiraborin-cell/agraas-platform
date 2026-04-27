@@ -126,13 +126,6 @@ export default async function LandingPage() {
           quality={85}
           className="absolute inset-0 -z-10 object-cover"
         />
-        <div
-          className="absolute inset-x-0 bottom-0 -z-10 h-48"
-          style={{
-            background:
-              "linear-gradient(to top, var(--bg) 0%, rgba(244,247,242,.5) 50%, transparent 100%)",
-          }}
-        />
 
         <div className="relative mx-auto max-w-[1100px] px-6 pt-20 pb-24 lg:px-10 lg:pt-28 lg:pb-32">
           <FadeIn>
