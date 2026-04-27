@@ -131,7 +131,11 @@ export default function ScoresSection() {
               </h3>
             </FadeIn>
 
-            <StaggerContainer className="mt-8 space-y-3" staggerChildren={0.07}>
+            <p className="mt-8 text-xs uppercase tracking-wider text-white/40">
+              Peso no Score
+            </p>
+
+            <StaggerContainer className="mt-3 space-y-3" staggerChildren={0.07}>
               {DIMENSIONS.map((d, i) => (
                 <StaggerItem key={d.label}>
                   <div className="rounded-xl border border-white/[.08] bg-white/[.03] p-5">

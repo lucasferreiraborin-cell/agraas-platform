@@ -34,7 +34,10 @@ export default function FSJBECaseSection() {
       <div className="relative mx-auto max-w-[1200px] px-6 py-24 lg:px-10 lg:py-32">
         <div className="max-w-[820px]">
           <FadeIn>
-            <h2 className="text-[clamp(2rem,4.5vw,3.2rem)] font-medium leading-[1.05] tracking-[-.025em] text-[var(--text-primary)]">
+            <span className="text-xs uppercase tracking-wider text-[var(--primary)]">
+              Cliente fundador · Em operação
+            </span>
+            <h2 className="mt-3 text-[clamp(2rem,4.5vw,3.2rem)] font-medium leading-[1.05] tracking-[-.025em] text-[var(--text-primary)]">
               Fazenda São João da Boa Esperança
             </h2>
           </FadeIn>
@@ -125,6 +128,17 @@ export default function FSJBECaseSection() {
                   className="transition-transform group-hover:translate-x-0.5"
                 />
               </Link>
+            </FadeIn>
+
+            <FadeIn delay={0.45}>
+              <a
+                href="/passaporte/AGR-7C46ZHG7"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block text-center text-sm text-[var(--primary)] underline underline-offset-4 hover:text-[var(--primary-hover)]"
+              >
+                Ver exemplo de passaporte público →
+              </a>
             </FadeIn>
           </div>
         </div>
