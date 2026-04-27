@@ -67,7 +67,7 @@ export default function BrazilAgroSection() {
         }}
       />
 
-      <div className="relative mx-auto max-w-[1200px] px-6 py-24 lg:px-10 lg:py-28">
+      <div className="relative mx-auto max-w-[1200px] px-6 py-16 lg:px-10 lg:py-20">
         <div className="grid gap-12 lg:grid-cols-[.8fr_1.2fr] lg:gap-20">
           <div>
             <FadeIn>

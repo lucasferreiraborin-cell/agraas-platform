@@ -140,7 +140,10 @@ export default function OperationalSection() {
               </p>
             </div>
 
-            <div className="mt-10">
+            <div className="mt-6">
+              <p className="mb-3 text-[.8125rem] text-[var(--text-muted)]">
+                Explore todos os módulos da plataforma
+              </p>
               <Link
                 href="/cadastro"
                 className="group inline-flex items-center gap-2 rounded-xl border border-[var(--border-strong)] bg-white px-5 py-2.5 text-[.8125rem] font-semibold text-[var(--text-primary)] transition hover:bg-[var(--surface-soft)]"

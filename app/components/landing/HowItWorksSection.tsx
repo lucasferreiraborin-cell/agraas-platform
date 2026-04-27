@@ -28,7 +28,7 @@ const STEPS = [
 export default function HowItWorksSection() {
   return (
     <section className="bg-[var(--bg)]">
-      <div className="mx-auto max-w-[1200px] px-6 py-24 lg:px-10 lg:py-28">
+      <div className="mx-auto max-w-[1200px] px-6 py-16 lg:px-10 lg:py-20">
         <div className="max-w-[820px]">
           <FadeIn>
             <h2 className="text-[clamp(1.8rem,4vw,2.8rem)] font-medium leading-[1.1] tracking-[-.02em] text-[var(--text-primary)]">
@@ -71,20 +71,28 @@ export default function HowItWorksSection() {
         </div>
 
         <FadeIn delay={0.4}>
-          <div className="mt-14 flex flex-wrap items-center gap-4">
-            <Link
-              href="/cadastro"
-              className="inline-flex items-center gap-2 rounded-xl bg-[var(--primary)] px-6 py-3 text-[.9375rem] font-semibold text-white shadow-[0_10px_30px_rgba(46,139,62,.2)] transition-all hover:bg-[var(--primary-hover)]"
-            >
-              Criar conta grátis
-              <ArrowRight size={15} />
-            </Link>
-            <Link
-              href="/planos"
-              className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-strong)] bg-white px-6 py-3 text-[.9375rem] font-semibold text-[var(--text-primary)] transition hover:bg-[var(--surface-soft)]"
-            >
-              Ver planos
-            </Link>
+          <div className="mt-14 rounded-2xl border border-[var(--border)] bg-white p-7 shadow-[var(--shadow-soft)]">
+            <h3 className="text-[1.125rem] font-semibold text-[var(--text-primary)]">
+              Pronto para começar?
+            </h3>
+            <p className="mt-2 text-[.875rem] leading-[1.6] text-[var(--text-muted)]">
+              Crie sua conta gratuitamente e ative o passaporte digital do seu rebanho ainda hoje.
+            </p>
+            <div className="mt-5 flex flex-wrap items-center gap-3">
+              <Link
+                href="/cadastro"
+                className="inline-flex items-center gap-2 rounded-xl bg-[var(--primary)] px-6 py-3 text-[.9375rem] font-semibold text-white shadow-[0_10px_30px_rgba(46,139,62,.2)] transition-all hover:bg-[var(--primary-hover)]"
+              >
+                Criar conta grátis
+                <ArrowRight size={15} />
+              </Link>
+              <Link
+                href="/planos"
+                className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-strong)] bg-white px-6 py-3 text-[.9375rem] font-semibold text-[var(--text-primary)] transition hover:bg-[var(--surface-soft)]"
+              >
+                Ver planos
+              </Link>
+            </div>
           </div>
         </FadeIn>
       </div>

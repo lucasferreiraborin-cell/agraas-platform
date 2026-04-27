@@ -144,7 +144,7 @@ export default async function LandingPage() {
           </FadeIn>
 
           <FadeIn delay={0.2}>
-            <p className="mt-7 max-w-[600px] text-[1.0625rem] leading-[1.75] text-white/70">
+            <p className="mt-7 max-w-[600px] text-[1.0625rem] leading-[1.75] text-white/85">
               Pecuária, grãos e exportação sobre uma única camada de dados verificáveis. Do pasto ao porto, do talhão ao comprador institucional.
             </p>
           </FadeIn>
@@ -160,7 +160,7 @@ export default async function LandingPage() {
               </Link>
               <Link
                 href="/login"
-                className="rounded-xl border border-white/60 px-7 py-[14px] text-[.9375rem] font-semibold text-white transition hover:border-white hover:bg-white/10"
+                className="rounded-xl border-2 border-white bg-transparent px-7 py-[14px] text-[.9375rem] font-semibold text-white transition-colors duration-200 hover:bg-white/10"
               >
                 Ver a plataforma
               </Link>
@@ -179,7 +179,7 @@ export default async function LandingPage() {
 
       {/* ═══ [5] CAPABILITIES — narrativa 2x2 ═════════════════════════════ */}
       <section className="bg-white">
-        <div className="mx-auto max-w-[1200px] px-6 py-24 lg:px-10 lg:py-28">
+        <div className="mx-auto max-w-[1200px] px-6 py-16 lg:px-10 lg:py-20">
           <div className="max-w-[820px]">
             <FadeIn>
               <h2 className="text-[clamp(1.8rem,3.5vw,2.6rem)] font-medium leading-[1.1] tracking-[-.02em] text-[var(--text-primary)]">
@@ -215,7 +215,7 @@ export default async function LandingPage() {
                 </>
               );
               const cls =
-                "group relative h-full rounded-2xl border border-[var(--border)] border-l-4 border-l-[var(--primary)] bg-white p-8 shadow-[var(--shadow-soft)] transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-card)]";
+                "group relative h-full rounded-2xl border border-[var(--border)] border-l-2 border-l-[var(--primary)] bg-white p-8 shadow-[var(--shadow-soft)] transition-all hover:-translate-y-0.5 hover:shadow-[var(--shadow-card)]";
               return (
                 <StaggerItem key={c.title}>
                   {c.href ? (
@@ -298,6 +298,16 @@ export default async function LandingPage() {
                         </span>
                         <div className="flex items-center gap-2">
                           {l.halal_certified && <HalalBadgeSVG size={22} />}
+                          {l.listing_type === "animal" && !l.halal_certified && (
+                            <span className="rounded-md border border-[var(--primary)]/25 bg-[var(--primary-soft)] px-2 py-0.5 text-[.6875rem] font-semibold text-[var(--primary)]">
+                              MAPA verificado
+                            </span>
+                          )}
+                          {(l.listing_type === "insumo" || l.listing_type === "maquinario" || l.listing_type === "equipamento" || l.listing_type === "epi") && (
+                            <span className="rounded-md border border-[var(--primary)]/25 bg-[var(--primary-soft)] px-2 py-0.5 text-[.6875rem] font-semibold text-[var(--primary)]">
+                              Produto verificado
+                            </span>
+                          )}
                           {l.score_agraas != null && (
                             <span className="rounded-md bg-[var(--primary-soft)] px-2 py-0.5 text-[.6875rem] font-bold text-[var(--primary)]">
                               Score {l.score_agraas}
