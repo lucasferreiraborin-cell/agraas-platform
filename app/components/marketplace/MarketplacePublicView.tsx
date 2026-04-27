@@ -21,6 +21,7 @@ import {
   Candy,
   Sprout,
   Tractor,
+  Wrench,
   HardHat,
   MoreHorizontal,
   ShieldCheck,
@@ -40,12 +41,12 @@ const TYPE_META: Record<
   string,
   { icon: typeof Package; label: string; color: string; bg: string; stripe: string }
 > = {
-  animal:      { icon: Tag,         label: "Animal",      color: "text-emerald-700", bg: "bg-emerald-50", stripe: "from-emerald-400 to-emerald-600" },
-  safra:       { icon: Wheat,       label: "Safra",       color: "text-amber-700",   bg: "bg-amber-50",   stripe: "from-amber-400 to-amber-600" },
-  insumo:      { icon: ShoppingBag, label: "Insumo",      color: "text-blue-700",    bg: "bg-blue-50",    stripe: "from-blue-400 to-blue-600" },
-  maquinario:  { icon: Truck,       label: "Maquinário",  color: "text-purple-700",  bg: "bg-purple-50",  stripe: "from-purple-400 to-purple-600" },
-  equipamento: { icon: Truck,       label: "Equipamento", color: "text-indigo-700",  bg: "bg-indigo-50",  stripe: "from-indigo-400 to-indigo-600" },
-  epi:         { icon: ShoppingBag, label: "EPI",         color: "text-teal-700",    bg: "bg-teal-50",    stripe: "from-teal-400 to-teal-600" },
+  animal:      { icon: Tag,        label: "Animal",      color: "text-emerald-700", bg: "bg-emerald-50", stripe: "from-emerald-400 to-emerald-600" },
+  safra:       { icon: Wheat,      label: "Safra",       color: "text-amber-700",   bg: "bg-amber-50",   stripe: "from-amber-400 to-amber-600" },
+  insumo:      { icon: Package,    label: "Insumo",      color: "text-blue-700",    bg: "bg-blue-50",    stripe: "from-blue-400 to-blue-600" },
+  maquinario:  { icon: Tractor,    label: "Maquinário",  color: "text-purple-700",  bg: "bg-purple-50",  stripe: "from-purple-400 to-purple-600" },
+  equipamento: { icon: Wrench,     label: "Equipamento", color: "text-indigo-700",  bg: "bg-indigo-50",  stripe: "from-indigo-400 to-indigo-600" },
+  epi:         { icon: HardHat,    label: "EPI",         color: "text-teal-700",    bg: "bg-teal-50",    stripe: "from-teal-400 to-teal-600" },
   outro:       { icon: Package,     label: "Outro",       color: "text-gray-700",    bg: "bg-gray-50",    stripe: "from-gray-400 to-gray-600" },
 };
 
@@ -248,7 +249,7 @@ export default function MarketplacePublicView({ listings }: { listings: Listing[
                 </a>
                 <Link
                   href="/cadastro"
-                  className="rounded-xl border border-white/60 px-7 py-[14px] text-[.9375rem] font-semibold text-white transition hover:border-white hover:bg-white/10"
+                  className="rounded-xl border-2 border-white bg-transparent px-7 py-[14px] text-[.9375rem] font-semibold text-white transition-colors duration-200 hover:bg-white/10"
                 >
                   Vender na Agraas
                 </Link>
@@ -771,8 +772,8 @@ export default function MarketplacePublicView({ listings }: { listings: Listing[
                   text: "Propriedade georreferenciada com CAR, GTA e certificações ativas exibidas em todo anúncio.",
                 },
                 {
-                  title: "RLS + dados soberanos",
-                  text: "Row Level Security em PostgreSQL. Seus dados nunca são visíveis a outros clientes, em nenhuma hipótese.",
+                  title: "Dados exclusivamente seus",
+                  text: "Suas informações nunca são visíveis a outros usuários da plataforma, em nenhuma hipótese. Privacidade garantida por arquitetura.",
                 },
                 {
                   title: "NF-e automática",
@@ -845,7 +846,7 @@ export default function MarketplacePublicView({ listings }: { listings: Listing[
               </Link>
               <Link
                 href="/planos"
-                className="rounded-xl border border-white/60 px-8 py-4 text-[.9375rem] font-semibold text-white transition hover:border-white hover:bg-white/10"
+                className="rounded-xl border-2 border-white bg-transparent px-8 py-4 text-[.9375rem] font-semibold text-white transition-colors duration-200 hover:bg-white/10"
               >
                 Ver planos
               </Link>
@@ -860,9 +861,8 @@ export default function MarketplacePublicView({ listings }: { listings: Listing[
 function PublicListingCard({ listing: l }: { listing: Listing }) {
   const t = TYPE_META[l.listing_type] ?? TYPE_META.outro;
   const Icon = t.icon;
-  // Parcelamento estilo Mercado Livre — calcula em 10x sem juros
-  const installmentValue = l.price_per_unit / 10;
   const isPremium = (l.score_agraas ?? 0) >= 75;
+  const isProduct = l.listing_type === "insumo" || l.listing_type === "maquinario" || l.listing_type === "equipamento" || l.listing_type === "epi";
 
   return (
     <Link
@@ -893,6 +893,11 @@ function PublicListingCard({ listing: l }: { listing: Listing }) {
               <HalalBadgeSVG size={10} /> Halal
             </span>
           )}
+          {isProduct && (
+            <span className="inline-flex items-center gap-1 rounded-sm bg-white/95 px-1.5 py-0.5 text-[.625rem] font-bold text-[var(--primary-hover)]">
+              <ShieldCheck size={10} /> Produto verificado
+            </span>
+          )}
         </div>
 
         {/* Top-right score */}
@@ -912,7 +917,7 @@ function PublicListingCard({ listing: l }: { listing: Listing }) {
           {l.title}
         </h4>
 
-        {/* Price block — Mercado Livre style */}
+        {/* Price block */}
         <div className="mt-3">
           <div className="flex items-baseline gap-1.5">
             <span className="text-[1.375rem] font-semibold leading-none text-[var(--text-primary)]">
@@ -920,9 +925,6 @@ function PublicListingCard({ listing: l }: { listing: Listing }) {
             </span>
             <span className="text-[.75rem] text-[var(--text-muted)]">/{l.unit}</span>
           </div>
-          <p className="mt-1 text-[.6875rem] text-[var(--text-secondary)]">
-            em <span className="font-semibold text-[var(--primary)]">10x {fmt(installmentValue)}</span> sem juros
-          </p>
         </div>
 
         {/* Freight / meta */}
@@ -950,8 +952,8 @@ function PublicListingCard({ listing: l }: { listing: Listing }) {
 function FeaturedListingCard({ listing: l }: { listing: Listing }) {
   const t = TYPE_META[l.listing_type] ?? TYPE_META.outro;
   const Icon = t.icon;
-  const installmentValue = l.price_per_unit / 10;
   const isPremium = (l.score_agraas ?? 0) >= 75;
+  const isProduct = l.listing_type === "insumo" || l.listing_type === "maquinario" || l.listing_type === "equipamento" || l.listing_type === "epi";
 
   return (
     <Link
@@ -985,6 +987,11 @@ function FeaturedListingCard({ listing: l }: { listing: Listing }) {
               <HalalBadgeSVG size={11} /> Halal
             </span>
           )}
+          {isProduct && (
+            <span className="inline-flex items-center gap-1 rounded-sm bg-white/95 px-2 py-0.5 text-[.6875rem] font-bold text-[var(--primary-hover)]">
+              <ShieldCheck size={11} /> Produto verificado
+            </span>
+          )}
         </div>
 
         {l.score_agraas != null && (
@@ -1009,9 +1016,6 @@ function FeaturedListingCard({ listing: l }: { listing: Listing }) {
             </span>
             <span className="text-[.8125rem] text-[var(--text-muted)]">/{l.unit}</span>
           </div>
-          <p className="mt-1.5 text-[.75rem] text-[var(--text-secondary)]">
-            em <span className="font-semibold text-[var(--primary)]">10x {fmt(installmentValue)}</span> sem juros
-          </p>
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-[.75rem]">
