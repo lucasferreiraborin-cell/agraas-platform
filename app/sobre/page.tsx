@@ -156,41 +156,11 @@ export default function SobrePage() {
           <FadeIn delay={0.15}>
             <div className="mt-8 space-y-5 text-[1.0625rem] leading-[1.85] text-[var(--text-secondary)]">
               <p>
-                A Agraas foi fundada em 2025 em São Paulo por um time com raízes no mercado financeiro e no agronegócio goiano. A plataforma foi construída do zero e está em operação como piloto em Jussara, Goiás — uma fazenda de cria com rebanho Nelore sendo digitalmente rastreada com passaporte individual, score em tempo real e infraestrutura de exportação ativa.
+                A Agraas foi fundada em 2025 em São Paulo por um time com raízes profundas no agronegócio brasileiro. A plataforma foi construída do zero e está em operação como piloto em Goiás — uma fazenda de cria com rebanho Nelore sendo digitalmente rastreada com passaporte individual e operação registrada do dia a dia.
               </p>
               <p>Estamos em processo de captação para escalar a operação em todo o Brasil.</p>
             </div>
           </FadeIn>
-        </div>
-      </section>
-
-      {/* ═══ A PLATAFORMA EM NÚMEROS ═══════════════════════════════════════ */}
-      <section className="border-y border-[var(--border)] bg-[var(--bg)]">
-        <div className="mx-auto max-w-[1200px] px-6 py-16 lg:px-10 lg:py-20">
-          <FadeIn>
-            <h2 className="text-[clamp(1.4rem,2.8vw,1.8rem)] font-medium leading-[1.2] tracking-[-.015em] text-[var(--text-primary)]">
-              A plataforma em números
-            </h2>
-          </FadeIn>
-          <div className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              { value: "82",  label: "módulos operacionais" },
-              { value: "104", label: "migrations aplicadas" },
-              { value: "56",  label: "tabelas no banco" },
-              { value: "0",   label: "bugs críticos abertos" },
-            ].map((m, i) => (
-              <FadeIn key={m.label} delay={0.1 + i * 0.06}>
-                <div>
-                  <p className="text-[2.2rem] font-semibold leading-none tracking-[-.025em] text-[var(--text-primary)]">
-                    {m.value}
-                  </p>
-                  <p className="mt-3 text-[.875rem] text-[var(--text-muted)]">
-                    {m.label}
-                  </p>
-                </div>
-              </FadeIn>
-            ))}
-          </div>
         </div>
       </section>
 
@@ -205,7 +175,7 @@ export default function SobrePage() {
             </FadeIn>
             <FadeIn delay={0.1}>
               <p className="mt-5 max-w-[620px] text-[1rem] leading-[1.75] text-[var(--text-secondary)]">
-                Cinco co-founders com background em mercado financeiro, engenharia de software, agronegócio goiano, comércio exterior e genética bovina.
+                Cinco co-founders com raízes profundas no agronegócio brasileiro — da operação de campo à cadeia exportadora.
               </p>
             </FadeIn>
           </div>
@@ -271,7 +241,7 @@ export default function SobrePage() {
               </Link>
               <a
                 href="mailto:contato@agraas.com.br"
-                className="rounded-xl border border-[var(--border-strong)] bg-white px-7 py-[14px] text-[.9375rem] font-semibold text-[var(--text-primary)] transition hover:bg-[var(--surface-soft)]"
+                className="rounded-xl border-2 border-[var(--primary)] bg-white px-7 py-[14px] text-[.9375rem] font-semibold text-[var(--primary)] transition hover:bg-[var(--primary-soft)]"
               >
                 contato@agraas.com.br
               </a>

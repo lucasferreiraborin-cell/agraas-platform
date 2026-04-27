@@ -354,7 +354,7 @@ export default async function ListingDetailPage({
                       href={`/passaporte/${passportSlug}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="group inline-flex w-full items-center justify-center gap-2 rounded-xl border border-[var(--primary)]/30 bg-white px-4 py-3 text-[.8125rem] font-semibold text-[var(--primary)] transition hover:bg-[var(--primary-soft)]"
+                      className="group inline-flex w-full items-center justify-center gap-2 rounded-xl border-2 border-[var(--primary)] bg-white px-4 py-3 text-[.8125rem] font-semibold text-[var(--primary)] transition hover:bg-[var(--primary-soft)]"
                     >
                       Ver passaporte público
                       <ExternalLink size={13} />

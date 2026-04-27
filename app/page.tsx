@@ -400,7 +400,7 @@ export default async function LandingPage() {
               </Link>
               <a
                 href="mailto:contato@agraas.com.br"
-                className="rounded-xl border border-white/60 px-8 py-4 text-[.9375rem] font-semibold text-white transition hover:border-white hover:bg-white/10"
+                className="rounded-xl border-2 border-white bg-transparent px-8 py-4 text-[.9375rem] font-semibold text-white transition-colors duration-200 hover:bg-white/10"
               >
                 Fale com a gente
               </a>

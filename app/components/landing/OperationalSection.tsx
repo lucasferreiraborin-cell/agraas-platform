@@ -143,7 +143,7 @@ export default function OperationalSection() {
             <div className="mt-10">
               <Link
                 href="/cadastro"
-                className="group inline-flex items-center gap-2 rounded-xl border border-[var(--border-strong)] bg-white px-5 py-2.5 text-[.8125rem] font-semibold text-[var(--text-primary)] transition hover:bg-[var(--surface-soft)]"
+                className="group inline-flex items-center gap-2 rounded-xl border-2 border-[var(--primary)] bg-white px-5 py-2.5 text-[.8125rem] font-semibold text-[var(--primary)] transition hover:bg-[var(--primary-soft)]"
               >
                 Ver a plataforma completa
                 <ArrowRight size={13} className="transition-transform group-hover:translate-x-0.5" />

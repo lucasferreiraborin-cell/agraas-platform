@@ -81,7 +81,7 @@ export default function HowItWorksSection() {
             </Link>
             <Link
               href="/planos"
-              className="inline-flex items-center gap-2 rounded-xl border border-[var(--border-strong)] bg-white px-6 py-3 text-[.9375rem] font-semibold text-[var(--text-primary)] transition hover:bg-[var(--surface-soft)]"
+              className="inline-flex items-center gap-2 rounded-xl border-2 border-[var(--primary)] bg-white px-6 py-3 text-[.9375rem] font-semibold text-[var(--primary)] transition hover:bg-[var(--primary-soft)]"
             >
               Ver planos
             </Link>

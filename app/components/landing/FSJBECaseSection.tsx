@@ -9,15 +9,13 @@ const STATS = [
   { value: "2.300",  label: "cabeças sob rastreio digital" },
   { value: "19",     label: "pesagens registradas" },
   { value: "21",     label: "aplicações sanitárias rastreadas" },
-  { value: "1",      label: "lote de exportação ativo → Jeddah" },
-  { value: "Halal",  label: "certificado para mercado árabe" },
 ];
 
 const DELIVERABLES = [
-  { label: "Passaporte digital",   sub: "ID único por animal, acessível via QR público" },
-  { label: "Operação no campo",    sub: "Pesagens, manejo e sanitário registrados pelo time" },
-  { label: "Cadeia de exportação", sub: "Lote ativo com rastreio completo até o porto" },
-  { label: "Conformidade Halal",   sub: "Certificação verificável para mercado árabe" },
+  { label: "Passaporte digital",      sub: "ID único por animal, acessível via QR público" },
+  { label: "Operação no campo",       sub: "Pesagens, manejo e sanitário registrados pelo time" },
+  { label: "Conformidade sanitária",  sub: "Calendário MAPA e carências respeitadas" },
+  { label: "Pronta para exportar",    sub: "Infraestrutura preparada para o próximo passo" },
 ];
 
 export default function FSJBECaseSection() {
@@ -53,7 +51,7 @@ export default function FSJBECaseSection() {
           <FadeIn delay={0.25}>
             <div className="mt-8 max-w-[720px] space-y-5 text-[1.0625rem] leading-[1.85] text-[var(--text-secondary)]">
               <p>
-                A Fazenda São João da Boa Esperança foi a primeira fazenda a operar na plataforma Agraas. Com 2.300 cabeças de Nelore em Jussara, Goiás, a FSJBE tem passaporte digital individual para cada animal, rastreio completo do manejo diário e um lote de exportação ativo com certificação Halal para o mercado árabe.
+                A Fazenda São João da Boa Esperança foi a primeira fazenda a operar na plataforma Agraas. Com 2.300 cabeças de Nelore em Goiás, a FSJBE tem passaporte digital individual para cada animal e rastreio completo do manejo diário.
               </p>
               <p className="font-medium text-[var(--text-primary)]">
                 É a prova de que a Agraas funciona no campo real — não em laboratório.

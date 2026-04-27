@@ -42,7 +42,7 @@ export default function NotFound() {
           </Link>
           <Link
             href="/marketplace"
-            className="inline-flex items-center gap-2 rounded-xl border border-white/30 px-7 py-3.5 text-[.9375rem] font-semibold text-white transition hover:border-white/60 hover:bg-white/5"
+            className="inline-flex items-center gap-2 rounded-xl border-2 border-white bg-transparent px-7 py-3.5 text-[.9375rem] font-semibold text-white transition-colors duration-200 hover:bg-white/10"
           >
             <ArrowLeft size={14} />
             Ver marketplace

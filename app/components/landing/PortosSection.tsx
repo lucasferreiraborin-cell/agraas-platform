@@ -12,11 +12,10 @@ const PORTS = [
 ];
 
 const DESTINATIONS = [
-  { city: "Jeddah",    country: "Arábia Saudita" },
-  { city: "Rotterdam", country: "Países Baixos" },
-  { city: "Dubai",     country: "Emirados Árabes" },
-  { city: "Doha",      country: "Catar" },
-  { city: "Xangai",    country: "China" },
+  { city: "Oriente Médio",     country: "Jeddah · Dubai · Doha" },
+  { city: "Europa",            country: "Rotterdam · Hamburgo" },
+  { city: "Ásia",              country: "Xangai · Singapura" },
+  { city: "América do Norte",  country: "Houston · Long Beach" },
 ];
 
 export default function PortosSection() {
@@ -42,12 +41,12 @@ export default function PortosSection() {
         <div className="max-w-[860px]">
           <FadeIn>
             <h2 className="text-[clamp(2rem,5vw,3.6rem)] font-medium leading-[1.05] tracking-[-.025em] text-white">
-              O Brasil exporta para o mundo. <span className="text-white/55">A Agraas rastreia cada embarque.</span>
+              Construído para a cadeia exportadora. <span className="text-white/55">De qualquer porto brasileiro ao mundo.</span>
             </h2>
           </FadeIn>
           <FadeIn delay={0.15}>
             <p className="mt-6 max-w-[680px] text-[1.0625rem] leading-[1.8] text-white/60">
-              De qualquer porto brasileiro a qualquer destino no mundo — cada embarque com QR público, certificações ativas e 7 checkpoints auditáveis. O comprador verifica a origem sem precisar confiar na palavra de ninguém.
+              A plataforma foi pensada para acompanhar embarques de ponta a ponta — origem, certificações documentadas e checkpoints auditáveis. Para que, quando o produtor exportar, o comprador verifique a origem sem precisar confiar na palavra de ninguém.
             </p>
           </FadeIn>
         </div>
@@ -61,7 +60,7 @@ export default function PortosSection() {
                 Origem · Brasil
               </p>
               <h3 className="mt-3 text-[1.25rem] font-medium text-white">
-                4 portos
+                Portos suportados
               </h3>
               <div className="mt-6 space-y-3">
                 {PORTS.map((p) => (
@@ -129,7 +128,7 @@ export default function PortosSection() {
                       </p>
                     </div>
                     <span className="ml-auto rounded-md border border-white/[.1] px-2 py-0.5 text-[.6875rem] font-semibold uppercase tracking-[.08em] text-white/55">
-                      Destino ativo
+                      Rota mapeada
                     </span>
                   </div>
                 </StaggerItem>
