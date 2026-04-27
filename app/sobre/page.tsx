@@ -211,43 +211,18 @@ export default function SobrePage() {
           </div>
 
           <StaggerContainer
-            className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3"
+            className="mt-12 grid gap-5 md:grid-cols-3"
             staggerChildren={0.08}
           >
             {[
-              {
-                name: "Lucas Ferreira Borin",
-                initials: "LF",
-                role: "CEO & CTO",
-                bio: "Construiu a plataforma do zero. Economia IBMEC SP. Santander Brasil e Guide Investimentos. Cert. ANBIMA.",
-              },
-              {
-                name: "Eduardo de Paola",
-                initials: "EP",
-                role: "COO",
-                bio: "Ecossistema Tivit — R$ 2,1Bi, 10 países, adquirida por R$ 873M.",
-              },
-              {
-                name: "Pedro Salim",
-                initials: "PS",
-                role: "Diretor Comercial",
-                bio: "Multi-Family Office e Wealth Management. Rede pecuária em Goiás.",
-              },
-              {
-                name: "Pedro Maluli",
-                initials: "PM",
-                role: "Operações Agro",
-                bio: "Co-proprietário da FSJBE — primeira fazenda piloto ativa.",
-              },
-              {
-                name: "Frederico Maluli",
-                initials: "FM",
-                role: "Parcerias Agro",
-                bio: "Rede em genética bovina, Allflex e cooperativas do Centro-Oeste.",
-              },
+              { name: "Lucas Ferreira Borin", initials: "LF", role: "CEO e Co-founder" },
+              { name: "Eduardo de Paola",     initials: "EP", role: "Co-founder" },
+              { name: "Pedro Salim",          initials: "PS", role: "Co-founder" },
+              { name: "Pedro Maluli",         initials: "PM", role: "Co-founder" },
+              { name: "Frederico Maluli",     initials: "FM", role: "Co-founder" },
             ].map((p) => (
               <StaggerItem key={p.name}>
-                <div className="flex h-full items-start gap-5 rounded-2xl border border-[var(--border)] bg-white p-6 shadow-[var(--shadow-soft)] transition-colors hover:border-[var(--primary)]/25">
+                <div className="flex h-full items-center gap-5 rounded-2xl border border-[var(--border)] bg-white p-6 shadow-[var(--shadow-soft)] transition-colors hover:border-[var(--primary)]/25">
                   <div
                     className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full text-white"
                     style={{
@@ -263,11 +238,8 @@ export default function SobrePage() {
                     <p className="text-[1rem] font-semibold leading-[1.25] tracking-[-.01em] text-[var(--text-primary)]">
                       {p.name}
                     </p>
-                    <p className="mt-1.5 text-[.8125rem] font-medium text-[var(--primary)]">
+                    <p className="mt-1.5 text-[.8125rem] text-[var(--text-muted)]">
                       {p.role}
-                    </p>
-                    <p className="mt-2.5 text-[.8125rem] leading-[1.55] text-[var(--text-muted)]">
-                      {p.bio}
                     </p>
                   </div>
                 </div>
