@@ -131,10 +131,16 @@ export default async function LandingPage() {
           className="absolute inset-0 -z-10"
           style={{
             background:
-              "linear-gradient(110deg, var(--sidebar-2) 0%, rgba(15,53,23,.85) 40%, rgba(15,53,23,.55) 75%, rgba(15,53,23,.35) 100%)",
+              "linear-gradient(95deg, rgba(15,53,23,.88) 0%, rgba(15,53,23,.60) 40%, rgba(15,53,23,.25) 75%, rgba(15,53,23,.05) 100%)",
           }}
         />
-        <div className="absolute inset-x-0 bottom-0 -z-10 h-32 bg-gradient-to-t from-[var(--bg)] to-transparent" />
+        <div
+          className="absolute inset-x-0 bottom-0 -z-10 h-72"
+          style={{
+            background:
+              "linear-gradient(to top, var(--bg) 0%, rgba(244,247,242,.6) 45%, transparent 100%)",
+          }}
+        />
 
         <div className="relative mx-auto max-w-[1100px] px-6 pt-20 pb-24 lg:px-10 lg:pt-28 lg:pb-32">
           <FadeIn>
