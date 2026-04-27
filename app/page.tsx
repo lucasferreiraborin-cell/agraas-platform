@@ -62,8 +62,7 @@ const fmt = (v: number) =>
   });
 
 const IMG = {
-  hero:     "/images/lp/rebanho-nelore.png",
-  colheita: "/images/lp/Maquina-agricola-colheita.jpg",
+  hero: "/images/lp/rebanho-nelore.png",
 };
 
 export const revalidate = 300;
@@ -128,29 +127,28 @@ export default async function LandingPage() {
           className="absolute inset-0 -z-10 object-cover"
         />
         <div
-          className="absolute inset-0 -z-10"
+          className="absolute inset-x-0 bottom-0 -z-10 h-48"
           style={{
             background:
-              "linear-gradient(95deg, rgba(15,53,23,.88) 0%, rgba(15,53,23,.60) 40%, rgba(15,53,23,.25) 75%, rgba(15,53,23,.05) 100%)",
-          }}
-        />
-        <div
-          className="absolute inset-x-0 bottom-0 -z-10 h-72"
-          style={{
-            background:
-              "linear-gradient(to top, var(--bg) 0%, rgba(244,247,242,.6) 45%, transparent 100%)",
+              "linear-gradient(to top, var(--bg) 0%, rgba(244,247,242,.5) 50%, transparent 100%)",
           }}
         />
 
         <div className="relative mx-auto max-w-[1100px] px-6 pt-20 pb-24 lg:px-10 lg:pt-28 lg:pb-32">
           <FadeIn>
-            <h1 className="max-w-[820px] text-[clamp(2.4rem,5.8vw,4.6rem)] font-medium leading-[1] tracking-[-.035em] text-white">
+            <h1
+              className="max-w-[820px] text-[clamp(2.4rem,5.8vw,4.6rem)] font-medium leading-[1] tracking-[-.035em] text-white"
+              style={{ textShadow: "0 2px 24px rgba(15,53,23,.55)" }}
+            >
               A plataforma do agro brasileiro.
             </h1>
           </FadeIn>
 
           <FadeIn delay={0.2}>
-            <p className="mt-7 max-w-[600px] text-[1.0625rem] leading-[1.75] text-white/70">
+            <p
+              className="mt-7 max-w-[600px] text-[1.0625rem] leading-[1.75] text-white"
+              style={{ textShadow: "0 2px 16px rgba(15,53,23,.7)" }}
+            >
               Pecuária, grãos e exportação sobre uma única camada de dados verificáveis. Do pasto ao porto, do talhão ao comprador institucional.
             </p>
           </FadeIn>
@@ -370,21 +368,11 @@ export default async function LandingPage() {
 
       {/* ═══ [12] CTA FINAL ═══════════════════════════════════════════════ */}
       <section className="relative isolate overflow-hidden">
-        <Image
-          src={IMG.colheita}
-          alt=""
-          fill
-          loading="lazy"
-          sizes="100vw"
-          quality={78}
-          className="absolute inset-0 -z-10 object-cover"
-        />
         <div
           className="absolute inset-0 -z-10"
           style={{
             background:
               "linear-gradient(135deg, #1E5E26 0%, #0f3517 100%)",
-            opacity: 0.92,
           }}
         />
 
