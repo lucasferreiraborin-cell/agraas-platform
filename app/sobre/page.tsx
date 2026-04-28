@@ -70,13 +70,16 @@ export default function SobrePage() {
           <FadeIn delay={0.15}>
             <div className="mt-10 space-y-6 text-[1.0625rem] leading-[1.85] text-[var(--text-secondary)]">
               <p>
-                O Brasil produz e exporta mais carne bovina certificada Halal do que qualquer outro país do mundo. Ainda assim, quem compra essa carne em Riade, Dubai ou Abu Dhabi não consegue saber de qual fazenda ela veio, como o animal foi criado ou se o processo Halal foi respeitado em cada etapa.
+                O Brasil é o maior exportador mundial de carne bovina, soja, café, açúcar e suco de laranja. Lidera em volume, em produtividade e em diversidade. Mas, do outro lado da mesa, quem compra raramente sabe de onde vem o que recebe.
               </p>
               <p>
-                A mesma lacuna se repete na soja que vai para Xangai, no café que chega a Hamburgo, no milho que abastece Rotterdam. Não é um problema técnico. É uma escolha que ninguém tinha feito.
+                O importador em Riade, Pequim, Roterdã ou Hamburgo não consegue rastrear de qual fazenda saiu o animal, como o talhão foi conduzido ou se o protocolo combinado foi cumprido em cada etapa. A mesma opacidade se repete na carne, na soja, no café, no milho e no algodão — e custa caro: em margem que escapa do produtor, em confiança que falta ao comprador, em mercados que o Brasil deixa de acessar.
+              </p>
+              <p>
+                Não é um problema técnico. É uma escolha que, até agora, ninguém tinha feito.
               </p>
               <p className="text-[var(--text-primary)]">
-                A Agraas existe para fazer essa escolha — e entregar a infraestrutura que transforma dados operacionais de fazendas em confiança verificável.
+                A Agraas existe para fazer essa escolha — e entregar a infraestrutura que transforma o dia a dia de uma fazenda brasileira em prova verificável de origem, qualidade e conformidade. Para o produtor, é capital reputacional construído evento a evento. Para o comprador, é a certeza de que o que está chegando é o que foi negociado.
               </p>
             </div>
           </FadeIn>
