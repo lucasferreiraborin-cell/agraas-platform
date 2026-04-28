@@ -73,7 +73,7 @@ export default function SobrePage() {
                 O Brasil é o maior exportador mundial de carne bovina, soja, café, açúcar e suco de laranja. Lidera em volume, em produtividade e em diversidade. Mas, do outro lado da mesa, quem compra raramente sabe de onde vem o que recebe.
               </p>
               <p>
-                O importador em Riade, Pequim, Roterdã ou Hamburgo não consegue rastrear de qual fazenda saiu o animal, como o talhão foi conduzido ou se o protocolo combinado foi cumprido em cada etapa. A mesma opacidade se repete na carne, na soja, no café, no milho e no algodão — e custa caro: em margem que escapa do produtor, em confiança que falta ao comprador, em mercados que o Brasil deixa de acessar.
+                Quem compra essa produção no exterior raramente consegue rastrear de qual fazenda saiu o animal, como o talhão foi conduzido ou se o protocolo combinado foi cumprido em cada etapa. A mesma opacidade se repete na carne, na soja, no café, no milho e no algodão — e custa caro: em margem que escapa do produtor, em confiança que falta ao comprador, em mercados que o Brasil deixa de acessar.
               </p>
               <p>
                 Não é um problema técnico. É uma escolha que, até agora, ninguém tinha feito.
