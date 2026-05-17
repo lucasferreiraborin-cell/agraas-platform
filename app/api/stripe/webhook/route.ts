@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServiceClient } from "@/lib/supabase-service";
+import { sendTemplateEmail } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
   if (!process.env.STRIPE_SECRET_KEY || !process.env.STRIPE_WEBHOOK_SECRET) {
@@ -50,7 +51,11 @@ export async function POST(req: NextRequest) {
       case "invoice.paid": {
         const invoice = event.data.object as any;
         const customerId = invoice.customer;
-        const { data: client } = await db.from("clients").select("id, plan").eq("stripe_customer_id", customerId).single();
+        const { data: client } = await db
+          .from("clients")
+          .select("id, plan, name, email, auth_user_id")
+          .eq("stripe_customer_id", customerId)
+          .single();
         if (client) {
           await db.from("subscription_events").insert({
             client_id: client.id,
@@ -59,6 +64,29 @@ export async function POST(req: NextRequest) {
             amount: invoice.amount_paid ? invoice.amount_paid / 100 : null,
             external_id: invoice.id,
           });
+
+          // Email de confirmação. invoice.customer_email é o caminho mais
+          // direto; se ausente, fallback para clients.email e por último
+          // para auth.users via service client.
+          let recipientEmail: string | null =
+            (invoice.customer_email as string | undefined) ?? client.email ?? null;
+          if (!recipientEmail && client.auth_user_id) {
+            const { data: authUser } = await db.auth.admin.getUserById(client.auth_user_id);
+            recipientEmail = authUser?.user?.email ?? null;
+          }
+
+          if (recipientEmail) {
+            const result = await sendTemplateEmail(
+              "payment_confirmed",
+              recipientEmail,
+              client.name ?? "cliente",
+            );
+            if (!result.ok && result.reason === "send_failed") {
+              console.error("[Stripe Webhook] payment_confirmed email failed:", result.error);
+            }
+          } else {
+            console.warn("[Stripe Webhook] invoice.paid sem email do cliente", { client_id: client.id });
+          }
         }
         break;
       }
