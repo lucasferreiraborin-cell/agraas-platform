@@ -9,7 +9,7 @@ import type { Listing, Offer, Transaction } from "@/app/components/marketplace/M
 export const metadata: Metadata = {
   title: "Marketplace Agro",
   description:
-    "Compre e venda animais, safras, insumos e equipamentos com rastreabilidade Agraas integrada. Certificação Halal e Score verificados automaticamente.",
+    "Compre e venda animais, safras, insumos e equipamentos com rastreabilidade Agraas integrada. Score e certificações verificados automaticamente.",
 };
 
 export const revalidate = 120;
@@ -84,7 +84,7 @@ export default async function MarketplacePage() {
             <h1 className="ag-page-title">Marketplace Agro</h1>
             <p className="mt-4 max-w-lg text-[1rem] leading-7 text-[var(--text-secondary)]">
               Compre e venda animais, safras, insumos e equipamentos com rastreabilidade Agraas integrada.
-              Certificação Halal e Score verificados automaticamente.
+              Score e certificações verificados automaticamente.
             </p>
           </div>
           <div className="ag-hero-panel">

@@ -27,10 +27,10 @@ export const metadata: Metadata = {
   keywords: [
     "rastreabilidade agro",
     "passaporte digital animal",
-    "Halal exportação",
+    "rastreabilidade bovinos",
     "Grain ID",
     "soja rastreabilidade",
-    "Nelore exportação",
+    "Nelore rastreável",
     "marketplace agro",
     "score agronegócio",
   ],

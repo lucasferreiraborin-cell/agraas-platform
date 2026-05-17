@@ -81,7 +81,7 @@ export default function LoginPage() {
   return (
     <AuthShell
       sidebarMessage={messages[messageIdx]}
-      sidebarBadges={["Halal", "EUDR", "MAPA", "SIF"]}
+      sidebarBadges={["EUDR", "MAPA", "GTA", "SIF"]}
     >
       {!showReset ? (
         <>

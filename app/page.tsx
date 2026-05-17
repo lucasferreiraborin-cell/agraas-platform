@@ -86,13 +86,13 @@ const CAPABILITIES = [
     Icon: Fingerprint,
     title: "Identidade e Rastreio",
     p1: "Passaporte digital individual para cada animal e cada talhão. ID único vitalício, histórico completo, QR público verificável por qualquer comprador no mundo.",
-    p2: "Trilíngue em português, inglês e árabe com suporte RTL nativo. Construído para o mercado Halal.",
+    p2: "Trilíngue (português, inglês e árabe) com suporte RTL nativo. Construído para o agro brasileiro e para compradores internacionais.",
   },
   {
     Icon: BarChart2,
     title: "Score e Inteligência",
     p1: "Algoritmo proprietário em 5 dimensões recalculado em tempo real a cada evento. O mesmo número no passaporte público, no dashboard e no marketplace.",
-    p2: "Nenhum concorrente calcula score individual por animal. É o diferencial que transforma dado operacional em valor de mercado.",
+    p2: "O score individual por animal transforma dado operacional em valor de mercado — visível no passaporte público, no dashboard e no marketplace, com o mesmo número em todos os lugares.",
     href: "#score",
   },
   {
