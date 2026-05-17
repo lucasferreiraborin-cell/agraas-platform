@@ -61,7 +61,8 @@ const menuGroups: NavGroup[] = [
     label: null,
     items: [
       { href: "/",              label: "Painel",             icon: Home },
-      { href: "/dashboard",    label: "Dashboard Executivo", icon: LayoutDashboard },
+      // ⏸️ /dashboard agora redireciona 301 → /painel via middleware.
+      // { href: "/dashboard",    label: "Dashboard Executivo", icon: LayoutDashboard },
       { href: "/inteligencia", label: "Inteligência",        icon: Brain },
     ],
   },

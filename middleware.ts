@@ -8,6 +8,15 @@ export function middleware(req: NextRequest) {
   const url = req.nextUrl;
   const path = url.pathname;
 
+  // ── Redirect permanente /dashboard → /painel ──────────────────────────
+  // /painel é o moderno (Server Component, lê agraas_master_passport_cache).
+  // /dashboard é a versão antiga.
+  if (path === "/dashboard" || path.startsWith("/dashboard/")) {
+    const newUrl = new URL(path.replace(/^\/dashboard/, "/painel"), url);
+    newUrl.search = url.search;
+    return NextResponse.redirect(newUrl, 301);
+  }
+
   // ── Portal PIF (singular, buyer-only) ────────────────────────────────
   // /compradores (plural) é operacional do Financeiro do produtor — não
   // pausar.
