@@ -43,8 +43,9 @@ next-env.d.ts
 
 .vercel
 
-# claude code — local config contém SUPABASE_ACCESS_TOKEN, NUNCA commitar
-.claude/
+# claude code — só settings.local.json pode conter secrets locais
+# o resto (settings.json, hooks, skills, commands) é compartilhado
+.claude/settings.local.json
 
 # supabase cli temp + linked project state
 supabase/.temp/
