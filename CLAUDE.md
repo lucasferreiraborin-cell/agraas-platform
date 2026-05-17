@@ -1,7 +1,40 @@
-# Agraas Platform — Guia Técnico de Onboarding
+# Agraas Platform — Guia Técnico
 
-> Documento de referência para desenvolvedores entrando no projeto.
-> Mantido manualmente — atualize após cada sprint significativo.
+> Documento de referência para desenvolvedores. Mantido manualmente —
+> atualize quando o foco mudar.
+> Última revisão: 2026-05-17.
+
+---
+
+## Foco atual: 100% pecuária bovina
+
+**Decisão 2026-05-17** (pós-Agrishow, mentoria IZ-SP com Dra. Renata + César):
+o caminho crítico é pecuária bovina. Tudo o mais está pausado, não removido.
+
+### Frentes quentes
+- **JBS** — CFO Alexandre, Mourão Filho. Conversas ativas.
+- **IZ-SP** — Dra. Renata + César. Mentoria quinzenal, próxima **2026-05-29**.
+- **GPB / Furlan** — em desenvolvimento.
+
+### Frentes pausadas (código mantido, fora do caminho crítico)
+- ⏸️ **Portal PIF (Comprador)** — rota `/comprador` redireciona para `/em-breve`. Tabelas e RLS intactas (eventual reuso frigorífico).
+- ⏸️ **Ovinos / Caprinos** — rotas `/ovinos`, `/caprinos` redirecionam para `/em-breve`. Tabelas, score engine e seeds intactos.
+- ⏸️ **Aves** — rota `/aves` redireciona. Tabelas, score engine e seeds intactos.
+- ⏸️ **Agricultura / Grãos** — rota `/agricultura` redireciona. Tabelas, score engine e seeds intactos.
+
+### Tombamento Multbovinos → Agraas
+Tratado em **segundo plano**, fora do caminho crítico atual. Enquanto o
+tombamento real não acontece, **FSJBE no sistema continua com 5 animais
+fictícios** (`BER-001` a `BER-005`) — sem alterar até decisão do Lucas.
+
+### Regras do tom público
+- Nunca afirmar Halal / Jeddah / Q2 2026 / SIF certificado / "apto exportação" para FSJBE no site público.
+- Nunca confrontar concorrentes (Agrofy, MF Rural, etc.) por nome. Silêncio competitivo, posicionamento por atributo.
+- Tom **Terminal Industries** — quieto, sem cara de AI startup. Editorial, foto + tipografia, paleta verde-logo.
+- Cautela com dados sensíveis (bios founders, scores reais, links passaporte real) — pause e pergunte ao Lucas antes de publicar.
+- Marketplace = "Mercado Livre do agro" (vende tudo, não só pecuária).
+
+> Detalhes operacionais dessas regras estão na skill `.claude/skills/agraas-fsjbe-guard/SKILL.md`.
 
 ---
 
@@ -10,15 +43,18 @@
 | Camada | Tecnologia |
 |---|---|
 | Framework | Next.js 16.1.6 (App Router, webpack) |
-| Backend/DB | Supabase (PostgreSQL 15 + Auth + RLS + Storage) |
+| Backend/DB | Supabase (PostgreSQL 17 + Auth + RLS + Storage) |
 | Linguagem | TypeScript 5 (strict) |
 | Estilo | Tailwind CSS 4 (PostCSS) |
 | Deploy | Vercel (CI automático via push para `main`) |
 | AI | Anthropic Claude Sonnet 4.6 (`@anthropic-ai/sdk`) |
+| Email | Resend |
+| Pagamentos | Stripe |
 | PDF | `@react-pdf/renderer` v4 |
 | Mapas | Leaflet + react-leaflet v5 (client-only via dynamic import) |
 | Gráficos | Recharts v3 |
 | QR Code | `qrcode.react` |
+| Testes | Jest + Testing Library |
 
 **Repositório:** `lucasferreiraborin-cell/agraas-platform`
 **Produção:** `agraas-platform.vercel.app`
@@ -32,169 +68,32 @@
 agraas/
 ├── app/
 │   ├── api/                        # API Routes (server-side)
-│   │   ├── export/lot-pdf/         # PDF de lote via @react-pdf
-│   │   ├── predict-score/          # Predição IA com Claude
-│   │   ├── recalculate-score/      # Recalcula score de animal
-│   │   └── migrate-animals/        # Importação CSV
 │   ├── components/                 # Componentes React reutilizáveis
-│   │   ├── CompradorView.tsx       # Portal do comprador (orquestrador)
-│   │   ├── CompradorLivestockTab.tsx
-│   │   ├── CompradorTrackingSection.tsx
-│   │   ├── CompradorCertificationMatrix.tsx
-│   │   ├── CompradorGrainsTab.tsx
-│   │   ├── AnimalTimeline.tsx      # Timeline cronológica do animal
-│   │   ├── LotValueCalculator.tsx  # Calculadora de valor do lote
-│   │   ├── ShipTrackingMap.tsx     # Mapa Leaflet Santos→Jeddah
-│   │   ├── ShipTrackingMapWrapper.tsx  # dynamic import wrapper (SSR safe)
-│   │   └── ...
-│   ├── animais/                    # CRUD + passaporte de animais bovinos
-│   ├── ovinos/                     # Ovinos e caprinos
-│   ├── aves/                       # Aves/frangos
-│   ├── agricultura/                # Módulo de grãos (lavouras, embarques)
-│   ├── lotes/                      # Lotes de exportação
+│   ├── animais/                    # CRUD + passaporte bovino
+│   ├── ovinos/  caprinos/  aves/   # ⏸️ pausados (rota redireciona)
+│   ├── agricultura/                # ⏸️ pausado (rota redireciona)
+│   ├── comprador/                  # ⏸️ portal PIF pausado
+│   ├── lotes/                      # Lotes de exportação bovinos
 │   ├── passaporte/[agraas_id]/     # Passaporte público (sem auth)
-│   ├── comprador/                  # Portal PIF (buyer-only)
+│   ├── painel/                     # Painel moderno (Server Component)
 │   ├── tracking/                   # Rastreio de embarques
 │   ├── alertas/                    # Alertas e predições IA
-│   ├── dashboard/                  # Dashboard operacional
-│   └── ...
+│   ├── em-breve/                   # Página placeholder para rotas pausadas
+│   ├── page.tsx                    # Landing pública
+│   └── sobre/                      # Página Sobre
 ├── lib/
-│   ├── supabase-server.ts          # Client SSR com cookies (@supabase/ssr)
-│   ├── supabase-service.ts         # Client com service role (bypasses RLS)
+│   ├── supabase-server.ts          # Client SSR com cookies
+│   ├── supabase-service.ts         # Client com service role
 │   ├── supabase.ts                 # Client browser
-│   ├── agraas-analytics.ts         # Funções puras de analytics/score
-│   ├── passport-i18n.ts            # Textos bilíngues do passaporte
-│   └── rate-limit.ts               # Rate limiting em memória por IP
+│   ├── agraas-analytics.ts         # Score engine puro
+│   └── rate-limit.ts               # Rate limit em memória
+├── middleware.ts                   # Redirects e proteção de rotas
 ├── supabase/
-│   ├── migrations/                 # Migrations SQL numeradas (001–063)
-│   └── functions/
-│       └── score-engine/           # Edge Function para recalcular scores
-├── middleware.ts                   # Proteção de rotas (redireciona → /login)
-└── .env.example                    # Variáveis necessárias (ver arquivo)
+│   ├── migrations/                 # SQL numeradas 001-106
+│   ├── rollbacks/                  # Down migrations (separadas)
+│   └── functions/score-engine/     # Edge Function (recalcula scores)
+└── .claude/                        # settings, hooks, skills, commands
 ```
-
----
-
-## Módulos implementados
-
-### Pecuária Bovina
-- **Animais** — cadastro, passaporte, timeline operacional, QR code, score Agraas
-- **Pesagens** — histórico, GMD calculado automaticamente
-- **Aplicações sanitárias** — carências ativas, alertas de retirada
-- **Certificações** — Halal, MAPA, GTA, SIF por animal
-- **Movimentações** — entrada/saída entre propriedades
-- **Eventos** — tabela `events` unificada (`source = 'animal' | 'farm'`)
-- **Lotes de exportação** — composição, calculadora de valor, PDF, rastreio
-- **Predição IA** — Claude analisa histórico e gera risk assessment (tabela `ai_predictions`)
-
-### Pecuária Diversificada
-- **Ovinos/Caprinos** — tabela `livestock_species`, score engine dedicado
-- **Aves** — tabela `poultry_batches`, score de lote, certificação Halal de abatedouro
-
-### Agricultura
-- **Fazendas e talhões** — tabela `farms_agriculture` + `crop_fields`
-- **Embarques de grãos** — `crop_shipments` + tracking `crop_shipment_tracking`
-- **Culturas** — soja, milho, trigo, açúcar, café
-- **Notas fiscais** — `fiscal_notes` com upload de documentos
-
-### Portal do Comprador (PIF)
-- **Acesso controlado** — role `buyer` em `clients`, tabela `lot_buyer_access`
-- **Visão consolidada** — bovinos + ovinos + aves + grãos
-- **Matriz de certificações** — status Halal/MAPA/GTA/SIF por animal
-- **Mapa AIS** — navio Santos→Jeddah com interpolação Haversine
-- **i18n** — EN/PT com toggle no header
-
-### Infraestrutura
-- **Auth** — Supabase Auth (e-mail/senha), middleware.ts protege todas as rotas
-- **RLS** — isolamento por `client_id` em todas as tabelas operacionais
-- **Rate limiting** — em memória por IP em todas as rotas `/api/*`
-- **Passaporte público** — `/passaporte/[agraas_id]` usa service client (sem auth)
-
----
-
-## Migrations executadas (001–063)
-
-| # | O que faz |
-|---|---|
-| 001 | Tabela `clients`, `client_id` em todas as tabelas, seed Pedro e Ico |
-| 002 | Tabela `events` unificada (`source='animal'|'farm'`) |
-| 003 | Coluna `auth_user_id` em `clients` |
-| 004 | RLS ativo em 8 tabelas + função `get_my_client_id()` |
-| 005 | Vincula Pedro e Ico ao Supabase Auth |
-| 006 | Cliente Lucas (`lucas@agraas.com.br`) |
-| 007 | `property_id` em `lots` |
-| 008 | RLS na tabela `clients` |
-| 009 | Drop tabelas legadas de eventos |
-| 010 | Lucas como admin |
-| 011 | Remove políticas allow-all |
-| 012 | Campos extras em `animals` (blood_type, genealogy, etc.) |
-| 013 | Campos extras em `lots` (certificações, contrato, destino) |
-| 014 | Campos em `applications` (withdrawal_period_days, etc.) |
-| 015 | `platform_settings`, `target_arrobas` |
-| 016 | Campos de exportação em `lots` |
-| 017 | Geração automática de `agraas_id` |
-| 018–019 | Seed de dados de demo |
-| 020–021 | lat/lng em propriedades |
-| 022–023 | Novos clientes, correção de nomes |
-| 024 | Certificações SIF/MAPA em exportação |
-| 025 | Tabelas de módulos + seed FSJBE |
-| 026 | Buyer PIF (`lot_buyer_access`) |
-| 027 | Seed Paulo Borin completo |
-| 028 | Tabelas fiscais |
-| 029–032 | Correções de score e upsert |
-| 033–034 | Tabela `shipment_tracking` + seed |
-| 035 | Enriquecimento Paulo Borin |
-| 036 | `calculate_agraas_score()` SQL + triggers |
-| 037 | Tabelas tipadas (weight_records, sanitary_applications, etc.) |
-| 038 | Normaliza coluna `sex` para Male/Female canônico |
-| 039 | Sincroniza `lots_count` estático |
-| 040 | RLS `animal_rfids` com isolamento por `client_id` |
-| 042 | Tabela `livestock_species` (ovinos/caprinos) |
-| 043 | Tabela `poultry_batches` (aves) |
-| 044–045 | Seed demo ovinos/aves + Halal |
-| 046–047 | Tabelas agricultura (`farms_agriculture`, `crop_fields`, `crop_shipments`) |
-| 048 | `calculate_farm_score()` SQL |
-| 049 | Drop tabelas legadas de eventos |
-| 050 | Sincroniza `lots_count` para todos os clientes |
-| 051 | Auditoria de RLS |
-| 052 | Seed auditoria e alertas demo |
-| 053 | Tabelas suporte livestock (withdrawals, certifications) |
-| 054 | Score engine para ovinos/caprinos |
-| 055 | Seed ovinos Lucas |
-| 056 | Score engine para aves |
-| 057–058 | Seed withdrawals e scores aves |
-| 059 | Score e certificações para talhões |
-| 060 | Notas fiscais agricultura (`crop_fiscal_notes`) |
-| 061 | Campo `document_source` em fiscal |
-| 062 | Tabela `ai_predictions` com RLS |
-| 063 | Colunas `ship_name`, `arrival_date` em `lots` |
-| 064 | `rfid_device_type_enum` — bolus intra-ruminal + brinco + subcutâneo |
-| 065 | `crop_quality_reports` + campos BL/fitossanitário em `crop_shipments` |
-| 066 | Indexes de performance (shipment_tracking, events, clients UNIQUE email) |
-| 067 | Triggers DELETE para recalcular score bovinos |
-| 068 | Seed reprodutivo completo para Lucas |
-
----
-
-## Score Engines — Flow completo
-
-### Bovinos (`calculate_agraas_score`)
-- **Trigger INSERT/UPDATE:** `weights`, `events`, `applications` (migration 036)
-- **Trigger DELETE:** `weights`, `events`, `applications` (migration 067)
-- **Flow:** Trigger → `calculate_agraas_score(animal_id)` → atualiza `animal_scores` + `agraas_master_passport_cache.score_json`
-- **Algoritmo:** 28% produtivo + 24% sanitário + 18% operacional + 20% continuidade + 10% idade + bônus rastreabilidade
-
-### Ovinos/Caprinos (`calculate_livestock_score`)
-- **Triggers:** `livestock_weights`, `livestock_applications`, `livestock_events`, `livestock_certifications` (migration 054)
-- **Flow:** Trigger → `calculate_livestock_score(animal_id)` → atualiza `livestock_species.score`
-
-### Aves (`calculate_poultry_score`)
-- **Triggers:** `poultry_batch_events` (migration 056)
-- **Flow:** Trigger → `calculate_poultry_score(batch_id)` → atualiza `poultry_batches.score`
-
-### Talhões (`calculate_field_score`)
-- **Triggers:** `crop_inputs`, `crop_shipment_tracking`, `crop_certifications` (migration 059)
-- **Flow:** Trigger → `calculate_field_score(field_id)` → atualiza `crop_fields.score`
 
 ---
 
@@ -202,83 +101,73 @@ agraas/
 
 ### Supabase clients
 ```typescript
-// Server component / API route — usa cookies, respeita RLS
+// Server / API route — usa cookies, respeita RLS
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 const supabase = await createSupabaseServerClient();
 
-// Dados públicos ou admin — bypassa RLS (service role)
+// Público ou admin — bypassa RLS (service role)
 import { createSupabaseServiceClient } from "@/lib/supabase-service";
 const db = createSupabaseServiceClient();
 ```
 
 ### Server vs Client components
-- Páginas em `app/` são **Server Components** por padrão (async, sem hooks)
+- Páginas em `app/` são Server Components por padrão (async, sem hooks)
 - Componentes com estado/interatividade levam `"use client"` no topo
-- Componentes Leaflet **sempre** usam `next/dynamic` com `ssr: false`
+- Leaflet **sempre** via `next/dynamic` com `ssr: false`
 
 ### Migrations
 ```bash
-# SEMPRE via CLI — nunca colar SQL no dashboard
+# SEMPRE via CLI
 npx supabase db push
 ```
+- Up migrations em `supabase/migrations/`, numeradas 001-106
+- Down migrations em `supabase/rollbacks/`
+- Toda tabela operacional precisa de `client_id` + política RLS
 
 ### Tipos e casts Supabase
 ```typescript
-// Supabase joins podem retornar object | object[] | null — use helper:
 function getJoin<T>(val: T | T[] | null): T | null {
   if (!val) return null;
   return Array.isArray(val) ? (val[0] ?? null) : val;
 }
-// Para casts largos:
 const rows = (data ?? []) as unknown as MyType[];
 ```
 
 ### Rate limiting
 ```typescript
 import { checkRateLimit, tooManyRequests } from "@/lib/rate-limit";
-const rl = checkRateLimit(req, 60, 60_000); // 60 req/min
+const rl = checkRateLimit(req, 60, 60_000);
 if (!rl.allowed) return tooManyRequests(rl.retryAfter);
 ```
 
 ---
 
-## Regras de RLS
+## RLS
 
-- Todas as tabelas operacionais têm `client_id uuid NOT NULL REFERENCES clients(id)`
-- Políticas padrão: `USING (client_id = get_my_client_id())`
 - `get_my_client_id()` resolve via `auth.uid()` → `clients.auth_user_id`
-- **Exceções** (sem RLS ou service role):
-  - `passaporte/[agraas_id]` — usa service client para acesso público
-  - `comprador/` — usa service client para dados agregados do buyer
+- Política padrão: `USING (client_id = get_my_client_id())`
+- Exceções (service role):
+  - `passaporte/[agraas_id]` — acesso público
+  - `comprador/` — agregação para buyer (pausado)
   - `platform_settings` — leitura pública (cotação arroba)
 
 ---
 
 ## Design system
 
-### Variáveis CSS
-```
---primary         --primary-hover   --primary-soft
---surface-soft    --border
---text-primary    --text-secondary  --text-muted
---danger          --warning         --info
-```
+### CSS vars
+`--primary` `--primary-hover` `--primary-soft` `--surface-soft` `--border`
+`--text-primary` `--text-secondary` `--text-muted` `--danger` `--warning` `--info`
 
 ### Classes utilitárias (globals.css)
 | Classe | Uso |
 |---|---|
-| `ag-card` | Card padrão |
-| `ag-card-strong` | Card com borda destacada |
-| `ag-badge` | Badge neutro |
-| `ag-badge-green` | Badge verde (exportação, PIF) |
-| `ag-badge-dark` | Badge escuro |
+| `ag-card` / `ag-card-strong` | Card padrão / borda destacada |
+| `ag-badge` / `ag-badge-green` / `ag-badge-dark` | Badges |
 | `ag-table` | Tabela padrão |
-| `ag-button-primary` | Botão primário |
-| `ag-button-secondary` | Botão secundário |
+| `ag-button-primary` / `ag-button-secondary` | Botões |
 | `ag-kpi-label` / `ag-kpi-value` | KPI cards |
-| `ag-section-title` | Título de seção |
-| `ag-section-subtitle` | Subtítulo de seção |
-| `ag-page-title` | Título de página |
+| `ag-section-title` / `ag-section-subtitle` / `ag-page-title` | Tipografia |
 
 ---
 
@@ -291,7 +180,7 @@ if (!rl.allowed) return tooManyRequests(rl.retryAfter);
 | Paulo Borin | paulo@agraas.com.br | admin |
 | Bernardo | bernardo@agraas.com.br | admin |
 | Ico | ico@agraas.com.br | admin |
-| PIF Buyer | pif@pif.sa | buyer |
+| PIF Buyer | pif@agraas.com.br | buyer ⏸️ |
 
 ---
 
@@ -300,7 +189,10 @@ if (!rl.allowed) return tooManyRequests(rl.retryAfter);
 - **Antes de implementar:** apresente plano resumido e aguarde aprovação
 - **Após cada etapa:** `git add`, `git commit`, `git push origin main`
 - **Migrations:** `npx supabase db push` — nunca SQL manual no dashboard
-- **Dados fictícios:** nunca criar sem aprovação explícita
+- **Dados fictícios:** nunca criar sem aprovação explícita do Lucas
+- **Frentes pausadas:** não criar copy nova sobre PIF / ovinos / caprinos / aves / agricultura
 - **Design system:** manter consistência em todas as páginas
 - **Leaflet:** sempre `dynamic(() => import(...), { ssr: false })`
 - **RLS:** toda nova tabela precisa de `client_id` + política RLS
+
+> Para regras de tom público + compliance FSJBE, ver `.claude/skills/agraas-fsjbe-guard/SKILL.md`.
