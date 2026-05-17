@@ -118,15 +118,18 @@ const menuGroups: NavGroup[] = [
       { href: "/fiscal/relatorio", label: "Relatório Fiscal", icon: FileSpreadsheet, sub: true },
     ],
   },
-  {
-    label: "Pecuária Expandida",
-    items: [
-      { href: "/ovinos",           label: "Ovinos & Caprinos", icon: Rabbit   },
-      { href: "/ovinos/dashboard", label: "Dashboard Ovinos",  icon: BarChart2, sub: true },
-      { href: "/aves",             label: "Aves & Frangos",    icon: Bird      },
-      { href: "/aves/dashboard",   label: "Dashboard Aves",    icon: BarChart2, sub: true },
-    ],
-  },
+  // ⏸️ Pecuária Expandida pausada (decisão 17/05 — foco 100% bovinos).
+  // Rotas /ovinos, /caprinos, /aves redirecionam via middleware. Não
+  // remover daqui — reativar comentando este bloco para voltar.
+  // {
+  //   label: "Pecuária Expandida",
+  //   items: [
+  //     { href: "/ovinos",           label: "Ovinos & Caprinos", icon: Rabbit   },
+  //     { href: "/ovinos/dashboard", label: "Dashboard Ovinos",  icon: BarChart2, sub: true },
+  //     { href: "/aves",             label: "Aves & Frangos",    icon: Bird      },
+  //     { href: "/aves/dashboard",   label: "Dashboard Aves",    icon: BarChart2, sub: true },
+  //   ],
+  // },
   {
     label: "Ferramentas",
     items: [
@@ -135,18 +138,21 @@ const menuGroups: NavGroup[] = [
       { href: "/configuracoes/assinatura",    label: "Assinatura",        icon: BadgeCheck, sub: true },
     ],
   },
-  {
-    label: "Agricultura",
-    items: [
-      { href: "/agricultura",          label: "Dashboard",  icon: Wheat },
-      { href: "/agricultura/fazendas", label: "Fazendas",   icon: Wheat,     sub: true },
-      { href: "/agricultura/talhoes",  label: "Talhões",    icon: Layers,    sub: true },
-      { href: "/agricultura/armazens", label: "Armazéns",   icon: Warehouse, sub: true },
-      { href: "/agricultura/embarques",label: "Embarques",  icon: Ship,      sub: true },
-      { href: "/agricultura/insumos",  label: "Insumos",    icon: Boxes,     sub: true },
-      { href: "/agricultura/fiscal",   label: "Fiscal Agrícola", icon: Receipt, sub: true },
-    ],
-  },
+  // ⏸️ Agricultura pausada (decisão 17/05 — foco 100% bovinos).
+  // Rota /agricultura redireciona via middleware. Não remover daqui —
+  // reativar comentando este bloco para voltar.
+  // {
+  //   label: "Agricultura",
+  //   items: [
+  //     { href: "/agricultura",          label: "Dashboard",  icon: Wheat },
+  //     { href: "/agricultura/fazendas", label: "Fazendas",   icon: Wheat,     sub: true },
+  //     { href: "/agricultura/talhoes",  label: "Talhões",    icon: Layers,    sub: true },
+  //     { href: "/agricultura/armazens", label: "Armazéns",   icon: Warehouse, sub: true },
+  //     { href: "/agricultura/embarques",label: "Embarques",  icon: Ship,      sub: true },
+  //     { href: "/agricultura/insumos",  label: "Insumos",    icon: Boxes,     sub: true },
+  //     { href: "/agricultura/fiscal",   label: "Fiscal Agrícola", icon: Receipt, sub: true },
+  //   ],
+  // },
   {
     label: "Marketplace",
     items: [

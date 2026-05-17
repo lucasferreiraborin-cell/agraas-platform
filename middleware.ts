@@ -15,6 +15,14 @@ export function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL("/em-breve", url));
   }
 
+  // ── Cadeias pausadas (ovinos/caprinos/aves/agricultura) ──────────────
+  const PAUSED_PREFIXES = ["/ovinos", "/caprinos", "/aves", "/agricultura"];
+  for (const prefix of PAUSED_PREFIXES) {
+    if (path === prefix || path.startsWith(prefix + "/")) {
+      return NextResponse.redirect(new URL("/em-breve", url));
+    }
+  }
+
   return NextResponse.next();
 }
 
