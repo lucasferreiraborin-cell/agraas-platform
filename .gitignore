@@ -42,3 +42,9 @@ yarn-error.log*
 next-env.d.ts
 
 .vercel
+
+# claude code — local config contém SUPABASE_ACCESS_TOKEN, NUNCA commitar
+.claude/
+
+# supabase cli temp + linked project state
+supabase/.temp/
