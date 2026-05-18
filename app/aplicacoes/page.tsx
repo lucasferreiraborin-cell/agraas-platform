@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
+import { KpiCard } from "@/app/components/ui/KpiCard";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -250,25 +251,25 @@ export default function AplicacoesPage() {
 
           <div className="ag-hero-panel">
             <div className="grid gap-4 sm:grid-cols-2">
-              <MetricCard
+              <KpiCard
                 label="Animais disponíveis"
                 value={animals.length}
-                subtitle="ativos para aplicação"
+                sub="ativos para aplicação"
               />
-              <MetricCard
+              <KpiCard
                 label="Produtos"
                 value={products.length}
-                subtitle="itens sanitários cadastrados"
+                sub="itens sanitários cadastrados"
               />
-              <MetricCard
+              <KpiCard
                 label="Lotes disponíveis"
                 value={batches.length}
-                subtitle="estoque com saldo positivo"
+                sub="estoque com saldo positivo"
               />
-              <MetricCard
+              <KpiCard
                 label="FEFO"
                 value="ativo"
-                subtitle="lote mais próximo do vencimento"
+                sub="lote mais próximo do vencimento"
               />
             </div>
           </div>
@@ -428,27 +429,6 @@ export default function AplicacoesPage() {
   );
 }
 
-function MetricCard({
-  label,
-  value,
-  subtitle,
-}: {
-  label: string;
-  value: string | number;
-  subtitle: string;
-}) {
-  return (
-    <div className="ag-kpi-card">
-      <p className="text-sm text-[var(--text-muted)]">{label}</p>
-      <p className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-[var(--text-primary)]">
-        {value}
-      </p>
-      <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-        {subtitle}
-      </p>
-    </div>
-  );
-}
 
 function todayInputValue() {
   const today = new Date();

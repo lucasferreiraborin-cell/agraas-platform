@@ -1,5 +1,6 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import Link from "next/link";
+import { KpiCard } from "@/app/components/ui/KpiCard";
 
 type CostRow = {
   id: string;
@@ -110,25 +111,25 @@ export default async function CustosHistoricoPage() {
 
           <div className="ag-hero-panel">
             <div className="grid gap-4 sm:grid-cols-2">
-              <MetricCard
+              <KpiCard
                 label="Custos"
                 value={rows.length}
-                subtitle="lançamentos registrados"
+                sub="lançamentos registrados"
               />
-              <MetricCard
+              <KpiCard
                 label="Valor total"
                 value={formatCurrency(totalAmount)}
-                subtitle="somatório da base"
+                sub="somatório da base"
               />
-              <MetricCard
+              <KpiCard
                 label="Categorias"
                 value={new Set(rows.map((row) => row.category)).size}
-                subtitle="tipos de custo mapeados"
+                sub="tipos de custo mapeados"
               />
-              <MetricCard
+              <KpiCard
                 label="Lotes impactados"
                 value={new Set(rows.map((row) => row.lot_name)).size - (rows.some((r)=>r.lot_name==="-" ) ? 1 : 0)}
-                subtitle="grupos com custos associados"
+                sub="grupos com custos associados"
               />
             </div>
           </div>
@@ -187,27 +188,6 @@ export default async function CustosHistoricoPage() {
   );
 }
 
-function MetricCard({
-  label,
-  value,
-  subtitle,
-}: {
-  label: string;
-  value: string | number;
-  subtitle: string;
-}) {
-  return (
-    <div className="ag-kpi-card">
-      <p className="text-sm text-[var(--text-muted)]">{label}</p>
-      <p className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-[var(--text-primary)]">
-        {value}
-      </p>
-      <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-        {subtitle}
-      </p>
-    </div>
-  );
-}
 
 function formatDate(value: string | null | undefined) {
   if (!value) return "-";

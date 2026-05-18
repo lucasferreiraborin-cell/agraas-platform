@@ -1,6 +1,7 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import React from "react";
 import AuditoriaActions from "@/app/components/AuditoriaActions";
+import { EmptyState } from "@/app/components/ui/EmptyState";
 
 const IconCheck = () => (
   <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -27,13 +28,6 @@ function SectionTitle({ title, sub }: { title: string; sub?: string }) {
   );
 }
 
-function EmptyState({ label }: { label: string }) {
-  return (
-    <div className="flex min-h-[80px] items-center justify-center rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface-soft)] px-6 py-8 text-sm text-[var(--text-muted)]">
-      {label}
-    </div>
-  );
-}
 
 function StatCard({
   label, valueIn, labelIn, valueOut, labelOut, variant = "neutral",
@@ -167,7 +161,7 @@ export default async function AuditoriaPage() {
       </section>
 
       {!snap ? (
-        <EmptyState label="Nenhum dado de auditoria registrado ainda" />
+        <EmptyState title="Nenhum dado de auditoria registrado ainda" />
       ) : (
         <>
           {/* Reconciliação */}

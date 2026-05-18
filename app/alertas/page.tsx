@@ -1,6 +1,7 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import Link from "next/link";
 import { Brain, AlertTriangle } from "lucide-react";
+import { KpiCard } from "@/app/components/ui/KpiCard";
 
 type BatchRow = {
   id: string;
@@ -149,25 +150,25 @@ export default async function AlertasPage() {
 
           <div className="ag-hero-panel">
             <div className="grid gap-4 sm:grid-cols-2">
-              <MetricCard
+              <KpiCard
                 label="Estoque crítico"
                 value={lowStock.length}
-                subtitle="lotes com saldo baixo"
+                sub="lotes com saldo baixo"
               />
-              <MetricCard
+              <KpiCard
                 label="Vencendo em 30 dias"
                 value={expiringSoon.length}
-                subtitle="produtos próximos do vencimento"
+                sub="produtos próximos do vencimento"
               />
-              <MetricCard
+              <KpiCard
                 label="Sem pesagem recente"
                 value={noRecentWeighing.length}
-                subtitle="animais há mais de 90 dias sem pesagem"
+                sub="animais há mais de 90 dias sem pesagem"
               />
-              <MetricCard
+              <KpiCard
                 label="Risco IA"
                 value={aiAlerts.length}
-                subtitle="animais com risco alto ou médio nas últimas 24h"
+                sub="animais com risco alto ou médio nas últimas 24h"
               />
             </div>
           </div>
@@ -348,24 +349,3 @@ export default async function AlertasPage() {
   );
 }
 
-function MetricCard({
-  label,
-  value,
-  subtitle,
-}: {
-  label: string;
-  value: string | number;
-  subtitle: string;
-}) {
-  return (
-    <div className="ag-kpi-card">
-      <p className="text-sm text-[var(--text-muted)]">{label}</p>
-      <p className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-[var(--text-primary)]">
-        {value}
-      </p>
-      <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-        {subtitle}
-      </p>
-    </div>
-  );
-}

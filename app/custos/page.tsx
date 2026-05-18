@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 import { Beef, Layers, DollarSign, Activity } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { KpiCard } from "@/app/components/ui/KpiCard";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -143,37 +143,33 @@ export default function CustosPage() {
 
           <div className="ag-hero-panel">
             <div className="grid gap-4 sm:grid-cols-2">
-              <MetricCard
+              <KpiCard
                 label="Animais"
                 value={animals.length}
-                subtitle="disponíveis para associação"
-                Icon={Beef}
-                bg="bg-[var(--primary-soft)]"
-                cl="text-[var(--primary)]"
+                sub="disponíveis para associação"
+                icon={Beef}
+                iconBg="bg-[var(--primary-soft)]"
               />
-              <MetricCard
+              <KpiCard
                 label="Lotes"
                 value={lots.length}
-                subtitle="grupos disponíveis para custos"
-                Icon={Layers}
-                bg="bg-blue-50"
-                cl="text-blue-600"
+                sub="grupos disponíveis para custos"
+                icon={Layers}
+                iconBg="bg-blue-50"
               />
-              <MetricCard
+              <KpiCard
                 label="Módulo"
                 value="econômico"
-                subtitle="base para rentabilidade"
-                Icon={DollarSign}
-                bg="bg-emerald-50"
-                cl="text-emerald-600"
+                sub="base para rentabilidade"
+                icon={DollarSign}
+                iconBg="bg-emerald-50"
               />
-              <MetricCard
+              <KpiCard
                 label="Fase"
                 value="ativa"
-                Icon={Activity}
-                bg="bg-amber-50"
-                cl="text-amber-600"
-                subtitle="estrutura pronta para análises"
+                icon={Activity}
+                iconBg="bg-amber-50"
+                sub="estrutura pronta para análises"
               />
             </div>
           </div>
@@ -303,32 +299,6 @@ export default function CustosPage() {
   );
 }
 
-function MetricCard({
-  label,
-  value,
-  subtitle,
-  Icon,
-  bg,
-  cl,
-}: {
-  label: string;
-  value: string | number;
-  subtitle: string;
-  Icon: LucideIcon;
-  bg: string;
-  cl: string;
-}) {
-  return (
-    <div className="ag-kpi-card">
-      <div className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${bg}`}>
-        <Icon size={17} className={cl} />
-      </div>
-      <p className="mt-3 ag-kpi-label">{label}</p>
-      <p className="ag-kpi-value">{value}</p>
-      <p className="sub">{subtitle}</p>
-    </div>
-  );
-}
 
 function todayInputValue() {
   const today = new Date();

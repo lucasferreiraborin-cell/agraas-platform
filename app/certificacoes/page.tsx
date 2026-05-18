@@ -1,6 +1,7 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { createSupabaseServiceClient } from "@/lib/supabase-service";
 import Link from "next/link";
+import { KpiCard } from "@/app/components/ui/KpiCard";
 
 type CertificationRow = {
   id: string;
@@ -215,25 +216,25 @@ export default async function CertificacoesPage() {
 
           <div className="ag-hero-panel">
             <div className="grid gap-4 sm:grid-cols-2">
-              <MetricCard
+              <KpiCard
                 label="Animais certificados"
                 value={totalCertified}
-                subtitle="ativos com certificação vigente"
+                sub="ativos com certificação vigente"
               />
-              <MetricCard
+              <KpiCard
                 label="Score médio"
                 value={averageScore}
-                subtitle="confiança média da base certificada"
+                sub="confiança média da base certificada"
               />
-              <MetricCard
+              <KpiCard
                 label="Propriedades cobertas"
                 value={propertiesCovered}
-                subtitle="unidades com certificação ativa"
+                sub="unidades com certificação ativa"
               />
-              <MetricCard
+              <KpiCard
                 label="Selos ativos"
                 value={totalSeals}
-                subtitle="marcadores de conformidade registrados"
+                sub="marcadores de conformidade registrados"
               />
             </div>
           </div>
@@ -412,27 +413,6 @@ export default async function CertificacoesPage() {
   );
 }
 
-function MetricCard({
-  label,
-  value,
-  subtitle,
-}: {
-  label: string;
-  value: string | number;
-  subtitle: string;
-}) {
-  return (
-    <div className="ag-kpi-card">
-      <p className="ag-kpi-label">{label}</p>
-      <p className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-[var(--text-primary)]">
-        {value}
-      </p>
-      <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-        {subtitle}
-      </p>
-    </div>
-  );
-}
 
 function formatLabel(value: string) {
   return value
