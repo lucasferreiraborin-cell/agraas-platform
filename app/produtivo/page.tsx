@@ -261,22 +261,21 @@ export default async function ProdutivoPage() {
     <main className="space-y-8">
       <section className="ag-card-strong overflow-hidden">
         <div className="grid gap-0 xl:grid-cols-[1.08fr_0.92fr]">
-          <div className="relative p-8 lg:p-10">
-            <div className="pointer-events-none absolute right-0 top-0 h-48 w-48 rounded-full bg-[radial-gradient(circle,rgba(122,168,76,0.20)_0%,rgba(122,168,76,0.00)_70%)]" />
+          <div className="relative p-6 lg:p-7">
+            <div className="pointer-events-none absolute right-0 top-0 h-32 w-32 rounded-full bg-[radial-gradient(circle,rgba(122,168,76,0.20)_0%,rgba(122,168,76,0.00)_70%)]" />
 
             <div className="ag-badge ag-badge-green">Dashboard produtivo</div>
 
-            <h1 className="ag-page-title max-w-4xl">
+            <h1 className="mt-3 max-w-3xl text-3xl font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
               Inteligência produtiva do rebanho
             </h1>
 
-            <p className="mt-5 max-w-3xl text-[1.05rem] leading-8 text-[var(--text-secondary)]">
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--text-secondary)]">
               Acompanhe peso médio, evolução recente, ranking por score,
-              performance por lote e movimentações operacionais em uma visão
-              executiva da produção.
+              performance por lote e movimentações operacionais.
             </p>
 
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="mt-5 flex flex-wrap gap-3">
               <Link href="/pesagens" className="ag-button-primary">
                 Nova pesagem
               </Link>
@@ -285,7 +284,7 @@ export default async function ProdutivoPage() {
               </Link>
             </div>
 
-            <div className="mt-10 grid gap-4 md:grid-cols-4">
+            <div className="mt-6 grid gap-4 md:grid-cols-4">
               <HeroMetric
                 label="Peso médio do rebanho"
                 value={`${averageWeight.toFixed(1)} kg`}
@@ -582,9 +581,9 @@ function HeroMetric({
   subtitle: string;
 }) {
   return (
-    <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5">
+    <div className="rounded-2xl border border-[var(--border)] bg-white p-6 shadow-sm">
       <p className="text-sm text-[var(--text-muted)]">{label}</p>
-      <p className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-[var(--text-primary)]">
+      <p className="mt-3 text-3xl font-bold tracking-[-0.05em] text-[var(--text-primary)]">
         {value}
       </p>
       <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">

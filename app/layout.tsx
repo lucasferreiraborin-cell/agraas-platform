@@ -84,7 +84,7 @@ export default async function RootLayout({
   const isBuyer = clientData?.role === "buyer";
 
   const environmentLabel =
-    process.env.NODE_ENV === "production" ? "Agraas MVP" : "Ambiente local";
+    process.env.NODE_ENV === "production" ? "v0.9 Beta" : "Ambiente local";
 
   const phaseLabel =
     process.env.NODE_ENV === "production"
@@ -139,7 +139,7 @@ export default async function RootLayout({
                     <h1 className="mt-3 text-[3rem] font-semibold leading-none tracking-[-0.07em] text-white">
                       Agraas
                     </h1>
-                    <p className="mt-3 text-base text-white/72">
+                    <p className="mt-3 text-xs italic tracking-wide text-emerald-300/85">
                       Plataforma do agro
                     </p>
                   </div>
@@ -209,13 +209,13 @@ export default async function RootLayout({
                   <div className="flex items-center gap-3">
                     <MobileDrawer />
                     <div className="min-w-0">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--text-muted)]">
+                      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--primary)]">
                         Plataforma Agraas
                       </p>
-                      <h2 className="mt-1 truncate text-lg font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
+                      <h2 className="mt-1 truncate text-base font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
                         {isBuyer
                           ? "Digital infrastructure for the Brazilian food supply chain"
-                          : "Infraestrutura digital da cadeia pecuária"}
+                          : "Infraestrutura digital da pecuária bovina"}
                       </h2>
                     </div>
                   </div>
