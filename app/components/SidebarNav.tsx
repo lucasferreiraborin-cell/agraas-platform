@@ -101,17 +101,19 @@ const menuGroups: NavGroup[] = [
       { href: "/eventos",            label: "Eventos",            icon: Activity },
     ],
   },
-  {
-    label: "Exportação",
-    items: [
-      { href: "/exportacao", label: "Central de Exportação", icon: Plane, highlight: true },
-      { href: "/tracking",   label: "Rastreio",              icon: Truck, highlight: true },
-    ],
-  },
+  // ⏸️ Exportação pausada da sidebar (decisão 17/05/18 — foco bovinos sem destaque PIF).
+  // Rotas /exportacao e /tracking continuam funcionais via deep-link, apenas saem do menu.
+  // {
+  //   label: "Exportação",
+  //   items: [
+  //     { href: "/exportacao", label: "Central de Exportação", icon: Plane, highlight: true },
+  //     { href: "/tracking",   label: "Rastreio",              icon: Truck, highlight: true },
+  //   ],
+  // },
   {
     label: "Financeiro",
     items: [
-      { href: "/financeiro",       label: "Painel Financeiro", icon: DollarSign, highlight: true },
+      { href: "/financeiro",       label: "Painel Financeiro", icon: DollarSign },
       { href: "/custos",           label: "Custos",            icon: DollarSign },
       { href: "/custos/historico", label: "Histórico Custos",  icon: DollarSign,      sub: true },
       { href: "/custo-producao",   label: "Custo de Produção", icon: DollarSign,      sub: true },
@@ -129,7 +131,7 @@ const menuGroups: NavGroup[] = [
       { href: "/produtos",     label: "Produtos",     icon: Package },
       { href: "/insumos",      label: "Insumos",      icon: Boxes },
       { href: "/operacoes",    label: "Operações",    icon: LayoutGrid },
-      { href: "/marketplace",  label: "Marketplace",  icon: ShoppingBag, highlight: true },
+      { href: "/marketplace",  label: "Marketplace",  icon: ShoppingBag },
     ],
   },
   // ⏸️ Pecuária Expandida pausada (decisão 17/05 — foco 100% bovinos).
