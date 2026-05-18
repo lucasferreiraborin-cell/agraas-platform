@@ -60,20 +60,45 @@ const menuGroups: NavGroup[] = [
   {
     label: null,
     items: [
-      { href: "/",              label: "Painel",             icon: Home },
-      // ⏸️ /dashboard agora redireciona 301 → /painel via middleware.
-      // { href: "/dashboard",    label: "Dashboard Executivo", icon: LayoutDashboard },
-      { href: "/inteligencia", label: "Inteligência",        icon: Brain },
+      { href: "/painel",       label: "Painel",       icon: Home },
+      { href: "/inteligencia", label: "Inteligência", icon: Brain },
     ],
   },
   {
     label: "Rebanho",
     items: [
-      { href: "/animais",      label: "Animais",      icon: Beef },
-      { href: "/propriedades", label: "Propriedades", icon: MapPin },
-      { href: "/lotes",        label: "Lotes",        icon: Package },
-      { href: "/reprodutivo",  label: "Reprodutivo",  icon: HeartPulse },
-      { href: "/scores",       label: "Scores",       icon: BarChart2 },
+      { href: "/animais",                 label: "Animais",                 icon: Beef },
+      { href: "/lotes",                   label: "Lotes",                   icon: Package },
+      { href: "/propriedades",            label: "Propriedades",            icon: MapPin },
+      { href: "/movimentacoes",           label: "Movimentações",           icon: ArrowLeftRight },
+      { href: "/movimentacoes/historico", label: "Histórico Movimentações", icon: ArrowLeftRight, sub: true },
+    ],
+  },
+  {
+    label: "Reprodução",
+    items: [
+      { href: "/reprodutivo", label: "Reprodutivo", icon: HeartPulse },
+    ],
+  },
+  {
+    label: "Sanidade",
+    items: [
+      { href: "/aplicacoes",           label: "Aplicações",           icon: Syringe },
+      { href: "/aplicacoes/historico", label: "Histórico Aplicações", icon: Syringe,    sub: true },
+      { href: "/estoque/dashboard",    label: "Dashboard Sanitário",  icon: Warehouse },
+      { href: "/calendario-sanitario", label: "Calendário Sanitário", icon: Activity },
+      { href: "/estoque",              label: "Estoque",              icon: Warehouse },
+      { href: "/estoque/historico",    label: "Histórico Estoque",    icon: Warehouse,  sub: true },
+    ],
+  },
+  {
+    label: "Performance",
+    items: [
+      { href: "/pesagens",           label: "Pesagens",           icon: Scale },
+      { href: "/pesagens/historico", label: "Histórico Pesagens", icon: Scale, sub: true },
+      { href: "/metas",              label: "Metas de Peso",      icon: TrendingUp },
+      { href: "/scores",             label: "Scores",             icon: BarChart2 },
+      { href: "/eventos",            label: "Eventos",            icon: Activity },
     ],
   },
   {
@@ -84,43 +109,31 @@ const menuGroups: NavGroup[] = [
     ],
   },
   {
-    label: "Operações",
-    items: [
-      { href: "/aplicacoes",              label: "Aplicações",              icon: Syringe },
-      { href: "/aplicacoes/historico",    label: "Histórico Aplicações",    icon: Syringe,        sub: true },
-      { href: "/pesagens",                label: "Pesagens",                icon: Scale },
-      { href: "/pesagens/historico",      label: "Histórico Pesagens",      icon: Scale,          sub: true },
-      { href: "/estoque",                 label: "Estoque",                 icon: Warehouse },
-      { href: "/estoque/dashboard",       label: "Dashboard Sanitário",     icon: Warehouse,      sub: true },
-      { href: "/estoque/historico",       label: "Histórico Estoque",       icon: Warehouse,      sub: true },
-      { href: "/metas",                     label: "Metas de Peso",           icon: TrendingUp },
-      { href: "/calendario-sanitario",   label: "Calendário Sanitário",    icon: Activity,      sub: true },
-      { href: "/fornecedores",             label: "Fornecedores",            icon: Truck },
-      { href: "/produtos",               label: "Produtos",                icon: Package },
-      { href: "/producao",                label: "Produção",                icon: BarChart3 },
-      { href: "/insumos",                 label: "Insumos",                 icon: Boxes },
-      { href: "/eventos",                 label: "Eventos",                 icon: Activity },
-      { href: "/movimentacoes",           label: "Movimentações",           icon: ArrowLeftRight },
-      { href: "/movimentacoes/historico", label: "Histórico Movimentações", icon: ArrowLeftRight, sub: true },
-      { href: "/operacoes",               label: "Operações",               icon: LayoutGrid },
-    ],
-  },
-  {
     label: "Financeiro",
     items: [
-      { href: "/financeiro",      label: "Painel Financeiro", icon: DollarSign, highlight: true },
+      { href: "/financeiro",       label: "Painel Financeiro", icon: DollarSign, highlight: true },
       { href: "/custos",           label: "Custos",            icon: DollarSign },
       { href: "/custos/historico", label: "Histórico Custos",  icon: DollarSign,      sub: true },
       { href: "/custo-producao",   label: "Custo de Produção", icon: DollarSign,      sub: true },
-      { href: "/compradores",      label: "Compradores",       icon: ArrowUpRight },
       { href: "/vendas",           label: "Vendas",            icon: ArrowUpRight },
-      { href: "/abates",           label: "Abates",           icon: Scissors },
-      { href: "/fiscal",           label: "Fiscal",           icon: Receipt },
-      { href: "/fiscal/relatorio", label: "Relatório Fiscal", icon: FileSpreadsheet, sub: true },
+      { href: "/abates",           label: "Abates",            icon: Scissors },
+      { href: "/fiscal",           label: "Fiscal",            icon: Receipt },
+      { href: "/fiscal/relatorio", label: "Relatório Fiscal",  icon: FileSpreadsheet, sub: true },
+    ],
+  },
+  {
+    label: "Comercial",
+    items: [
+      { href: "/compradores",  label: "Compradores",  icon: ArrowUpRight },
+      { href: "/fornecedores", label: "Fornecedores", icon: Truck },
+      { href: "/produtos",     label: "Produtos",     icon: Package },
+      { href: "/insumos",      label: "Insumos",      icon: Boxes },
+      { href: "/operacoes",    label: "Operações",    icon: LayoutGrid },
+      { href: "/marketplace",  label: "Marketplace",  icon: ShoppingBag, highlight: true },
     ],
   },
   // ⏸️ Pecuária Expandida pausada (decisão 17/05 — foco 100% bovinos).
-  // Rotas /ovinos, /caprinos, /aves redirecionam via middleware. Não
+  // Rotas /ovinos, /caprinos, /aves redirecionam via proxy.ts. Não
   // remover daqui — reativar comentando este bloco para voltar.
   // {
   //   label: "Pecuária Expandida",
@@ -131,39 +144,34 @@ const menuGroups: NavGroup[] = [
   //     { href: "/aves/dashboard",   label: "Dashboard Aves",    icon: BarChart2, sub: true },
   //   ],
   // },
-  {
-    label: "Ferramentas",
-    items: [
-      { href: "/migrar-dados",                label: "Importar animais",  icon: FileUp },
-      { href: "/planos",                      label: "Planos",            icon: BadgeCheck },
-      { href: "/configuracoes/assinatura",    label: "Assinatura",        icon: BadgeCheck, sub: true },
-    ],
-  },
   // ⏸️ Agricultura pausada (decisão 17/05 — foco 100% bovinos).
-  // Rota /agricultura redireciona via middleware. Não remover daqui —
+  // Rota /agricultura redireciona via proxy.ts. Não remover daqui —
   // reativar comentando este bloco para voltar.
   // {
   //   label: "Agricultura",
   //   items: [
-  //     { href: "/agricultura",          label: "Dashboard",  icon: Wheat },
-  //     { href: "/agricultura/fazendas", label: "Fazendas",   icon: Wheat,     sub: true },
-  //     { href: "/agricultura/talhoes",  label: "Talhões",    icon: Layers,    sub: true },
-  //     { href: "/agricultura/armazens", label: "Armazéns",   icon: Warehouse, sub: true },
-  //     { href: "/agricultura/embarques",label: "Embarques",  icon: Ship,      sub: true },
-  //     { href: "/agricultura/insumos",  label: "Insumos",    icon: Boxes,     sub: true },
-  //     { href: "/agricultura/fiscal",   label: "Fiscal Agrícola", icon: Receipt, sub: true },
+  //     { href: "/agricultura",          label: "Dashboard",       icon: Wheat },
+  //     { href: "/agricultura/fazendas", label: "Fazendas",        icon: Wheat,     sub: true },
+  //     { href: "/agricultura/talhoes",  label: "Talhões",         icon: Layers,    sub: true },
+  //     { href: "/agricultura/armazens", label: "Armazéns",        icon: Warehouse, sub: true },
+  //     { href: "/agricultura/embarques",label: "Embarques",       icon: Ship,      sub: true },
+  //     { href: "/agricultura/insumos",  label: "Insumos",         icon: Boxes,     sub: true },
+  //     { href: "/agricultura/fiscal",   label: "Fiscal Agrícola", icon: Receipt,   sub: true },
   //   ],
   // },
   {
-    label: "Marketplace",
+    label: "Ferramentas",
     items: [
-      { href: "/marketplace",   label: "Marketplace",   icon: ShoppingBag, highlight: true },
+      { href: "/migrar-dados",             label: "Importar animais", icon: FileUp },
+      { href: "/planos",                   label: "Planos",           icon: BadgeCheck },
+      { href: "/configuracoes/assinatura", label: "Assinatura",       icon: BadgeCheck, sub: true },
     ],
   },
   {
     label: "Relatórios",
     items: [
       { href: "/market",        label: "Market",        icon: TrendingUp },
+      { href: "/producao",      label: "Produção",      icon: BarChart3 },
       { href: "/relatorios",    label: "Relatórios",    icon: FileText },
       { href: "/auditoria",     label: "Auditoria",     icon: ClipboardCheck },
       { href: "/alertas",       label: "Alertas",       icon: Bell },
