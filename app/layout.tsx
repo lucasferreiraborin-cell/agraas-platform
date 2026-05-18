@@ -142,7 +142,7 @@ export default async function RootLayout({
                     <h1 className="mt-3 text-[3rem] font-semibold leading-none tracking-[-0.07em] text-white">
                       Agraas
                     </h1>
-                    <p className="mt-3 text-xs italic tracking-wide text-emerald-300/85">
+                    <p className="mt-3 text-xs tracking-wide text-white/55">
                       Plataforma do agro
                     </p>
                   </div>
