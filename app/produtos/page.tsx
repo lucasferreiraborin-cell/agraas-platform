@@ -76,7 +76,7 @@ export default async function ProdutosPage() {
           <p className="ag-empty-state-text">Cadastre vacinas, vermífugos e outros produtos para vincular às aplicações.</p>
         </div>
       ) : (
-        <section className="ag-card overflow-hidden p-0 pb-20">
+        <section className="ag-card overflow-x-auto p-0 pb-20">
           <table className="ag-table w-full">
             <thead>
               <tr>

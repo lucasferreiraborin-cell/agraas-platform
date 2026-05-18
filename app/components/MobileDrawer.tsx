@@ -40,7 +40,7 @@ export default function MobileDrawer() {
 
       {/* Drawer */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 w-[320px] transform bg-[linear-gradient(180deg,var(--sidebar)_0%,var(--sidebar-2)_100%)] text-white transition-transform duration-300 ease-in-out lg:hidden ${
+        className={`fixed inset-y-0 left-0 z-50 w-[85vw] max-w-[320px] transform bg-[linear-gradient(180deg,var(--sidebar)_0%,var(--sidebar-2)_100%)] text-white transition-transform duration-300 ease-in-out lg:hidden ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
