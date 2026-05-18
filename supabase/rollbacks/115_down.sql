@@ -1,0 +1,14 @@
+-- Rollback migration 115
+
+BEGIN;
+
+DELETE FROM public.marketplace_offers
+  WHERE id IN (
+    '55555555-0099-0000-0000-000000000001',
+    '55555555-0099-0000-0000-000000000002'
+  );
+
+DELETE FROM public.properties
+  WHERE id = '11111111-0099-0000-0000-000000000002';
+
+COMMIT;
