@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
+import { ActionGuard } from "@/app/components/ui/ActionGuard";
 import { KpiCard } from "@/app/components/ui/KpiCard";
 
 const supabase = createClient(
@@ -415,13 +416,15 @@ export default function AplicacoesPage() {
               />
             </label>
 
-            <button
-              onClick={registerApplication}
-              disabled={saving}
-              className="ag-button-primary mt-2 disabled:opacity-70"
-            >
-              {saving ? "Salvando..." : "Registrar aplicação"}
-            </button>
+            <ActionGuard>
+              <button
+                onClick={registerApplication}
+                disabled={saving}
+                className="ag-button-primary mt-2 disabled:opacity-70"
+              >
+                {saving ? "Salvando..." : "Registrar aplicação"}
+              </button>
+            </ActionGuard>
           </div>
         )}
       </section>

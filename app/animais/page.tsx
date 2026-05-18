@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
+import { ActionGuard } from "@/app/components/ui/ActionGuard";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -354,9 +355,11 @@ export default function AnimaisPage() {
           score, certificações, rastreabilidade e leitura produtiva.
         </p>
         <div className="mt-7 flex flex-wrap gap-3">
-          <Link href="/animais/novo" className="ag-button-primary">
-            Novo animal
-          </Link>
+          <ActionGuard>
+            <Link href="/animais/novo" className="ag-button-primary">
+              Novo animal
+            </Link>
+          </ActionGuard>
           <Link href="/scores" className="ag-button-secondary">
             Ver ranking
           </Link>
@@ -839,9 +842,11 @@ function EmptyState({ filter }: { filter: FilterKey }) {
       </p>
       {filter === "all" && (
         <div className="mt-6 flex justify-center gap-3">
-          <Link href="/animais/novo" className="ag-button-primary">
-            Cadastrar animal
-          </Link>
+          <ActionGuard>
+            <Link href="/animais/novo" className="ag-button-primary">
+              Cadastrar animal
+            </Link>
+          </ActionGuard>
         </div>
       )}
     </div>

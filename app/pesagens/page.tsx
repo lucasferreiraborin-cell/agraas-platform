@@ -5,6 +5,7 @@ import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
 import { Scale as ScaleIcon, TrendingUp as TrendingUpIcon, Weight as WeightIcon, Activity as ActivityIcon } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { ActionGuard } from "@/app/components/ui/ActionGuard";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -241,9 +242,11 @@ export default function PesagensPage() {
 
           <div className="mt-4 flex items-center justify-between">
             <span className="text-sm text-[var(--text-muted)]">{batchRows.filter(r => r.selected && r.weight).length} animais selecionados</span>
-            <button onClick={createBatchWeights} disabled={batchSaving} className="ag-button-primary disabled:opacity-70">
-              {batchSaving ? "Salvando..." : "Registrar pesagens em lote"}
-            </button>
+            <ActionGuard>
+              <button onClick={createBatchWeights} disabled={batchSaving} className="ag-button-primary disabled:opacity-70">
+                {batchSaving ? "Salvando..." : "Registrar pesagens em lote"}
+              </button>
+            </ActionGuard>
           </div>
         </section>
       )}
@@ -333,13 +336,15 @@ export default function PesagensPage() {
               />
             </label>
 
-            <button
-              onClick={createWeight}
-              disabled={saving}
-              className="ag-button-primary mt-2 disabled:opacity-70"
-            >
-              {saving ? "Salvando..." : "Registrar pesagem"}
-            </button>
+            <ActionGuard>
+              <button
+                onClick={createWeight}
+                disabled={saving}
+                className="ag-button-primary mt-2 disabled:opacity-70"
+              >
+                {saving ? "Salvando..." : "Registrar pesagem"}
+              </button>
+            </ActionGuard>
           </div>
         )}
       </section>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
+import { ActionGuard } from "@/app/components/ui/ActionGuard";
 
 const PAGE_SIZE = 20;
 const OBJECTIVES = ["Engorda", "Cria", "Recria", "Reprodução", "Descarte", "Exportação"];
@@ -128,7 +129,9 @@ export default function LotesPage() {
             <p className="mt-4 max-w-md text-base leading-8 text-[var(--text-secondary)]">
               Organize seus animais em lotes por objetivo produtivo ou crie um <strong>Lote de Exportação</strong> com rastreabilidade completa para mercados internacionais.
             </p>
-            <button onClick={() => setShowForm(true)} className="ag-button-primary mt-8">Criar primeiro lote</button>
+            <ActionGuard>
+              <button onClick={() => setShowForm(true)} className="ag-button-primary mt-8">Criar primeiro lote</button>
+            </ActionGuard>
           </div>
         </div>
       </main>
@@ -147,7 +150,9 @@ export default function LotesPage() {
                 Organize o rebanho por objetivo produtivo. Acompanhe GMD, score médio, previsão de saída e conformidade de exportação.
               </p>
             </div>
-            <button onClick={() => setShowForm(true)} className="ag-button-primary shrink-0">+ Novo lote</button>
+            <ActionGuard>
+              <button onClick={() => setShowForm(true)} className="ag-button-primary shrink-0">+ Novo lote</button>
+            </ActionGuard>
           </div>
         </div>
       </section>
