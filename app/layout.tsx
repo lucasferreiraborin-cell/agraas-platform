@@ -9,6 +9,7 @@ import MobileDrawer from "./components/MobileDrawer";
 import { ToastContainer } from "./components/Toast";
 import AgroAssistant from "./components/AgroAssistant";
 import QuickActions from "./components/QuickActions";
+import { MentorViewBadge } from "./components/MentorViewBadge";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getCurrentRole } from "@/lib/auth/getCurrentRole";
 import { RoleProvider } from "@/app/components/RoleContext";
@@ -223,6 +224,7 @@ export default async function RootLayout({
                   </div>
 
                   <div className="hidden items-center gap-3 md:flex">
+                    <MentorViewBadge />
                     <div className="rounded-full border border-[var(--border)] bg-white px-4 py-2 text-sm text-[var(--text-secondary)] shadow-[var(--shadow-soft)]">
                       {environmentLabel}
                     </div>
