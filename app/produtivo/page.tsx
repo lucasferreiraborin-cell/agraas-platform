@@ -202,7 +202,22 @@ export default async function ProdutivoPage() {
     (item) => item.delta !== null && item.delta > 0
   ).length;
 
-  const topAnimalsByDelta = [...evolutions]
+  // Filtro UI: esconder lotes confidenciais (Arábia/exportação/Mar-26) e seus animais
+  // do "Ranking de evolução" e "Performance por lote". Dados continuam no banco.
+  const EXCLUDED_LOT_PATTERNS = ["arábia", "saudita", "saudi", "export", "exportação", "mar/26"];
+  const lotNameExcluded = (name: string | null | undefined) =>
+    !!name && EXCLUDED_LOT_PATTERNS.some((p) => name.toLowerCase().includes(p));
+  const excludedLotIds = new Set(
+    lots.filter((l) => lotNameExcluded(l.name)).map((l) => l.id)
+  );
+  const excludedAnimalIds = new Set(
+    assignments
+      .filter((a) => !a.exit_date && excludedLotIds.has(a.lot_id))
+      .map((a) => a.animal_id)
+  );
+  const visibleEvolutions = evolutions.filter((e) => !excludedAnimalIds.has(e.animal_id));
+
+  const topAnimalsByDelta = [...visibleEvolutions]
     .sort((a, b) => (b.delta ?? -9999) - (a.delta ?? -9999))
     .slice(0, 5);
 
@@ -238,6 +253,7 @@ export default async function ProdutivoPage() {
   });
 
   const topLots = lotSummary
+    .filter((l) => !lotNameExcluded(l.name))
     .sort((a, b) => b.average_weight - a.average_weight)
     .slice(0, 5);
 
