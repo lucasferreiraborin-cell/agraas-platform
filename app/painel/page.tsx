@@ -2,8 +2,8 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import BrazilMapWrapper from "@/app/components/BrazilMapWrapper";
-import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
 import NotificationBanner from "@/app/components/NotificationBanner";
+import { KpiCard } from "@/app/components/ui/KpiCard";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -504,21 +504,6 @@ export default async function PainelPage() {
         </div>
 
         <div className="mt-8">
-          {halalCount > 0 && (
-            <div className="mb-4 flex justify-end">
-              <div
-                className="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-2"
-                title="Animais com certificação Halal ativa"
-              >
-                <HalalBadgeSVG size={48} />
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-600">Halal Certified</p>
-                  <p className="text-2xl font-bold tracking-tight text-emerald-700">{halalCount}</p>
-                  <p className="text-xs text-emerald-500">animais certificados</p>
-                </div>
-              </div>
-            </div>
-          )}
           <div className="grid gap-4 md:grid-cols-3">
             <HeroStat
               label="Animais monitorados"
@@ -590,46 +575,26 @@ export default async function PainelPage() {
       </section>
 
       {/* ── 3. KPIs ── */}
-      <section className="grid gap-4 md:grid-cols-3 xl:grid-cols-6">
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard
           label="Animais"
           value={totalAnimals}
-          icon={<IconAnimal />}
-          subtitle="base animal monitorada"
+          sub="base animal monitorada"
         />
         <KpiCard
           label="Score médio"
-          value={totalScoreAverage}
-          icon={<IconScore />}
-          subtitle="confiança média do rebanho"
-          valueSuffix=" pts"
+          value={`${totalScoreAverage} pts`}
+          sub="confiança média do rebanho"
         />
         <KpiCard
           label="Arrobas totais"
-          value={totalArrobas}
-          icon={<IconWeight />}
-          subtitle="peso vivo estimado da base"
-          valueSuffix=" @"
+          value={`${totalArrobas} @`}
+          sub="peso vivo estimado da base"
         />
         <KpiCard
           label="Valor estimado"
           value={estimatedValue}
-          icon={<IconCurrency />}
-          subtitle="base · R$ 330/@"
-        />
-        <KpiCard
-          label="Halal certificados"
-          value={halalCount}
-          icon={<IconHalal />}
-          subtitle="com certificação Halal ativa"
-          highlight
-        />
-        <KpiCard
-          label="Aptos exportação"
-          value={exportReadyCount}
-          icon={<IconPlane />}
-          subtitle="score ≥ 75 + Halal + sem carência"
-          highlight
+          sub="base · R$ 330/@"
         />
       </section>
 
@@ -949,48 +914,6 @@ function AlertCard({ alert }: { alert: Alert }) {
   );
 }
 
-function KpiCard({
-  label,
-  value,
-  icon,
-  subtitle,
-  valueSuffix,
-  highlight = false,
-}: {
-  label: string;
-  value: string | number;
-  icon: React.ReactNode;
-  subtitle: string;
-  valueSuffix?: string;
-  highlight?: boolean;
-}) {
-  return (
-    <div
-      className={`ag-card flex min-h-[180px] flex-col p-6 ${highlight ? "ring-1 ring-[rgba(93,156,68,0.18)]" : ""}`}
-    >
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[var(--primary-soft)] shadow-[var(--shadow-soft)]">
-          {icon}
-        </div>
-        <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
-          Live
-        </span>
-      </div>
-      <p className="mt-5 ag-kpi-label">{label}</p>
-      <p className="mt-2 truncate ag-kpi-value">
-        {value}
-        {valueSuffix && (
-          <span className="text-lg font-medium text-[var(--text-secondary)]">
-            {valueSuffix}
-          </span>
-        )}
-      </p>
-      <p className="mt-2 line-clamp-2 text-sm leading-5 text-[var(--text-secondary)]">
-        {subtitle}
-      </p>
-    </div>
-  );
-}
 
 // ─── Icons (inline SVG) ───────────────────────────────────────────────────────
 
