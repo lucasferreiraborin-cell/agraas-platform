@@ -10,7 +10,6 @@ import { ToastContainer } from "./components/Toast";
 import AgroAssistant from "./components/AgroAssistant";
 import QuickActions from "./components/QuickActions";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
 
 const SITE_URL = "https://agraas-platform.vercel.app";
 
@@ -132,7 +131,7 @@ export default async function RootLayout({
           <div className="flex min-h-screen">
             <aside className="hidden w-[320px] shrink-0 border-r border-white/10 bg-[linear-gradient(180deg,var(--sidebar)_0%,var(--sidebar-2)_100%)] text-white lg:flex lg:flex-col">
               <div className="border-b border-white/10 px-7 py-8">
-                <div className="flex items-center justify-center gap-6">
+                <div className="flex items-center justify-center">
                   <div className="text-center">
                     <p className="text-[11px] uppercase tracking-[0.32em] text-white/50">
                       Plataforma
@@ -144,7 +143,6 @@ export default async function RootLayout({
                       Plataforma do agro
                     </p>
                   </div>
-                  <HalalBadgeSVG size={56} />
                 </div>
               </div>
 
