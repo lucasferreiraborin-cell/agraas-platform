@@ -5,6 +5,7 @@ import {
   ShieldCheck, TrendingUp, Package, DollarSign, ArrowLeftRight, Bell, Globe, FileText,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { KpiCard } from "@/app/components/ui/KpiCard";
 
 export default async function RelatoriosPage() {
   const supabase = await createSupabaseServerClient();
@@ -112,12 +113,12 @@ export default async function RelatoriosPage() {
 
           <div className="ag-hero-panel">
             <div className="grid gap-4 sm:grid-cols-2">
-              <MetricCard label="Animais" value={animalsCount ?? 0} subtitle="base pecuária registrada" />
-              <MetricCard label="Aplicações" value={applicationsCount ?? 0} subtitle="histórico sanitário" />
-              <MetricCard label="Pesagens" value={weightsCount ?? 0} subtitle="base produtiva" />
-              <MetricCard label="Custos" value={costsCount ?? 0} subtitle="base econômica" />
-              <MetricCard label="Lotes" value={lotsCount ?? 0} subtitle="grupos operacionais" />
-              <MetricCard label="Movimentos" value={movementsCount ?? 0} subtitle="trilha operacional" />
+              <KpiCard label="Animais" value={animalsCount ?? 0} sub="base pecuária registrada" />
+              <KpiCard label="Aplicações" value={applicationsCount ?? 0} sub="histórico sanitário" />
+              <KpiCard label="Pesagens" value={weightsCount ?? 0} sub="base produtiva" />
+              <KpiCard label="Custos" value={costsCount ?? 0} sub="base econômica" />
+              <KpiCard label="Lotes" value={lotsCount ?? 0} sub="grupos operacionais" />
+              <KpiCard label="Movimentos" value={movementsCount ?? 0} sub="trilha operacional" />
             </div>
           </div>
         </div>
@@ -149,24 +150,3 @@ export default async function RelatoriosPage() {
   );
 }
 
-function MetricCard({
-  label,
-  value,
-  subtitle,
-}: {
-  label: string;
-  value: string | number;
-  subtitle: string;
-}) {
-  return (
-    <div className="ag-kpi-card">
-      <p className="text-sm text-[var(--text-muted)]">{label}</p>
-      <p className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-[var(--text-primary)]">
-        {value}
-      </p>
-      <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-        {subtitle}
-      </p>
-    </div>
-  );
-}

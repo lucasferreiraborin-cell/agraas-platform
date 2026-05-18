@@ -5,6 +5,7 @@ import {
   getProductiveRiskLabel,
   getRiskBadgeClass,
 } from "@/lib/agraas-analytics";
+import { KpiCard } from "@/app/components/ui/KpiCard";
 
 type AnimalRow = {
   id: string;
@@ -224,25 +225,25 @@ export default async function InteligenciaPage() {
 
           <div className="ag-hero-panel">
             <div className="grid gap-4 sm:grid-cols-2">
-              <MetricCard
+              <KpiCard
                 label="Animais com GMD"
                 value={topGmd.length}
-                subtitle="base já com leitura de ganho diário"
+                sub="base já com leitura de ganho diário"
               />
-              <MetricCard
+              <KpiCard
                 label="Riscos detectados"
                 value={risks.length}
-                subtitle="animais com atenção ou risco"
+                sub="animais com atenção ou risco"
               />
-              <MetricCard
+              <KpiCard
                 label="Top evolução"
                 value={topEvolution.length}
-                subtitle="ganho de peso destacado"
+                sub="ganho de peso destacado"
               />
-              <MetricCard
+              <KpiCard
                 label="Base com score"
                 value={bestScore.length}
-                subtitle="animais com score consolidado"
+                sub="animais com score consolidado"
               />
             </div>
           </div>
@@ -429,27 +430,6 @@ function InsightCard({
   );
 }
 
-function MetricCard({
-  label,
-  value,
-  subtitle,
-}: {
-  label: string;
-  value: string | number;
-  subtitle: string;
-}) {
-  return (
-    <div className="ag-kpi-card">
-      <p className="text-sm text-[var(--text-muted)]">{label}</p>
-      <p className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-[var(--text-primary)]">
-        {value}
-      </p>
-      <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-        {subtitle}
-      </p>
-    </div>
-  );
-}
 
 function MiniInfo({ label, value }: { label: string; value: string }) {
   return (

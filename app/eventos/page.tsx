@@ -1,6 +1,7 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import Link from "next/link";
 import EventsTable, { normalizeEventType } from "@/app/components/EventsTable";
+import { KpiCard } from "@/app/components/ui/KpiCard";
 
 const PAGE_SIZE = 20;
 
@@ -113,32 +114,32 @@ export default async function EventosPage({ searchParams }: PageProps) {
 
           <div className="ag-hero-panel">
             <div className="grid gap-4 sm:grid-cols-2">
-              <MetricCard
+              <KpiCard
                 label="Eventos"
                 value={total}
-                subtitle="trilha operacional registrada"
+                sub="trilha operacional registrada"
               />
-              <MetricCard
+              <KpiCard
                 label="Animais"
                 value={
                   new Set(rows.map((row) => row.animal_code)).size -
                   (rows.some((row) => row.animal_code === "-") ? 1 : 0)
                 }
-                subtitle="com eventos vinculados"
+                sub="com eventos vinculados"
               />
-              <MetricCard
+              <KpiCard
                 label="Tipos"
                 value={new Set(rows.map(r => normalizeEventType(r.event_type))).size}
-                subtitle="tipos distintos de evento"
+                sub="tipos distintos de evento"
               />
-              <MetricCard
+              <KpiCard
                 label="Último evento"
                 value={
                   rows[0]?.event_date
                     ? new Date(rows[0].event_date).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })
                     : "—"
                 }
-                subtitle="data do mais recente"
+                sub="data do mais recente"
               />
             </div>
           </div>
@@ -196,25 +197,4 @@ export default async function EventosPage({ searchParams }: PageProps) {
   );
 }
 
-function MetricCard({
-  label,
-  value,
-  subtitle,
-}: {
-  label: string | number;
-  value: string | number;
-  subtitle: string;
-}) {
-  return (
-    <div className="ag-kpi-card">
-      <p className="ag-kpi-label">{label}</p>
-      <p className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-[var(--text-primary)]">
-        {value}
-      </p>
-      <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-        {subtitle}
-      </p>
-    </div>
-  );
-}
 

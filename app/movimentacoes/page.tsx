@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { ArrowLeftRight, ShieldCheck, MapPin, Layers } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { KpiCard } from "@/app/components/ui/KpiCard";
 
 type AnimalRow = {
   id: string;
@@ -122,37 +122,33 @@ export default function MovimentacoesPage() {
 
           <div className="ag-hero-panel">
             <div className="grid gap-4 sm:grid-cols-2">
-              <MetricCard
+              <KpiCard
                 label="Animais"
                 value={animals.length}
-                subtitle="ativos disponíveis para registro"
-                Icon={Layers}
-                bg="bg-[var(--primary-soft)]"
-                cl="text-[var(--primary)]"
+                sub="ativos disponíveis para registro"
+                icon={Layers}
+                iconBg="bg-[var(--primary-soft)]"
               />
-              <MetricCard
+              <KpiCard
                 label="Tipos"
                 value={5}
-                subtitle="tipos distintos de movimentação"
-                Icon={ArrowLeftRight}
-                bg="bg-blue-50"
-                cl="text-blue-600"
+                sub="tipos distintos de movimentação"
+                icon={ArrowLeftRight}
+                iconBg="bg-blue-50"
               />
-              <MetricCard
+              <KpiCard
                 label="Rastreabilidade"
                 value="100%"
-                subtitle="movimento integrado à trilha do animal"
-                Icon={ShieldCheck}
-                bg="bg-emerald-50"
-                cl="text-emerald-600"
+                sub="movimento integrado à trilha do animal"
+                icon={ShieldCheck}
+                iconBg="bg-emerald-50"
               />
-              <MetricCard
+              <KpiCard
                 label="Propriedades"
                 value={properties.length}
-                subtitle="cadastradas para origem/destino"
-                Icon={MapPin}
-                bg="bg-amber-50"
-                cl="text-amber-600"
+                sub="cadastradas para origem/destino"
+                icon={MapPin}
+                iconBg="bg-amber-50"
               />
             </div>
           </div>
@@ -283,32 +279,6 @@ export default function MovimentacoesPage() {
   );
 }
 
-function MetricCard({
-  label,
-  value,
-  subtitle,
-  Icon,
-  bg,
-  cl,
-}: {
-  label: string;
-  value: string | number;
-  subtitle: string;
-  Icon: LucideIcon;
-  bg: string;
-  cl: string;
-}) {
-  return (
-    <div className="ag-kpi-card">
-      <div className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${bg}`}>
-        <Icon size={17} className={cl} />
-      </div>
-      <p className="mt-3 ag-kpi-label">{label}</p>
-      <p className="ag-kpi-value">{value}</p>
-      <p className="sub">{subtitle}</p>
-    </div>
-  );
-}
 
 function todayInputValue() {
   const today = new Date();

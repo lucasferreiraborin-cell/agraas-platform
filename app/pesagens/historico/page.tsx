@@ -1,5 +1,6 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import Link from "next/link";
+import { KpiCard } from "@/app/components/ui/KpiCard";
 
 type WeightRow = {
   id: string;
@@ -109,20 +110,20 @@ export default async function PesagensHistoricoPage() {
 
           <div className="ag-hero-panel">
             <div className="grid gap-4 sm:grid-cols-3">
-              <MetricCard
+              <KpiCard
                 label="Pesagens"
                 value={totalWeights}
-                subtitle="registros produtivos"
+                sub="registros produtivos"
               />
-              <MetricCard
+              <KpiCard
                 label="Animais"
                 value={animalsWeighed}
-                subtitle="com pelo menos uma pesagem"
+                sub="com pelo menos uma pesagem"
               />
-              <MetricCard
+              <KpiCard
                 label="Peso médio"
                 value={averageWeight > 0 ? `${averageWeight.toFixed(1)} kg` : "-"}
-                subtitle="média dos registros"
+                sub="média dos registros"
               />
             </div>
           </div>
@@ -187,27 +188,6 @@ export default async function PesagensHistoricoPage() {
   );
 }
 
-function MetricCard({
-  label,
-  value,
-  subtitle,
-}: {
-  label: string;
-  value: string | number;
-  subtitle: string;
-}) {
-  return (
-    <div className="ag-kpi-card">
-      <p className="text-sm text-[var(--text-muted)]">{label}</p>
-      <p className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-[var(--text-primary)]">
-        {value}
-      </p>
-      <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-        {subtitle}
-      </p>
-    </div>
-  );
-}
 
 function formatDate(value: string | null | undefined) {
   if (!value) return "-";
