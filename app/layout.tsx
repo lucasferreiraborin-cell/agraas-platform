@@ -10,6 +10,8 @@ import { ToastContainer } from "./components/Toast";
 import AgroAssistant from "./components/AgroAssistant";
 import QuickActions from "./components/QuickActions";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getCurrentRole } from "@/lib/auth/getCurrentRole";
+import { RoleProvider } from "@/app/components/RoleContext";
 
 const SITE_URL = "https://agraas-platform.vercel.app";
 
@@ -77,11 +79,10 @@ export default async function RootLayout({
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  // Detect buyer role for sidebar customization
-  const { data: clientData } = user
-    ? await supabase.from("clients").select("role").eq("auth_user_id", user.id).single()
-    : { data: null };
-  const isBuyer = clientData?.role === "buyer";
+  // Resolve role info (admin/client/buyer/mentor_externo/viewer) — usado pelo
+  // RoleProvider abaixo. Faz queries próprias (user + RPC + clients lookup).
+  const roleInfo = await getCurrentRole();
+  const isBuyer = roleInfo.role === "buyer";
 
   const environmentLabel =
     process.env.NODE_ENV === "production" ? "v0.9 Beta" : "Ambiente local";
@@ -127,6 +128,7 @@ export default async function RootLayout({
         )}
       </head>
       <body>
+       <RoleProvider value={roleInfo}>
         <div className="min-h-screen bg-[var(--bg)] text-[var(--text-primary)]">
           <div className="flex min-h-screen">
             <aside className="hidden w-[320px] shrink-0 border-r border-white/10 bg-[linear-gradient(180deg,var(--sidebar)_0%,var(--sidebar-2)_100%)] text-white lg:flex lg:flex-col">
@@ -245,6 +247,7 @@ export default async function RootLayout({
             </div>
           </div>
         </div>
+       </RoleProvider>
       </body>
     </html>
   );
