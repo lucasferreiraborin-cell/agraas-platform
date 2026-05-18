@@ -311,6 +311,11 @@ textarea:focus-visible {
   border-bottom-right-radius: 18px;
 }
 
+/* ─── LEGACY: classes usadas por páginas fora do escopo PR 1 ─────────────
+   Migrar para <KpiCard> (app/components/ui/KpiCard.tsx) quando refatorar:
+   abates, agricultura/*, aves/*, animais/[id], MarketCalculator,
+   FinanceiroTabs, configuracoes/assinatura. PR 2 ou 3 elimina daqui. */
+
 .ag-kpi-value {
   font-size: 2rem;
   font-weight: 700;
@@ -350,7 +355,9 @@ textarea:focus-visible {
   }
 }
 
-/* ─── Page title (hero h1) ───────────────────────────────────────────────── */
+/* ─── LEGACY: .ag-page-title usado por páginas fora do escopo PR 1.
+   Substituir por <PageHeader> de app/components/ui/PageHeader.tsx.
+   Refatorar e remover em PR 2. */
 
 .ag-page-title {
   margin-top: 1.25rem;
@@ -367,7 +374,11 @@ textarea:focus-visible {
   }
 }
 
-/* ─── KPI card (standalone stat block) ──────────────────────────────────── */
+/* ─── LEGACY: .ag-kpi-card pra páginas fora do escopo PR 1 ───────────────
+   Após PR 1, KpiCard de app/components/ui/ é a fonte de verdade.
+   As overrides .ag-kpi-card .ag-kpi-value / .ag-kpi-label que conflitavam
+   com a definição standalone (bug duplicação P0 do audit) foram REMOVIDAS —
+   agora .ag-kpi-value usa 2rem/700 em qualquer contexto. */
 
 .ag-kpi-card {
   background: white;
@@ -375,20 +386,6 @@ textarea:focus-visible {
   border-radius: 24px;
   padding: 1.25rem;
   box-shadow: var(--shadow-soft);
-}
-
-.ag-kpi-card .ag-kpi-label {
-  font-size: 0.875rem;
-  color: var(--text-muted);
-}
-
-.ag-kpi-card .ag-kpi-value {
-  margin-top: 0.75rem;
-  font-size: 1.875rem;
-  font-weight: 600;
-  letter-spacing: -0.05em;
-  color: var(--text-primary);
-  line-height: 1;
 }
 
 .ag-kpi-card p.sub {
