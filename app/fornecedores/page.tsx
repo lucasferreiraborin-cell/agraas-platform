@@ -67,7 +67,7 @@ export default async function FornecedoresPage() {
           <p className="ag-empty-state-text">Cadastre seus fornecedores para vincular a produtos e notas fiscais.</p>
         </div>
       ) : (
-        <section className="ag-card overflow-hidden p-0 pb-20">
+        <section className="ag-card overflow-x-auto p-0 pb-20">
           <table className="ag-table w-full">
             <thead>
               <tr>

@@ -128,7 +128,7 @@ export default async function MetasPage() {
           <p className="ag-empty-state-text">Defina metas de peso por categoria e fase para acompanhar o desempenho do rebanho.</p>
         </div>
       ) : (
-        <section className="ag-card overflow-hidden p-0 pb-20">
+        <section className="ag-card overflow-x-auto p-0 pb-20">
           <table className="ag-table w-full">
             <thead>
               <tr>

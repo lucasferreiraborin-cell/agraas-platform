@@ -140,7 +140,7 @@ export default function HistoricoEstoquePage() {
       )}
 
       {!loading && rows.length > 0 && (
-        <section className="ag-card overflow-hidden p-0">
+        <section className="ag-card overflow-x-auto p-0">
           <table className="ag-table w-full">
             <thead>
               <tr>

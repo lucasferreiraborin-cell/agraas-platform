@@ -59,7 +59,7 @@ export default async function CompradoresPage() {
           <p className="ag-empty-state-text">Cadastre frigoríficos, tradings e outros compradores para vincular às vendas.</p>
         </div>
       ) : (
-        <section className="ag-card overflow-hidden p-0">
+        <section className="ag-card overflow-x-auto p-0">
           <table className="ag-table w-full">
             <thead>
               <tr><th>Nome</th><th>CNPJ</th><th>Tipo</th><th>Contato</th><th>Vendas</th></tr>
