@@ -2,6 +2,31 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function proxy(request: NextRequest) {
+  // ── Redirects de roteamento (foco bovinos 17/05) ──────────────────
+  // Não dependem de auth — rodam antes da Supabase server client criar.
+  const path = request.nextUrl.pathname;
+
+  // 1) Cadeias pausadas → /em-breve
+  const PAUSED_PREFIXES = ["/ovinos", "/caprinos", "/aves", "/agricultura"];
+  for (const prefix of PAUSED_PREFIXES) {
+    if (path === prefix || path.startsWith(prefix + "/")) {
+      return NextResponse.redirect(new URL("/em-breve", request.nextUrl));
+    }
+  }
+
+  // 2) Portal PIF /comprador pausado → /em-breve
+  // (/compradores plural é operacional financeiro do produtor, não pausar)
+  if (path === "/comprador" || path.startsWith("/comprador/")) {
+    return NextResponse.redirect(new URL("/em-breve", request.nextUrl));
+  }
+
+  // 3) /dashboard → /painel (redirect permanente 301)
+  if (path === "/dashboard" || path.startsWith("/dashboard/")) {
+    const newUrl = new URL(path.replace(/^\/dashboard/, "/painel"), request.nextUrl);
+    newUrl.search = request.nextUrl.search;
+    return NextResponse.redirect(newUrl, 301);
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
