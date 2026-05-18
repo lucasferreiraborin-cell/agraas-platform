@@ -1,30 +1,15 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import ReproGauge  from "@/app/components/charts/ReproGaugeWrapper";
 import IABreakdown from "@/app/components/charts/IABreakdownWrapper";
-
-function KpiCard({ label, value, sub }: { label: string; value: string | number; sub: string }) {
-  return (
-    <div className="ag-card flex flex-col gap-1 p-5">
-      <p className="ag-kpi-label">{label}</p>
-      <p className="ag-kpi-value">{value}</p>
-      <p className="text-xs text-[var(--text-muted)]">{sub}</p>
-    </div>
-  );
-}
+import { KpiCard } from "@/app/components/ui/KpiCard";
+import { PageHeader } from "@/app/components/ui/PageHeader";
+import { EmptyState } from "@/app/components/ui/EmptyState";
 
 function SectionTitle({ title, sub }: { title: string; sub?: string }) {
   return (
     <div className="mb-4">
       <h2 className="ag-section-title">{title}</h2>
       {sub && <p className="ag-section-subtitle">{sub}</p>}
-    </div>
-  );
-}
-
-function EmptyState({ label }: { label: string }) {
-  return (
-    <div className="flex min-h-[80px] items-center justify-center rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface-soft)] px-6 py-8 text-sm text-[var(--text-muted)]">
-      {label}
     </div>
   );
 }
@@ -73,22 +58,18 @@ export default async function ReprodutivoPage() {
 
   return (
     <main className="space-y-8">
-      {/* Hero */}
-      <section className="ag-card-strong overflow-hidden p-8 lg:p-10">
-        <div className="pointer-events-none absolute right-0 top-0 h-64 w-64 rounded-full bg-[radial-gradient(circle,rgba(122,168,76,0.12)_0%,rgba(122,168,76,0.00)_70%)]" />
-        <div className="ag-badge ag-badge-green mb-4">Módulo Reprodutivo</div>
-        <h1 className="text-3xl font-semibold tracking-[-0.05em] text-[var(--text-primary)] lg:text-4xl">
-          Reprodutivo
-        </h1>
-        <p className="mt-3 max-w-xl text-[1rem] leading-7 text-[var(--text-secondary)]">
-          {season
+      <PageHeader
+        badge="Módulo Reprodutivo"
+        title="Reprodutivo"
+        description={
+          season
             ? `Estação ${new Date(season.season_start).toLocaleDateString("pt-BR")} — ${new Date(season.season_end).toLocaleDateString("pt-BR")}`
-            : "Gestão da estação de monta, índices reprodutivos, partos e desmame."}
-        </p>
-      </section>
+            : "Gestão da estação de monta, índices reprodutivos, partos e desmame."
+        }
+      />
 
       {!season ? (
-        <EmptyState label="Nenhum dado reprodutivo registrado ainda" />
+        <EmptyState title="Nenhum dado reprodutivo registrado ainda" />
       ) : (
         <>
           {/* Estação de Monta — KPIs */}
@@ -110,7 +91,7 @@ export default async function ReprodutivoPage() {
           <section className="ag-card p-6 lg:p-8">
             <SectionTitle title="Breakdown por Serviço de IA" sub="Taxa de concepção acumulada por repasse" />
             {ia.length === 0 ? (
-              <EmptyState label="Nenhum serviço de IA registrado" />
+              <EmptyState title="Nenhum serviço de IA registrado" />
             ) : (
               <IABreakdown rows={ia} />
             )}
@@ -127,7 +108,7 @@ export default async function ReprodutivoPage() {
                 toInseminate={season.to_inseminate ?? 0}
               />
             ) : (
-              <EmptyState label="Dados insuficientes para o gauge" />
+              <EmptyState title="Dados insuficientes para o gauge" />
             )}
           </section>
 
@@ -135,7 +116,7 @@ export default async function ReprodutivoPage() {
           <section className="ag-card p-6 lg:p-8">
             <SectionTitle title="Estoque de Reprodutores" sub="Categoria × status reprodutivo" />
             {stockRows.length === 0 ? (
-              <EmptyState label="Nenhum dado de estoque registrado" />
+              <EmptyState title="Nenhum dado de estoque registrado" />
             ) : (
               <div className="overflow-x-auto">
                 <table className="ag-table w-full">
