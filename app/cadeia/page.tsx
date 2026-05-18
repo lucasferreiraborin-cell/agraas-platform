@@ -1,5 +1,7 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import Link from "next/link";
+import { KpiCard } from "@/app/components/ui/KpiCard";
+import { PageHeader } from "@/app/components/ui/PageHeader";
 
 type ChainRow = {
   animal_id: string;
@@ -56,59 +58,32 @@ export default async function CadeiaPage() {
 
   return (
     <main className="space-y-8">
-      <section className="ag-card-strong overflow-hidden">
-        <div className="grid gap-0 xl:grid-cols-[1.08fr_0.92fr]">
-          <div className="p-8 lg:p-10">
-            <div className="ag-badge ag-badge-green">Cadeia pecuária</div>
-
-            <h1 className="ag-page-title max-w-4xl">
-              Visão da cadeia e fluxo do ativo pecuário
-            </h1>
-
-            <p className="mt-5 max-w-3xl text-[1.05rem] leading-8 text-[var(--text-secondary)]">
-              A Agraas conecta o animal à propriedade, ao lote e ao destino,
-              formando a base da infraestrutura digital da cadeia pecuária.
-            </p>
-
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/animais" className="ag-button-primary">
-                Ver animais
-              </Link>
-              <Link href="/painel" className="ag-button-secondary">
-                Dashboard executivo
-              </Link>
-              <Link href="/inteligencia" className="ag-button-secondary">
-                Inteligência
-              </Link>
-            </div>
+      <PageHeader
+        badge="Cadeia pecuária"
+        title="Visão da cadeia e fluxo do ativo pecuário"
+        description="A Agraas conecta o animal à propriedade, ao lote e ao destino, formando a base da infraestrutura digital da cadeia pecuária."
+        actions={
+          <>
+            <Link href="/animais" className="ag-button-primary">
+              Ver animais
+            </Link>
+            <Link href="/painel" className="ag-button-secondary">
+              Dashboard executivo
+            </Link>
+            <Link href="/inteligencia" className="ag-button-secondary">
+              Inteligência
+            </Link>
+          </>
+        }
+        panel={
+          <div className="grid gap-4 sm:grid-cols-2">
+            <KpiCard label="Animais" value={rows.length} sub="ativos mapeados na cadeia" />
+            <KpiCard label="Propriedades" value={propertiesCount} sub="origens estruturadas" />
+            <KpiCard label="Lotes" value={lotsCount} sub="agrupamentos operacionais" />
+            <KpiCard label="Destinos" value={destinationsCount} sub="pontos finais da cadeia" />
           </div>
-
-          <div className="ag-hero-panel">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <MetricCard
-                label="Animais"
-                value={rows.length}
-                subtitle="ativos mapeados na cadeia"
-              />
-              <MetricCard
-                label="Propriedades"
-                value={propertiesCount}
-                subtitle="origens estruturadas"
-              />
-              <MetricCard
-                label="Lotes"
-                value={lotsCount}
-                subtitle="agrupamentos operacionais"
-              />
-              <MetricCard
-                label="Destinos"
-                value={destinationsCount}
-                subtitle="pontos finais da cadeia"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
+        }
+      />
 
       <section className="ag-card p-8">
         <div className="ag-section-header">
@@ -170,28 +145,6 @@ export default async function CadeiaPage() {
         </div>
       </section>
     </main>
-  );
-}
-
-function MetricCard({
-  label,
-  value,
-  subtitle,
-}: {
-  label: string;
-  value: string | number;
-  subtitle: string;
-}) {
-  return (
-    <div className="ag-kpi-card">
-      <p className="text-sm text-[var(--text-muted)]">{label}</p>
-      <p className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-[var(--text-primary)]">
-        {value}
-      </p>
-      <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-        {subtitle}
-      </p>
-    </div>
   );
 }
 
