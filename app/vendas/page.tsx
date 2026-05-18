@@ -10,6 +10,7 @@ import DocumentGate, {
   LockedField,
   UnverifiedBadge,
 } from "@/app/components/DocumentGate";
+import { KpiCard } from "@/app/components/ui/KpiCard";
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -193,22 +194,19 @@ function VendasContent() {
             ) : (
               <div className="grid gap-3 sm:grid-cols-3">
                 {[
-                  { label: "Total vendas",  value: kpis.total,   sub: "registradas",        icon: TrendingUp, bg: "bg-[var(--primary-soft)]", cl: "text-[var(--primary)]" },
-                  { label: "Receita total", value: `R$\u00a0${kpis.receita.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, sub: "soma informada", icon: DollarSign, bg: "bg-emerald-50", cl: "text-emerald-600" },
-                  { label: "Peso vendido",  value: `${kpis.pesoTotal.toLocaleString("pt-BR")} kg`, sub: "total informado", icon: Weight, bg: "bg-blue-50", cl: "text-blue-600" },
-                ].map(k => {
-                  const Icon = k.icon;
-                  return (
-                    <div key={k.label} className="ag-kpi-card">
-                      <div className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${k.bg}`}>
-                        <Icon size={17} className={k.cl} />
-                      </div>
-                      <p className="mt-3 ag-kpi-label">{k.label}</p>
-                      <p className="ag-kpi-value">{k.value}</p>
-                      <p className="sub">{k.sub}</p>
-                    </div>
-                  );
-                })}
+                  { label: "Total vendas",  value: kpis.total,   sub: "registradas",        icon: TrendingUp, iconBg: "bg-[var(--primary-soft)]" },
+                  { label: "Receita total", value: `R$\u00a0${kpis.receita.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`, sub: "soma informada", icon: DollarSign, iconBg: "bg-emerald-50" },
+                  { label: "Peso vendido",  value: `${kpis.pesoTotal.toLocaleString("pt-BR")} kg`, sub: "total informado", icon: Weight, iconBg: "bg-blue-50" },
+                ].map(k => (
+                  <KpiCard
+                    key={k.label}
+                    label={k.label}
+                    value={k.value}
+                    sub={k.sub}
+                    icon={k.icon}
+                    iconBg={k.iconBg}
+                  />
+                ))}
               </div>
             )}
           </div>

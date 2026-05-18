@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 import Link from "next/link";
 import { FileText, DollarSign, AlertTriangle, ShieldCheck, Download, TrendingUp } from "lucide-react";
+import { KpiCard } from "@/app/components/ui/KpiCard";
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -164,19 +165,16 @@ export default function FiscalRelatorioPage() {
           {/* Right — KPIs + risco */}
           <div className="ag-hero-panel">
             <div className="grid gap-3 sm:grid-cols-2">
-              {kpis.map(kpi => {
-                const Icon = kpi.icon;
-                return (
-                  <div key={kpi.label} className="ag-kpi-card">
-                    <div className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${kpi.iconBg}`}>
-                      <Icon size={17} className={kpi.iconCl} />
-                    </div>
-                    <p className="mt-3 ag-kpi-label">{kpi.label}</p>
-                    <p className="ag-kpi-value">{kpi.value}</p>
-                    <p className="sub">{kpi.sub}</p>
-                  </div>
-                );
-              })}
+              {kpis.map(kpi => (
+                <KpiCard
+                  key={kpi.label}
+                  label={kpi.label}
+                  value={kpi.value}
+                  sub={kpi.sub}
+                  icon={kpi.icon}
+                  iconBg={kpi.iconBg}
+                />
+              ))}
             </div>
 
             {/* Indicador de risco — badge grande */}

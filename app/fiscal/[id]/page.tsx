@@ -2,6 +2,7 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import Link from "next/link";
 import { Building2, Calendar, DollarSign, ShieldCheck, AlertTriangle, Info } from "lucide-react";
 import FiscalNoteActions from "@/app/components/FiscalNoteActions";
+import { KpiCard } from "@/app/components/ui/KpiCard";
 
 type PageProps = { params: Promise<{ id: string }> };
 
@@ -105,18 +106,15 @@ export default async function FiscalNotePage({ params }: PageProps) {
       {/* ── KPI cards ─────────────────────────────────────────────────────── */}
       <section className="ag-card-strong p-8">
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          {kpis.map(kpi => {
-            const Icon = kpi.icon;
-            return (
-              <div key={kpi.label} className="ag-kpi-card">
-                <div className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${kpi.iconBg}`}>
-                  <Icon size={17} className={kpi.iconCl} />
-                </div>
-                <p className="mt-3 ag-kpi-label">{kpi.label}</p>
-                <p className="ag-kpi-value truncate">{kpi.value}</p>
-              </div>
-            );
-          })}
+          {kpis.map(kpi => (
+            <KpiCard
+              key={kpi.label}
+              label={kpi.label}
+              value={kpi.value}
+              icon={kpi.icon}
+              iconBg={kpi.iconBg}
+            />
+          ))}
         </div>
       </section>
 

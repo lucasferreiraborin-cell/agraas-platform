@@ -3,6 +3,7 @@ import Link from "next/link";
 import { FileText, AlertTriangle, CheckCircle, DollarSign } from "lucide-react";
 import FiscalUpload from "@/app/components/FiscalUpload";
 import FiscalDeleteButton from "@/app/components/FiscalDeleteButton";
+import { KpiCard } from "@/app/components/ui/KpiCard";
 
 export default async function FiscalPage() {
   const supabase = await createSupabaseServerClient();
@@ -103,19 +104,16 @@ export default async function FiscalPage() {
           {/* Right — hero panel */}
           <div className="ag-hero-panel">
             <div className="grid gap-4 sm:grid-cols-2">
-              {kpis.map(kpi => {
-                const Icon = kpi.icon;
-                return (
-                  <div key={kpi.label} className="ag-kpi-card">
-                    <div className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${kpi.iconBg}`}>
-                      <Icon size={18} className={kpi.iconColor} />
-                    </div>
-                    <p className="mt-3 ag-kpi-label">{kpi.label}</p>
-                    <p className="ag-kpi-value">{kpi.value}</p>
-                    <p className="sub">{kpi.sub}</p>
-                  </div>
-                );
-              })}
+              {kpis.map(kpi => (
+                <KpiCard
+                  key={kpi.label}
+                  label={kpi.label}
+                  value={kpi.value}
+                  sub={kpi.sub}
+                  icon={kpi.icon}
+                  iconBg={kpi.iconBg}
+                />
+              ))}
             </div>
           </div>
         </div>
