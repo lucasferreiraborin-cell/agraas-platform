@@ -74,7 +74,7 @@ export default async function CadeiaPage() {
               <Link href="/animais" className="ag-button-primary">
                 Ver animais
               </Link>
-              <Link href="/dashboard" className="ag-button-secondary">
+              <Link href="/painel" className="ag-button-secondary">
                 Dashboard executivo
               </Link>
               <Link href="/inteligencia" className="ag-button-secondary">

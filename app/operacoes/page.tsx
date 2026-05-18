@@ -1,7 +1,7 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import Link from "next/link";
 import {
-  Syringe, Scale, FlaskConical, Package, Layers, ShoppingCart,
+  Syringe, Scale, Package, Layers, ShoppingCart,
   Calendar, ArrowLeftRight, Box, BarChart3, ChevronRight,
 } from "lucide-react";
 
@@ -43,7 +43,6 @@ export default async function OperacoesPage() {
     { href: "/estoque",       label: "Estoque",          sub: "Produtos e validades",     icon: Package,        badge: null,               badgeSub: "" },
     { href: "/lotes",         label: "Lotes",            sub: "Manejo de grupos",         icon: Layers,         badge: lotesAtivos ?? 0,   badgeSub: "lotes ativos" },
     { href: "/vendas",        label: "Vendas",           sub: "Registro de transações",   icon: ShoppingCart,   badge: null,               badgeSub: "" },
-    { href: "/laboratorio",   label: "Laboratório",      sub: "Exames e resultados",      icon: FlaskConical,   badge: null,               badgeSub: "" },
   ];
 
   return (

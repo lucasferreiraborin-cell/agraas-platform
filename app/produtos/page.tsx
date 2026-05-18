@@ -86,7 +86,6 @@ export default async function ProdutosPage() {
                 <th>Categoria</th>
                 <th>Carência</th>
                 <th>Registro MAPA</th>
-                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -113,11 +112,6 @@ export default async function ProdutosPage() {
                       </span>
                     </td>
                     <td className="font-mono text-xs text-[var(--text-muted)]">{p.notes ?? "—"}</td>
-                    <td className="text-right">
-                      <button className="text-sm font-medium text-[var(--primary-hover)] hover:underline" type="button">
-                        Editar
-                      </button>
-                    </td>
                   </tr>
                 );
               })}
