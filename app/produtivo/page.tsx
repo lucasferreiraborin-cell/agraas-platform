@@ -1,5 +1,6 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import Link from "next/link";
+import { KpiCard } from "@/app/components/ui/KpiCard";
 
 type WeightRow = {
   id: string;
@@ -285,25 +286,25 @@ export default async function ProdutivoPage() {
             </div>
 
             <div className="mt-6 grid gap-4 md:grid-cols-4">
-              <HeroMetric
+              <KpiCard
                 label="Peso médio do rebanho"
                 value={`${averageWeight.toFixed(1)} kg`}
-                subtitle="média dos últimos pesos registrados"
+                sub="média dos últimos pesos registrados"
               />
-              <HeroMetric
+              <KpiCard
                 label="Score médio"
                 value={averageScore > 0 ? averageScore.toFixed(1) : "-"}
-                subtitle="média do Agraas Score"
+                sub="média do Agraas Score"
               />
-              <HeroMetric
+              <KpiCard
                 label="Pesagens recentes"
                 value={animalsWithRecentWeight}
-                subtitle="animais pesados nos últimos 30 dias"
+                sub="animais pesados nos últimos 30 dias"
               />
-              <HeroMetric
+              <KpiCard
                 label="Evolução positiva"
                 value={positiveVariationCount}
-                subtitle="animais com ganho entre últimas pesagens"
+                sub="animais com ganho entre últimas pesagens"
               />
             </div>
           </div>
@@ -570,29 +571,6 @@ export default async function ProdutivoPage() {
     </main>
   );
 }
-
-function HeroMetric({
-  label,
-  value,
-  subtitle,
-}: {
-  label: string;
-  value: string | number;
-  subtitle: string;
-}) {
-  return (
-    <div className="rounded-2xl border border-[var(--border)] bg-white p-6 shadow-sm">
-      <p className="text-sm text-[var(--text-muted)]">{label}</p>
-      <p className="mt-3 text-3xl font-bold tracking-[-0.05em] text-[var(--text-primary)]">
-        {value}
-      </p>
-      <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-        {subtitle}
-      </p>
-    </div>
-  );
-}
-
 
 function formatDate(value: string | null | undefined) {
   if (!value) return "-";
