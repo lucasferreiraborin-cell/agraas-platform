@@ -1,0 +1,17 @@
+-- Rollback migration 113
+
+BEGIN;
+
+DELETE FROM public.client_producer_types
+  WHERE client_id IN (
+    '00000000-0000-0000-0099-000000000001',
+    '00000000-0000-0000-0099-000000000002'
+  );
+
+DELETE FROM public.clients
+  WHERE id IN (
+    '00000000-0000-0000-0099-000000000001',
+    '00000000-0000-0000-0099-000000000002'
+  );
+
+COMMIT;
