@@ -6,10 +6,13 @@ import Link from "next/link";
 import { ActionGuard } from "@/app/components/ui/ActionGuard";
 
 const PAGE_SIZE = 20;
-const OBJECTIVES = ["Engorda", "Cria", "Recria", "Reprodução", "Descarte", "Exportação"];
-const PAISES_DESTINO = ["Arábia Saudita", "Emirados Árabes", "Kuwait", "Qatar", "Omã", "Jordânia", "Egito", "Líbia", "Argélia"];
+const OBJECTIVES = ["Engorda", "Cria", "Recria", "Reprodução", "Descarte"];
+// Mercado interno BR (decisão 17/05 — foco bovinos sem destaque exportação).
+// Lista exportação ("Arábia Saudita", "Emirados", "Kuwait", etc.) preservada
+// no histórico git pra reativar quando frente Halal/PIF retomar.
+const PAISES_DESTINO = ["São Paulo", "Goiás", "Mato Grosso", "Minas Gerais", "Pará", "Rio Grande do Sul", "Bahia", "Tocantins"];
 const PORTOS = ["Santos (SP)", "Paranaguá (PR)", "Vitória (ES)", "Salvador (BA)", "Fortaleza (CE)", "Belém (PA)", "Outro"];
-const CERTS_DISPONIVEIS = ["Halal", "MAPA", "GTA", "TRACES", "SIF"];
+const CERTS_DISPONIVEIS = ["MAPA", "GTA", "TRACES", "SIF"];
 
 type LotRow = {
   id: string;
