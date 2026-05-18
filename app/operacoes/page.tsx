@@ -4,6 +4,8 @@ import {
   Syringe, Scale, Package, Layers, ShoppingCart,
   Calendar, ArrowLeftRight, Box, BarChart3, ChevronRight,
 } from "lucide-react";
+import { KpiCard } from "@/app/components/ui/KpiCard";
+import { PageHeader } from "@/app/components/ui/PageHeader";
 
 export default async function OperacoesPage() {
   const supabase = await createSupabaseServerClient();
@@ -26,11 +28,11 @@ export default async function OperacoesPage() {
   ]);
 
   const kpis = [
-    { label: "Aplicações (30d)", value: aplicacoes30d ?? 0, sub: "medicamentos e vacinas", color: "text-purple-600", href: null as string | null },
-    { label: "Pesagens (30d)",   value: pesagens30d ?? 0,   sub: "registros de peso",     color: "text-blue-600",   href: null },
-    { label: "Em carência",      value: carenciaAtiva ?? 0, sub: "animais com restrição",  color: "text-[#D97706]",  href: null },
-    { label: "Lotes ativos",     value: lotesAtivos ?? 0,   sub: "em andamento",           color: "text-emerald-600",href: "/lotes" },
-    { label: "Eventos (30d)",    value: eventos30d ?? 0,    sub: "registros operacionais", color: "text-teal-600",   href: "/eventos" },
+    { label: "Aplicações (30d)", value: aplicacoes30d ?? 0, sub: "medicamentos e vacinas", href: null as string | null },
+    { label: "Pesagens (30d)",   value: pesagens30d ?? 0,   sub: "registros de peso",      href: null },
+    { label: "Em carência",      value: carenciaAtiva ?? 0, sub: "animais com restrição",  href: null },
+    { label: "Lotes ativos",     value: lotesAtivos ?? 0,   sub: "em andamento",           href: "/lotes" },
+    { label: "Eventos (30d)",    value: eventos30d ?? 0,    sub: "registros operacionais", href: "/eventos" },
   ];
 
   const modules = [
@@ -47,22 +49,22 @@ export default async function OperacoesPage() {
 
   return (
     <main className="space-y-8">
-      <section className="ag-card-strong p-8">
-        <h1 className="ag-page-title">Operações</h1>
-        <p className="ag-section-subtitle mt-1">Visão geral das operações do rebanho</p>
-        <div className="mt-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          {kpis.map(k => (
-            <div key={k.label} className="ag-kpi-card">
-              <p className="ag-kpi-label">{k.label}</p>
-              {k.href ? (
-                <Link href={k.href} className={`ag-kpi-value ${k.color} hover:underline`}>{k.value}</Link>
-              ) : (
-                <p className={`ag-kpi-value ${k.color}`}>{k.value}</p>
-              )}
-              <p className="sub">{k.sub}</p>
-            </div>
-          ))}
-        </div>
+      <PageHeader
+        title="Operações"
+        description="Visão geral das operações do rebanho"
+      />
+
+      <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        {kpis.map(k => {
+          const card = <KpiCard label={k.label} value={k.value} sub={k.sub} />;
+          return k.href ? (
+            <Link key={k.label} href={k.href} className="block transition hover:-translate-y-0.5 hover:shadow-md">
+              {card}
+            </Link>
+          ) : (
+            <div key={k.label}>{card}</div>
+          );
+        })}
       </section>
 
       <section className="ag-card-strong p-8 space-y-4">

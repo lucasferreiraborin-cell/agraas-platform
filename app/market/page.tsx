@@ -3,6 +3,8 @@ import Link from "next/link";
 import { TrendingUp, Weight, ShieldCheck, BarChart3, Info } from "lucide-react";
 import MarketCalculator from "@/app/components/MarketCalculator";
 import MarketTable, { type MarketRow } from "@/app/components/MarketTable";
+import { KpiCard } from "@/app/components/ui/KpiCard";
+import { PageHeader } from "@/app/components/ui/PageHeader";
 
 type MarketAnimalRow = {
   animal_id: string;
@@ -101,40 +103,31 @@ export default async function MarketPage() {
   return (
     <main className="space-y-8">
 
-      {/* ── Hero ─────────────────────────────────────────────────────────── */}
-      <section className="ag-card-strong overflow-hidden">
-        <div className="grid gap-0 xl:grid-cols-[1.1fr_0.9fr]">
-          <div className="relative p-8 lg:p-10">
-            <div className="pointer-events-none absolute right-0 top-0 h-48 w-48 rounded-full bg-[radial-gradient(circle,rgba(122,168,76,0.12)_0%,rgba(122,168,76,0)_70%)]" />
-            <span className="ag-badge ag-badge-green">Agraas Market</span>
-            <h1 className="ag-page-title">Inteligência de Mercado</h1>
-            <p className="mt-4 max-w-lg text-[1rem] leading-7 text-[var(--text-secondary)]">
-              Cotações CEPEA de referência, calculadora de valor do rebanho e visão comercial dos animais certificados.
-            </p>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Link href="/scores" className="ag-button-primary">Ver ranking</Link>
-              <Link href="/animais" className="ag-button-secondary">Base animal</Link>
-            </div>
+      <PageHeader
+        badge="Agraas Market"
+        title="Inteligência de Mercado"
+        description="Cotações CEPEA de referência, calculadora de valor do rebanho e visão comercial dos animais certificados."
+        actions={
+          <>
+            <Link href="/scores" className="ag-button-primary">Ver ranking</Link>
+            <Link href="/animais" className="ag-button-secondary">Base animal</Link>
+          </>
+        }
+        panel={
+          <div className="grid gap-3 sm:grid-cols-2">
+            {kpis.map(kpi => (
+              <KpiCard
+                key={kpi.label}
+                label={kpi.label}
+                value={kpi.value}
+                sub={kpi.sub}
+                icon={kpi.icon}
+                iconBg={kpi.iconBg}
+              />
+            ))}
           </div>
-          <div className="ag-hero-panel">
-            <div className="grid gap-3 sm:grid-cols-2">
-              {kpis.map(kpi => {
-                const Icon = kpi.icon;
-                return (
-                  <div key={kpi.label} className="ag-kpi-card">
-                    <div className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${kpi.iconBg}`}>
-                      <Icon size={17} className={kpi.iconCl} />
-                    </div>
-                    <p className="mt-3 ag-kpi-label">{kpi.label}</p>
-                    <p className="ag-kpi-value">{kpi.value}</p>
-                    <p className="sub">{kpi.sub}</p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      </section>
+        }
+      />
 
       {/* ── CEPEA Cotações ────────────────────────────────────────────────── */}
       <section className="ag-card-strong p-8 space-y-5">

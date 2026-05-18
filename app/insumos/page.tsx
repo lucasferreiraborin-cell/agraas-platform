@@ -1,29 +1,14 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import InsumosBar from "@/app/components/charts/InsumosBarWrapper";
+import { KpiCard } from "@/app/components/ui/KpiCard";
+import { PageHeader } from "@/app/components/ui/PageHeader";
+import { EmptyState } from "@/app/components/ui/EmptyState";
 
 function SectionTitle({ title, sub }: { title: string; sub?: string }) {
   return (
     <div className="mb-4">
       <h2 className="ag-section-title">{title}</h2>
       {sub && <p className="ag-section-subtitle">{sub}</p>}
-    </div>
-  );
-}
-
-function EmptyState({ label }: { label: string }) {
-  return (
-    <div className="flex min-h-[80px] items-center justify-center rounded-2xl border border-dashed border-[var(--border)] bg-[var(--surface-soft)] px-6 py-8 text-sm text-[var(--text-muted)]">
-      {label}
-    </div>
-  );
-}
-
-function KpiCard({ label, value, sub, valueClass }: { label: string; value: string; sub: string; valueClass?: string }) {
-  return (
-    <div className="ag-card flex flex-col gap-1 p-5">
-      <p className="ag-kpi-label">{label}</p>
-      <p className={`ag-kpi-value ${valueClass ?? ""}`}>{value}</p>
-      <p className="text-xs text-[var(--text-muted)]">{sub}</p>
     </div>
   );
 }
@@ -77,32 +62,25 @@ export default async function InsumosPage() {
 
   return (
     <main className="space-y-8">
-      {/* Hero */}
-      <section className="ag-card-strong overflow-hidden p-8 lg:p-10">
-        <div className="pointer-events-none absolute right-0 top-0 h-64 w-64 rounded-full bg-[radial-gradient(circle,rgba(122,168,76,0.12)_0%,rgba(122,168,76,0.00)_70%)]" />
-        <div className="ag-badge ag-badge-green mb-4">Módulo Insumos</div>
-        <h1 className="text-3xl font-semibold tracking-[-0.05em] text-[var(--text-primary)] lg:text-4xl">
-          Insumos
-        </h1>
-        <p className="mt-3 max-w-xl text-[1rem] leading-7 text-[var(--text-secondary)]">
-          Controle de estoque, movimentação, posição financeira e alertas de mínimo.
-          {fin && <span className="ml-2 text-[var(--text-muted)]">· {fin.period_label}</span>}
-        </p>
-      </section>
+      <PageHeader
+        badge="Módulo Insumos"
+        title="Insumos"
+        description={`Controle de estoque, movimentação, posição financeira e alertas de mínimo.${fin ? ` · ${fin.period_label}` : ""}`}
+      />
 
       {/* Posição Financeira */}
       <section className="ag-card p-6 lg:p-8">
         <SectionTitle title="Posição Financeira" sub="Balanço de estoque em valor (R$)" />
-        {!fin ? <EmptyState label="Nenhuma posição financeira registrada ainda" /> : (
+        {!fin ? <EmptyState title="Nenhuma posição financeira registrada ainda" /> : (
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <KpiCard label="Estoque inicial" value={`R$ ${fmt(fin.initial_stock_value)}`} sub="saldo anterior" />
-            <KpiCard label="Compras no período" value={`R$ ${fmt(fin.purchases_value)}`} sub="total adquirido" valueClass="text-[#166534]" />
-            <KpiCard label="Consumo no período" value={`R$ ${fmt(fin.consumption_value)}`} sub="total utilizado" valueClass="text-[#D97706]" />
+            <KpiCard label="Compras no período" value={`R$ ${fmt(fin.purchases_value)}`} sub="total adquirido" tone="positive" />
+            <KpiCard label="Consumo no período" value={`R$ ${fmt(fin.consumption_value)}`} sub="total utilizado" tone="warning" />
             <KpiCard
               label="Saldo atual"
               value={`R$ ${fmt(fin.balance_value)}`}
               sub="inicial + compras − consumo"
-              valueClass="text-[#166534] font-bold"
+              tone="positive"
             />
           </div>
         )}
@@ -111,7 +89,7 @@ export default async function InsumosPage() {
       {/* Estoque por Categoria */}
       <section className="ag-card p-6 lg:p-8">
         <SectionTitle title="Estoque por Categoria" sub="Itens agrupados por tipo de insumo" />
-        {categories.length === 0 ? <EmptyState label="Nenhum item cadastrado ainda" /> : (
+        {categories.length === 0 ? <EmptyState title="Nenhum item cadastrado ainda" /> : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {categories.map(([cat, catItems]) => {
               const colorClass = CATEGORY_COLORS[cat] ?? "bg-gray-100 text-gray-600";
@@ -149,7 +127,7 @@ export default async function InsumosPage() {
       {/* Gráfico por grupo */}
       <section className="ag-card p-6 lg:p-8">
         <SectionTitle title="Distribuição por Grupo" sub="Participação de cada categoria no valor total do estoque" />
-        {totalCatValue === 0 ? <EmptyState label="Nenhum dado disponível" /> : (
+        {totalCatValue === 0 ? <EmptyState title="Nenhum dado disponível" /> : (
           <InsumosBar
             rows={Object.entries(CATEGORY_VALUES).map(([category, value]) => ({
               category,
@@ -163,7 +141,7 @@ export default async function InsumosPage() {
       {/* Itens de Estoque */}
       <section className="ag-card p-6 lg:p-8">
         <SectionTitle title="Itens de Estoque" sub="Produtos cadastrados com dose e abrangência" />
-        {items.length === 0 ? <EmptyState label="Nenhum item de estoque cadastrado ainda" /> : (
+        {items.length === 0 ? <EmptyState title="Nenhum item de estoque cadastrado ainda" /> : (
           <div className="overflow-x-auto">
             <table className="ag-table w-full">
               <thead>
