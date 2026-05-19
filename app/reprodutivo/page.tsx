@@ -15,7 +15,9 @@ function SectionTitle({ title, sub }: { title: string; sub?: string }) {
 }
 
 function pct(v: number | null) {
-  return v != null ? `${v.toFixed(2)}%` : "—";
+  if (v == null) return "—";
+  const clamped = Math.max(0, Math.min(100, v));
+  return `${clamped.toFixed(2)}%`;
 }
 function num(v: number | null) {
   return v != null ? v.toLocaleString("pt-BR") : "—";
@@ -52,8 +54,12 @@ export default async function ReprodutivoPage() {
   const stockRows = stock.filter(s => s.category !== "Total");
   const stockTotal = stock.find(s => s.category === "Total");
 
+  // % das fêmeas aptas que foram efetivamente inseminadas (clamped 0-100)
   const aptPct = season
-    ? ((season.apt_count ?? 0) / Math.max(season.females_inseminated ?? 1, 1)) * 100
+    ? Math.min(
+        100,
+        ((season.females_inseminated ?? 0) / Math.max(season.apt_count ?? 1, 1)) * 100,
+      )
     : null;
 
   return (
@@ -99,7 +105,7 @@ export default async function ReprodutivoPage() {
 
           {/* Gauge APTAS */}
           <section className="ag-card p-6 lg:p-8">
-            <SectionTitle title="Fêmeas Aptas" sub="Percentual apto para inseminação" />
+            <SectionTitle title="Cobertura de Inseminação" sub="% das fêmeas aptas que foram inseminadas" />
             {aptPct != null ? (
               <ReproGauge
                 pct={aptPct}
