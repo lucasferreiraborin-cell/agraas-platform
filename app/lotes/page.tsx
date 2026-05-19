@@ -148,7 +148,7 @@ export default function LotesPage() {
           <div className="flex items-start justify-between gap-4">
             <div>
               <div className="ag-badge ag-badge-green">Gestão de lotes</div>
-              <h1 className="mt-5 text-4xl font-semibold tracking-[-0.06em] text-[var(--text-primary)] lg:text-5xl">Lotes da operação</h1>
+              <h1 className="mt-5 text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)] [text-wrap:balance] sm:text-4xl sm:tracking-[-0.05em] lg:text-5xl lg:tracking-[-0.06em]">Lotes da operação</h1>
               <p className="mt-4 text-[1.02rem] leading-8 text-[var(--text-secondary)]">
                 Organize o rebanho por objetivo produtivo. Acompanhe GMD, score médio, previsão de saída e conformidade de exportação.
               </p>

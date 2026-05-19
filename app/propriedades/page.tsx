@@ -737,9 +737,12 @@ function HeroMetric({
   subtitle: string;
 }) {
   return (
-    <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5">
-      <p className="text-sm text-[var(--text-muted)]">{label}</p>
-      <p className="mt-3 text-3xl font-semibold tracking-[-0.05em] text-[var(--text-primary)]">
+    <div className="min-w-0 rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5">
+      <p className="truncate text-sm text-[var(--text-muted)]">{label}</p>
+      <p
+        title={String(value)}
+        className="mt-3 truncate text-3xl font-semibold tracking-[-0.05em] text-[var(--text-primary)]"
+      >
         {value}
       </p>
       <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
@@ -751,9 +754,12 @@ function HeroMetric({
 
 function SnapshotCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="ag-kpi-card">
-      <p className="text-sm text-[var(--text-muted)]">{label}</p>
-      <p className="mt-3 text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]">
+    <div className="ag-kpi-card min-w-0">
+      <p className="truncate text-sm text-[var(--text-muted)]">{label}</p>
+      <p
+        title={value}
+        className="mt-3 truncate text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]"
+      >
         {value}
       </p>
     </div>
@@ -783,8 +789,10 @@ function KpiCard({
         </span>
       </div>
 
-      <p className="mt-5 ag-kpi-label">{label}</p>
-      <p className="mt-3 ag-kpi-value">{value}</p>
+      <p className="mt-5 truncate ag-kpi-label">{label}</p>
+      <p title={String(value)} className="mt-3 truncate ag-kpi-value">
+        {value}
+      </p>
       <p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">
         {subtitle}
       </p>

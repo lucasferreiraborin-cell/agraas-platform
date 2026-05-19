@@ -495,7 +495,7 @@ export default async function PainelPage() {
 
         <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="max-w-2xl">
-            <h1 className="text-4xl font-semibold tracking-[-0.05em] text-[var(--text-primary)] lg:text-5xl">
+            <h1 className="text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)] [text-wrap:balance] sm:text-4xl sm:tracking-[-0.05em] lg:text-5xl">
               {greeting}, {firstName}
             </h1>
             <p className="mt-2 text-base text-[var(--text-secondary)]">

@@ -4,14 +4,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Home,
-  LayoutDashboard,
   Brain,
   Beef,
   MapPin,
   Package,
   BarChart2,
   TrendingUp,
-  Plane,
   Truck,
   Syringe,
   Scale,
@@ -34,11 +32,6 @@ import {
   Receipt,
   FileSpreadsheet,
   FileUp,
-  Rabbit,
-  Bird,
-  Wheat,
-  Layers,
-  Ship,
   ShoppingBag,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -56,132 +49,107 @@ type NavGroup = {
   items: NavItem[];
 };
 
+// Sidebar reorganizada 19/05/2026 — 9 grupos → 6 grupos + pinned top.
+// Mental model: Visão → Rebanho → Saúde → Vender → Dinheiro → Análise → Plataforma.
+// Decisão estratégica (plano unificado Claude/ChatGPT pós-Agrishow):
+// reduzir cognitive load, alinhar com fluxo do produtor real (dia, semana, mês, ano).
 const menuGroups: NavGroup[] = [
+  // ── PINNED: visão executiva sempre acessível ──────────────────────────────
   {
     label: null,
     items: [
       { href: "/painel",       label: "Painel",       icon: Home },
       { href: "/inteligencia", label: "Inteligência", icon: Brain },
+      { href: "/alertas",      label: "Alertas",      icon: Bell },
     ],
   },
+
+  // ── 1. REBANHO: o ativo digital (animais, lotes, peso, score) ─────────────
   {
     label: "Rebanho",
     items: [
       { href: "/animais",                 label: "Animais",                 icon: Beef },
       { href: "/lotes",                   label: "Lotes",                   icon: Package },
-      { href: "/propriedades",            label: "Propriedades",            icon: MapPin },
+      { href: "/eventos",                 label: "Eventos",                 icon: Activity },
       { href: "/movimentacoes",           label: "Movimentações",           icon: ArrowLeftRight },
       { href: "/movimentacoes/historico", label: "Histórico Movimentações", icon: ArrowLeftRight, sub: true },
+      { href: "/pesagens",                label: "Pesagens",                icon: Scale },
+      { href: "/pesagens/historico",      label: "Histórico Pesagens",      icon: Scale, sub: true },
+      { href: "/metas",                   label: "Metas de Peso",           icon: TrendingUp },
+      { href: "/scores",                  label: "Scores",                  icon: BarChart2 },
     ],
   },
+
+  // ── 2. MANEJO & SANIDADE: saúde, reprodução, estoque sanitário ────────────
   {
-    label: "Reprodução",
+    label: "Manejo & Sanidade",
     items: [
-      { href: "/reprodutivo", label: "Reprodutivo", icon: HeartPulse },
-    ],
-  },
-  {
-    label: "Sanidade",
-    items: [
+      { href: "/reprodutivo",          label: "Reprodutivo",          icon: HeartPulse },
       { href: "/aplicacoes",           label: "Aplicações",           icon: Syringe },
-      { href: "/aplicacoes/historico", label: "Histórico Aplicações", icon: Syringe,    sub: true },
-      { href: "/estoque/dashboard",    label: "Dashboard Sanitário",  icon: Warehouse },
+      { href: "/aplicacoes/historico", label: "Histórico Aplicações", icon: Syringe, sub: true },
       { href: "/calendario-sanitario", label: "Calendário Sanitário", icon: Activity },
+      { href: "/estoque/dashboard",    label: "Dashboard Sanitário",  icon: Warehouse },
       { href: "/estoque",              label: "Estoque",              icon: Warehouse },
-      { href: "/estoque/historico",    label: "Histórico Estoque",    icon: Warehouse,  sub: true },
+      { href: "/estoque/historico",    label: "Histórico Estoque",    icon: Warehouse, sub: true },
     ],
   },
-  {
-    label: "Performance",
-    items: [
-      { href: "/pesagens",           label: "Pesagens",           icon: Scale },
-      { href: "/pesagens/historico", label: "Histórico Pesagens", icon: Scale, sub: true },
-      { href: "/metas",              label: "Metas de Peso",      icon: TrendingUp },
-      { href: "/scores",             label: "Scores",             icon: BarChart2 },
-      { href: "/eventos",            label: "Eventos",            icon: Activity },
-    ],
-  },
-  // ⏸️ Exportação pausada da sidebar (decisão 17/05/18 — foco bovinos sem destaque PIF).
-  // Rotas /exportacao e /tracking continuam funcionais via deep-link, apenas saem do menu.
-  // {
-  //   label: "Exportação",
-  //   items: [
-  //     { href: "/exportacao", label: "Central de Exportação", icon: Plane, highlight: true },
-  //     { href: "/tracking",   label: "Rastreio",              icon: Truck, highlight: true },
-  //   ],
-  // },
-  {
-    label: "Financeiro",
-    items: [
-      { href: "/financeiro",       label: "Painel Financeiro", icon: DollarSign },
-      { href: "/custos",           label: "Custos",            icon: DollarSign },
-      { href: "/custos/historico", label: "Histórico Custos",  icon: DollarSign,      sub: true },
-      { href: "/custo-producao",   label: "Custo de Produção", icon: DollarSign,      sub: true },
-      { href: "/vendas",           label: "Vendas",            icon: ArrowUpRight },
-      { href: "/abates",           label: "Abates",            icon: Scissors },
-      { href: "/fiscal",           label: "Fiscal",            icon: Receipt },
-      { href: "/fiscal/relatorio", label: "Relatório Fiscal",  icon: FileSpreadsheet, sub: true },
-    ],
-  },
+
+  // ── 3. COMERCIAL: vender, comprar, parceiros, marketplace ─────────────────
   {
     label: "Comercial",
     items: [
+      { href: "/vendas",       label: "Vendas",       icon: ArrowUpRight },
+      { href: "/abates",       label: "Abates",       icon: Scissors },
       { href: "/compradores",  label: "Compradores",  icon: ArrowUpRight },
       { href: "/fornecedores", label: "Fornecedores", icon: Truck },
       { href: "/produtos",     label: "Produtos",     icon: Package },
       { href: "/insumos",      label: "Insumos",      icon: Boxes },
       { href: "/operacoes",    label: "Operações",    icon: LayoutGrid },
       { href: "/marketplace",  label: "Marketplace",  icon: ShoppingBag },
+      { href: "/market",       label: "Market",       icon: TrendingUp },
     ],
   },
-  // ⏸️ Pecuária Expandida pausada (decisão 17/05 — foco 100% bovinos).
-  // Rotas /ovinos, /caprinos, /aves redirecionam via proxy.ts. Não
-  // remover daqui — reativar comentando este bloco para voltar.
-  // {
-  //   label: "Pecuária Expandida",
-  //   items: [
-  //     { href: "/ovinos",           label: "Ovinos & Caprinos", icon: Rabbit   },
-  //     { href: "/ovinos/dashboard", label: "Dashboard Ovinos",  icon: BarChart2, sub: true },
-  //     { href: "/aves",             label: "Aves & Frangos",    icon: Bird      },
-  //     { href: "/aves/dashboard",   label: "Dashboard Aves",    icon: BarChart2, sub: true },
-  //   ],
-  // },
-  // ⏸️ Agricultura pausada (decisão 17/05 — foco 100% bovinos).
-  // Rota /agricultura redireciona via proxy.ts. Não remover daqui —
-  // reativar comentando este bloco para voltar.
-  // {
-  //   label: "Agricultura",
-  //   items: [
-  //     { href: "/agricultura",          label: "Dashboard",       icon: Wheat },
-  //     { href: "/agricultura/fazendas", label: "Fazendas",        icon: Wheat,     sub: true },
-  //     { href: "/agricultura/talhoes",  label: "Talhões",         icon: Layers,    sub: true },
-  //     { href: "/agricultura/armazens", label: "Armazéns",        icon: Warehouse, sub: true },
-  //     { href: "/agricultura/embarques",label: "Embarques",       icon: Ship,      sub: true },
-  //     { href: "/agricultura/insumos",  label: "Insumos",         icon: Boxes,     sub: true },
-  //     { href: "/agricultura/fiscal",   label: "Fiscal Agrícola", icon: Receipt,   sub: true },
-  //   ],
-  // },
+
+  // ── 4. FINANCEIRO & FISCAL: dinheiro e compliance tributário ──────────────
   {
-    label: "Ferramentas",
+    label: "Financeiro & Fiscal",
     items: [
+      { href: "/financeiro",       label: "Painel Financeiro", icon: DollarSign },
+      { href: "/custos",           label: "Custos",            icon: DollarSign },
+      { href: "/custos/historico", label: "Histórico Custos",  icon: DollarSign,      sub: true },
+      { href: "/custo-producao",   label: "Custo de Produção", icon: DollarSign,      sub: true },
+      { href: "/fiscal",           label: "Fiscal",            icon: Receipt },
+      { href: "/fiscal/relatorio", label: "Relatório Fiscal",  icon: FileSpreadsheet, sub: true },
+    ],
+  },
+
+  // ── 5. INTELIGÊNCIA & AUDITORIA: relatórios, cadeia, certificações ────────
+  {
+    label: "Inteligência & Auditoria",
+    items: [
+      { href: "/producao",      label: "Produção",      icon: BarChart3 },
+      { href: "/relatorios",    label: "Relatórios",    icon: FileText },
+      { href: "/auditoria",     label: "Auditoria",     icon: ClipboardCheck },
+      { href: "/certificacoes", label: "Certificações", icon: BadgeCheck },
+      { href: "/cadeia",        label: "Cadeia",        icon: Link2 },
+      { href: "/historico",     label: "Histórico",     icon: Clock },
+    ],
+  },
+
+  // ── 6. PLATAFORMA: cadastros estruturais, importação, assinatura ──────────
+  {
+    label: "Plataforma",
+    items: [
+      { href: "/propriedades",             label: "Propriedades",     icon: MapPin },
       { href: "/migrar-dados",             label: "Importar animais", icon: FileUp },
       { href: "/planos",                   label: "Planos",           icon: BadgeCheck },
       { href: "/configuracoes/assinatura", label: "Assinatura",       icon: BadgeCheck, sub: true },
     ],
   },
-  {
-    label: "Relatórios",
-    items: [
-      { href: "/market",        label: "Market",        icon: TrendingUp },
-      { href: "/producao",      label: "Produção",      icon: BarChart3 },
-      { href: "/relatorios",    label: "Relatórios",    icon: FileText },
-      { href: "/auditoria",     label: "Auditoria",     icon: ClipboardCheck },
-      { href: "/alertas",       label: "Alertas",       icon: Bell },
-      { href: "/certificacoes", label: "Certificações", icon: BadgeCheck },
-      { href: "/historico",     label: "Histórico",     icon: Clock },
-      { href: "/cadeia",        label: "Cadeia",        icon: Link2 },
-    ],
-  },
+
+  // ⏸️ Exportação pausada — rotas /exportacao e /tracking via deep-link.
+  // ⏸️ Pecuária Expandida (ovinos/caprinos/aves) — rotas redirecionam para /em-breve.
+  // ⏸️ Agricultura — rota redireciona para /em-breve. Tabelas e seeds intactos.
 ];
 
 export default function SidebarNav() {

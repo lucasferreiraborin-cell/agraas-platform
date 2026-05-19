@@ -346,7 +346,7 @@ export default function AnimaisPage() {
       <section className="ag-card-strong overflow-hidden p-8 lg:p-10">
         <div className="pointer-events-none absolute right-0 top-0 h-56 w-56 rounded-full bg-[radial-gradient(circle,rgba(93,156,68,0.18)_0%,rgba(93,156,68,0)_72%)]" />
         <div className="ag-badge ag-badge-green">Base animal</div>
-        <h1 className="mt-5 text-4xl font-semibold tracking-[-0.06em] text-[var(--text-primary)] lg:text-5xl">
+        <h1 className="mt-5 text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)] [text-wrap:balance] sm:text-4xl sm:tracking-[-0.05em] lg:text-5xl lg:tracking-[-0.06em]">
           Passaportes vivos da operação
         </h1>
         <p className="mt-4 max-w-2xl text-base leading-7 text-[var(--text-secondary)]">

@@ -505,12 +505,14 @@ function MetricCard({
   cl: string;
 }) {
   return (
-    <div className="ag-kpi-card">
+    <div className="ag-kpi-card min-w-0">
       <div className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${bg}`}>
         <Icon size={17} className={cl} />
       </div>
-      <p className="mt-3 ag-kpi-label">{label}</p>
-      <p className="ag-kpi-value">{value}</p>
+      <p className="mt-3 truncate ag-kpi-label">{label}</p>
+      <p title={String(value)} className="truncate ag-kpi-value">
+        {value}
+      </p>
       <p className="sub">{subtitle}</p>
     </div>
   );
