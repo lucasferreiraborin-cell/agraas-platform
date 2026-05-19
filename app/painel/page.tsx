@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import BrazilMapWrapper from "@/app/components/BrazilMapWrapper";
 import NotificationBanner from "@/app/components/NotificationBanner";
+import PainelInsights from "@/app/components/PainelInsights";
 import { KpiCard } from "@/app/components/ui/KpiCard";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -432,7 +433,7 @@ export default async function PainelPage() {
       hasHalal: halalAnimalIds.has(item.animal_id),
     }))
     .sort((a, b) => b.total_score - a.total_score)
-    .slice(0, 5);
+    .slice(0, 10);
 
   // ── Map properties (BUG 2 fix: use animals.current_property_id, not ownership_json) ──
   const propertyScores = new Map<string, number[]>();
@@ -614,7 +615,31 @@ export default async function PainelPage() {
         />
       </section>
 
-      {/* ── 4. Mapa + Top 5 ── */}
+      {/* ── Insights Agraas (Claude Sonnet 4.6) ── */}
+      <PainelInsights
+        totalAnimals={totalAnimals}
+        totalScoreAverage={totalScoreAverage}
+        totalArrobas={totalArrobas}
+        totalProperties={totalProperties}
+        withdrawals7d={withdrawals7d}
+        noPesagem30d={noPesagem30d}
+        shipmentsStale={shipmentsStale}
+        lotsUpcoming={lotsUpcoming}
+        totalActiveAlerts={totalActiveAlerts}
+        expiredCertsCount={expiredCerts.length}
+        estimatedValue={estimatedValue}
+        topAnimal={
+          topAnimals.length > 0
+            ? {
+                code: topAnimals[0].internal_code,
+                score: topAnimals[0].total_score,
+              }
+            : null
+        }
+        isFsjbePilot={isFsjbePilot}
+      />
+
+      {/* ── 4. Mapa + Top 10 ── */}
       <section className="grid gap-6 xl:grid-cols-2">
         <div className="ag-card p-8">
           <div className="mb-6 flex items-start justify-between gap-4">
@@ -659,9 +684,9 @@ export default async function PainelPage() {
         <div className="ag-card p-8">
           <div className="mb-6 flex items-start justify-between gap-4">
             <div>
-              <h2 className="ag-section-title">Top 5 animais</h2>
+              <h2 className="ag-section-title">Top 10 animais</h2>
               <p className="ag-section-subtitle">
-                Maiores scores consolidados da base.
+                Maiores scores consolidados do rebanho.
               </p>
             </div>
             <Link href="/scores" className="ag-button-secondary">
