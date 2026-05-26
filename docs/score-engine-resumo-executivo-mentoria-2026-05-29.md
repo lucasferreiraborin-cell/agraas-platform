@@ -38,6 +38,24 @@ Selecionadas das 15 questões do documento técnico — são as que mais destrav
 
 **C. Como integrar manejo regenerativo e métricas ambientais (alinhadas ao NeuTroPec) ao score de forma auditável?** Quais sinais o produtor já registra ou poderia registrar — rotação de pasto, taxa de lotação, suplementação, captura de carbono — que validem manejo regenerativo sem custo cognitivo proibitivo?
 
+## O que pedimos
+
+Para que a contribuição de vocês não fique abstrata, listamos com franqueza o que mais valorizamos como aporte concreto — sem ordem de prioridade, todos importam:
+
+- **Correções diretas.** Onde o que construímos está errado ou ingênuo, queremos ouvir. Score errado é score corrigível; metodologia frágil é metodologia que pode ser refeita.
+
+- **Indicação de literatura zootécnica brasileira aplicável**, ou referência internacional adaptada ao contexto BR, que sustente decisões metodológicas (pesos, normalizações, escolha de variáveis).
+
+- **Apontamento de variáveis-chave ausentes** que deveriam compor o score — particularmente em desempenho zootécnico, eficiência reprodutiva, eficiência alimentar e manejo regenerativo.
+
+- **Calibração com práticas de mercado consagradas** (CIQ, Boi Verde · ABIEC, GAP, programas oficiais brasileiros) — para que o Score Agraas não nasça desconectado do vocabulário e dos padrões já em uso na cadeia.
+
+- **Diálogo sobre roadmap conjunto** — em que sequência faz mais sentido evoluir o que está construído, o que pode esperar, o que precisa ser refeito antes de qualquer outra coisa.
+
+Não temos expectativa de resposta completa em uma sessão. Algumas dessas frentes podem evoluir ao longo de meses. O que pedimos é que a porta fique aberta — e que nos avisem honestamente quando algo do que apresentarmos precisar ser questionado.
+
+---
+
 ## Convite
 
 A oportunidade desta sessão é começar a transformar o Score Agraas de **ponto de partida funcional** em **metodologia cientificamente defensável**. O documento técnico anexo descreve com transparência total tudo que está construído, tudo que é frágil, e tudo que pode evoluir — exatamente para colocar a conversa em condições de produtividade real.
