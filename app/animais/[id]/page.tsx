@@ -537,21 +537,71 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
         </div>
       </section>
 
-      {/* Score breakdown */}
+      {/* Score breakdown v3 — ancorado em Embrapa Documento Técnico 237 (Costa et al., 2018) */}
       <section className="ag-card p-8">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="ag-section-title">Breakdown do score Agraas</h2>
-            <p className="ag-section-subtitle">Composição detalhada por dimensão de avaliação.</p>
+            <div className="flex items-center gap-2">
+              <h2 className="ag-section-title">Score Agraas v3 · breakdown por pilar</h2>
+            </div>
+            <p
+              className="ag-section-subtitle"
+              title="Score Agraas v3 — Implementação Agraas da metodologia Plataforma +Precoce da Embrapa Gado de Corte (Documento Técnico 237, Costa et al., 2018), adaptada para rastreabilidade individual. 5 pilares: Produtivo, Sanidade, Reprodutivo (preparado), Rastreabilidade, Certificações."
+            >
+              Ancorado em <strong>Embrapa Gado de Corte · Documento 237 (Costa et al., 2018)</strong> · Plataforma +Precoce.
+            </p>
           </div>
-          <span className="ag-badge ag-badge-dark">Score {calculatedAgraasScore}/100</span>
+          <div className="flex flex-col items-end gap-2">
+            <span className="ag-badge ag-badge-dark">Score {calculatedAgraasScore}/100</span>
+            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-emerald-700">
+              v3 · Embrapa Doc 237
+            </span>
+          </div>
         </div>
         <div className="mt-6 space-y-4">
-          <ScoreBar label="Sanitário" value={calculatedSanitaryScore} weight={24} color="#2E8B3E" />
-          <ScoreBar label="Continuidade" value={calculatedContinuityScore} weight={20} color="#2E8B3E" />
-          <ScoreBar label="Operacional" value={calculatedOperationalScore} weight={18} color="#7db35a" />
-          <ScoreBar label="Produtivo" value={latestWeight ? Math.min(100, 35 + Math.round(latestWeight / 10)) : 35} weight={28} color="#8dbc5f" />
-          <ScoreBar label="Fator etário" value={ageMonths !== null ? Math.min(100, 40 + Math.round(ageMonths / 2)) : 50} weight={10} color="#a0c878" />
+          <ScoreBar
+            label="Produtivo (GMD + Peso × Idade)"
+            value={Number(score.productive_score ?? 0)}
+            weight={36}
+            color="#2E8B3E"
+          />
+          <ScoreBar
+            label="Sanidade (histórico + carências + recência)"
+            value={calculatedSanitaryScore}
+            weight={25}
+            color="#3DA54C"
+          />
+          <ScoreBar
+            label="Rastreabilidade (RFID + genealogia + eventos + nascimento)"
+            value={calculatedOperationalScore}
+            weight={29}
+            color="#7db35a"
+          />
+          <ScoreBar
+            label="Certificações (Boi Verde, Rastreabilidade BR, GAP)"
+            value={Math.min(100, (passport?.certifications_json?.filter((c: any) => (c.status ?? '').toLowerCase() === 'active').length ?? 0) * 25)}
+            weight={10}
+            color="#a0c878"
+          />
+        </div>
+
+        {/* Pilar Reprodutivo: PREPARADO (sem dados estruturados ainda) */}
+        <div className="mt-6 rounded-2xl border border-dashed border-amber-200 bg-amber-50/40 p-4">
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-amber-100 text-[11px] font-bold text-amber-700">
+              ⏳
+            </span>
+            <div>
+              <p className="text-sm font-semibold text-amber-900">
+                Pilar Reprodutivo — preparado, aguardando dados
+              </p>
+              <p className="mt-1 text-xs leading-5 text-amber-800/85">
+                Peso reservado de 15% (intervalo entre partos, taxa de prenhez individual, idade ao primeiro parto)
+                está redistribuído enquanto a estrutura de eventos reprodutivos não é populada.
+                Quando ativar, pesos voltam para 30% Produtivo · 25% Sanidade · 15% Reprodutivo · 20% Rastreabilidade · 10% Certificações.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
