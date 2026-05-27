@@ -1,6 +1,6 @@
 # Score Agraas — Resumo Executivo para a Mentoria
 
-> **Para**: Dra. Renata Tieko Nassu · Prof. César Gonçalves de Lima
+> **Para**: Dra. Renata Helena Branco Arnandes · Prof. César Franzon
 > **De**: Equipe Agraas
 > **Sessão**: 29 de maio de 2026
 > **Leitura estimada**: 5 minutos. Material técnico completo disponível em documento anexo de mesma data.

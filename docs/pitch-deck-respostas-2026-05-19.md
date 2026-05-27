@@ -74,14 +74,14 @@ Isso é mais honesto e mais forte do que "470+ commits".
 
 ## Bloco B — Validações e Parcerias (slide 9)
 
-### B1. Dra. Renata Tieko Nassu (IZ-SP / NeuTroPec)
+### B1. Dra. Renata Helena Branco Arnandes (IZ-SP, especialista em CAR/RFI em Nelore)
 
 **[LUCAS CONFIRMAR formalização]**
 - Per CLAUDE.md: mentoria quinzenal ativa. Próxima sessão 29/05/2026.
 - Existe perfil técnico em produção: cliente "Fazenda Mentoria IZ-SP" + login compartilhado com Prof. César.
 - Carta de aceite formal? Termo de prestação de serviço? Apenas aceite verbal? Não sei. Sem isso, usar "mentoria científica em curso", não "consultora oficial".
 
-### B2. Prof. César Gonçalves de Lima
+### B2. Prof. César Franzon (IZ-SP)
 
 **[LUCAS CONFIRMAR]** — mesma situação. Aparece junto com Renata no perfil compartilhado. Status formal não confirmado.
 
@@ -90,7 +90,7 @@ Isso é mais honesto e mais forte do que "470+ commits".
 **[PÚBLICO com correção de termo]**
 - Tecnicamente verdade que há 3 perfis ativos em produção desde 18/05/2026.
 - **Cuidado com a leitura**: "3 perfis institucionais ativos" pode ser interpretado como "3 instituições assinaram parceria". A verdade é mais limitada: **3 contas de acesso técnicas** provisionadas para a mentoria, usadas por Renata + César de forma compartilhada.
-- Sugestão de copy honesta: *"Mentoria científica em curso com Instituto de Zootecnia de SP (Dra. Renata Tieko Nassu, Prof. César Gonçalves de Lima) · acesso institucional ativo desde mai/2026."*
+- Sugestão de copy honesta: *"Mentoria científica em curso com Instituto de Zootecnia de SP (Dra. Renata Helena Branco Arnandes, especialista em CAR/RFI em Nelore; Prof. César Franzon) · acesso institucional ativo desde mai/2026."*
 
 ### B4. Alexandre Alves (CFO JBS Miami)
 

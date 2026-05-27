@@ -2,7 +2,7 @@
 
 > **Documento preparatório para a mentoria IZ-SP / NeuTroPec — sessão 29/05/2026**
 >
-> **Para**: Dra. Renata Tieko Nassu · Prof. César Gonçalves de Lima
+> **Para**: Dra. Renata Helena Branco Arnandes · Prof. César Franzon
 > **De**: Equipe Agraas
 > **Postura editorial**: honestidade total. Onde a metodologia é frágil, intuitiva ou arbitrária, está marcado explicitamente. O propósito desta sessão é revisão científica, e revisão científica só funciona com transparência.
 

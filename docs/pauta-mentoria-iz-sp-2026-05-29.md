@@ -1,6 +1,6 @@
 # Pauta de Mentoria · Agraas + Instituto de Zootecnia de SP
 
-> **Para**: Dra. Renata Tieko Nassu · Prof. César Gonçalves de Lima
+> **Para**: Dra. Renata Helena Branco Arnandes · Prof. César Franzon
 > **De**: Equipe Agraas — Lucas Ferreira Borin
 > **Sessão de referência**: 29 de maio de 2026
 > **Versão**: rascunho 1 · 19/05/2026
@@ -80,7 +80,7 @@ Atualmente, a Agraas está em fase de validação operacional na **Fazenda São 
 A escolha por buscar a mentoria do Instituto de Zootecnia de SP — e especificamente de vocês dois — não foi acidente. Três motivos:
 
 **3.1. Rigor científico sobre o score Agraas.**
-Nosso score multidimensional (sanitário, operacional, continuidade) precisa de **validação metodológica externa, idealmente publicável**. A reputação científica do IZ-SP e a experiência de vocês em metodologias quantitativas (Prof. César) e em pesquisa aplicada em produção animal (Dra. Renata) são exatamente o tipo de input que diferencia "métrica proprietária" de "metodologia auditável".
+Nosso score multidimensional precisa de **validação metodológica externa, idealmente publicável**. A reputação científica do IZ-SP, a experiência aplicada em produção animal e a especialização em CAR/RFI em Nelore que vocês trazem são exatamente o tipo de input que diferencia "métrica proprietária" de "metodologia auditável".
 
 **3.2. Conexão com o programa NeuTroPec.**
 O NeuTroPec, com seu enfoque em **neutralidade tropical** — manejo regenerativo, eficiência hídrica, baixo carbono — é o ecossistema científico mais alinhado com nossa tese de "sustentabilidade verificável". Selo só vale se for verificável; e verificabilidade só vale se for científica.

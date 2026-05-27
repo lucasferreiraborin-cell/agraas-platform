@@ -73,7 +73,7 @@ Curadoria editorial BR. Componentes de fundação (Hero, Sobre, Portos, CTA) che
 
 ## Regra 7 — Foco atual: 100% pecuária bovina
 
-**Decisão 17/05** (mentoria com Dra. Renata + César, IZ-SP): Agraas foca 100% pecuária bovina no caminho crítico. Cadeias adjacentes estão **pausadas** (não removidas):
+**Decisão 17/05** (mentoria com Dra. Renata Helena Branco Arnandes + Prof. César Franzon, IZ-SP): Agraas foca 100% pecuária bovina no caminho crítico. Cadeias adjacentes estão **pausadas** (não removidas):
 
 - ⏸️ Ovinos/caprinos — pausado
 - ⏸️ Aves — pausado
@@ -85,7 +85,7 @@ Curadoria editorial BR. Componentes de fundação (Hero, Sobre, Portos, CTA) che
 ### Frentes quentes (caminho crítico)
 
 - **JBS** — CFO Alexandre, Mourão Filho. Conversas ativas.
-- **IZ-SP** — Dra. Renata + César. Mentoria quinzenal, próxima 29/05.
+- **IZ-SP** — Dra. Renata Helena Branco Arnandes (especialista em CAR/RFI em Nelore) + Prof. César Franzon. Mentoria quinzenal, próxima 29/05.
 - **GPB / Furlan** — em desenvolvimento.
 
 Decisões de produto, copy, demos e roadmap **respondem a essas frentes**, não às cadeias pausadas.

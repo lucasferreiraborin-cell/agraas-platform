@@ -176,8 +176,8 @@ Frase para o slide:
 ### D1. Mentoria Científica IZ-SP
 
 **[LUCAS CONFIRMAR autorização para citação nominal]**
-- **Dra. Renata Tieko Nassu** (Instituto de Zootecnia de SP, programa NeuTroPec) — mentoria quinzenal ativa
-- **Prof. César Gonçalves de Lima** — mentoria conjunta com Renata
+- **Dra. Renata Helena Branco Arnandes** (Instituto de Zootecnia de SP, especialista em CAR/RFI em Nelore) — mentoria quinzenal ativa
+- **Prof. César Franzon** (Instituto de Zootecnia de SP) — mentoria conjunta com Dra. Renata
 - Mentoria iniciada com sessão Agrishow 2026, próxima sessão 29/05/2026
 - Três perfis institucionais provisionados na plataforma desde 18/05/2026
 

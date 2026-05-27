@@ -8,12 +8,12 @@
 
 ## Foco atual: 100% pecuária bovina
 
-**Decisão 2026-05-17** (pós-Agrishow, mentoria IZ-SP com Dra. Renata + César):
+**Decisão 2026-05-17** (pós-Agrishow, mentoria IZ-SP com Dra. Renata Helena Branco Arnandes + Prof. César Franzon):
 o caminho crítico é pecuária bovina. Tudo o mais está pausado, não removido.
 
 ### Frentes quentes
 - **JBS** — CFO Alexandre, Mourão Filho. Conversas ativas.
-- **IZ-SP** — Dra. Renata + César. Mentoria quinzenal, próxima **2026-05-29**.
+- **IZ-SP** — Dra. Renata Helena Branco Arnandes (especialista em CAR/RFI em Nelore) + Prof. César Franzon. Mentoria quinzenal, próxima **2026-05-29**.
 - **GPB / Furlan** — em desenvolvimento.
 
 ### Frentes pausadas (código mantido, fora do caminho crítico)
