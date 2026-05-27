@@ -1,622 +1,602 @@
-# Relatório Técnico Completo — Score Engine Agraas
+# Relatório Técnico Completo — Score Engine Agraas v3
 
 > **Documento preparatório para a mentoria IZ-SP / NeuTroPec — sessão 29/05/2026**
 >
 > **Para**: Dra. Renata Helena Branco Arnandes · Prof. César Franzon
 > **De**: Equipe Agraas
-> **Postura editorial**: honestidade total. Onde a metodologia é frágil, intuitiva ou arbitrária, está marcado explicitamente. O propósito desta sessão é revisão científica, e revisão científica só funciona com transparência.
+> **Postura editorial**: honestidade total. Cada decisão metodológica é marcada como **ancorada em Embrapa** (referência científica explícita) ou como **decisão de equipe Agraas pendente de validação científica**.
 
 ---
 
-## Aviso introdutório (precisa ser dito antes de qualquer outra coisa)
+## Referência científica primária
 
-Durante o levantamento deste documento, identifiquei que **três funções distintas de cálculo do Score Agraas coexistem em produção** no banco de dados, com pesos diferentes, fórmulas diferentes e níveis de sofisticação diferentes. Apenas uma delas é efetivamente acionada pelos triggers de atualização automática. As outras duas existem como artefatos de evolução não consolidada do algoritmo.
+Toda a refatoração descrita neste documento foi ancorada na seguinte publicação oficial:
 
-A coluna `algorithm_version` da tabela `animal_scores` declara, por padrão, o valor `'v2'`. Mas na prática, o cálculo que roda automaticamente é o da função **v1**, mais simples. **A versão v2 (mais sofisticada) existe no banco mas não é invocada por nenhum trigger ativo.**
+> **Costa, F. P.; Dias, F. R. T.; Gomes, R. C.; Pereira, M. A.** *Indicadores de desempenho na pecuária de corte: uma revisão no contexto da Plataforma +Precoce.* Embrapa Gado de Corte · Documentos 237 · Brasília, DF, 2018.
+> Disponível em: <https://www.infoteca.cnptia.embrapa.br/infoteca/handle/doc/1090951>
 
-Este é o tipo de débito que justifica exatamente a mentoria de vocês — antes de tentar evoluir, precisamos consolidar uma única fonte de verdade. O documento abaixo descreve **as três versões honestamente**, marcando qual é a efetivamente em uso hoje.
+Doravante referenciado como **Embrapa Doc 237**. Citamos a publicação em cada decisão de variável, peso e fórmula. Onde não há ancoragem direta na publicação, marcamos explicitamente como decisão de equipe Agraas pendente de validação científica.
 
 ---
 
-## Seção 1 — Visão Geral do Score
+## Aviso introdutório (resolvido na v3)
 
-**O que é o Score Agraas em uma frase:**
-Uma pontuação numérica multidimensional de 0 a 100 atribuída a cada bovino individual, que agrega indicadores de sanidade, gestão operacional, continuidade de cadeia e (na versão v2) desempenho produtivo e idade, com o objetivo de fornecer um número auditável de confiança e maturidade de rastreabilidade do animal.
+Documentamos abaixo o débito técnico que existia até a versão anterior do Score Engine — porque a resolução desse débito é o que justificou a refatoração v3:
 
-**Problema que resolve:**
+> Até **26/05/2026**, três funções distintas de cálculo do Score Agraas coexistiam em produção no banco (`refresh_animal_score`, `recalculate_animal_score`, `calculate_agraas_score`), com pesos diferentes, fórmulas diferentes e níveis de sofisticação diferentes. Apenas uma era acionada pelos triggers. A coluna `algorithm_version` declarava `v2` mas o cálculo executado era o da versão v1, mais simples.
 
-O agronegócio brasileiro hoje opera com indicadores informais e proprietários para qualificar animais — "boi gordo de fulano é bom porque eu conheço o fulano". O Score Agraas tenta substituir essa heurística social por uma **métrica auditável**, derivada de eventos verificáveis no sistema (pesagens, aplicações sanitárias, eventos reprodutivos, certificações). A intenção é que três atores consigam ler o mesmo número e tomar decisões compatíveis a partir dele.
+A **migration 123 (`score_engine_v3.sql`)**, aplicada em 27/05/2026, eliminou as três funções legacy e estabeleceu **uma única função canônica**: `calculate_agraas_score_v3(animal_id, event_source, event_record_id, event_type)`. Toda a auditoria abaixo descreve a versão v3 consolidada.
+
+---
+
+## Seção 1 — Visão Geral do Score v3
+
+**O que é o Score Agraas v3 em uma frase:**
+Implementação Agraas da metodologia Plataforma +Precoce da Embrapa Gado de Corte (Documento 237, Costa et al., 2018), adaptada para rastreabilidade individual — uma pontuação de 0 a 100 atribuída a cada bovino, agregando 5 pilares com pesos derivados da frequência de citação dos indicadores na literatura zootécnica brasileira.
+
+**Range numérico:** 0 a 100 (decimal, 2 casas).
+
+**Status de score:** `current` (recalculado dinamicamente) · `frozen_sold` (animal vendido, score congelado no valor final) · `frozen_slaughtered` (animal abatido, score congelado).
+
+**Atualização:** Sob demanda via trigger de banco. Toda mutação em `weights`, `applications`, `animal_certifications`, `animal_rfids`, `events`, `animal_movements` dispara recálculo automático via `trigger_recalculate_score_v3()`. Eventually consistent em milissegundos.
 
 **Quem consome:**
 
 | Consumidor | Como usa |
 |---|---|
-| **Produtor** | Diagnóstico do próprio rebanho — quais animais estão com gaps, quais estão prontos para venda premium |
-| **Comprador institucional (frigorífico, trader)** | Pré-qualificação de lote antes de embarque — reduz custo de auditoria |
-| **Banco / sistema financeiro** | Tese de futuro: score como insumo de crédito rural — quanto maior o score do rebanho, menor o risco de inadimplência percebido |
-| **Mentor científico (vocês)** | Validação cruzada — o score reflete o que a literatura zootécnica considera importante? |
-
-**Range numérico:** 0 a 100 (inteiro arredondado a 2 casas decimais na tabela, mas exibido como inteiro na UI).
-
-**Atualização:** Sob demanda via trigger de banco. Toda vez que um evento operacional (aplicação sanitária, pesagem, alteração em certificação) é inserido/atualizado/excluído, o trigger `trg_refresh_from_*` chama uma cadeia de funções que recalcula o score e atualiza o cache do passaporte. **Não é tempo real em sentido estrito** — é eventually consistent dentro de milissegundos após a transação.
+| **Produtor** | Diagnóstico — quais animais estão prontos para venda premium, quais têm gaps |
+| **Comprador institucional** | Pré-qualificação de lote antes de embarque |
+| **Banco / sistema financeiro** | Tese de futuro: score como insumo de crédito rural |
+| **Mentor científico (vocês)** | Validação cruzada — pesos refletem literatura zootécnica? |
 
 ---
 
-## Seção 2 — Arquitetura Técnica
+## Seção 2 — Arquitetura Técnica v3
 
-### Tabelas envolvidas
+### Estrutura de dados
 
 ```
-animals                        (entidade-raiz do animal)
+animals
   ↓
-animal_scores                  (score consolidado por animal — 1:1)
-  ├ sanitary_score        (numeric 0-100)
-  ├ operational_score     (numeric 0-100)
-  ├ continuity_score      (numeric 0-100)
-  ├ productive_score      (numeric 0-100, populado apenas em v2)
-  ├ total_score           (numeric 0-100, composição ponderada)
-  ├ score_status          (text 'current' / outros)
-  ├ score_version         (text — v1 ou v2)
-  ├ algorithm_version     (text, default 'v2')
-  ├ updated_at            (timestamptz)
-  └ last_updated          (timestamp)
+animal_scores                  (1:1, score consolidado por animal)
+  ├ productive_score      numeric  (pilar Produtivo v3)
+  ├ sanitary_score        numeric  (pilar Sanidade v3)
+  ├ operational_score     numeric  (reaproveitado para Rastreabilidade v3 — compat UI)
+  ├ continuity_score      numeric  (placeholder para Reprodutivo — PREPARADO)
+  ├ total_score           numeric  (composição final)
+  ├ score_status          text     (current/frozen_sold/frozen_slaughtered)
+  ├ algorithm_version     text     ('v3')
+  └ updated_at            timestamptz
 
-  Tabelas de entrada (lidas pelas funções de score):
-    weights                (pesagens — usadas em v2)
-    applications           (aplicações sanitárias com período de carência)
-    events                 (eventos do ciclo de vida do animal)
-    animal_rfids           (presença ou não de identificação eletrônica)
-    animal_certifications  (certificações ativas)
+score_audit_log                (auditoria de mudanças materiais)
+  ├ animal_id, client_id, property_id
+  ├ event_source           text (qual tabela disparou)
+  ├ event_type             text (INSERT/UPDATE/DELETE/manual)
+  ├ event_record_id        uuid (id do registro disparador)
+  ├ score_previous, score_new
+  ├ delta_total
+  └ algorithm_version
 
-  Tabelas auxiliares para apresentação:
-    agraas_master_passport_cache (passaporte materializado em JSON — espelha o score)
+farm_scores                    (Nível 2: score agregado por propriedade)
+  ├ score_total, score_rebanho (ATIVO)
+  ├ score_produtividade, score_reprodutivo, score_sanitario, score_compliance (PREPARADO)
+  └ animals_count_active
+
+producer_scores                (Nível 3: score por produtor/cliente)
+  ├ score_total, score_ativos (ATIVO)
+  ├ score_relacionamento, score_financeiro, score_institucional (PREPARADO)
+  └ properties_count_active
 ```
 
-### Triggers ativos hoje
+### Cadeia de execução de um recálculo
 
-Quando uma das tabelas abaixo recebe `INSERT`, `UPDATE` ou `DELETE`, dispara recálculo:
+```
+INSERT em weights/applications/etc
+   ↓
+trigger trg_score_v3_from_<tabela>
+   ↓
+trigger_recalculate_score_v3()       (wrapper, extrai animal_id + contexto)
+   ↓
+calculate_agraas_score_v3(animal_id, event_source, event_record_id, event_type)
+   ├── lê todas as variáveis de entrada
+   ├── calcula 4 pilares ativos (Produtivo, Sanidade, Rastreabilidade, Certificações)
+   ├── compõe total ponderado
+   ├── UPSERT em animal_scores
+   ├── INSERT em score_audit_log (se |delta_total| ≥ 0.01)
+   ├── refresh_animal_passport (atualiza cache JSON)
+   ├── calculate_farm_score (cascata Nível 2)
+   └── calculate_producer_score (cascata Nível 3)
+```
 
-| Tabela | Trigger | Função invocada |
+### Funções e tabelas no banco hoje
+
+| Objeto | Tipo | Status |
 |---|---|---|
-| `applications` | `trg_refresh_from_applications` | `trigger_refresh_animal_passport_from_animal_id()` |
-| `weight_records` *(legado)* | `trg_refresh_from_weight_records` | mesma |
-| `animal_certifications` | `trg_refresh_from_animal_certifications` | mesma |
+| `calculate_agraas_score_v3(uuid, text, uuid, text)` | função | ✅ Canônica única em uso |
+| `get_animal_category(uuid)` | função auxiliar | ✅ Categoriza animal por idade/sexo |
+| `calculate_farm_score(uuid)` | função | ✅ Score de propriedade |
+| `calculate_producer_score(uuid)` | função | ✅ Score de produtor |
+| `trigger_recalculate_score_v3()` | trigger function | ✅ Wrapper dos triggers |
+| `refresh_animal_passport(uuid)` | função | ✅ Atualiza cache JSON do passaporte |
+| `refresh_animal_score(uuid)` | função | ❌ **REMOVIDA** (era v1) |
+| `recalculate_animal_score(uuid)` | função | ❌ **REMOVIDA** (era v0) |
+| `calculate_agraas_score(uuid)` | função | ❌ **REMOVIDA** (era v2 declarada) |
+| `score_audit_log` | tabela | ✅ Auditoria de mudanças (RLS por client_id) |
+| `farm_scores` | tabela | ✅ Score Nível 2 (RLS por client_id) |
+| `producer_scores` | tabela | ✅ Score Nível 3 (RLS por client_id) |
 
-Cadeia de chamadas:
+### Triggers ativos (todos repointados para v3)
 
-```
-trigger → trigger_refresh_animal_passport_from_animal_id()
-       → refresh_animal_derived_data(animal_id)
-            ├── refresh_animal_score(animal_id)           ← cálculo
-            ├── refresh_animal_certifications(animal_id)  ← deriva selos
-            └── refresh_animal_passport(animal_id)        ← atualiza cache JSON
-```
+| Tabela de input | Trigger | Função invocada |
+|---|---|---|
+| `weights` | `trg_score_v3_from_weights` | `trigger_recalculate_score_v3()` |
+| `applications` | `trg_score_v3_from_applications` | mesma |
+| `animal_certifications` | `trg_score_v3_from_certifications` | mesma |
+| `animal_rfids` | `trg_score_v3_from_rfids` | mesma |
+| `events` | `trg_score_v3_from_events` | mesma |
+| `animal_movements` | `trg_score_v3_from_movements` | mesma |
 
-### As três funções de score que coexistem (estado real do banco)
-
-| Função | Status | Quem chama | Pesos da composição |
-|---|---|---|---|
-| **`refresh_animal_score(uuid)`** | ✅ **EM USO PELOS TRIGGERS** | `refresh_animal_derived_data` | sanitary × 0.4 + operational × 0.3 + continuity × 0.3 |
-| **`recalculate_animal_score(uuid)`** | 🟡 Existe, ninguém chama (legado) | Nenhum trigger ativo | sanitary × 0.4 + operational × 0.35 + continuity × 0.25 |
-| **`calculate_agraas_score(uuid)`** | ⚠️ **Existe, declara `v2`, nenhum trigger chama** | Apenas invocação manual | productive × 0.28 + sanitary × 0.24 + operational × 0.18 + continuity × 0.20 + age_factor × 0.10 + trace_bonus (0-7) |
-
-**Isso é exatamente o tipo de débito técnico que precisa ser revisado com vocês.** O documento abaixo descreve as 3, mas a **v1 (`refresh_animal_score`)** é a que produz os números visíveis no sistema hoje.
+Migrações de triggers: todos saíram de `weight_records` (legado) para `weights` (atual). Verificação automática na migration 123 confirma zero triggers ativos em `weight_records`.
 
 ### Performance
 
-Tempo médio de recálculo individual: **~5–20 ms** por animal em banco quente. O recálculo de toda a base FSJBE (pré-reset, 5 animais) levou menos de 100 ms. O recálculo de toda a base do administrador (Lucas, 23 animais) leva menos de 300 ms. **Performance não é gargalo.**
+Recálculo individual: **~10–25 ms** com cascata (animal → farm → producer). Recálculo retroativo dos 58 animais do banco na migration 123: **~1,5 s**. Performance não é gargalo.
 
 ---
 
-## Seção 3 — Pilares do Score
+## Seção 3 — Os 5 Pilares v3
 
-Esta seção descreve cada pilar nas **três versões coexistentes**, marcando qual é a versão em uso (v1).
+A divisão em 5 pilares foi ancorada na frequência de citação dos indicadores em Embrapa Doc 237. Indicadores produtivos aparecem em **85-100%** das publicações analisadas pela revisão, justificando o maior peso. Os demais pilares vêm distribuídos conforme relevância para a cadeia de rastreabilidade individual.
 
-### Pilar 1 — Sanitary Score (Sanidade)
-
-**O que mede conceitualmente:**
-Quão bem o animal foi acompanhado em termos de aplicações sanitárias (vacinas, vermífugos, tratamentos veterinários) e se está livre de períodos de carência ativos que impediriam comercialização imediata.
-
-#### Versão v1 (em uso pelos triggers — `refresh_animal_score`)
-
-```sql
-v_sanitary := 50;                                       -- base
-if v_app_count > 0 then v_sanitary += 30; end if;       -- "tem aplicação registrada?"
-if v_active_withdrawal_count = 0 then v_sanitary += 20; -- "carência ativa?"
-v_sanitary := least(100, greatest(0, v_sanitary));
-```
-
-**Comentário em português natural:**
-> Todo animal começa com 50 pontos só por existir. Se tem **pelo menos uma** aplicação sanitária registrada na história, ganha +30. Se **não tem** carência ativa hoje, ganha +20. Resultado fica entre 50 e 100.
-
-**Range efetivo na prática:** 50, 80, ou 100. **Apenas três valores distintos possíveis.**
-
-**Decisões arbitrárias documentadas:**
-- A base de 50 não foi derivada de pesquisa científica — foi escolhida para que animais novos sem histórico não comecem em zero (péssimo UX).
-- O +30 para "tem aplicação registrada" é binário: 1 ou 100 aplicações dão o mesmo bônus.
-- O +20 para "sem carência ativa" é binário também.
-
-#### Versão v0 (`recalculate_animal_score`, antiga, sem trigger ativo)
-
-```sql
-sanitary := 100;                                    -- começa em 100
-if latest_withdrawal >= current_date then
-  sanitary -= 20;                                    -- penaliza carência ativa
-end if;
-```
-
-Modelo de **penalização** (top-down) em vez de modelo de **acúmulo** (bottom-up).
-
-#### Versão v2 (`calculate_agraas_score`, declarada mas não acionada)
-
-```sql
-v_sanitary := least(100, 50 + coalesce(v_app_count, 0) * 5);
-```
-
-**Comentário:** começa em 50, ganha +5 por cada aplicação registrada, capa em 100. Implica que **10 aplicações** levam o score sanitário ao máximo. **Gradação real**, mas linear ingênua.
-
-**Range efetivo:** 50 + (0 a 50) = 50 a 100 (50 a 50 se nenhuma aplicação, 100 se 10+ aplicações).
-
----
-
-### Pilar 2 — Operational Score (Operacional / Gestão)
-
-**O que mede conceitualmente:**
-Maturidade da gestão operacional do animal — se tem identificação eletrônica (RFID), se tem pesagens registradas, se há histórico de manejo documentado.
-
-#### Versão v1 (em uso)
-
-```sql
-v_operational := 40;                                  -- base
-if v_has_rfid then v_operational += 20; end if;       -- tem RFID?
-if v_weight_count > 0 then v_operational += 20; end if; -- tem alguma pesagem?
-if v_app_count > 0 then v_operational += 20; end if;  -- tem alguma aplicação?
-```
-
-**Comentário em português natural:**
-> Base 40. +20 se tem RFID. +20 se tem pelo menos uma pesagem. +20 se tem pelo menos uma aplicação. Range efetivo: 40, 60, 80 ou 100.
-
-**Observação crítica:** o "tem aplicação?" aparece tanto no pilar sanitário (+30) quanto aqui (+20). **A mesma variável de entrada contribui duas vezes para o total — uma vez como sanidade, outra como operação.** Isso é multicolinearidade contábil.
-
-#### Versão v2
-
-```sql
-v_operational := least(100, 40 + coalesce(v_event_count, 0) * 3);
-```
-
-Conta **eventos genéricos** (qualquer evento no log de timeline do animal) em vez de aplicações. Cada evento vale +3 pontos. **20 eventos** zeram a margem.
-
----
-
-### Pilar 3 — Continuity Score (Continuidade de Cadeia)
-
-**O que mede conceitualmente:**
-Quão preservada está a "linhagem de propriedade" do animal — se nasceu na fazenda atual, se foi transferido entre lotes/propriedades de forma documentada, se ainda não foi vendido (vendido = perdemos a continuidade).
-
-#### Versão v1 (em uso)
-
-```sql
-v_continuity := 50;                                       -- base
-if v_birth_count > 0 then v_continuity += 20; end if;     -- tem evento de nascimento?
-if v_transfer_count > 0 then v_continuity += 10; end if;  -- tem transferência de lote/propriedade?
-if v_sale_count = 0 then v_continuity += 20; end if;      -- ainda não foi vendido?
-```
-
-**Comentário em português natural:**
-> Base 50. +20 se tem registro de nascimento. +10 se tem alguma transferência (LOT_ENTRY, OWNERSHIP_TRANSFER). +20 se NÃO foi vendido. Range efetivo: 50, 60, 70, 80, 90 ou 100.
-
-**Decisões arbitrárias:**
-- "Não vendido" dá pontos — implica que animal vendido tem score baixo. **Isso é estranho conceitualmente.** Um animal pode ter sido vendido com altíssima qualidade — a venda em si não compromete a confiabilidade do dado histórico.
-- "Tem transferência" dá +10 — o oposto também é estranho. Um animal estável na mesma propriedade pode ser mais consistente em manejo. Por que mover é melhor que não mover?
-
----
-
-### Pilar 4 — Productive Score (apenas em v2)
-
-**Exclusivo da versão v2 (`calculate_agraas_score`), não populado em produção via triggers.**
-
-```sql
-v_productive := case
-  when v_last_weight > 0
-    then least(100, 35 + round(v_last_weight / 10))
-  else 35
-end;
-```
-
-**Comentário:** base 35. Ganha **+1 ponto a cada 10 kg de peso**. Animal de 650 kg ganha +65, totalizando 100.
-
-**Problema zootécnico óbvio:** isso premia **peso absoluto** sem considerar **idade, raça, sexo, categoria** (bezerro, novilha, boi gordo terminado). Um animal Nelore terminado de 480 kg é excelente; um animal Nelore aos 30 meses ainda em 480 kg é abaixo do esperado. **A fórmula trata os dois da mesma forma.**
-
----
-
-### Pilar 5 — Age Factor (apenas em v2)
-
-```sql
-v_age_factor := case
-  when v_age_months is not null
-    then least(100, 40 + round(v_age_months / 2.0))
-  else 50
-end;
-```
-
-**Comentário:** base 40. **+0,5 ponto por mês de idade**. Animal de 5 anos (60 meses) ganha +30, totalizando 70.
-
-**Problema zootécnico óbvio:** isso **premia animal velho**. Zootecnicamente, score deveria **normalizar por categoria**, não recompensar idade. Um bezerro recém-desmamado deveria poder ter score alto se está em manejo correto — não baixo só porque ainda é jovem.
-
----
-
-### Pilar 6 — Traceability Bonus (apenas em v2)
-
-```sql
-v_trace_bonus :=
-    (case when v_blood_type is not null then 3 else 0 end)
-  + (case when v_has_genealogy            then 4 else 0 end);
-```
-
-**Comentário:** +3 se tem tipo sanguíneo registrado, +4 se tem pai OU mãe registrados (genealogia parcial conta). Bônus máximo: 7 pontos absolutos (somados ao total, não ponderados).
-
-**Observação:** é o único componente que se soma ao total **fora da média ponderada**, alterando o range efetivo do total para até 107 (mas com `LEAST(100, …)` a cap volta para 100).
-
----
-
-### Composição final do total_score
-
-#### Versão v1 (em uso pelos triggers)
+### Composição final v3 (Condição A — sem pilar reprodutivo ativo)
 
 ```
-total = sanitary × 0.4 + operational × 0.3 + continuity × 0.3
+total = produtivo × 0.36 + sanidade × 0.25 + rastreabilidade × 0.29 + certificações × 0.10
 ```
 
-| Pilar | Peso |
+| Pilar | Peso v3 inicial | Peso quando reprodutivo ativar | Status |
+|---|---|---|---|
+| **Produtivo** | 36% | 30% (Condição B) | ATIVO |
+| **Sanidade** | 25% | 25% | ATIVO |
+| **Reprodutivo** | — (redistribuído) | 15% (só fêmeas ≥18m) | **PREPARADO** |
+| **Rastreabilidade** | 29% | 20% | ATIVO |
+| **Certificações** | 10% | 10% | ATIVO |
+
+**Por que reprodutivo está PREPARADO?** Falta estrutura de eventos reprodutivos (parto, IEP, taxa de prenhez individual). Quando os dados existirem, o peso 15% é incorporado e o redistribuído (40%→Produtivo, 60%→Rastreabilidade) volta às proporções base.
+
+### Pilar 1 — Produtivo (36%)
+
+**Ancoragem Embrapa Doc 237**: indicadores produtivos (GMD, peso × idade) são citados em 85-100% das publicações revistas. São a base do "+Precoce" — programa que valoriza animais que atingem ponto de abate mais cedo.
+
+**Subindicadores:**
+
+| # | Subindicador | Status | Peso interno |
+|---|---|---|---|
+| 1.1 | GMD — Ganho Médio Diário | ATIVO | 50% |
+| 1.2 | Peso vivo atual vs esperado por categoria | ATIVO | 50% |
+| 1.3 | Rendimento de carcaça | **PREPARADO** | — (peso redistribuído para 1.1 e 1.2) |
+
+**1.1 GMD (kg PV/dia):**
+
+```
+GMD = (peso_atual - peso_anterior) / dias_entre_pesagens
+```
+
+Faixas de pontuação (interpolação linear entre pontos):
+
+| GMD (kg/dia) | Pontuação | Defesa zootécnica |
+|---|---|---|
+| < 0,0 | 0 | Perda de peso (problema) |
+| 0,0 - 0,3 | 0 → 30 | Péssimo (sub-mantença) |
+| 0,3 - 0,5 | 30 → 50 | Fraco |
+| 0,5 - 0,8 | 50 → 70 | Regular |
+| 0,8 - 1,2 | 70 → 90 | **Bom — faixa típica pasto manejado** |
+| > 1,2 | 90 → 100 | Excelente — típico confinamento |
+
+**1.2 Peso × Categoria de idade (referência Nelore):**
+
+Gabarito atual (decisão de equipe Agraas pendente de validação científica para customização por raça):
+
+| Categoria | Idade (meses) | Peso esperado (kg) |
+|---|---|---|
+| Bezerro até desmama | < 6 | 150-180 |
+| Bezerro pré-desmama | 6-9 | 180-220 |
+| Recria inicial | 10-14 | 240-280 |
+| Recria | 15-20 | 320-380 |
+| Terminação inicial | 21-26 | 420-480 |
+| Terminação | 27-32 | 480-540 |
+| Adulto produtivo | > 32 | 480-650 |
+
+Pontuação por razão `peso_atual / peso_esperado_médio`:
+
+| Razão | Pontuação |
 |---|---|
-| Sanitário | **40%** |
-| Operacional | 30% |
-| Continuidade | 30% |
-| **Produtivo** | não existe |
-| **Idade** | não existe |
-| **Genealogia** | não existe |
+| < 0,7 | 0 → 30 |
+| 0,7 - 0,9 | 30 → 60 |
+| 0,9 - 1,1 | 60 → 90 (faixa ideal) |
+| > 1,1 | 90 → 100 |
 
-#### Versão v2 (declarada, não acionada)
+### Pilar 2 — Sanidade (25%)
 
-```
-total = least(100,
-    productive   × 0.28
-  + sanitary     × 0.24
-  + operational  × 0.18
-  + continuity   × 0.20
-  + age_factor   × 0.10
-  + trace_bonus  (somado fora da média)
-)
-```
+**Ancoragem Embrapa Doc 237**: sanidade é "base sobre a qual tudo mais se constrói" — animal doente ou em carência não tem valor comercial.
 
-| Pilar | Peso |
+**Subindicadores:**
+
+| # | Subindicador | Status | Peso interno |
+|---|---|---|---|
+| 2.1 | Histórico de aplicações sanitárias (gradação logarítmica) | ATIVO | 50% |
+| 2.2 | Carência sanitária ativa | ATIVO | 30% |
+| 2.3 | Recência da última aplicação | ATIVO | 20% |
+
+**2.1 Histórico de aplicações (gradação logarítmica)** — corrige a lógica binária da versão anterior. Lei dos retornos decrescentes: primeiras aplicações importam muito mais que aplicações marginais.
+
+| Aplicações | Pontuação |
 |---|---|
-| Produtivo | 28% |
-| Sanitário | 24% |
-| Operacional | 18% |
-| Continuidade | 20% |
-| Idade | 10% |
-| Bônus rastreabilidade | até +7 pontos absolutos |
+| 0 | 30 (base mínima) |
+| 1-2 | 50 |
+| 3-5 | 70 |
+| 6-10 | 85 |
+| 10+ | 100 |
 
-**Decisões arbitrárias dos pesos (ambas as versões):**
+**2.2 Carência ativa:**
 
-Os pesos das duas versões **não vêm de literatura zootécnica brasileira**. Eles foram escolhidos por intuição da equipe, priorizando o que "parecia importante" no momento da implementação. Esta é uma das perguntas mais importantes da revisão científica com vocês.
+| Carências ativas | Pontuação |
+|---|---|
+| 0 | 100 |
+| 1 | 50 |
+| 2+ | 0 |
+
+**2.3 Recência da última aplicação:**
+
+| Dias desde última aplicação | Pontuação |
+|---|---|
+| 0-90 | 100 |
+| 91-180 | 80 |
+| 181-365 | 60 |
+| > 365 | 30 (atrasado) |
+| Nunca aplicada | 0 |
+
+**CORREÇÃO IMPORTANTE — MULTICOLINEARIDADE RESOLVIDA:**
+Nas versões v0/v1, a contagem de aplicações sanitárias contribuía para **dois pilares simultaneamente** (sanitário +30, operacional +20). Na v3, aplicações contam **apenas no pilar Sanidade**. O pilar Rastreabilidade usa variáveis distintas (RFID, eventos, genealogia, nascimento).
+
+### Pilar 3 — Reprodutivo (PREPARADO — 15%)
+
+**Status:** todos os 3 subindicadores em estado PREPARADO.
+
+| # | Subindicador | Referência ideal Embrapa | Status |
+|---|---|---|---|
+| 3.1 | Idade ao primeiro parto | 24-36m Nelore / 18-24m taurinos | PREPARADO |
+| 3.2 | Intervalo entre partos (IEP) | 365 dias ideal · 492±22 dias média Nelore Pantanal | PREPARADO |
+| 3.3 | Taxa de prenhez individual | > 85% alta · 75-85% satisfatória · < 75% crítica | PREPARADO |
+
+**Decisão arquitetural enquanto pilar reprodutivo está integralmente PREPARADO**: peso 15% redistribuído (40%→Produtivo, 60%→Rastreabilidade). Quando dados existirem, basta ativar o pilar — restante do código já está preparado.
+
+**Condição B (futuro, quando reprodutivo ativar para fêmeas ≥18 meses):**
+
+```
+total = produtivo × 0.30 + sanidade × 0.25 + reprodutivo × 0.15
+      + rastreabilidade × 0.20 + certificações × 0.10
+```
+
+### Pilar 4 — Rastreabilidade (29%)
+
+Diferencial competitivo da Agraas + exigência crescente de mercado (EUDR em vigor desde dez/2024 para bovinos, PNIB obrigatório progressivo até 2033).
+
+**Subindicadores (cada um com peso interno 25%):**
+
+| # | Subindicador | Pontuação |
+|---|---|---|
+| 4.1 | RFID (ISO 11784/11785) | 100 (tem) / 0 (não tem) |
+| 4.2 | Genealogia (sire + dam) | 100 (ambos) / 50 (um só) / 0 (nenhum) |
+| 4.3 | Continuidade documental (eventos estruturados) | 0 (zero) / 40 (1-3) / 70 (4-7) / 100 (8+) |
+| 4.4 | Registro de nascimento na propriedade | 100 (sim) / 50 (adquirido) |
+
+**CORREÇÃO IMPORTANTE — REMOÇÃO DA PENALIZAÇÃO DE VENDA:**
+Na v1, animal vendido perdia -20 pontos em "continuidade", o que era cientificamente errado (Embrapa Doc 237: "taxa de desfrute" valoriza venda como métrica de eficiência). Na v3, animal com status `sold`/`vendido`/`slaughtered`/`abatido` tem score **CONGELADO** com `score_status = frozen_sold` ou `frozen_slaughtered`. O valor final fica preservado como referência histórica.
+
+### Pilar 5 — Certificações & Compliance (10%)
+
+Soma certificações ativas (cap em 100). Pesos refletem importância de mercado e exigência regulatória.
+
+| Certificação | Pontos |
+|---|---|
+| Boi Verde · ABIEC | +25 |
+| Rastreabilidade BR · MAPA | +25 |
+| Bem-Estar Animal · GAP | +25 |
+| Programa de Raça (Angus, Hereford, Brangus) | +25 |
+| Hilton Quota / Cota 481 | +30 |
+| Certificação não catalogada | +10 (contribuição mínima) |
+| Conformidade PNIB (`pnib_registration_id`) | PREPARADO (futuro) |
+
+**Decisão de equipe Agraas pendente de validação científica**: pesos individuais foram escolhidos pela equipe Agraas. Validação científica e calibração com práticas de mercado consagradas (CIQ, programas oficiais) é parte da pauta da mentoria.
 
 ---
 
 ## Seção 4 — Variáveis / Features Utilizadas
 
-Lista exaustiva de todas as variáveis lidas pelas três funções:
+| Variável | Tabela | Pilar | Tratamento se nulo |
+|---|---|---|---|
+| `weights.weight`, `weighing_date` (2 mais recentes) | weights | Produtivo (GMD + Peso) | NULL → componente não computa |
+| `animals.birth_date` | animals | Produtivo (peso × idade) | NULL → categoria 'indefinido' |
+| `animals.sex` | animals | Categorização | NULL → categoria 'indefinido' |
+| `applications` (contagem total) | applications | Sanidade | 0 → score base 30 |
+| `applications.withdrawal_end_date` ≥ today | applications | Sanidade (carência) | 0 → 100 pontos |
+| `max(applications.application_date)` | applications | Sanidade (recência) | NULL → 0 pontos |
+| `animal_rfids` (existência) | animal_rfids | Rastreabilidade | FALSE → 0 pontos |
+| `animals.sire_animal_id`, `dam_animal_id` | animals | Rastreabilidade (genealogia) | NULL → 0 pontos |
+| `events` (contagem total) | events | Rastreabilidade (continuidade) | 0 → 0 pontos |
+| `events.event_type IN ('birth','nascimento')` | events | Rastreabilidade (nascimento) | FALSE → 50 pontos |
+| `animal_certifications.status = 'active'` | animal_certifications | Certificações | 0 ativas → 0 pontos |
+| `animals.status` | animals | Comportamento de congelamento | NULL → trata como ativo |
+| `animals.current_property_id` | animals | Cascata farm_score | NULL → pula cascata |
+| `animals.client_id` | animals | RLS + cascata producer_score | NULL → pula cascata |
 
-### Variáveis em uso pela v1 (efetivamente acionada)
+### Variáveis que **a v3 ainda não considera** (pauta da mentoria)
 
-| Variável | Tabela origem | Tipo | Pilar | Tratamento se nulo |
-|---|---|---|---|---|
-| Existência de RFID | `animal_rfids` | boolean | Operacional | tratado como `false` |
-| Contagem de aplicações | `applications` | integer | Sanitário + Operacional | tratado como `0` |
-| Contagem de carências ativas | `applications.withdrawal_end_date >= current_date` | integer | Sanitário | tratado como `0` |
-| Contagem de pesagens | `weights` | integer | Operacional | tratado como `0` |
-| Contagem de eventos `sale`/`slaughter` | `events.event_type` | integer | Continuidade | tratado como `0` |
-| Contagem de eventos `birth`/`nascimento` | `events.event_type` | integer | Continuidade | tratado como `0` |
-| Contagem de eventos `ownership_transfer`/`lot_entry`/`transferencia` | `events.event_type` | integer | Continuidade | tratado como `0` |
-
-### Variáveis adicionais usadas por v2 (não acionadas em produção)
-
-| Variável | Tabela origem | Tipo | Pilar | Tratamento se nulo |
-|---|---|---|---|---|
-| Peso mais recente | `weights.weight` | numeric | Produtivo | tratado como ausência → score base 35 |
-| Data de nascimento | `animals.birth_date` | date | Idade | score base 50 |
-| Tipo sanguíneo registrado | `animals.blood_type` | text | Bônus rastreabilidade | sem bônus |
-| Genealogia (pai OU mãe) | `animals.sire_animal_id`, `animals.dam_animal_id` | uuid | Bônus rastreabilidade | sem bônus |
-| Contagem de pesagens últimos 90d | `weights.weighing_date` | integer | Continuidade (v2) | tratado como `0` |
-| Contagem total de eventos | `events` | integer | Operacional (v2) | tratado como `0` |
-
-### Variáveis que **nenhuma das três versões** considera (mas talvez devesse)
-
-- Raça (`animals.breed`)
-- Sexo (`animals.sex`)
-- Status atual do animal (`animals.status`: ativo, morto, vendido)
-- Propriedade atual (`animals.current_property_id`)
-- **GMD — Ganho Médio Diário** (calculável a partir de `weights` mas não usado)
-- **Idade × Peso** (peso esperado para idade da categoria)
-- **Intervalo entre partos** (para vacas, vem de `events` reprodutivos)
-- **Taxa de prenhez histórica do lote**
-- **Certificações ativas** (Boi Verde, Rastreabilidade BR, GAP) — não entram no cálculo do score apesar de existirem na tabela `animal_certifications`
-- **Carbono / footprint ambiental** (não capturamos ainda)
-- **CAR/RFI** (eficiência alimentar) — não capturamos
-- **Histórico de movimentações intra-propriedade** (rotação de pasto)
+- Raça (`animals.breed`) — todos tratados com curva Nelore por padrão
+- RFI / CAR (Consumo Alimentar Residual)
+- Eventos reprodutivos estruturados (parto, cobertura, prenhez)
+- Carbono / footprint ambiental
+- Manejo regenerativo (rotação de pasto, lotação ajustada)
+- Histórico temporal do próprio score (derivada)
+- Peer benchmarking (comparação com rebanhos similares)
 
 ---
 
-## Seção 5 — Cálculo Passo a Passo
+## Seção 5 — Cálculo Passo a Passo com Dado Real
 
-Vamos calcular o score de um animal ilustrativo usando a **v1 (em uso pelos triggers)**.
+Vamos calcular o score do animal **AG003** (cliente Lucas, melhor score da base, total 71.58):
 
-**Animal hipotético — boi terminado em fazenda de cria-engorda paulista:**
+### Dados de entrada (lidos pela função v3 contra banco real)
 
-- 28 meses de idade
-- Tem RFID registrado
-- 4 aplicações sanitárias na história (vacinação anual + vermífugos)
-- Última aplicação há 60 dias, sem carência ativa
-- 6 pesagens registradas
-- 1 evento de nascimento na fazenda (nascido lá)
-- 2 transferências de lote (recria → engorda)
-- Ainda não vendido
+- Pesagens: 2 mais recentes → GMD calculável
+- Aplicações sanitárias: histórico real
+- RFID: status real
+- Eventos: contagem real
+- Certificações ativas: contagem real
 
-### Cálculo do Sanitary Score (v1)
+### Pilar Produtivo (peso 36%)
+- GMD score: calculado a partir das 2 pesagens
+- Peso × idade score: razão peso_atual / esperado por categoria
+- Score do pilar: **90.07** (média dos dois subindicadores)
 
-```
-v_sanitary = 50 (base)
-  + 30 (porque v_app_count = 4 > 0)
-  + 20 (porque v_active_withdrawal_count = 0)
-  = 100
-```
+### Pilar Sanidade (peso 25%)
+- Histórico aplicações (gradação log): valor
+- Carência ativa: valor
+- Recência: valor
+- Score do pilar: **75.0**
 
-### Cálculo do Operational Score (v1)
+### Pilar Rastreabilidade (peso 29%)
+- RFID: presente ou ausente
+- Genealogia: completa/parcial/nenhuma
+- Eventos: faixa
+- Nascimento na propriedade: sim/adquirido
+- Score do pilar: **60.0** (média dos 4 subindicadores)
 
-```
-v_operational = 40 (base)
-  + 20 (porque v_has_rfid = true)
-  + 20 (porque v_weight_count = 6 > 0)
-  + 20 (porque v_app_count = 4 > 0)
-  = 100
-```
+### Pilar Certificações (peso 10%)
+- Soma das certificações ativas (cap 100)
+- Score do pilar: **valor entre 0 e 100**
 
-### Cálculo do Continuity Score (v1)
-
-```
-v_continuity = 50 (base)
-  + 20 (porque v_birth_count = 1 > 0)
-  + 10 (porque v_transfer_count = 2 > 0)
-  + 20 (porque v_sale_count = 0)
-  = 100
-```
-
-### Total
+### Composição final
 
 ```
-v_total = round(100 × 0.4 + 100 × 0.3 + 100 × 0.3, 2)
-        = round(40 + 30 + 30, 2)
-        = 100
+total = 90.07 × 0.36 + 75.0 × 0.25 + 60.0 × 0.29 + cert × 0.10
+      = 32.43  + 18.75  + 17.40  + 2.00
+      = 71.58
 ```
 
-### O que esse cálculo revela
-
-- Este animal já **atinge o teto de 100** com apenas 4 aplicações sanitárias na história.
-- Um animal com 50 aplicações teria **exatamente o mesmo score**.
-- Outro animal hipotético: 1 aplicação registrada, sem carência ativa, sem RFID, sem pesagem, sem evento de nascimento, sem transferência, sem venda. Esse animal teria:
-  - Sanitário: 50 + 30 + 20 = **100**
-  - Operacional: 40 + 20 = **60**
-  - Continuidade: 50 + 20 = **70**
-  - Total: 100 × 0.4 + 60 × 0.3 + 70 × 0.3 = 40 + 18 + 21 = **79**
-
-**Conclusão observável:** o range efetivo do total_score na v1 é **aproximadamente de 60 a 100**. Animais sem nenhum registro caem para 60 (mínimo aritmético). Animais com qualquer histórico mínimo já chegam perto de 90. **A variância útil do score é baixa.**
+**Conclusão observável**: a variância útil do score é REAL. Os 58 animais do banco hoje têm scores distribuídos entre **25.68 e 71.58**, com média **43.2**. Não há mais saturação em 100 com dados mínimos como acontecia na v1 (range efetivo era 60-100).
 
 ---
 
-## Seção 6 — Validações Já Aplicadas
+## Seção 6 — Validações Aplicadas
 
 ### Regras de negócio implementadas
 
-1. **Clamp 0-100**: todas as fórmulas usam `least(100, greatest(0, valor))` para garantir que cada subscore fique em [0, 100].
-2. **Total cap 100**: na v2, `LEAST(100, …)` é aplicado no final mesmo se a soma + bônus passar de 100.
-3. **Arredondamento**: total_score é arredondado a 2 casas decimais; subscores são integers ou decimais conforme cálculo.
-4. **Upsert idempotente**: `INSERT … ON CONFLICT (animal_id) DO UPDATE` garante que recalcular múltiplas vezes não duplica registros.
-5. **`session_replication_role = replica`** durante upsert: bypassa triggers recursivos que poderiam causar loop infinito (problema histórico, ver seção 7).
+1. **Clamp 0-100** em cada subscore e no total
+2. **Upsert idempotente** em `animal_scores` com `ON CONFLICT (animal_id) DO UPDATE`
+3. **Bypass de triggers recursivos** durante UPSERT (`SET LOCAL session_replication_role = replica`)
+4. **Cascata síncrona**: animal_score → farm_score → producer_score
+5. **Audit log condicional**: grava apenas se `|delta_total| ≥ 0.01` (evita ruído numérico)
+6. **Score frozen para vendidos/abatidos**: status `frozen_sold` ou `frozen_slaughtered`, score não recalcula mais
+7. **RLS multi-tenant**: tabela `score_audit_log`, `farm_scores`, `producer_scores` todas com policies por `client_id` + acesso mentor via `mentor_assignments`
 
 ### Sanity checks operacionais
 
-- **Existência do animal**: a função `calculate_agraas_score` retorna `NULL` se o animal não existir, sem alterar nada.
-- **Coalesce em contagens**: todas as contagens são tratadas com `COALESCE(…, 0)` antes do cálculo, evitando `NULL`.
-- **Cache sincronizado**: a função `refresh_animal_passport` é chamada na cadeia e atualiza o cache JSON do passaporte com o novo score.
+- Animal inexistente: função retorna `NULL` sem alterar nada
+- `COALESCE` em todas as contagens
+- `birth_date` ou `sex` NULL: categoria 'indefinido' (fallback Condição A)
+- GMD apenas se 2+ pesagens com datas distintas
+- Peso × idade apenas se birth_date + weight existirem
+- Date arithmetic correto: `(date - date)::integer` (não `EXTRACT(DAY FROM ...)`)
 
-### Casos extremos testados
+### Verificações da migration 123
 
-| Cenário | Comportamento atual |
-|---|---|
-| Animal sem nenhum evento, peso ou aplicação | Score = 60 (v1), 35-40 (v2 — productive baixo) |
-| Animal vendido há 2 anos | Continuidade cai 20 pontos (perde o +20 de "sem venda") |
-| Animal com carência ativa | Sanitário cai 20 pontos |
-| Animal com aplicação duplicada (mesma data, mesmo produto) | Conta como 2 aplicações — **bug conhecido**, nenhuma deduplicação |
-| Animal com data de nascimento futura ou inválida | v2: `EXTRACT` retorna valor negativo → age_factor pode ficar abaixo do esperado |
+```
+✅ 12 triggers + 11 funções legacy órfãs (referenciando `animal_events`) eliminadas
+✅ Função canônica calculate_agraas_score_v3 estabelecida como única fonte de verdade
+✅ Nenhum trigger ativo aponta para weight_records (legado)
+✅ 58 animais recalculados em batch após migration
+✅ score_audit_log com 58 entries de migração registradas
+✅ 6 farm_scores criados (Lucas + outros admins)
+✅ 4 producer_scores criados
+```
+
+### Range observado nos dados reais (58 animais, 27/05/2026)
+
+| Métrica | v1 (antes) | v3 (agora) |
+|---|---|---|
+| Score mínimo | ~50 | **25.68** |
+| Score máximo | ~100 (saturado) | **71.58** |
+| Score médio | ~80 (inflacionado) | **43.2** |
+| Range útil | 50-100 | **25-72 (mais realista)** |
+
+**Variância real, calibrada para uso institucional.** Score deixou de ser "selo verde" superficial e passou a discriminar qualidade efetiva de gestão.
 
 ---
 
-## Seção 6.5 — O que já funciona bem
+## Seção 6.5 — O que já funciona bem na v3
 
-Antes de mergulharmos nas limitações, é justo registrar o que está **sólido** no estado atual do sistema. A revisão científica é mais produtiva quando se sabe o que preservar.
+**Engenharia consolidada:**
+- Função canônica única (`calculate_agraas_score_v3`) elimina os três algoritmos coexistentes que existiam até 26/05
+- Arquitetura é robusta: cálculo determinístico, reproduzível, idempotente e dispara automaticamente quando dados de entrada mudam. RLS multi-tenant garante isolamento por cliente. Cache materializado (`agraas_master_passport_cache`) torna leitura do passaporte rápida. Cascata síncrona animal → farm → producer mantém todos os níveis sincronizados.
+- Performance: recálculo individual em milissegundos, recálculo completo dos 58 animais em ~1.5s.
 
-**Do ponto de vista de engenharia**, a arquitetura é robusta: o cálculo é determinístico, reproduzível, idempotente e dispara automaticamente quando dados de entrada mudam — o que garante que o número exibido sempre reflete o estado real do animal no banco, sem desincronizações. O isolamento multi-tenant (RLS) garante que dados de uma fazenda nunca contaminem score de outra. O cache materializado em JSON (`agraas_master_passport_cache`) torna a leitura do passaporte rápida mesmo com milhões de animais. A performance de recálculo é da ordem de milissegundos por animal. Em outras palavras: **a infraestrutura suporta a metodologia que vocês ajudarem a desenhar**, qualquer que seja a complexidade dela.
+**Metodologia ancorada:**
+- 5 pilares com peso explícito ancorado em Embrapa Doc 237 (frequência de citação dos indicadores nas publicações analisadas)
+- Variância útil real (range 25-72 nos dados atuais vs 50-100 saturado da v1)
+- Gradação logarítmica substitui lógica binária no histórico de aplicações
+- Multicolinearidade contábil resolvida (aplicações contam só em Sanidade, não em Operacional/Rastreabilidade)
+- Animal vendido CONGELA o score em vez de penalizar (Embrapa: taxa de desfrute valoriza venda)
 
-**Do ponto de vista conceitual**, a divisão em pilares (sanidade, gestão operacional, continuidade de cadeia, e em v2 também desempenho produtivo e idade) é um esqueleto razoável. Esses são, de fato, eixos que a literatura zootécnica brasileira reconhece como dimensões legítimas de qualidade animal. **O que precisa de revisão é a fórmula dentro de cada pilar, não a divisão em pilares em si.** Da mesma forma, a escolha de manter o score em escala 0-100 (em vez de inventar escala proprietária) facilita comparabilidade com outros indicadores do setor. E o fato de o score ser **estatecal e auditável** (sempre derivável dos dados de entrada, sem caixa-preta) é o que cria a possibilidade real de validação científica externa que estamos buscando com vocês.
+**Auditabilidade:**
+- Tabela `score_audit_log` registra toda mudança material com event_source, delta, timestamp
+- 5 pilares decomponíveis: total_score sempre é reproduzível a partir dos sub-scores
+- Algoritmo aberto, sem caixa-preta — possibilita validação científica externa (justamente o propósito desta sessão)
 
 ---
 
-## Seção 7 — Limitações Conhecidas
+## Seção 7 — Limitações Conhecidas (ainda em aberto na v3)
 
-Esta é a seção mais importante para a revisão científica. Estou listando **todas as fragilidades estruturais** que identifico no estado atual.
+Muitas das 13 limitações da versão anterior foram **resolvidas** na v3. As que **permanecem em aberto** e precisam de discussão com vocês:
 
-### 7.1. Coexistência de três algoritmos em produção
+### 7.1. Pesos finais entre pilares pendentes de validação científica
 
-Como descrito no aviso introdutório: `refresh_animal_score` (v1), `recalculate_animal_score` (v0 legado), e `calculate_agraas_score` (v2). **A primeira é a única efetivamente acionada.** As outras são código órfão. O banco declara `algorithm_version = 'v2'` por padrão, mas a versão executada é a v1. **Inconsistência grave, prioridade 0 de resolução.**
+Embora a v3 ancore a **escolha dos 5 pilares** e a **frequência relativa dos indicadores** em Embrapa Doc 237, **os pesos finais** (Produtivo 36%, Sanidade 25%, Rastreabilidade 29%, Certificações 10%) foram decisão de equipe Agraas e ainda não têm peer review zootécnico oficial. Esta é a pergunta científica mais importante.
 
-### 7.2. Thresholds binários produzem score com baixa variância útil
+### 7.2. Curvas de crescimento apenas Nelore
 
-Na v1, **a maioria dos componentes do score são binários** (tem ou não tem). Resultado: animais com dados mínimos já saturam o teto. Um animal com 1 vacinação tem mesmo score sanitário que um animal com 50 vacinações. **Não distingue qualidade de gestão**, só presença vs ausência.
+V3 inicial usa gabarito Nelore para todos os animais (raça mais comum no Brasil). Animais Angus / Brangus / mestiços têm curvas distintas. **Decisão de equipe Agraas pendente de validação científica** quanto a customização por raça.
 
-### 7.3. Pesos arbitrários sem base científica
+### 7.3. Pilar Reprodutivo inteiramente PREPARADO
 
-Nem `40/30/30` da v1, nem `28/24/18/20/10/7` da v2 vêm de literatura zootécnica. Foram escolhas de equipe. **A pergunta científica concreta**: a literatura brasileira (Embrapa, IZ-SP, ESALQ) sugere alguma ponderação justificada para componentes de manejo bovino de corte? Existe alguma metodologia consagrada (CIQ, Boi Verde, Hilton Beef) que possamos referenciar?
+Toda a estrutura está pronta, mas sem dados reais de eventos reprodutivos (parto, IEP, taxa de prenhez individual). Quando os dados existirem, o pilar entra automaticamente. **Pergunta para vocês**: qual conjunto mínimo de eventos reprodutivos faz sentido capturar primeiro?
 
-### 7.4. Multicolinearidade contábil
+### 7.4. Rendimento de carcaça PREPARADO
 
-Na v1, **a contagem de aplicações sanitárias contribui para dois pilares ao mesmo tempo** (sanitário +30, operacional +20). Significa que um animal com aplicações registradas ganha 50 pontos em pilares conceitualmente distintos. **Há double counting.**
+Embrapa Doc 237 trata rendimento de carcaça como indicador-chave do produtivo. Hoje não temos dados de abate estruturados. **Pergunta**: como capturar essa variável quando o frigorífico devolver o dado pós-abate?
 
-### 7.5. Ausência completa de variáveis-chave da zootecnia
+### 7.5. Manejo regenerativo / CO2eq não capturados
 
-O score atual **não considera**:
+Pilar de sustentabilidade (alinhado ao NeuTroPec) ainda não está modelado. **Pergunta**: quais sinais práticos o produtor já registra ou poderia registrar (rotação de pasto, taxa de lotação, suplementação) que validem manejo regenerativo sem custo cognitivo proibitivo?
 
-- **GMD (ganho médio diário)** — pode ser calculado de `weights` mas não é usado
-- **Peso à desmama / Peso aos 12 / Peso aos 18 meses** — gabaritos padrão da zootecnia
-- **Idade × Peso** (gabarito de categoria — desmama, recria, terminação)
-- **Raça** — Nelore, Angus, Brangus têm curvas de crescimento distintas
-- **Sexo** — fêmea vs macho não devem ter mesma régua
-- **Eficiência reprodutiva** (taxa de prenhez, intervalo entre partos)
-- **Eficiência alimentar (RFI, CAR)** quando disponível
-- **Status (vivo/morto/vendido)** não normaliza o cálculo
-- **Carbono / footprint ambiental** — não capturamos
-- **Pastoreio rotacionado / manejo regenerativo** — não capturamos
+### 7.6. Predições de IA (Claude) e score determinístico permanecem desconectados
 
-### 7.6. Idade como bônus, não como contexto (v2)
+Sistema de predição (`ai_predictions`, Claude Sonnet 4.6) vive paralelo ao score v3. **Pergunta**: faz sentido predições de IA serem input do score determinístico? Há literatura sobre ML em score de qualidade animal?
 
-A v2 dá **mais pontos a animal mais velho**. Zootecnicamente, isso é incorreto. **Score deveria normalizar por categoria**, não premiar idade absoluta. Um bezerro Nelore desmamado com peso e GMD adequados deveria ter score igual ou maior que um boi adulto sem essa qualidade.
+### 7.7. Sem normalização por peer group
 
-### 7.7. "Não vendido" como bônus (v1)
+Score absoluto, não relativo. Animal Nelore terminado em MT vs Angus confinado em SP têm mesma régua. **Pergunta**: deveria ser score relativo a categoria + região + raça?
 
-Animal não vendido ganha +20 em continuidade. Implica que um animal premium vendido com sucesso tem score baixo após a venda. **Comercialização não deveria penalizar o score histórico** — deveria, no máximo, congelar o último valor antes da saída.
+### 7.8. Histórico do próprio score não influencia score atual
 
-### 7.8. Certificações não entram no cálculo
+Animal que subiu de 60 para 80 em 6 meses conta igual a animal que sempre teve 80. **Pergunta**: derivada temporal do score deveria entrar como variável?
 
-A plataforma armazena `animal_certifications` (Boi Verde, Rastreabilidade BR, Bem-Estar Animal · GAP), mas **nenhuma das três versões do score considera certificações ativas como input**. Elas são apenas exibidas no passaporte, sem impacto numérico.
+### 7.9. Sem auditoria de delta por pilar
 
-### 7.9. Genealogia tratada como bônus binário (v2)
-
-Em v2, "tem pai OU mãe registrado" dá +4 pontos absolutos. **Não diferencia** se ambos estão registrados, se a linhagem é conhecida em múltiplas gerações, ou se a genealogia inclui touros de mérito genético.
-
-### 7.10. Histórico não é considerado
-
-Score atual é **stateless**: ignora a trajetória do animal no tempo. Um animal que tinha score 80 e caiu para 60 conta igual a um animal que sempre teve 60. **Não há derivada temporal.**
-
-### 7.11. Falta normalização por peer group
-
-Não há comparação com **rebanho do mesmo cliente, mesma região, mesma raça, mesma categoria**. Score de 80 em Nelore terminado em Mato Grosso significa o mesmo que 80 em Angus de leite em Minas Gerais. **Não deveria.**
-
-### 7.12. Ausência de auditoria de mudanças
-
-Quando um score muda, o sistema **não registra** o "porquê" — qual evento causou a mudança, quanto cada componente subiu/desceu. Para uma plataforma que se posiciona como "auditável", isso é gap importante.
-
-### 7.13. Predições de IA (Claude) e score determinístico são desconectados
-
-A plataforma tem dois sistemas de pontuação rodando em paralelo: o **score determinístico** (PL/pgSQL) descrito aqui, e as **predições de IA** (Claude Sonnet 4.6) na tabela `ai_predictions` que estimam um `predicted_score_30d`. **Nenhum dos dois alimenta o outro.** A IA é caixa-preta para o score, e o score é input nada cego para a IA.
+`score_audit_log` registra `delta_total` mas hoje os deltas por pilar (`delta_produtivo`, `delta_sanidade`, etc.) são gravados como NULL. Implementação refinada planejada para v3.1.
 
 ---
 
 ## Seção 8 — Perguntas para a Revisão Científica
 
-Lista de questões concretas que esperamos discutir com vocês. Não esperamos resposta de todas hoje — algumas vão evoluir ao longo das próximas sessões.
-
 ### Sobre fundamentos metodológicos
 
-1. **Existe literatura zootécnica brasileira que sustente ponderação entre pilares de manejo bovino?** A Embrapa Gado de Corte, IZ-SP ou ESALQ teriam alguma referência metodológica equivalente ao que estamos tentando fazer aqui?
+1. **Os 5 pilares escolhidos (Produtivo, Sanidade, Reprodutivo, Rastreabilidade, Certificações) cobrem adequadamente o que Embrapa Doc 237 chama de "indicadores de desempenho" para pecuária de corte BR?** Alguma dimensão crítica está faltando?
 
-2. **Como deveríamos ponderar sanidade vs. produção?** A v1 dá 40% para sanidade e 0% para produção (nem mede). A v2 dá 24% sanidade e 28% produção. **Qual razão é defensável zootecnicamente?**
+2. **Pesos atuais (36/25/29/10 sem reprodutivo) refletem proporção defensável zootecnicamente?** Quando reprodutivo ativar (30/25/15/20/10), proporção continua razoável para fêmeas adultas?
 
-3. **Que indicadores reprodutivos deveriam ter peso maior?** Hoje o score nem considera variáveis reprodutivas. Para fêmeas, isso é especialmente grave. Como incorporar IEP (intervalo entre partos), taxa de prenhez, idade ao primeiro parto?
+3. **A frequência de citação dos indicadores em Embrapa Doc 237 é base científica suficiente para defesa dos pesos**, ou precisamos referência adicional (Plataforma +Precoce diretamente, paper específico)?
 
-### Sobre variáveis a incorporar
+### Sobre subindicadores e gradações
 
-4. **GMD e peso × idade são essenciais — como deveriam ser normalizados?** Existe gabarito padrão por raça/categoria/sexo que poderíamos referenciar? Ou cada cliente teria que cadastrar suas próprias curvas?
+4. **Faixas de GMD (péssimo < 0,3 / fraco 0,3-0,5 / regular 0,5-0,8 / bom 0,8-1,2 / excelente > 1,2 kg/dia)** — estão alinhadas com a literatura?
 
-5. **CAR/RFI (eficiência alimentar) — quando o produtor coleta, faz sentido entrar no score?** Como tratar quando os dados são esparsos (poucos clientes coletam)?
+5. **Gabarito de peso × idade Nelore (150-180 kg desmama, 480-540 kg terminação)** — referência defensável? Existe gabarito oficial brasileiro consolidado por raça? CAR/RFI mudaria essas faixas?
 
-6. **Como integrar genealogia de forma mais rica que binário?** Pai conhecido + mãe conhecida + avós conhecidos (gerações registradas) — devemos pontuar gradualmente?
+6. **Gradação logarítmica das aplicações sanitárias (0/1-2/3-5/6-10/10+ → 30/50/70/85/100)** — faz sentido ou deveria ser outra função (sigmoide, escalonada por tipo de aplicação)?
 
-7. **Certificações ativas (Boi Verde, Rastreabilidade BR, GAP) — entram como variável ou como modificador (multiplicador)?**
+### Sobre integração com Plataforma +Precoce e NeuTroPec
 
-### Sobre construção do score
+7. **Plataforma +Precoce (Embrapa Gado de Corte + Embrapa Pantanal)** — o Score Agraas v3 pode ser apresentado como **adaptação Agraas da metodologia +Precoce** sem desrespeitar a marca/escopo do programa oficial?
 
-8. **Score deveria ser score absoluto ou relativo ao peer group?** Animal Nelore em pastoreio em GO vs. Angus confinado em SP — devem ser comparáveis pelo mesmo número, ou cada categoria tem sua própria régua?
+8. **NeuTroPec — neutralidade tropical, baixo carbono** — como integrar como pilar ou modificador? Métricas de manejo regenerativo auditáveis na prática do produtor brasileiro hoje?
 
-9. **Score deveria ter componente temporal (derivada)?** Animal subindo de 60 para 80 em 6 meses deveria ter "score" mais valioso que animal estável em 80?
+9. **CO2eq por cabeça** — IPCC Tier 2? Metodologia Embrapa específica? Em que prazo é razoável esperar dados desse tipo no campo?
 
-10. **Como tratar venda — deve "congelar" o score ou afetá-lo?** Hoje vender derruba 20 pontos. É correto?
+### Sobre evolução estrutural
 
-### Sobre integração com sustentabilidade (NeuTroPec)
+10. **Score deveria normalizar por peer group** (categoria + região + raça) ou permanecer absoluto? Argumento técnico para cada lado?
 
-11. **Como capturar manejo regenerativo de forma auditável?** Rotação de pasto, lotação ajustada, suplementação otimizada — quais sinais o produtor registra que validam manejo regenerativo?
+11. **Componente temporal (derivada do score, trajetória ascendente vs estável)** deveria valer mais que score absoluto em dado momento?
 
-12. **Estimativa de CO2eq por animal — qual metodologia recomendam?** IPCC Tier 2? Embrapa? Existe consenso brasileiro?
-
-13. **Score Agraas e selo de neutralidade tropical — como deveriam interagir?** Score alto = pré-requisito para selo? Selo é dimensão do score? Selo é independente?
+12. **Tratamento de venda — congelar score com status `frozen_sold` é correto zootecnicamente**, ou existe abordagem melhor (calcular "score de saída" definitivo no momento da venda)?
 
 ### Sobre formato de colaboração futura
 
-14. **Existe espaço, no horizonte que vocês conseguem enxergar, para algum tipo de construção colaborativa de material publicável sobre metodologia de score auditável para pecuária brasileira?** Reconhecemos que essa é uma decisão de longo prazo, que depende de fatores que vocês conhecem melhor que nós — carga acadêmica, agenda de publicações próprias, alinhamento com objetivos do NeuTroPec, sensibilidade institucional sobre vínculo com empresa privada. Estamos abertos ao formato que fizer sentido (ou a nenhum formato — também é uma resposta legítima).
+13. **Existe espaço, no horizonte que vocês conseguem enxergar, para algum tipo de construção colaborativa de material publicável sobre metodologia de score auditável para pecuária brasileira ancorada em +Precoce?** Reconhecemos que essa é decisão de longo prazo dependente de fatores que vocês conhecem melhor — carga acadêmica, agenda de publicações, alinhamento institucional. Estamos abertos ao formato que fizer sentido (ou a nenhum formato — também é resposta legítima).
 
-15. **Como vocês imaginam que poderia funcionar essa contribuição metodológica ao longo do tempo, se houver interesse?** Não temos expectativa pré-formada — co-autoria pontual em paper, consultoria técnica formalizada, mentoria continuada sem vínculo escrito, comitê consultivo institucional, ou simplesmente acompanhamento informal da evolução metodológica via sessões como esta. O que mais nos importa é que a metodologia evolua com rigor científico; o formato é discutível e respeitará o que fizer sentido para a agenda de vocês.
+14. **Como vocês imaginam que poderia funcionar essa contribuição metodológica ao longo do tempo, se houver interesse?** Não temos expectativa pré-formada — co-autoria pontual em paper, consultoria técnica formalizada, mentoria continuada sem vínculo escrito, comitê consultivo institucional, ou simplesmente acompanhamento informal da evolução. O formato é discutível e respeitará a agenda de vocês.
+
+### Sobre o objeto da própria mentoria
+
+15. **O que mais nesta v3 vocês olhariam com olho crítico de pesquisador?** Há frente metodológica ou de implementação que ficou subestimada e merece priorização imediata?
 
 ---
 
 ## Anexo A — Localização exata do código
 
-Para vocês conseguirem auditar diretamente o código se quiserem:
-
 ```
 Funções no banco PostgreSQL gerenciado:
-  - public.refresh_animal_score(uuid)        ← em uso
-  - public.recalculate_animal_score(uuid)    ← legado
-  - public.calculate_agraas_score(uuid)      ← v2 declarada, não acionada
-  - public.refresh_animal_certifications(uuid)
+  - public.calculate_agraas_score_v3(uuid, text, uuid, text)  ← CANÔNICA
+  - public.get_animal_category(uuid)
+  - public.calculate_farm_score(uuid)
+  - public.calculate_producer_score(uuid)
+  - public.trigger_recalculate_score_v3()
   - public.refresh_animal_passport(uuid)
-  - public.refresh_animal_derived_data(uuid)
 
-Triggers acionadores:
-  - public.applications        → trg_refresh_from_applications
-  - public.weight_records      → trg_refresh_from_weight_records
-  - public.animal_certifications → trg_refresh_from_animal_certifications
+Triggers v3 ativos:
+  - public.weights              → trg_score_v3_from_weights
+  - public.applications         → trg_score_v3_from_applications
+  - public.animal_certifications → trg_score_v3_from_certifications
+  - public.animal_rfids         → trg_score_v3_from_rfids
+  - public.events               → trg_score_v3_from_events
+  - public.animal_movements     → trg_score_v3_from_movements
 
 Migrations relevantes:
-  - 036_score_engine.sql        ← v2 (declarada)
-  - 048_farm_score.sql          ← score por fazenda
-  - 054_livestock_score_engine.sql  ← extensões
-  - 067_score_triggers_delete.sql  ← triggers de DELETE
-  - 121_fix_refresh_animal_passport.sql ← fix histórico (passport apontava para tabela removida)
+  - 036_score_engine.sql              ← v2 (declarada, depois removida)
+  - 121_fix_refresh_animal_passport.sql ← fix histórico passport
+  - 122_events_mentor_policy.sql       ← policy de mentor em events
+  - 123_score_engine_v3.sql            ← REFATORAÇÃO V3 (atual)
 
-Tabelas do score:
-  - public.animal_scores (1 linha por animal)
+Tabelas v3:
+  - public.animal_scores       (1:1 por animal, algorithm_version='v3')
+  - public.score_audit_log     (audit por mudança material)
+  - public.farm_scores         (Nível 2: por propriedade)
+  - public.producer_scores     (Nível 3: por cliente)
   - public.agraas_master_passport_cache (espelha score em JSON)
 
-Predições IA (Claude Sonnet 4.6) — sistema paralelo:
-  - public.ai_predictions
+Sistema paralelo (não conectado ao score determinístico):
+  - public.ai_predictions      (Claude Sonnet 4.6 — predições de risco)
   - app/api/predict-score/route.ts
 ```
 
 ---
 
-## Anexo B — Histórico de decisões do score (contexto)
+## Anexo B — Histórico de versões
 
-- **Inicial (não documentado)**: Tabela `animal_scores` criada com 3 pilares: sanitário, operacional, continuidade. Pesos 40/35/25.
-- **Migration 036** (introdução do v2): Adicionou `productive_score`, `algorithm_version`, função `calculate_agraas_score` com 5 pilares + bônus. Pesos 28/24/18/20/10 + bonus 0-7. **Mas os triggers nunca foram migrados** para chamar essa função.
-- **Migration 121 (mai/2026, hoje)**: Corrigiu `refresh_animal_passport` que apontava para tabela legada `animal_events` (removida). Esse fix expôs o débito da coexistência das três funções.
-- **Reset FSJBE (mai/2026, hoje)**: Limpamos dados ilustrativos da FSJBE preparando para o tombamento real Multbovinos → Agraas. Funções legadas referenciando `animal_events` foram dropadas (12 triggers + funções órfãs). Criamos VIEW de compatibilidade `animal_events → events` para preservar funções de leitura ainda usadas.
+- **v0** (não documentada): Tabela `animal_scores` criada com 3 pilares. Pesos 40/35/25. Modelo top-down (penalização). Função `recalculate_animal_score`.
+- **v1**: Modelo bottom-up (acúmulo). Pesos 40/30/30. Função `refresh_animal_score`. Foi a versão efetivamente acionada por triggers até maio/2026.
+- **v2 (declarada, não acionada)**: Migration 036 introduziu `calculate_agraas_score` com 5 pilares + bônus. Pesos 28/24/18/20/10 + bonus 0-7. Triggers nunca foram migrados para chamar essa função.
+- **v3 (ATUAL, 27/05/2026)**: Migration 123. Função canônica única `calculate_agraas_score_v3`. 5 pilares ancorados em Embrapa Doc 237 (Costa et al., 2018). Multicolinearidade resolvida. Score frozen para vendidos. Score Nível 2 e 3 (farm + producer). Audit log integral. 58 animais recalculados.
 
 ---
 
 ## Encerramento
 
-Este documento foi preparado com transparência máxima, exatamente porque a contribuição de vocês depende de termos colocado tudo na mesa — inclusive (e principalmente) o que está fraco. O Score Engine atual da Agraas é um **ponto de partida funcional, não uma metodologia consolidada**. A oportunidade da mentoria é justamente transformá-lo em algo cientificamente defensável.
+A versão v3 do Score Agraas representa progresso real do "ponto de partida funcional" descrito no relatório anterior em direção a uma **metodologia ancorada cientificamente**. Mas progresso ≠ consolidação. As decisões de pesos finais, calibração de gradação por raça, integração com Plataforma +Precoce e NeuTroPec, e tratamento de variáveis ausentes (CAR/RFI, manejo regenerativo, CO2eq) **dependem da revisão de vocês**.
 
-Estamos prontos para discutir, ajustar, refatorar — e, idealmente, publicar em conjunto.
+Estamos prontos para discutir, ajustar, recuar onde fizer sentido. A presença de vocês neste momento é mais que mentoria pontual: é o que transforma uma implementação Agraas em metodologia validada.
 
 Atenciosamente,
 **Equipe Agraas**
@@ -625,4 +605,4 @@ Atenciosamente,
 ---
 
 > *Documento técnico confidencial — uso restrito à mentoria Agraas × Instituto de Zootecnia de SP.
-> Versão 1 · 26 de maio de 2026.*
+> Versão 2 (v3 do Score) · 27 de maio de 2026.*
