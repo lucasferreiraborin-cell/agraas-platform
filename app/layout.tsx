@@ -86,11 +86,11 @@ export default async function RootLayout({
   const isBuyer = roleInfo.role === "buyer";
 
   const environmentLabel =
-    process.env.NODE_ENV === "production" ? "v0.9 Beta · Modo Demonstração" : "Ambiente local";
+    process.env.NODE_ENV === "production" ? "v1.0 · Score Engine Embrapa" : "Ambiente local";
 
   const environmentTooltip =
     process.env.NODE_ENV === "production"
-      ? "Dados ilustrativos durante consolidação do piloto. Tombamento Multbovinos → Agraas em andamento."
+      ? "Score Agraas v3 ancorado em Embrapa Documento Técnico 237 (Costa et al., 2018) — Plataforma +Precoce. Primeiro piloto em tombamento real."
       : "Ambiente local de desenvolvimento.";
 
   const phaseLabel =
@@ -232,11 +232,11 @@ export default async function RootLayout({
                     <MentorViewBadge />
                     <div
                       title={environmentTooltip}
-                      className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3.5 py-2 text-sm font-medium text-amber-800 shadow-[var(--shadow-soft)]"
+                      className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-sm font-medium text-emerald-800 shadow-[var(--shadow-soft)]"
                     >
                       <span className="relative flex h-2 w-2">
-                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75" />
-                        <span className="relative inline-flex h-2 w-2 rounded-full bg-amber-500" />
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                        <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
                       </span>
                       {environmentLabel}
                     </div>

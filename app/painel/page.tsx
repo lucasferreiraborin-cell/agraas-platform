@@ -288,6 +288,32 @@ export default async function PainelPage() {
         )
       : 0;
 
+  // ── Médias dos 5 pilares Embrapa Doc 237 (Score v3) ─────────────────────────
+  // productive_score, sanitary_score, operational_score (Rastreabilidade v3),
+  // continuity_score (placeholder Reprodutivo PREPARADO) já vêm do passport_cache.
+  // certificações: contagem média de certificações ativas × 25 (cap 100).
+  const avgPilar = (key: "productive_score" | "sanitary_score" | "operational_score") =>
+    totalAnimals > 0
+      ? Math.round(
+          passports.reduce(
+            (acc, item) => acc + Number((item.score_json as Record<string, number>)?.[key] ?? 0),
+            0,
+          ) / totalAnimals,
+        )
+      : 0;
+
+  const pilarProdutivo       = avgPilar("productive_score");
+  const pilarSanidade        = avgPilar("sanitary_score");
+  const pilarRastreabilidade = avgPilar("operational_score"); // col compat: operational_score guarda rastreabilidade v3
+
+  const certificacoesMedia = totalAnimals > 0
+    ? Math.min(100, Math.round(
+        (passports.reduce((acc, p) => {
+          const certs = (p.certifications_json ?? []) as Array<{ status?: string }>;
+          return acc + certs.filter(c => (c.status ?? "").toLowerCase() === "active").length;
+        }, 0) / totalAnimals) * 25))
+    : 0;
+
   // BUG 4 fix: build last-weight map from "weights" table (health_json.last_weight never populated)
   const lastWeightMap = new Map<string, number>();
   const lastWeighingDateMap = new Map<string, string>();
@@ -615,6 +641,69 @@ export default async function PainelPage() {
         />
       </section>
 
+      {/* ── Score v3 · Pilares Embrapa Doc 237 ─────────────────────────────── */}
+      <section className="ag-card-strong overflow-hidden p-8">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-700">
+                v3 · Embrapa Doc 237
+              </span>
+              <span className="text-xs text-[var(--text-muted)]">
+                Implementação Agraas da Plataforma +Precoce
+              </span>
+            </div>
+            <h2 className="mt-2 ag-section-title">Score Agraas · pilares do rebanho</h2>
+            <p className="ag-section-subtitle">
+              Médias agregadas dos 5 pilares ancorados na metodologia Embrapa Gado de Corte (Costa et al., 2018).
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-xs uppercase tracking-[0.14em] text-[var(--text-muted)]">Score médio total</p>
+            <p className="text-3xl font-semibold tracking-[-0.04em] text-[var(--primary-hover)]">
+              {totalScoreAverage}<span className="text-base font-normal text-[var(--text-muted)]">/100</span>
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            { label: "Produtivo", value: pilarProdutivo, weight: 36, sub: "GMD + Peso × Idade" },
+            { label: "Sanidade", value: pilarSanidade, weight: 25, sub: "histórico + carência + recência" },
+            { label: "Rastreabilidade", value: pilarRastreabilidade, weight: 29, sub: "RFID + genealogia + eventos" },
+            { label: "Certificações", value: certificacoesMedia, weight: 10, sub: "Boi Verde · BR · GAP" },
+          ].map((pilar) => (
+            <div key={pilar.label} className="rounded-2xl border border-[var(--border)] bg-white p-4">
+              <div className="flex items-baseline justify-between">
+                <p className="text-xs font-semibold uppercase tracking-[0.1em] text-[var(--text-muted)]">
+                  {pilar.label}
+                </p>
+                <span className="text-[10px] font-semibold text-[var(--primary-hover)]">{pilar.weight}%</span>
+              </div>
+              <div className="mt-3 flex items-baseline gap-1.5">
+                <span className="text-2xl font-bold tracking-[-0.04em] text-[var(--text-primary)]">{pilar.value}</span>
+                <span className="text-xs text-[var(--text-muted)]">/100</span>
+              </div>
+              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[rgba(93,156,68,0.10)]">
+                <div
+                  className="h-full rounded-full bg-[linear-gradient(90deg,#3DA54C_0%,#2E8B3E_100%)] transition-all"
+                  style={{ width: `${Math.max(2, pilar.value)}%` }}
+                />
+              </div>
+              <p className="mt-2 text-[11px] leading-4 text-[var(--text-muted)]">{pilar.sub}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-5 rounded-2xl border border-dashed border-amber-200 bg-amber-50/40 px-4 py-3">
+          <p className="text-xs leading-5 text-amber-900">
+            <strong className="font-semibold">Pilar Reprodutivo (15%) preparado</strong> — IEP, taxa de prenhez individual,
+            idade ao primeiro parto. Peso redistribuído (40% Produtivo, 60% Rastreabilidade) enquanto os dados estruturados
+            não são populados. Ativação prevista pós-mentoria IZ-SP.
+          </p>
+        </div>
+      </section>
+
       {/* ── Insights Agraas (Claude Sonnet 4.6) ── */}
       <PainelInsights
         totalAnimals={totalAnimals}
@@ -725,11 +814,9 @@ export default async function PainelPage() {
                             {animal.internal_code}
                           </p>
                           <div className="mt-1 flex items-center gap-2">
-                            {animal.hasHalal && (
-                              <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-green-700">
-                                Halal
-                              </span>
-                            )}
+                            <span className="rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-700">
+                              Score v3
+                            </span>
                             <span className="text-xs text-[var(--text-muted)]">
                               {animal.last_weight
                                 ? `${animal.last_weight} kg`
