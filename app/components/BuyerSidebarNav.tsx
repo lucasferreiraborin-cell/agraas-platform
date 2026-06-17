@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { LayoutDashboard, Beef, Wheat, Truck, FileText } from "lucide-react";
+import { LayoutDashboard, Beef, Wheat, Truck, FileText, Store } from "lucide-react";
 
 const BUYER_NAV = [
   { href: "/comprador",                  label: "Visão Geral",          icon: LayoutDashboard, tab: null },
+  { href: "/comprador/oportunidades",    label: "Oportunidades",        icon: Store,           tab: null },
   { href: "/comprador?tab=livestock",    label: "Pecuária Brasileira",  icon: Beef,            tab: "livestock" },
   { href: "/comprador?tab=grains",       label: "Commodities Agrícolas",icon: Wheat,           tab: "grains" },
   { href: "/tracking",                   label: "Rastreio ao Vivo",     icon: Truck,           tab: null },

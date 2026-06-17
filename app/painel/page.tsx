@@ -7,6 +7,7 @@ import PainelInsights from "@/app/components/PainelInsights";
 import { KpiCard } from "@/app/components/ui/KpiCard";
 import { CotacaoBadge } from "@/app/components/CotacaoBadge";
 import { getCotacaoArroba } from "@/lib/cotacao";
+import InstituicoesParceirasCard from "@/app/components/InstituicoesParceirasCard";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -129,8 +130,9 @@ export default async function PainelPage() {
         .single()
     : { data: null };
 
-  // Redireciona compradores para a página dedicada
+  // Redireciona compradores e bancos para suas páginas dedicadas
   if (clientData?.role === "buyer") redirect("/comprador");
+  if (clientData?.role === "bank") redirect("/banco");
 
   // clientId is used to filter every query explicitly —
   // some tables (passport cache, properties) have no RLS.
@@ -246,6 +248,33 @@ export default async function PainelPage() {
       .neq("stage", "entregue")
       .lt("created_at", new Date(now.getTime() - 5 * 86400000).toISOString()),
   ]);
+
+  // ── Sprint B · Instituições parceiras (banco/cooperativa) ───────────────────
+  const { data: instituicoesParceirasRaw } = await supabaseServer
+    .from("bank_producer_relationships")
+    .select(`
+      id, relationship_type, granted_by_producer, granted_at, created_at,
+      bank:clients!bank_producer_relationships_bank_client_id_fkey(id, name)
+    `)
+    .eq("producer_client_id", clientId)
+    .eq("status", "active")
+    .order("created_at", { ascending: false });
+
+  const instituicoesParceiras = ((instituicoesParceirasRaw ?? []) as Array<{
+    id: string;
+    relationship_type: string;
+    granted_by_producer: boolean;
+    granted_at: string | null;
+    created_at: string;
+    bank: { id: string; name: string } | { id: string; name: string }[] | null;
+  }>).map((row) => ({
+    id: row.id,
+    bank_name: Array.isArray(row.bank) ? (row.bank[0]?.name ?? "Instituição") : (row.bank?.name ?? "Instituição"),
+    relationship_type: row.relationship_type as "credit_analysis" | "portfolio_monitoring" | "loan_active",
+    granted_by_producer: row.granted_by_producer,
+    granted_at: row.granted_at,
+    created_at: row.created_at,
+  }));
 
   const passports = (passportsData as PassportCacheRow[] | null) ?? [];
   const marketRows = (marketData as MarketRow[] | null) ?? [];
@@ -710,6 +739,13 @@ export default async function PainelPage() {
           </p>
         </div>
       </section>
+
+      {/* ── Sprint B · Transparência LGPD: instituições parceiras ── */}
+      {instituicoesParceiras.length > 0 && (
+        <section>
+          <InstituicoesParceirasCard parceiras={instituicoesParceiras} />
+        </section>
+      )}
 
       {/* ── Insights Agraas (Claude Sonnet 4.6) ── */}
       <PainelInsights
