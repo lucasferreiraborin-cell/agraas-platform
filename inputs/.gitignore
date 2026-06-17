@@ -1,0 +1,9 @@
+# Tudo dentro de inputs/ é confidencial por padrão.
+# Material aqui processado deve gerar memory/, docs/ ou TODO no código —
+# o input bruto NUNCA vai pro git.
+
+*
+!.gitignore
+!README.md
+!.template/
+!.template/**
