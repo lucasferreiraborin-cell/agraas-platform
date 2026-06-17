@@ -5,6 +5,8 @@ import BrazilMapWrapper from "@/app/components/BrazilMapWrapper";
 import NotificationBanner from "@/app/components/NotificationBanner";
 import PainelInsights from "@/app/components/PainelInsights";
 import { KpiCard } from "@/app/components/ui/KpiCard";
+import { CotacaoBadge } from "@/app/components/CotacaoBadge";
+import { getCotacaoArroba } from "@/lib/cotacao";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -329,11 +331,15 @@ export default async function PainelPage() {
     0
   );
   const totalArrobas = Math.round(totalWeightKg / 30); // peso vivo: 1 arroba = 30 kg
+
+  // T1.7 (17/06/2026): cotação dinâmica do banco com fallback seguro.
+  // Em vez de hardcode R$ 330, agora valoriza pelo último snapshot CEPEA.
+  const cotacaoSnap = await getCotacaoArroba();
   const estimatedValue = new Intl.NumberFormat("pt-BR", {
     style: "currency",
     currency: "BRL",
     maximumFractionDigits: 0,
-  }).format(totalArrobas * 330);
+  }).format(totalArrobas * cotacaoSnap.value);
 
   // ── Halal & export KPIs (BUG 3 fix: from direct cert query) ──────────────────
   const halalAnimalIds = new Set(halalCerts.map((c) => c.animal_id));
@@ -509,6 +515,7 @@ export default async function PainelPage() {
 
         <div className="flex flex-wrap items-center gap-2">
           <div className="ag-badge ag-badge-green">Painel executivo</div>
+          <CotacaoBadge compact />
           {isFsjbePilot && (
             <div
               title="5 animais ilustrativos enquanto o tombamento Multbovinos → Agraas é concluído. Score, peso e eventos são representativos."
@@ -637,7 +644,7 @@ export default async function PainelPage() {
         <KpiCard
           label="Valor estimado"
           value={estimatedValue}
-          sub="base · R$ 330/@"
+          sub={`base · R$ ${cotacaoSnap.value.toFixed(2).replace(".", ",")}/@${cotacaoSnap.isStale ? " (stale)" : ""}`}
         />
       </section>
 

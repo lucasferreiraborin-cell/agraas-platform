@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { ActionGuard } from "@/app/components/ui/ActionGuard";
+import { HALAL_ENABLED } from "@/lib/feature-flags";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -375,12 +376,14 @@ export default function AnimaisPage() {
             value={loading ? "—" : avgScore}
             sub="nesta página"
           />
-          <HeroStat
-            label="Halal ativos"
-            value={loading ? "—" : halalCount}
-            sub="nesta página"
-            accent="green"
-          />
+          {HALAL_ENABLED && (
+            <HeroStat
+              label="Halal ativos"
+              value={loading ? "—" : halalCount}
+              sub="nesta página"
+              accent="green"
+            />
+          )}
           <HeroStat
             label="Em alerta"
             value={loading ? "—" : alertCount}
@@ -397,14 +400,17 @@ export default function AnimaisPage() {
           <div className="flex flex-wrap gap-2">
             {(
               [
-                { key: "all", label: "Todos", count: cards.length },
-                { key: "halal", label: "Halal", count: halalCount },
+                { key: "all" as const, label: "Todos", count: cards.length },
+                // Filtro Halal exibido apenas com feature flag (T1.1, 17/06/2026)
+                ...(HALAL_ENABLED
+                  ? [{ key: "halal" as const, label: "Halal", count: halalCount }]
+                  : []),
                 {
-                  key: "export",
+                  key: "export" as const,
                   label: "Aptos exportação",
                   count: exportReadyCount,
                 },
-                { key: "alert", label: "Em alerta", count: alertCount },
+                { key: "alert" as const, label: "Em alerta", count: alertCount },
               ] as { key: FilterKey; label: string; count: number }[]
             ).map(({ key, label, count }) => (
               <button

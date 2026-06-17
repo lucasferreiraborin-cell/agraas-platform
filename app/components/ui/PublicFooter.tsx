@@ -56,8 +56,12 @@ export default function PublicFooter() {
             Legal
           </p>
           <div className="mt-4 flex flex-col gap-3">
-            <span style={WHITE} className="text-[.875rem] opacity-80">Privacidade</span>
-            <span style={WHITE} className="text-[.875rem] opacity-80">Termos</span>
+            <Link href="/privacidade" style={WHITE} className="text-[.875rem] transition-opacity hover:opacity-80">
+              Privacidade
+            </Link>
+            <Link href="/termos" style={WHITE} className="text-[.875rem] transition-opacity hover:opacity-80">
+              Termos
+            </Link>
           </div>
         </div>
       </div>

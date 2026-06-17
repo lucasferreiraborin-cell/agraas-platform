@@ -531,7 +531,7 @@ export default function PlanosPage() {
               </FadeIn>
               <FadeIn delay={0.2}>
                 <p className="mt-6 max-w-[520px] text-[.9375rem] leading-[1.8] text-[var(--text-secondary)]">
-                  Opera no Agraas com passaporte digital individual, score em tempo real e lote de exportação ativo para Jeddah. Comprador institucional vinculado via portal dedicado.
+                  Opera no Agraas com passaporte digital individual e score em tempo real ancorado em metodologia Embrapa. Cadeia de rastreio preparada para exportação institucional, com cobertura ponta a ponta da origem à saída do animal.
                 </p>
               </FadeIn>
 

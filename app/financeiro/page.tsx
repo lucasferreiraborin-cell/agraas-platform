@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getCotacaoArroba } from "@/lib/cotacao";
 import { DollarSign } from "lucide-react";
 import FinanceiroTabs from "@/app/components/financeiro/FinanceiroTabs";
 import type { FinanceiroData } from "@/app/components/financeiro/FinanceiroTabs";
@@ -11,10 +12,10 @@ type FiscalRow = { data_emissao: string | null; valor_total: number | null };
 type StockRow = { quantity: number | null; unit_cost: number | null };
 type AnimalRow = { id: string; category: string | null };
 type ScoreRow = { animal_id: string; total_score: number | null };
-type SettingRow = { key: string; value: string | null };
 
 export default async function FinanceiroPage() {
   const supabase = await createSupabaseServerClient();
+  const cotacaoSnap = await getCotacaoArroba();
 
   const [
     { data: salesData },
@@ -24,7 +25,6 @@ export default async function FinanceiroPage() {
     { data: stockData },
     { data: animalsData },
     { data: scoresData },
-    { data: settingsData },
     { data: slaughterData },
   ] = await Promise.all([
     supabase.from("sales").select("sale_date, total_value, weight_kg, roi").order("sale_date"),
@@ -34,7 +34,6 @@ export default async function FinanceiroPage() {
     supabase.from("stock_batches").select("quantity, unit_cost"),
     supabase.from("animals").select("id, category").eq("status", "Ativo"),
     supabase.from("animal_scores").select("animal_id, total_score"),
-    supabase.from("platform_settings").select("key, value").eq("key", "cotacao_arroba"),
     supabase.from("slaughter_records").select("slaughter_date, total_value"),
   ]);
 
@@ -45,7 +44,7 @@ export default async function FinanceiroPage() {
   const stock = (stockData ?? []) as StockRow[];
   const animals = (animalsData ?? []) as AnimalRow[];
   const scores = (scoresData ?? []) as ScoreRow[];
-  const cotacao = Number((settingsData as SettingRow[] | null)?.[0]?.value ?? 330);
+  const cotacao = cotacaoSnap.value;
   const slaughterRecs = (slaughterData ?? []) as { slaughter_date: string | null; total_value: number | null }[];
 
   // ── KPIs ────────────────────────────────────────────────────────────────────

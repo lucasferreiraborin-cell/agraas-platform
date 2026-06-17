@@ -28,6 +28,7 @@ import {
   FileText,
 } from "lucide-react";
 import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
+import { HALAL_ENABLED } from "@/lib/feature-flags";
 import {
   FadeIn,
   StaggerContainer,
@@ -143,8 +144,11 @@ export default function MarketplacePublicView({ listings }: { listings: Listing[
     // Destaques: top 3 por score + halal + mais quantidade
     return [...listings]
       .sort((a, b) => {
-        const scoreA = (a.score_agraas ?? 0) + (a.halal_certified ? 10 : 0);
-        const scoreB = (b.score_agraas ?? 0) + (b.halal_certified ? 10 : 0);
+        // T1.1 (17/06/2026): Halal só pondera no sort quando feature está habilitada.
+        const halalBoostA = HALAL_ENABLED && a.halal_certified ? 10 : 0;
+        const halalBoostB = HALAL_ENABLED && b.halal_certified ? 10 : 0;
+        const scoreA = (a.score_agraas ?? 0) + halalBoostA;
+        const scoreB = (b.score_agraas ?? 0) + halalBoostB;
         return scoreB - scoreA;
       })
       .slice(0, 3);
@@ -162,7 +166,7 @@ export default function MarketplacePublicView({ listings }: { listings: Listing[
       );
     }
     if (typeFilter) r = r.filter((l) => l.listing_type === typeFilter);
-    if (halalOnly) r = r.filter((l) => l.halal_certified);
+    if (HALAL_ENABLED && halalOnly) r = r.filter((l) => l.halal_certified);
     // MAPA / EUDR: infere via descrição/título (listings ainda não têm flag dedicada)
     if (mapaOnly)
       r = r.filter(
@@ -574,18 +578,20 @@ export default function MarketplacePublicView({ listings }: { listings: Listing[
                     Certificações
                   </p>
                   <div className="space-y-2">
-                    <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-[var(--border)] bg-white px-3 py-2 text-[.8125rem] transition hover:bg-[var(--surface-soft)]">
-                      <input
-                        type="checkbox"
-                        checked={halalOnly}
-                        onChange={(e) => setHalalOnly(e.target.checked)}
-                        className="h-4 w-4 rounded accent-[var(--primary)]"
-                      />
-                      <HalalBadgeSVG size={16} />
-                      <span className="font-medium text-[var(--text-primary)]">
-                        Halal certificado
-                      </span>
-                    </label>
+                    {HALAL_ENABLED && (
+                      <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-[var(--border)] bg-white px-3 py-2 text-[.8125rem] transition hover:bg-[var(--surface-soft)]">
+                        <input
+                          type="checkbox"
+                          checked={halalOnly}
+                          onChange={(e) => setHalalOnly(e.target.checked)}
+                          className="h-4 w-4 rounded accent-[var(--primary)]"
+                        />
+                        <HalalBadgeSVG size={16} />
+                        <span className="font-medium text-[var(--text-primary)]">
+                          Halal certificado
+                        </span>
+                      </label>
+                    )}
                     <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-[var(--border)] bg-white px-3 py-2 text-[.8125rem] transition hover:bg-[var(--surface-soft)]">
                       <input
                         type="checkbox"
@@ -888,7 +894,7 @@ function PublicListingCard({ listing: l }: { listing: Listing }) {
               Premium
             </span>
           )}
-          {l.halal_certified && (
+          {HALAL_ENABLED && l.halal_certified && (
             <span className="inline-flex items-center gap-1 rounded-sm bg-white/95 px-1.5 py-0.5 text-[.625rem] font-bold text-[var(--primary-hover)]">
               <HalalBadgeSVG size={10} /> Halal
             </span>
@@ -980,7 +986,7 @@ function FeaturedListingCard({ listing: l }: { listing: Listing }) {
               Premium
             </span>
           )}
-          {l.halal_certified && (
+          {HALAL_ENABLED && l.halal_certified && (
             <span className="inline-flex items-center gap-1 rounded-sm bg-white/95 px-2 py-0.5 text-[.6875rem] font-bold text-[var(--primary-hover)]">
               <HalalBadgeSVG size={11} /> Halal
             </span>

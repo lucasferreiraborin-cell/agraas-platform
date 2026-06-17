@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getCotacaoArroba } from "@/lib/cotacao";
 import Link from "next/link";
 import { TrendingUp, Weight, ShieldCheck, BarChart3, Info } from "lucide-react";
 import MarketCalculator from "@/app/components/MarketCalculator";
@@ -27,6 +28,7 @@ type HalalCert = { animal_id: string };
 
 export default async function MarketPage() {
   const supabase = await createSupabaseServerClient();
+  const cotacaoSnap = await getCotacaoArroba();
   const [
     { data, error },
     { data: weightsData },
@@ -158,7 +160,7 @@ export default async function MarketPage() {
       </section>
 
       {/* ── Calculadora ───────────────────────────────────────────────────── */}
-      <MarketCalculator totalAnimals={totalAnimals} avgWeight={avgWeight} />
+      <MarketCalculator totalAnimals={totalAnimals} avgWeight={avgWeight} cotacaoAtual={cotacaoSnap.value} />
 
       {/* ── Animais elegíveis ─────────────────────────────────────────────── */}
       <section className="ag-card-strong p-8 space-y-5">

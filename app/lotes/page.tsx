@@ -238,7 +238,7 @@ export default function LotesPage() {
                             ? "border-emerald-400 bg-emerald-500 text-white"
                             : "border-white/20 bg-white/8 text-white/70 hover:bg-white/15"
                         }`}>
-                        {cert === "Halal" ? "☪ Halal" : cert}
+                        {cert}
                       </button>
                     ))}
                   </div>

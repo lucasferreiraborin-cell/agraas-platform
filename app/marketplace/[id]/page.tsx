@@ -6,6 +6,7 @@ import { createSupabaseServiceClient } from "@/lib/supabase-service";
 import PublicShell from "@/app/components/ui/PublicShell";
 import ScoreRing from "@/app/components/ui/ScoreRing";
 import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
+import { HALAL_ENABLED } from "@/lib/feature-flags";
 import { FadeIn } from "@/app/components/ui/Motion";
 import OfferPanel from "@/app/components/marketplace/OfferPanel";
 import {
@@ -191,7 +192,7 @@ export default async function ListingDetailPage({
                   <TypeIcon size={11} />
                   {typeMeta.label}
                 </span>
-                {l.halal_certified && (
+                {HALAL_ENABLED && l.halal_certified && (
                   <span className="inline-flex items-center gap-1.5 rounded-md border border-[var(--primary)]/25 bg-[var(--primary-soft)] px-2.5 py-1 text-[.6875rem] font-bold uppercase tracking-[.12em] text-[var(--primary)]">
                     <HalalBadgeSVG size={12} /> Halal certificado
                   </span>
@@ -303,12 +304,14 @@ export default async function ListingDetailPage({
                       value={fmtDate(l.expires_at)}
                     />
                   )}
-                  <DetailRow
-                    icon={<ShieldCheck size={14} />}
-                    label="Certificação Halal"
-                    value={l.halal_certified ? "Sim — verificada" : "Não declarada"}
-                    valueClass={l.halal_certified ? "text-[var(--primary)]" : undefined}
-                  />
+                  {HALAL_ENABLED && (
+                    <DetailRow
+                      icon={<ShieldCheck size={14} />}
+                      label="Certificação Halal"
+                      value={l.halal_certified ? "Sim — verificada" : "Não declarada"}
+                      valueClass={l.halal_certified ? "text-[var(--primary)]" : undefined}
+                    />
+                  )}
                 </div>
               </div>
             </FadeIn>

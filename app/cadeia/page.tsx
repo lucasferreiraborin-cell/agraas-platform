@@ -15,7 +15,11 @@ type ChainRow = {
 
 export default async function CadeiaPage() {
   const supabase = await createSupabaseServerClient();
-  const [{ data, error }, { data: assignsData }, { data: lotsData }] = await Promise.all([
+
+  // Promise.allSettled para tolerância a falha individual:
+  // se UMA query falhar (ex.: view indisponível, RLS bloqueando), as outras
+  // continuam, e a UI degrada graciosamente em vez de quebrar a página inteira.
+  const [passportResult, assignsResult, lotsResult] = await Promise.allSettled([
     supabase
       .from("agraas_master_passport")
       .select(
@@ -28,6 +32,30 @@ export default async function CadeiaPage() {
       .is("exit_date", null),
     supabase.from("lots").select("id, name"),
   ]);
+
+  // Extrai data/error de cada resultado; loga warning se alguma falhar.
+  const data = passportResult.status === "fulfilled" ? passportResult.value.data : null;
+  const error = passportResult.status === "fulfilled"
+    ? passportResult.value.error
+    : passportResult.reason;
+  const assignsData = assignsResult.status === "fulfilled" ? assignsResult.value.data : null;
+  const lotsData = lotsResult.status === "fulfilled" ? lotsResult.value.data : null;
+
+  if (passportResult.status === "rejected") {
+    console.warn("[cadeia] agraas_master_passport falhou:", passportResult.reason);
+  } else if (passportResult.value.error) {
+    console.warn("[cadeia] agraas_master_passport erro:", passportResult.value.error);
+  }
+  if (assignsResult.status === "rejected") {
+    console.warn("[cadeia] animal_lot_assignments falhou:", assignsResult.reason);
+  } else if (assignsResult.value.error) {
+    console.warn("[cadeia] animal_lot_assignments erro:", assignsResult.value.error);
+  }
+  if (lotsResult.status === "rejected") {
+    console.warn("[cadeia] lots falhou:", lotsResult.reason);
+  } else if (lotsResult.value.error) {
+    console.warn("[cadeia] lots erro:", lotsResult.value.error);
+  }
 
   // Mapa animal → nome do lote ativo (fallback quando view não retorna)
   const lotNameById = new Map(((lotsData ?? []) as { id: string; name: string }[]).map(l => [l.id, l.name]));

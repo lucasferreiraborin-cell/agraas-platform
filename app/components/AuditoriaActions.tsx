@@ -18,8 +18,26 @@ export default function AuditoriaActions() {
     }, 600);
   }
 
-  function handleExport() {
-    showToast("Exportação em breve.");
+  const [exporting, setExporting] = useState(false);
+
+  async function handleExport() {
+    setExporting(true);
+    try {
+      const res = await fetch("/api/export/herd-pdf", { method: "POST" });
+      if (!res.ok) throw new Error("Erro ao gerar PDF");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `auditoria-rebanho-${new Date().toISOString().split("T")[0]}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast("PDF gerado com sucesso.");
+    } catch {
+      showToast("Falha ao gerar PDF. Tente novamente.");
+    } finally {
+      setExporting(false);
+    }
   }
 
   return (
@@ -36,10 +54,11 @@ export default function AuditoriaActions() {
       <button
         type="button"
         onClick={handleExport}
-        className="inline-flex items-center gap-2 rounded-xl border border-[var(--border)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-soft)] transition"
+        disabled={exporting}
+        className="inline-flex items-center gap-2 rounded-xl border border-[var(--border)] bg-white px-3 py-1.5 text-xs font-semibold text-[var(--text-secondary)] hover:bg-[var(--surface-soft)] transition disabled:opacity-60"
       >
-        <FileDown size={13} />
-        Exportar PDF
+        <FileDown size={13} className={exporting ? "animate-pulse" : ""} />
+        {exporting ? "Gerando..." : "Exportar PDF"}
       </button>
     </div>
   );

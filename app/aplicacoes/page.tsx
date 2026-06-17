@@ -50,15 +50,44 @@ export default function AplicacoesPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [saving, setSaving] = useState(false);
+  // Resolve client_id do usuário autenticado para filtrar queries explicitamente.
+  // Defensive coding: RLS já protege em produção, mas filtrar no client evita vazamento
+  // caso uma migração futura remova RLS de animals/products/stock_batches por engano.
+  const [clientId, setClientId] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadBase() {
       setLoading(true);
       setLoadError("");
 
+      // Resolve client_id via auth.uid() → clients.auth_user_id.
+      // Sem client_id resolvido, as queries abaixo retornam vazio em vez de
+      // potencialmente expor dados de outro tenant (defense in depth).
+      const { data: { user } } = await supabase.auth.getUser();
+      let resolvedClientId: string | null = null;
+      if (user) {
+        const { data: client } = await supabase
+          .from("clients")
+          .select("id")
+          .eq("auth_user_id", user.id)
+          .single();
+        resolvedClientId = client?.id ?? null;
+      }
+      setClientId(resolvedClientId);
+
+      if (!resolvedClientId) {
+        setLoadError("Sessão inválida. Faça login novamente.");
+        setAnimals([]);
+        setProducts([]);
+        setBatches([]);
+        setLoading(false);
+        return;
+      }
+
       const { data: animalsData, error: animalsError } = await supabase
         .from("animals")
         .select("id, internal_code")
+        .eq("client_id", resolvedClientId) // filtro multi-tenant explícito
         .eq("status", "Ativo")
         .order("internal_code", { ascending: true });
 
@@ -70,6 +99,7 @@ export default function AplicacoesPage() {
       const { data: productsData, error: productsError } = await supabase
         .from("products")
         .select("id, name, withdrawal_days, unit, supplier_id")
+        .eq("client_id", resolvedClientId) // filtro multi-tenant explícito
         .eq("active", true)
         .order("name", { ascending: true });
 
@@ -81,6 +111,7 @@ export default function AplicacoesPage() {
       const { data: batchesData, error: batchesError } = await supabase
         .from("stock_batches")
         .select("id, product_id, batch_number, expiration_date, quantity")
+        .eq("client_id", resolvedClientId) // filtro multi-tenant explícito
         .gt("quantity", 0)
         .order("expiration_date", { ascending: true });
 
@@ -128,9 +159,11 @@ export default function AplicacoesPage() {
   }, [productId, filteredBatches]);
 
   async function refreshBatches() {
+    if (!clientId) return; // sem client_id resolvido, não consulta
     const { data: batchesData, error: batchesError } = await supabase
       .from("stock_batches")
       .select("id, product_id, batch_number, expiration_date, quantity")
+      .eq("client_id", clientId) // filtro multi-tenant explícito
       .gt("quantity", 0)
       .order("expiration_date", { ascending: true });
 

@@ -6,14 +6,16 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Circle, MapPin, ArrowUpRight } from "lucide-react";
 import type { Listing } from "./MarketplaceTabs";
 
+// Activity exemplo apenas com produtos bovinos (foco da plataforma desde mig 106).
+// Quando há ≥ 3 listings reais, este array nem é usado — ver lógica em items abaixo.
+// Removidos: Soja, Milho, Trator (cadeias agrícolas pausadas — não geram listings reais).
 const SEEDED_ACTIVITY = [
-  { where: "Sorriso, MT",     what: "Soja convencional · 500 toneladas",         minsAgo: 3  },
   { where: "Campo Grande, MS", what: "Nelore PO · 120 cabeças · 420 kg média",   minsAgo: 8  },
   { where: "Rio Verde, GO",    what: "Brincos RFID bovinos · 2.000 unidades",    minsAgo: 14 },
   { where: "Cascavel, PR",     what: "Ração de confinamento premium · 30 t",     minsAgo: 22 },
-  { where: "Barreiras, BA",    what: "Sementes híbridas de milho · 80 sacas",    minsAgo: 31 },
-  { where: "Dourados, MS",     what: "Trator John Deere 6110J · 2023",           minsAgo: 44 },
-  { where: "Passo Fundo, RS",  what: "Vacina aftosa · 2.000 doses",              minsAgo: 58 },
+  { where: "Passo Fundo, RS",  what: "Vacina aftosa · 2.000 doses",              minsAgo: 31 },
+  { where: "Uberaba, MG",      what: "Touro Nelore PO · reprodutor",             minsAgo: 44 },
+  { where: "Dourados, MS",     what: "Suplemento mineral · 50 sacos",            minsAgo: 58 },
 ];
 
 function humanTime(mins: number): string {

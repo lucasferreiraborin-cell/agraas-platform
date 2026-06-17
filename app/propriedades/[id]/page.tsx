@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getCotacaoArroba } from "@/lib/cotacao";
 import Link from "next/link";
 import TargetArrobasEditor from "@/app/components/TargetArrobasEditor";
 
@@ -104,15 +105,15 @@ export default async function PropriedadeDetailPage({ params }: PageProps) {
   const lotsCount = lotsData?.length ?? 0;
 
   // Cotação e pesos para valor do rebanho
-  const [{ data: cotacaoData }, weightsResult] = await Promise.all([
-    supabase.from("platform_settings").select("value").eq("key", "cotacao_arroba").single(),
+  const [cotacaoSnap, weightsResult] = await Promise.all([
+    getCotacaoArroba(),
     animalIds.length > 0
       ? supabase.from("weights").select("animal_id, weight, weighing_date")
           .in("animal_id", animalIds)
           .order("weighing_date", { ascending: false })
       : Promise.resolve({ data: [] }),
   ]);
-  const cotacao = parseFloat(cotacaoData?.value ?? "330");
+  const cotacao = cotacaoSnap.value;
   const weightsData = (weightsResult.data ?? []) as { animal_id: string; weight: number; weighing_date: string | null }[];
 
   // Última pesagem por animal

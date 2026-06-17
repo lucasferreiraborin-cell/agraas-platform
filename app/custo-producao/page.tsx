@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getCotacaoArroba } from "@/lib/cotacao";
 import Link from "next/link";
 import { DollarSign, TrendingUp, Plus } from "lucide-react";
 import CustoProducaoTable, { type CustoRow } from "@/app/components/CustoProducaoTable";
@@ -26,13 +27,13 @@ const fmt = (v: number) =>
 
 export default async function CustoProducaoPage() {
   const supabase = await createSupabaseServerClient();
+  const cotacaoSnap = await getCotacaoArroba();
 
   const [
     { data: costsData },
     { data: animalsData },
     { data: weightsData },
     { data: scoresData },
-    { data: cotacaoData },
     { data: assignData },
     { data: lotsData },
   ] = await Promise.all([
@@ -40,7 +41,6 @@ export default async function CustoProducaoPage() {
     supabase.from("animals").select("id, internal_code, breed, sex").eq("status", "Ativo").order("internal_code"),
     supabase.from("weights").select("animal_id, weight").order("weighing_date", { ascending: false }),
     supabase.from("animal_scores").select("animal_id, total_score"),
-    supabase.from("platform_settings").select("value").eq("key", "cotacao_arroba").single(),
     supabase.from("animal_lot_assignments").select("animal_id, lot_id").is("exit_date", null),
     supabase.from("lots").select("id, name"),
   ]);
@@ -58,7 +58,7 @@ export default async function CustoProducaoPage() {
       animalLotMap.set(a.animal_id, lotNameMap.get(a.lot_id) ?? "Sem lote");
     }
   }
-  const cotacao = Number(cotacaoData?.value ?? 330);
+  const cotacao = cotacaoSnap.value;
   const animals = (animalsData ?? []) as AnimalRow[];
 
   const rows: CustoRow[] = animals.map(a => {

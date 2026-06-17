@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Trophy, TrendingUp, ShieldCheck, Star } from "lucide-react";
 import ScoresFilter from "@/app/components/ScoresFilter";
 import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
+import { HALAL_ENABLED } from "@/lib/feature-flags";
 
 type ScoreRow = {
   animal_id: string;
@@ -56,6 +57,7 @@ export default async function ScoresPage() {
 
   const [
     { data: scoreData },
+    { data: pillarsData },
   ] = await Promise.all([
     myAnimalIds.length
       ? supabase.from("agraas_master_passport")
@@ -63,7 +65,25 @@ export default async function ScoresPage() {
           .in("animal_id", myAnimalIds)
           .order("total_score", { ascending: false })
       : Promise.resolve({ data: [] }),
+    // Pilares Embrapa Doc 237 (v3) — usados para breakdown da composição
+    myAnimalIds.length
+      ? supabase.from("animal_scores")
+          .select("animal_id, productive_score, sanitary_score, operational_score")
+          .in("animal_id", myAnimalIds)
+          .eq("algorithm_version", "v3")
+      : Promise.resolve({ data: [] }),
   ]);
+
+  // Médias dos 4 pilares ATIVOS (Reprodutivo está PREPARADO — peso redistribuído)
+  type PillarRow = { animal_id: string; productive_score: number | null; sanitary_score: number | null; operational_score: number | null };
+  const pillars = (pillarsData as PillarRow[] | null) ?? [];
+  const avgPillar = (key: "productive_score" | "sanitary_score" | "operational_score") =>
+    pillars.length > 0
+      ? Math.round(pillars.reduce((acc, p) => acc + Number(p[key] ?? 0), 0) / pillars.length)
+      : 0;
+  const pilarProdutivo       = avgPillar("productive_score");
+  const pilarSanidade        = avgPillar("sanitary_score");
+  const pilarRastreabilidade = avgPillar("operational_score"); // col compat: operational_score guarda rastreabilidade v3
 
   const animalBaseData = myAnimalsData;
 
@@ -175,6 +195,61 @@ export default async function ScoresPage() {
         </div>
       </section>
 
+      {/* ── Composição Embrapa Doc 237 — 5 pilares ─────────────────────────── */}
+      <section className="ag-card-strong overflow-hidden p-8">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-700">
+                v3 · Embrapa Doc 237
+              </span>
+              <span className="text-xs text-[var(--text-muted)]">
+                Implementação Agraas da Plataforma +Precoce
+              </span>
+            </div>
+            <h2 className="mt-2 ag-section-title">Composição do Score · pilares do rebanho</h2>
+            <p className="ag-section-subtitle">
+              Médias agregadas ancoradas em Costa et al. (2018), Embrapa Gado de Corte.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            { label: "Produtivo", value: pilarProdutivo, weight: 36, sub: "GMD + Peso × Idade" },
+            { label: "Sanidade", value: pilarSanidade, weight: 25, sub: "histórico + carência + recência" },
+            { label: "Rastreabilidade", value: pilarRastreabilidade, weight: 29, sub: "RFID + genealogia + eventos" },
+            { label: "Certificações", value: Math.min(100, Math.round((certified / Math.max(rows.length, 1)) * 100)), weight: 10, sub: "% animais com cert ativa" },
+          ].map((pilar) => (
+            <div key={pilar.label} className="rounded-2xl border border-[var(--border)] bg-white p-4">
+              <div className="flex items-baseline justify-between">
+                <p className="text-xs font-semibold uppercase tracking-[0.1em] text-[var(--text-muted)]">{pilar.label}</p>
+                <span className="text-[10px] font-semibold text-[var(--primary-hover)]">{pilar.weight}%</span>
+              </div>
+              <div className="mt-3 flex items-baseline gap-1.5">
+                <span className="text-2xl font-bold tracking-[-0.04em] text-[var(--text-primary)]">{pilar.value}</span>
+                <span className="text-xs text-[var(--text-muted)]">/100</span>
+              </div>
+              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[rgba(93,156,68,0.10)]">
+                <div
+                  className="h-full rounded-full bg-[linear-gradient(90deg,#3DA54C_0%,#2E8B3E_100%)] transition-all"
+                  style={{ width: `${Math.max(2, pilar.value)}%` }}
+                />
+              </div>
+              <p className="mt-2 text-[11px] leading-4 text-[var(--text-muted)]">{pilar.sub}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-5 rounded-2xl border border-dashed border-amber-200 bg-amber-50/40 px-4 py-3">
+          <p className="text-xs leading-5 text-amber-900">
+            <strong className="font-semibold">Pilar Reprodutivo (15%) preparado</strong> — IEP, taxa de prenhez individual,
+            idade ao primeiro parto. Peso redistribuído (40% Produtivo, 60% Rastreabilidade) enquanto a estrutura
+            de eventos reprodutivos não é populada. Ativação prevista pós-mentoria IZ-SP.
+          </p>
+        </div>
+      </section>
+
       {/* ── Pódio ─────────────────────────────────────────────────────────── */}
       {podium.length > 0 && (
         <section className="ag-card-strong p-8 space-y-5">
@@ -190,10 +265,11 @@ export default async function ScoresPage() {
                     <span className="text-2xl">{medal}</span>
                     <div className="flex items-center gap-2">
                       <ScoreCircleLarge score={Math.round(score)} size={60} />
-                      {item.active_certifications?.some(c => c.toLowerCase().includes("halal"))
-                        ? <HalalBadgeSVG size={60} />
-                        : <div style={{ width: 60, height: 60 }} />
-                      }
+                      {/* HalalBadge só aparece quando feature flag está habilitada (T1.1) */}
+                      {HALAL_ENABLED &&
+                        item.active_certifications?.some(c =>
+                          c.toLowerCase().includes("halal"),
+                        ) && <HalalBadgeSVG size={60} />}
                     </div>
                   </div>
                   <p className="mt-3 font-semibold text-[var(--text-primary)]">{item.internal_code ?? item.animal_id}</p>

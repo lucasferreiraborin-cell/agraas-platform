@@ -3,6 +3,14 @@
     {
       "path": "/api/cron/cotacao",
       "schedule": "0 11 * * *"
+    },
+    {
+      "path": "/api/digest/daily",
+      "schedule": "57 10 * * 1-5"
+    },
+    {
+      "path": "/api/digest/socios?dryRun=true",
+      "schedule": "3 20 * * 5"
     }
   ]
 }

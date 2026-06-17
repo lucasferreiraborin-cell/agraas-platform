@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import Link from "next/link";
 import { Search, ShoppingBag, Package, Tag, Truck, Plus, MessageSquare, CheckCircle } from "lucide-react";
 import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
+import { HALAL_ENABLED } from "@/lib/feature-flags";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 export type Listing = {
@@ -110,7 +111,7 @@ export default function MarketplaceTabs({ listings, myListings, myOffers, myTran
       r = r.filter(l => l.title.toLowerCase().includes(q) || (l.description ?? "").toLowerCase().includes(q));
     }
     if (typeFilter) r = r.filter(l => l.listing_type === typeFilter);
-    if (halalOnly) r = r.filter(l => l.halal_certified);
+    if (HALAL_ENABLED && halalOnly) r = r.filter(l => l.halal_certified);
     return r;
   }, [listings, search, typeFilter, halalOnly]);
 
@@ -146,11 +147,13 @@ export default function MarketplaceTabs({ listings, myListings, myOffers, myTran
               <option value="">Todos os tipos</option>
               {Object.entries(TYPE_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
             </select>
-            <label className="inline-flex items-center gap-2 text-sm cursor-pointer">
-              <input type="checkbox" checked={halalOnly} onChange={e => setHalalOnly(e.target.checked)}
-                className="h-4 w-4 rounded accent-[var(--primary)]" />
-              Halal certificado
-            </label>
+            {HALAL_ENABLED && (
+              <label className="inline-flex items-center gap-2 text-sm cursor-pointer">
+                <input type="checkbox" checked={halalOnly} onChange={e => setHalalOnly(e.target.checked)}
+                  className="h-4 w-4 rounded accent-[var(--primary)]" />
+                Halal certificado
+              </label>
+            )}
           </div>
 
           {/* Grid */}
@@ -281,7 +284,7 @@ function ListingCard({ listing: l }: { listing: Listing }) {
           <Icon size={18} className={t.color} />
         </span>
         <div className="flex items-center gap-1.5">
-          {l.halal_certified && <HalalBadgeSVG size={28} />}
+          {HALAL_ENABLED && l.halal_certified && <HalalBadgeSVG size={28} />}
           {l.score_agraas != null && (
             <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
               Score {l.score_agraas}

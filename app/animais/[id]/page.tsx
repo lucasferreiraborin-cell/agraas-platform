@@ -579,7 +579,15 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
           />
           <ScoreBar
             label="Certificações (Boi Verde, Rastreabilidade BR, GAP)"
-            value={Math.min(100, (passport?.certifications_json?.filter((c: any) => (c.status ?? '').toLowerCase() === 'active').length ?? 0) * 25)}
+            // T1.6 fix (17/06/2026): usa query direta animal_certifications em vez
+            // do cache certifications_json, que histórico mostrou poder ficar stale.
+            // Pilar Certificações vale 10% — cada cert ativa contribui +25 pts (cap 100).
+            value={Math.min(
+              100,
+              ((certificationsData ?? []).filter(
+                (c) => (c.status ?? "").toLowerCase() === "active",
+              ).length) * 25,
+            )}
             weight={10}
             color="#a0c878"
           />

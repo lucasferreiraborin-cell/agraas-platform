@@ -3,8 +3,21 @@
 import { useState } from "react";
 import { Calculator } from "lucide-react";
 
-export default function MarketCalculator({ totalAnimals, avgWeight }: { totalAnimals: number; avgWeight: number }) {
-  const [preco, setPreco]     = useState(330);
+export default function MarketCalculator({
+  totalAnimals,
+  avgWeight,
+  cotacaoAtual,
+}: {
+  totalAnimals: number;
+  avgWeight: number;
+  /**
+   * Cotação @ em R$ vinda do servidor (T1.7 17/06/2026).
+   * Default 330 só serve como fallback se chamado sem prop — pages devem
+   * sempre passar valor real obtido via lib/cotacao.getCotacaoArroba().
+   */
+  cotacaoAtual?: number;
+}) {
+  const [preco, setPreco]     = useState(cotacaoAtual ?? 330);
   const [animais, setAnimais] = useState(totalAnimals);
   const [peso, setPeso]       = useState(avgWeight || 450);
 
