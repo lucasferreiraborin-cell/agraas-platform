@@ -8,13 +8,13 @@
  * Dados granulares (CPF, contrato, ear tag completo) ficam escondidos.
  */
 
-import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { createSupabaseServiceClient } from "@/lib/supabase-service";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
-import BankSidebarNav from "@/app/components/BankSidebarNav";
+import PersonaShell from "@/app/components/personas/PersonaShell";
 import { BANK_VIEW_ENABLED } from "@/lib/feature-flags";
 import { scoreClassification, maskEarTag } from "@/lib/personas";
+import { requirePersona, BANCO_ROUTES } from "@/lib/persona-resolver";
 import { ArrowLeft, Download, MapPin, Calendar, Award } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -25,18 +25,8 @@ export default async function DossieProdutor({ params }: Params) {
   if (!BANK_VIEW_ENABLED) redirect("/em-breve");
 
   const { clientId } = await params;
-  const auth = await createSupabaseServerClient();
-  const { data: { user } } = await auth.auth.getUser();
-  if (!user) redirect("/login");
-
-  const { data: bankData } = await auth
-    .from("clients")
-    .select("id, name, role")
-    .eq("auth_user_id", user.id)
-    .single();
-
-  if (!bankData || !["bank", "admin"].includes(bankData.role)) redirect("/");
-
+  const ctx = await requirePersona(BANCO_ROUTES);
+  const bankData = { id: ctx.clientId, name: ctx.clientName, role: ctx.realRole };
   const db = createSupabaseServiceClient();
 
   // Verifica relacionamento ativo + acesso liberado
@@ -93,18 +83,8 @@ export default async function DossieProdutor({ params }: Params) {
   const psCls = scoreClassification(Number(ps?.score_total ?? 0));
 
   return (
-    <div className="flex h-screen bg-[#0a0a0a]">
-      <aside className="w-72 shrink-0 border-r border-white/8 bg-[#0d1f17] flex flex-col">
-        <div className="px-6 py-5 border-b border-white/8">
-          <div className="text-[11px] uppercase tracking-[0.16em] text-white/55">Agraas</div>
-          <div className="text-white font-semibold text-lg mt-1">Instituição Financeira</div>
-          <div className="text-white/60 text-xs mt-0.5">{bankData.name}</div>
-        </div>
-        <BankSidebarNav />
-      </aside>
-
-      <main className="flex-1 overflow-y-auto">
-        <div className="max-w-6xl mx-auto px-8 py-10">
+    <PersonaShell ctx={ctx}>
+      <div className="max-w-6xl mx-auto px-8 py-10">
           <Link href="/banco" className="inline-flex items-center gap-1 text-[--text-secondary] text-sm hover:text-[--text-primary] mb-6">
             <ArrowLeft size={14} />
             Portfólio
@@ -305,9 +285,8 @@ export default async function DossieProdutor({ params }: Params) {
             Identificadores individuais mascarados. Para análise complementar, solicite documentos
             ao produtor diretamente.
           </p>
-        </div>
-      </main>
-    </div>
+      </div>
+    </PersonaShell>
   );
 }
 

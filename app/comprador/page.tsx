@@ -1,21 +1,13 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { createSupabaseServiceClient } from "@/lib/supabase-service";
-import { redirect } from "next/navigation";
 import CompradorView from "@/app/components/CompradorView";
+import { requirePersona, FRIGORIFICO_ROUTES } from "@/lib/persona-resolver";
 
 export default async function CompradorPage() {
-  // ── Auth check ────────────────────────────────────────────────────────────
+  // ── Persona guard (admin pode acessar, buyer pode acessar) ────────────────
+  const ctx = await requirePersona(FRIGORIFICO_ROUTES);
   const authClient = await createSupabaseServerClient();
-  const { data: { user } } = await authClient.auth.getUser();
-  if (!user) redirect("/login");
-
-  const { data: clientData } = await authClient
-    .from("clients")
-    .select("id, name, role, email")
-    .eq("auth_user_id", user.id)
-    .single();
-
-  if (!clientData || clientData.role !== "buyer") redirect("/");
+  const clientData = { id: ctx.clientId, name: ctx.clientName, role: ctx.realRole, email: "" };
 
   // ── Service client (bypasses RLS) ────────────────────────────────────────
   const db = createSupabaseServiceClient();

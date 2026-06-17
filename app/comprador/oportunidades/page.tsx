@@ -7,13 +7,12 @@
  * origem rastreada. Dados não-sensíveis — sem CPF/CNPJ, sem ear tag bruto.
  */
 
-import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { createSupabaseServiceClient } from "@/lib/supabase-service";
-import { redirect } from "next/navigation";
 import Link from "next/link";
-import BuyerSidebarNav from "@/app/components/BuyerSidebarNav";
+import PersonaShell from "@/app/components/personas/PersonaShell";
 import type { LoteOfertadoCard } from "@/lib/personas";
 import { scoreClassification } from "@/lib/personas";
+import { requirePersona, FRIGORIFICO_ROUTES } from "@/lib/persona-resolver";
 import { ArrowRight, ShieldCheck, AlertCircle, MapPin, Calendar, Beef } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -141,35 +140,12 @@ async function fetchLotesAbertos(): Promise<LoteOfertadoCard[]> {
 }
 
 export default async function OportunidadesPage() {
-  const auth = await createSupabaseServerClient();
-  const { data: { user } } = await auth.auth.getUser();
-  if (!user) redirect("/login");
-
-  const { data: clientData } = await auth
-    .from("clients")
-    .select("id, name, role")
-    .eq("auth_user_id", user.id)
-    .single();
-
-  if (!clientData || !["buyer", "admin"].includes(clientData.role)) {
-    redirect("/");
-  }
-
+  const ctx = await requirePersona(FRIGORIFICO_ROUTES);
   const lotes = await fetchLotesAbertos();
 
   return (
-    <div className="flex h-screen bg-[#0a0a0a]">
-      <aside className="w-72 shrink-0 border-r border-white/8 bg-[#0d1f17] flex flex-col">
-        <div className="px-6 py-5 border-b border-white/8">
-          <div className="text-[11px] uppercase tracking-[0.16em] text-white/55">Agraas</div>
-          <div className="text-white font-semibold text-lg mt-1">Frigorífico</div>
-          <div className="text-white/60 text-xs mt-0.5">{clientData.name}</div>
-        </div>
-        <BuyerSidebarNav />
-      </aside>
-
-      <main className="flex-1 overflow-y-auto">
-        <div className="max-w-7xl mx-auto px-8 py-10">
+    <PersonaShell ctx={ctx}>
+      <div className="max-w-7xl mx-auto px-8 py-10">
           <header className="mb-10">
             <div className="text-[11px] uppercase tracking-[0.16em] text-[--text-muted]">
               Oportunidades · Lotes disponíveis
@@ -276,9 +252,8 @@ export default async function OportunidadesPage() {
               })}
             </div>
           )}
-        </div>
-      </main>
-    </div>
+      </div>
+    </PersonaShell>
   );
 }
 

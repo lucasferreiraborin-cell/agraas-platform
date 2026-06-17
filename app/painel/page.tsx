@@ -8,6 +8,8 @@ import { KpiCard } from "@/app/components/ui/KpiCard";
 import { CotacaoBadge } from "@/app/components/CotacaoBadge";
 import { getCotacaoArroba } from "@/lib/cotacao";
 import InstituicoesParceirasCard from "@/app/components/InstituicoesParceirasCard";
+import AdminSwitcher from "@/app/components/AdminSwitcher";
+import { roleToPersona } from "@/lib/persona-themes";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -545,6 +547,9 @@ export default async function PainelPage() {
         <div className="flex flex-wrap items-center gap-2">
           <div className="ag-badge ag-badge-green">Painel executivo</div>
           <CotacaoBadge compact />
+          {roleToPersona(clientData?.role) === "admin" && (
+            <AdminSwitcher currentViewing="produtor" isViewingAs={false} />
+          )}
           {isFsjbePilot && (
             <div
               title="5 animais ilustrativos enquanto o tombamento Multbovinos → Agraas é concluído. Score, peso e eventos são representativos."

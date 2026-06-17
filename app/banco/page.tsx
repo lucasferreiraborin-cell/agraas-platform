@@ -6,13 +6,13 @@
  * bank_producer_relationships). Score agregado, indicadores de risco.
  */
 
-import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { createSupabaseServiceClient } from "@/lib/supabase-service";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import BankSidebarNav from "@/app/components/BankSidebarNav";
+import PersonaShell from "@/app/components/personas/PersonaShell";
 import { BANK_VIEW_ENABLED } from "@/lib/feature-flags";
 import { scoreClassification } from "@/lib/personas";
+import { requirePersona, BANCO_ROUTES } from "@/lib/persona-resolver";
 import { ChevronRight, AlertTriangle, TrendingUp, Building2 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -20,20 +20,8 @@ export const dynamic = "force-dynamic";
 export default async function BancoPage() {
   if (!BANK_VIEW_ENABLED) redirect("/em-breve");
 
-  const auth = await createSupabaseServerClient();
-  const { data: { user } } = await auth.auth.getUser();
-  if (!user) redirect("/login");
-
-  const { data: clientData } = await auth
-    .from("clients")
-    .select("id, name, role")
-    .eq("auth_user_id", user.id)
-    .single();
-
-  if (!clientData || !["bank", "admin"].includes(clientData.role)) {
-    redirect("/");
-  }
-
+  const ctx = await requirePersona(BANCO_ROUTES);
+  const clientData = { id: ctx.clientId, name: ctx.clientName, role: ctx.realRole };
   const db = createSupabaseServiceClient();
 
   const { data: relationships } = await db
@@ -50,7 +38,8 @@ export default async function BancoPage() {
 
   if (producerIds.length === 0) {
     return (
-      <PortfolioShell bankName={clientData.name}>
+      <PersonaShell ctx={ctx}>
+      <div className="max-w-7xl mx-auto px-8 py-10">
         <header className="mb-10">
           <div className="text-[11px] uppercase tracking-[0.16em] text-[--text-muted]">
             Portfólio · Análise de crédito rural
@@ -73,7 +62,8 @@ export default async function BancoPage() {
             Procedimento: o produtor acessa <code>/painel</code> e ativa o compartilhamento no card "Instituições parceiras".
           </p>
         </div>
-      </PortfolioShell>
+        </div>
+    </PersonaShell>
     );
   }
 
@@ -125,7 +115,8 @@ export default async function BancoPage() {
   const altoPadrao = rows.filter((r) => r.score_total >= 80).length;
 
   return (
-    <PortfolioShell bankName={clientData.name}>
+    <PersonaShell ctx={ctx}>
+      <div className="max-w-7xl mx-auto px-8 py-10">
       <header className="mb-10">
         <div className="text-[11px] uppercase tracking-[0.16em] text-[--text-muted]">
           Portfólio · Análise de crédito rural
@@ -219,25 +210,8 @@ export default async function BancoPage() {
           </tbody>
         </table>
       </section>
-    </PortfolioShell>
-  );
-}
-
-function PortfolioShell({ bankName, children }: { bankName: string; children: React.ReactNode }) {
-  return (
-    <div className="flex h-screen bg-[#0a0a0a]">
-      <aside className="w-72 shrink-0 border-r border-white/8 bg-[#0d1f17] flex flex-col">
-        <div className="px-6 py-5 border-b border-white/8">
-          <div className="text-[11px] uppercase tracking-[0.16em] text-white/55">Agraas</div>
-          <div className="text-white font-semibold text-lg mt-1">Instituição Financeira</div>
-          <div className="text-white/60 text-xs mt-0.5">{bankName}</div>
-        </div>
-        <BankSidebarNav />
-      </aside>
-      <main className="flex-1 overflow-y-auto">
-        <div className="max-w-7xl mx-auto px-8 py-10">{children}</div>
-      </main>
-    </div>
+      </div>
+    </PersonaShell>
   );
 }
 
