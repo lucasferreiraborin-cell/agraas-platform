@@ -1,16 +1,9 @@
 {
   "crons": [
-    {
-      "path": "/api/cron/cotacao",
-      "schedule": "0 11 * * *"
-    },
-    {
-      "path": "/api/digest/daily",
-      "schedule": "57 10 * * 1-5"
-    },
-    {
-      "path": "/api/digest/socios?dryRun=true",
-      "schedule": "3 20 * * 5"
-    }
+    { "path": "/api/cron/cotacao",            "schedule": "0 11 * * *"     },
+    { "path": "/api/market/refresh",          "schedule": "0 */6 * * *"    },
+    { "path": "/api/cron/generate-insights",  "schedule": "0 10 * * *"     },
+    { "path": "/api/digest/daily",            "schedule": "57 10 * * 1-5"  },
+    { "path": "/api/digest/socios?dryRun=true","schedule": "3 20 * * 5"    }
   ]
 }
