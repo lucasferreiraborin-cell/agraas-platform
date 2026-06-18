@@ -19,9 +19,20 @@ import RefreshButton from "@/app/admin/saude/RefreshButton";
 export const dynamic = "force-dynamic";
 
 const JOBS = [
+  { name: "self_heal", label: "Auto-cura horária", schedule: "a cada 1h", icon: RefreshCw },
   { name: "market_refresh", label: "Coleta de mercado", schedule: "cada 6h", icon: TrendingUp },
   { name: "generate_insights", label: "Geração de insights IA", schedule: "10h UTC diário", icon: Brain },
-  { name: "cotacao_arroba", label: "Cotação @", schedule: "11h UTC diário", icon: Activity },
+  { name: "daily_briefing", label: "Briefing diário 2.0", schedule: "10:57 UTC seg-sex", icon: Activity },
+];
+
+const REQUIRED_VARS = [
+  { key: "ANTHROPIC_API_KEY",         purpose: "IA Claude para insights por persona",       required: true,  cron_only: false },
+  { key: "RESEND_API_KEY",            purpose: "E-mails (digest sócios, alertas)",          required: true,  cron_only: false },
+  { key: "NEXT_PUBLIC_SUPABASE_URL",  purpose: "Conexão Supabase",                          required: true,  cron_only: false },
+  { key: "SUPABASE_SERVICE_ROLE_KEY", purpose: "Acesso server-side ao banco",               required: true,  cron_only: false },
+  { key: "STRIPE_SECRET_KEY",         purpose: "Pagamentos planos",                         required: false, cron_only: false },
+  { key: "CRON_SECRET",               purpose: "Disparo manual de crons (opcional)",        required: false, cron_only: true  },
+  { key: "DIGEST_TRIGGER_TOKEN",      purpose: "Disparo manual digest sócios (opcional)",   required: false, cron_only: true  },
 ];
 
 export default async function AdminSaudePage() {
@@ -29,17 +40,28 @@ export default async function AdminSaudePage() {
   const db = createSupabaseServiceClient();
   const cotacao = await getCotacaoArroba();
 
-  // Últimos runs por job
+  // Últimos runs por job (mais que 4 pra cobrir todos os jobs)
   const { data: lastRuns } = await db
     .from("platform_jobs_log")
     .select("*")
     .order("ran_at", { ascending: false })
-    .limit(20);
+    .limit(40);
 
   const lastByJob = new Map<string, { status: string; ran_at: string; details: Record<string, unknown> }>();
   for (const r of lastRuns ?? []) {
     if (!lastByJob.has(r.job_name)) lastByJob.set(r.job_name, r);
   }
+
+  // Auto-cura: detalhes do último self_heal
+  const lastSelfHeal = lastByJob.get("self_heal");
+  const selfHealActions = (lastSelfHeal?.details as { actions?: Array<{ step: string; status: string; detail?: string }> })?.actions ?? [];
+
+  // Configuração (env vars) — server-side direto
+  const envStatus = REQUIRED_VARS.map((v) => ({
+    ...v,
+    configured: Boolean(process.env[v.key]),
+  }));
+  const missingRequired = envStatus.filter((s) => s.required && !s.configured).length;
 
   // Últimos sinais de mercado
   const { data: signals } = await db
@@ -160,6 +182,100 @@ export default async function AdminSaudePage() {
             </tbody>
           </table>
         </section>
+
+        {/* Configuração da plataforma · env vars */}
+        <section className="ag-card mb-6">
+          <div className="px-6 py-4 border-b border-white/8 flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-[--text-primary]">Configuração da plataforma</h2>
+              <p className="text-xs text-[--text-muted] mt-0.5">
+                Variáveis de ambiente que mantêm crons e IA funcionando
+              </p>
+            </div>
+            {missingRequired === 0 ? (
+              <Badge tone="ok" label="Tudo configurado" />
+            ) : (
+              <Badge tone="warning" label={`${missingRequired} obrigatória(s) faltando`} />
+            )}
+          </div>
+          <table className="ag-table">
+            <thead>
+              <tr>
+                <th>Variável</th>
+                <th>Propósito</th>
+                <th>Tipo</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {envStatus.map((v) => (
+                <tr key={v.key}>
+                  <td className="font-mono text-xs">{v.key}</td>
+                  <td className="text-[--text-secondary] text-sm">{v.purpose}</td>
+                  <td className="text-xs">
+                    {v.required ? (
+                      <span className="text-red-300">Obrigatória</span>
+                    ) : (
+                      <span className="text-[--text-muted]">Opcional</span>
+                    )}
+                  </td>
+                  <td>
+                    {v.configured ? (
+                      <Badge tone="ok" label="Configurada" />
+                    ) : v.required ? (
+                      <Badge tone="danger" label="Faltando" />
+                    ) : (
+                      <Badge tone="warning" label="Ausente" />
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+
+        {/* Última auto-cura */}
+        {lastSelfHeal && (
+          <section className="ag-card mb-6">
+            <div className="px-6 py-4 border-b border-white/8 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-[--text-primary]">Última auto-cura</h2>
+                <p className="text-xs text-[--text-muted] mt-0.5">
+                  {new Date(lastSelfHeal.ran_at).toLocaleString("pt-BR")}
+                </p>
+              </div>
+              {lastSelfHeal.status === "ok" ? (
+                <Badge tone="ok" label="Tudo OK" />
+              ) : lastSelfHeal.status === "partial" ? (
+                <Badge tone="warning" label="Parcial" />
+              ) : (
+                <Badge tone="danger" label="Falhou" />
+              )}
+            </div>
+            <div className="p-6 space-y-2">
+              {selfHealActions.length === 0 ? (
+                <p className="text-sm text-[--text-secondary]">Sem detalhes</p>
+              ) : (
+                selfHealActions.map((a, i) => (
+                  <div key={i} className="flex items-start gap-3">
+                    {a.status === "ok" ? (
+                      <CheckCircle size={14} className="text-green-400 mt-0.5 shrink-0" />
+                    ) : a.status === "skipped" ? (
+                      <CheckCircle size={14} className="text-[--text-muted] mt-0.5 shrink-0" />
+                    ) : (
+                      <XCircle size={14} className="text-red-400 mt-0.5 shrink-0" />
+                    )}
+                    <div className="flex-1">
+                      <div className="text-sm font-medium text-[--text-primary]">{a.step}</div>
+                      {a.detail && <div className="text-xs text-[--text-muted]">{a.detail}</div>}
+                    </div>
+                    <span className="text-[10px] uppercase tracking-wider text-[--text-muted]">{a.status}</span>
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
+        )}
 
         {/* Insights por persona */}
         <section className="ag-card mb-6">
