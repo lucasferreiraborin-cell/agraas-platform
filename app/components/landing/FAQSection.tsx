@@ -35,8 +35,8 @@ const FAQ = [
     a: "Publicar anúncios é gratuito em todos os planos. A transação acontece direto entre comprador e vendedor com NF-e gerada automaticamente. Taxa de sucesso de 2% sobre transações fechadas pelo marketplace (pago pelo vendedor, sem surpresa no checkout).",
   },
   {
-    q: "A Agraas serve para agricultura além da pecuária?",
-    a: "Totalmente. Grain ID cobre soja, milho, trigo, cana e café — talhões georreferenciados com CAR verificado, embarques rastreados em 7 etapas, BL + laudo de qualidade + certificado fitossanitário no sistema. EUDR ready.",
+    q: "A Agraas vai além da pecuária bovina?",
+    a: "O foco operacional atual é 100% bovino — onde está o piloto, o aprendizado e o time. O motor de dados foi desenhado para escalar para soja, milho, cana e demais cadeias quando o sinal de mercado pedir. Talhões georreferenciados e estrutura para documentação de embarque já estão na fundação da plataforma.",
   },
 ];
 

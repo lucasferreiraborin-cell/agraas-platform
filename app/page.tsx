@@ -27,9 +27,9 @@ import {
 } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "O agro do Brasil, auditável em tempo real.",
+  title: "Agraas — Gestão completa do agro brasileiro, com rastreio como diferencial.",
   description:
-    "Pecuária, grãos e exportação sobre uma única camada de dados verificáveis. Do pasto ao porto, do talhão ao comprador institucional.",
+    "Uma camada única de dados verificáveis para produtores, compradores institucionais e instituições financeiras. Do nascimento do animal ao destino da arroba.",
   alternates: { canonical: "/" },
 };
 
@@ -85,27 +85,27 @@ const CAPABILITIES = [
   {
     Icon: Fingerprint,
     title: "Identidade e Rastreio",
-    p1: "Passaporte digital individual para cada animal e cada talhão. ID único vitalício, histórico completo, QR público verificável por qualquer comprador no mundo.",
-    p2: "Trilíngue (português, inglês e árabe) com suporte RTL nativo. Construído para o agro brasileiro e para compradores internacionais.",
+    p1: "Passaporte digital individual para cada animal e cada talhão. ID único vitalício, histórico completo, QR público verificável por qualquer comprador.",
+    p2: "Ancorado na Embrapa Doc 237 — cinco pilares que sustentam o passaporte e o valor do animal: produtivo, sanidade, reprodutivo, rastreabilidade e certificações.",
   },
   {
     Icon: BarChart2,
     title: "Score e Inteligência",
-    p1: "Algoritmo proprietário em 5 dimensões recalculado em tempo real a cada evento. O mesmo número no passaporte público, no dashboard e no marketplace.",
-    p2: "O score individual por animal transforma dado operacional em valor de mercado — visível no passaporte público, no dashboard e no marketplace, com o mesmo número em todos os lugares.",
+    p1: "Algoritmo proprietário em cinco dimensões, recalculado em tempo real a cada evento. Pesos fixos, fórmula transparente, recálculo auditável.",
+    p2: "O mesmo número no passaporte público, no dashboard do produtor e no anúncio do marketplace. Uma linguagem só para a cadeia inteira.",
     href: "#score",
   },
   {
     Icon: Wheat,
-    title: "Grain ID",
-    p1: "Soja, milho, trigo, cana e café rastreados do talhão ao navio em 7 etapas documentadas. BL, certificado fitossanitário e laudo de qualidade incluídos.",
-    p2: "Conformidade com o Regulamento Europeu sobre Desmatamento (EUDR) e com os requisitos da SFDA — os dois maiores mercados de destino do agro brasileiro.",
+    title: "Gestão da safra",
+    p1: "Talhões georreferenciados com CAR verificado e custo acumulado por propriedade. O mesmo motor que opera bovinos é a base para safra no roadmap.",
+    p2: "Preparado para os requisitos de origem que o mercado europeu e o asiático estão consolidando — sem prometer carimbo que ainda não é nosso.",
   },
   {
     Icon: ShoppingBag,
     title: "Marketplace Integrado",
-    p1: "Compre e venda animais, safras e insumos com score verificado, vendedor rastreado e NF-e automática no fechamento. Sem intermediário, sem burocracia.",
-    p2: "O único marketplace do agro onde o histórico do animal e da fazenda acompanha o anúncio. Qualidade comprovada antes de fechar.",
+    p1: "O mercado livre do agro. Animais, safras, insumos, máquinas e serviços anunciados com score do vendedor e NF-e automática no fechamento.",
+    p2: "O único marketplace em que o histórico operacional do vendedor acompanha o anúncio. Qualidade comprovada antes do aperto de mão.",
     href: "/marketplace",
   },
 ];
@@ -129,37 +129,46 @@ export default async function LandingPage() {
 
         <div className="relative mx-auto max-w-[1100px] px-6 pt-20 pb-24 lg:px-10 lg:pt-28 lg:pb-32">
           <FadeIn>
-            <h1
-              className="max-w-[820px] text-[clamp(2.4rem,5.8vw,4.6rem)] font-medium leading-[1] tracking-[-.035em] text-white"
-              style={{ textShadow: "0 2px 24px rgba(15,53,23,.55)" }}
-            >
-              A plataforma do agro brasileiro.
-            </h1>
-          </FadeIn>
-
-          <FadeIn delay={0.2}>
             <p
-              className="mt-7 max-w-[600px] text-[1.0625rem] leading-[1.75] text-white"
+              className="text-[.75rem] font-semibold uppercase tracking-[.22em] text-white/80"
               style={{ textShadow: "0 2px 16px rgba(15,53,23,.7)" }}
             >
-              Pecuária, grãos e exportação sobre uma única camada de dados verificáveis. Do pasto ao porto, do talhão ao comprador institucional.
+              Infraestrutura do agro brasileiro
             </p>
           </FadeIn>
 
-          <FadeIn delay={0.35}>
+          <FadeIn delay={0.1}>
+            <h1
+              className="mt-6 max-w-[860px] text-[clamp(2.4rem,5.8vw,4.6rem)] font-medium leading-[1] tracking-[-.035em] text-white [text-wrap:balance]"
+              style={{ textShadow: "0 2px 24px rgba(15,53,23,.55)" }}
+            >
+              Gestão completa do agro, com rastreio como diferencial.
+            </h1>
+          </FadeIn>
+
+          <FadeIn delay={0.25}>
+            <p
+              className="mt-7 max-w-[620px] text-[1.0625rem] leading-[1.75] text-white"
+              style={{ textShadow: "0 2px 16px rgba(15,53,23,.7)" }}
+            >
+              Uma camada única de dados verificáveis que conecta o produtor brasileiro ao comprador institucional e à instituição financeira. Do nascimento do animal ao destino da arroba.
+            </p>
+          </FadeIn>
+
+          <FadeIn delay={0.4}>
             <div className="mt-10 flex flex-wrap items-center gap-4">
               <Link
-                href="/marketplace"
+                href="/cadastro"
                 className="inline-flex items-center gap-2 rounded-xl bg-[var(--primary)] px-7 py-[14px] text-[.9375rem] font-semibold text-white shadow-[0_10px_30px_rgba(46,139,62,.25)] transition-all hover:bg-[var(--primary-hover)] hover:shadow-[0_14px_40px_rgba(46,139,62,.35)]"
               >
-                Explorar marketplace
+                Começar gratuitamente
                 <ArrowRight size={15} />
               </Link>
               <Link
-                href="/login"
+                href="/marketplace"
                 className="rounded-xl border-2 border-white bg-transparent px-7 py-[14px] text-[.9375rem] font-semibold text-white transition-colors duration-200 hover:bg-white/10"
               >
-                Ver a plataforma
+                Explorar marketplace
               </Link>
             </div>
           </FadeIn>
@@ -229,6 +238,72 @@ export default async function LandingPage() {
         </div>
       </section>
 
+      {/* ═══ [5.5] TRÊS PERSONAS, UM MESMO CORE ═══════════════════════════ */}
+      <section className="bg-[var(--bg)]">
+        <div className="mx-auto max-w-[1200px] px-6 py-24 lg:px-10 lg:py-28">
+          <div className="max-w-[820px]">
+            <FadeIn>
+              <p className="text-[.75rem] font-semibold uppercase tracking-[.22em] text-[var(--primary)]">
+                Tese
+              </p>
+            </FadeIn>
+            <FadeIn delay={0.08}>
+              <h2 className="mt-5 text-[clamp(1.8rem,4vw,2.8rem)] font-medium leading-[1.08] tracking-[-.02em] text-[var(--text-primary)] [text-wrap:balance]">
+                O mesmo dado serve três interlocutores do agro.
+              </h2>
+            </FadeIn>
+            <FadeIn delay={0.16}>
+              <p className="mt-6 max-w-[720px] text-[1rem] leading-[1.8] text-[var(--text-secondary)]">
+                A operação de campo gera um único registro auditável. Esse registro vira gestão para quem produz, prova para quem compra e leitura de risco para quem financia. Sem retrabalho, sem versão diferente do mesmo número em sistemas diferentes.
+              </p>
+            </FadeIn>
+          </div>
+
+          <StaggerContainer
+            className="mt-14 grid gap-6 md:grid-cols-3"
+            staggerChildren={0.08}
+          >
+            {[
+              {
+                tag: "Produtor",
+                title: "Gestão completa do dia a dia",
+                text: "Manejo, sanitário, financeiro, fiscal e estoque em um só lugar. O rastreio é consequência da operação — não custo adicional.",
+              },
+              {
+                tag: "Comprador institucional",
+                title: "Prova auditável de origem",
+                text: "Acesso ao histórico do animal ou do lote sem precisar confiar na palavra do vendedor. Score, eventos e documentos no mesmo QR.",
+              },
+              {
+                tag: "Instituição financeira",
+                title: "Risco lido na fonte",
+                text: "Carteira de crédito agro avaliada com base no que está acontecendo no campo agora — não em demonstrativo de seis meses atrás.",
+              },
+            ].map((p) => (
+              <StaggerItem key={p.tag}>
+                <div className="flex h-full flex-col rounded-2xl border border-[var(--border)] bg-white p-8 shadow-[var(--shadow-soft)] transition-colors hover:border-[var(--primary)]/25">
+                  <p className="text-[.6875rem] font-semibold uppercase tracking-[.18em] text-[var(--primary)]">
+                    {p.tag}
+                  </p>
+                  <h3 className="mt-4 text-[1.125rem] font-semibold leading-[1.3] tracking-[-.01em] text-[var(--text-primary)]">
+                    {p.title}
+                  </h3>
+                  <p className="mt-3 text-[.9375rem] leading-[1.75] text-[var(--text-muted)]">
+                    {p.text}
+                  </p>
+                </div>
+              </StaggerItem>
+            ))}
+          </StaggerContainer>
+
+          <FadeIn delay={0.35}>
+            <p className="mt-12 max-w-[760px] border-l-4 border-[var(--primary)] pl-6 text-[1rem] leading-[1.8] text-[var(--text-secondary)]">
+              Hoje o foco operacional é bovino — onde está o cliente piloto, a tração e o ciclo de aprendizado mais curto. O motor de dados foi desenhado para escalar para as demais cadeias quando o sinal pedir.
+            </p>
+          </FadeIn>
+        </div>
+      </section>
+
       {/* ═══ [6] PORTOS BR → MUNDO ═════════════════════════════════════════ */}
       <PortosSection />
 
@@ -243,26 +318,26 @@ export default async function LandingPage() {
         <div className="mx-auto max-w-[1200px] px-6 py-24 lg:px-10 lg:py-28">
           <FadeIn>
             <div className="max-w-[820px]">
-              <h2 className="text-[clamp(1.8rem,3.5vw,2.6rem)] font-medium leading-[1.08] tracking-[-.02em] text-[var(--text-primary)]">
-                O marketplace do agronegócio
+              <h2 className="text-[clamp(1.8rem,3.5vw,2.6rem)] font-medium leading-[1.08] tracking-[-.02em] text-[var(--text-primary)] [text-wrap:balance]">
+                O marketplace do agronegócio brasileiro.
               </h2>
               <p className="mt-5 max-w-[680px] text-[1rem] leading-[1.8] text-[var(--text-secondary)]">
-                Animais, safras, insumos e máquinas — cada anúncio com score verificado, vendedor rastreado e NF-e automática.
+                Animais, safras, insumos, máquinas e serviços — cada anúncio com score do vendedor, histórico operacional e NF-e automática no fechamento.
               </p>
             </div>
           </FadeIn>
 
-          {/* 4 pills exclusivas — Só na Agraas */}
+          {/* 4 pills — propostas únicas */}
           <FadeIn delay={0.12}>
             <div className="mt-10 flex flex-wrap items-center gap-3 border-y border-[var(--border)] py-6">
               <span className="text-[.75rem] font-semibold uppercase tracking-[.12em] text-[var(--text-muted)]">
-                Só na Agraas:
+                O que muda aqui:
               </span>
               {[
                 "Score em todo anúncio",
-                "Histórico do animal no listing",
+                "Histórico do vendedor no listing",
                 "NF-e automática no fechamento",
-                "Vendedor com passaporte ativo",
+                "Sem intermediário entre as partes",
               ].map((p) => (
                 <span
                   key={p}
@@ -369,30 +444,58 @@ export default async function LandingPage() {
           }}
         />
 
-        <div className="mx-auto max-w-[880px] px-6 py-28 text-center lg:py-40">
+        <div className="mx-auto max-w-[960px] px-6 py-28 lg:py-36">
           <FadeIn>
-            <h2 className="text-[clamp(2.2rem,5vw,3.6rem)] font-medium leading-[1.05] tracking-[-.035em] text-white">
-              Faça parte da camada<br />de confiança do agro.
+            <h2 className="max-w-[760px] text-[clamp(2.2rem,5vw,3.6rem)] font-medium leading-[1.05] tracking-[-.035em] text-white [text-wrap:balance]">
+              A camada de confiança do agro brasileiro começa aqui.
             </h2>
-            <p className="mx-auto mt-6 max-w-[480px] text-[1.0625rem] leading-[1.75] text-white/75">
-              Fazendeiro, comprador, fornecedor ou parceiro — a infraestrutura do agronegócio brasileiro está aqui.
+            <p className="mt-6 max-w-[520px] text-[1.0625rem] leading-[1.75] text-white/75">
+              Dois caminhos, o mesmo destino: profissionalizar a infraestrutura digital do agro nacional.
             </p>
-            <div className="mt-10 flex flex-wrap justify-center gap-4">
-              <Link
-                href="/cadastro"
-                className="group inline-flex items-center gap-2 rounded-xl bg-[var(--primary)] px-8 py-4 text-[.9375rem] font-semibold text-white shadow-[0_14px_40px_rgba(46,139,62,.35)] transition-all hover:bg-[var(--primary-hover)] hover:shadow-[0_20px_50px_rgba(46,139,62,.5)]"
-              >
-                Criar conta gratuita
-                <ArrowRight size={15} className="transition-transform group-hover:translate-x-0.5" />
-              </Link>
-              <a
-                href="mailto:contato@agraas.com.br"
-                className="rounded-xl border-2 border-white bg-transparent px-8 py-4 text-[.9375rem] font-semibold text-white transition-colors duration-200 hover:bg-white/10"
-              >
-                Fale com a gente
-              </a>
-            </div>
           </FadeIn>
+
+          <div className="mt-14 grid gap-5 md:grid-cols-2">
+            <FadeIn delay={0.12}>
+              <div className="flex h-full flex-col rounded-2xl border border-white/15 bg-white/[.04] p-8 backdrop-blur-sm">
+                <p className="text-[.6875rem] font-semibold uppercase tracking-[.18em] text-white/55">
+                  Produtor rural
+                </p>
+                <h3 className="mt-4 text-[1.25rem] font-semibold leading-[1.3] text-white">
+                  Comece a operar com rastreio.
+                </h3>
+                <p className="mt-3 text-[.9375rem] leading-[1.75] text-white/65">
+                  Cadastro gratuito. Onboarding assistido para operações médias e grandes.
+                </p>
+                <Link
+                  href="/cadastro"
+                  className="group mt-6 inline-flex w-fit items-center gap-2 rounded-xl bg-[var(--primary)] px-6 py-3 text-[.9375rem] font-semibold text-white shadow-[0_10px_30px_rgba(46,139,62,.3)] transition-all hover:bg-[var(--primary-hover)] hover:shadow-[0_14px_40px_rgba(46,139,62,.45)]"
+                >
+                  Criar conta
+                  <ArrowRight size={15} className="transition-transform group-hover:translate-x-0.5" />
+                </Link>
+              </div>
+            </FadeIn>
+
+            <FadeIn delay={0.22}>
+              <div className="flex h-full flex-col rounded-2xl border border-white/15 bg-white/[.04] p-8 backdrop-blur-sm">
+                <p className="text-[.6875rem] font-semibold uppercase tracking-[.18em] text-white/55">
+                  Investidor, parceiro institucional ou financeiro
+                </p>
+                <h3 className="mt-4 text-[1.25rem] font-semibold leading-[1.3] text-white">
+                  Conversa direta com a fundação.
+                </h3>
+                <p className="mt-3 text-[.9375rem] leading-[1.75] text-white/65">
+                  Captação pré-seed, integrações com frigorífico ou avaliação de carteira de crédito agro.
+                </p>
+                <a
+                  href="mailto:contato@agraas.com.br?subject=Conversa%20institucional%20—%20Agraas"
+                  className="mt-6 inline-flex w-fit items-center gap-2 rounded-xl border-2 border-white bg-transparent px-6 py-3 text-[.9375rem] font-semibold text-white transition-colors duration-200 hover:bg-white/10"
+                >
+                  Falar com a fundação
+                </a>
+              </div>
+            </FadeIn>
+          </div>
         </div>
       </section>
     </PublicShell>

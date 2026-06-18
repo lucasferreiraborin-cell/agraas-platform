@@ -7,15 +7,15 @@ import { FadeIn, StaggerContainer, StaggerItem } from "@/app/components/ui/Motio
 const STATS = [
   { value: "Nelore", label: "Rebanho passaportado individual" },
   { value: "2.300",  label: "cabeças sob rastreio digital" },
-  { value: "19",     label: "pesagens registradas" },
-  { value: "21",     label: "aplicações sanitárias rastreadas" },
+  { value: "Cria",   label: "fazenda com foco em terminação reprodutiva" },
+  { value: "Goiás",  label: "Jussara — região central do cinturão pecuário" },
 ];
 
 const DELIVERABLES = [
-  { label: "Passaporte digital",      sub: "ID único por animal, acessível via QR público" },
-  { label: "Operação no campo",       sub: "Pesagens, manejo e sanitário registrados pelo time" },
-  { label: "Conformidade sanitária",  sub: "Calendário MAPA e carências respeitadas" },
-  { label: "Pronta para exportar",    sub: "Infraestrutura preparada para o próximo passo" },
+  { label: "Passaporte digital",        sub: "ID único por animal, acessível via QR público" },
+  { label: "Operação no campo",         sub: "Pesagens, manejo e sanitário registrados pelo time" },
+  { label: "Conformidade sanitária",    sub: "Calendário MAPA e carências respeitadas" },
+  { label: "Infraestrutura preparada",  sub: "Base de dados pronta para os próximos passos comerciais" },
 ];
 
 export default function FSJBECaseSection() {
@@ -45,16 +45,16 @@ export default function FSJBECaseSection() {
               <span className="h-1 w-1 rounded-full bg-[var(--border-strong)]" />
               <span>Rebanho Nelore</span>
               <span className="h-1 w-1 rounded-full bg-[var(--border-strong)]" />
-              <span>Cliente ativo</span>
+              <span>Piloto operacional</span>
             </div>
           </FadeIn>
           <FadeIn delay={0.25}>
             <div className="mt-8 max-w-[720px] space-y-5 text-[1.0625rem] leading-[1.85] text-[var(--text-secondary)]">
               <p>
-                A Fazenda São João da Boa Esperança foi a primeira fazenda a operar na plataforma Agraas. Com 2.300 cabeças de Nelore em Goiás, a FSJBE tem passaporte digital individual para cada animal e rastreio completo do manejo diário.
+                A Fazenda São João da Boa Esperança é o piloto operacional da Agraas. Com 2.300 cabeças de Nelore em Jussara (GO), a FSJBE tem passaporte digital individual por animal e rastreio do manejo diário rodando em campo aberto.
               </p>
               <p className="font-medium text-[var(--text-primary)]">
-                É a prova de que a Agraas funciona no campo real — não em laboratório.
+                A prova de que a Agraas roda no campo real — não só em demo.
               </p>
             </div>
           </FadeIn>
@@ -92,7 +92,7 @@ export default function FSJBECaseSection() {
             <FadeIn delay={0.2}>
               <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] p-6 shadow-[var(--shadow-soft)]">
                 <h3 className="text-[1rem] font-semibold text-[var(--text-primary)]">
-                  O que está ativo
+                  Status do piloto
                 </h3>
                 <ul className="mt-4 space-y-3">
                   {DELIVERABLES.map((d) => (

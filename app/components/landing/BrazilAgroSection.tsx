@@ -30,9 +30,9 @@ const MACRO_STATS = [
     sub: "direta ou indiretamente gerados pelo agronegócio brasileiro",
   },
   {
-    value: "44%",
-    label: "da proteína bovina saudita",
-    sub: "das importações de carne da Arábia Saudita vêm do Brasil",
+    value: "30%+",
+    label: "da carne bovina global",
+    sub: "do mercado mundial de exportação tem origem brasileira",
   },
   {
     value: "108 Mi t",

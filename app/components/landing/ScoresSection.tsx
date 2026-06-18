@@ -78,7 +78,7 @@ export default function ScoresSection() {
         <div className="max-w-[860px]">
           <FadeIn>
             <h2 className="text-[clamp(2.2rem,5.2vw,3.8rem)] font-medium leading-[1.05] tracking-[-.025em] text-white">
-              O Score que <span className="text-[var(--primary)]">nenhum concorrente</span> tem.
+              Um <span className="text-[var(--primary)]">número só</span> para a cadeia inteira.
             </h2>
           </FadeIn>
           <FadeIn delay={0.12}>

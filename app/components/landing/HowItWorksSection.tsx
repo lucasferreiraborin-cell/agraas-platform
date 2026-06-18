@@ -20,8 +20,8 @@ const STEPS = [
   {
     Icon: Globe,
     title: "Venda com rastreio, chegue ao mundo",
-    text: "Animais e safras anunciados no marketplace com score e certificações automáticos. Venda fechada com NF-e gerada. Embarque via porto brasileiro com rastreio em 7 checkpoints. O comprador em Jeddah, Rotterdam ou Xangai verifica a origem pelo QR público — sem precisar de intermediário, sem precisar confiar na palavra de ninguém.",
-    tags: ["Marketplace integrado", "NF-e automática", "QR público", "7 checkpoints de embarque"],
+    text: "Animais anunciados no marketplace com score e documentos atrelados. Venda fechada com NF-e gerada. Embarque preparado para rastreio em checkpoints auditáveis. O comprador institucional verifica a origem pelo QR público — sem precisar de intermediário, sem precisar confiar na palavra de ninguém.",
+    tags: ["Marketplace integrado", "NF-e automática", "QR público", "Checkpoints auditáveis"],
   },
 ];
 

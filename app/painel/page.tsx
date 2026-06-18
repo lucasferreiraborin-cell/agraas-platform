@@ -1,10 +1,19 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import {
+  ArrowUpRight,
+  Clock4,
+  Truck,
+  CircleCheck,
+  Scale,
+  Trophy,
+  Wheat,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import BrazilMapWrapper from "@/app/components/BrazilMapWrapper";
 import NotificationBanner from "@/app/components/NotificationBanner";
-import PainelInsights from "@/app/components/PainelInsights";
-import { KpiCard } from "@/app/components/ui/KpiCard";
+import DailyInsightsProdutor from "@/app/components/DailyInsightsProdutor";
 import { CotacaoBadge } from "@/app/components/CotacaoBadge";
 import { getCotacaoArroba } from "@/lib/cotacao";
 import InstituicoesParceirasCard from "@/app/components/InstituicoesParceirasCard";
@@ -531,8 +540,44 @@ export default async function PainelPage() {
 
   // ─────────────────────────────────────────────────────────────────────────────
 
+  // ── Pulse summary (faixa horizontal de operação) ───────────────────────────
+  const pulseItems = [
+    {
+      label: "Carências",
+      value: withdrawals7d,
+      detail: withdrawals7d > 0 ? "vencendo em 7 dias" : "nenhuma vencendo",
+      tone: withdrawals7d > 0 ? "amber" : "neutral",
+      href: "/alertas",
+      Icon: Clock4,
+    },
+    {
+      label: "Sem pesagem",
+      value: noPesagem30d,
+      detail: noPesagem30d > 0 ? "há mais de 30 dias" : "rebanho em dia",
+      tone: noPesagem30d > 0 ? "amber" : "neutral",
+      href: "/animais",
+      Icon: Scale,
+    },
+    {
+      label: "Embarques",
+      value: shipmentsStale,
+      detail: shipmentsStale > 0 ? "sem atualização há 5+ dias" : "tracking saudável",
+      tone: shipmentsStale > 0 ? "red" : "neutral",
+      href: "/tracking",
+      Icon: Truck,
+    },
+    {
+      label: "Cotação @",
+      value: `R$ ${cotacaoSnap.value.toFixed(0)}`,
+      detail: cotacaoSnap.isStale ? "snapshot desatualizado" : "snapshot CEPEA recente",
+      tone: cotacaoSnap.isStale ? "amber" : "neutral",
+      href: "/inteligencia",
+      Icon: Wheat,
+    },
+  ] as const;
+
   return (
-    <main className="space-y-8">
+    <main className="space-y-10">
       <NotificationBanner
         withdrawals7d={withdrawals7d}
         noPesagem30d={noPesagem30d}
@@ -540,12 +585,12 @@ export default async function PainelPage() {
         lotsUpcoming={lotsUpcoming}
       />
 
-      {/* ── 1. Hero executivo ── */}
-      <section className="ag-card-strong overflow-hidden p-8 lg:p-10">
-        <div className="pointer-events-none absolute right-0 top-0 h-64 w-64 rounded-full bg-[radial-gradient(circle,rgba(122,168,76,0.16)_0%,rgba(122,168,76,0.00)_70%)]" />
+      {/* ── 1. Hero institucional ── */}
+      <section className="relative ag-card-strong overflow-hidden p-8 lg:p-12">
+        <div className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-[radial-gradient(circle,rgba(46,139,62,0.10)_0%,rgba(46,139,62,0.00)_70%)]" />
 
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="ag-badge ag-badge-green">Painel executivo</div>
+        <div className="relative flex flex-wrap items-center gap-2">
+          <div className="ag-badge ag-badge-green">Painel do produtor</div>
           <CotacaoBadge compact />
           {roleToPersona(clientData?.role) === "admin" && (
             <AdminSwitcher currentViewing="produtor" isViewingAs={false} />
@@ -561,65 +606,72 @@ export default async function PainelPage() {
           )}
         </div>
 
-        <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="max-w-2xl">
-            <h1 className="text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)] [text-wrap:balance] sm:text-4xl sm:tracking-[-0.05em] lg:text-5xl">
-              {greeting}, {firstName}
+        <div className="relative mt-6 grid gap-10 lg:grid-cols-[1.15fr_1fr] lg:items-end">
+          <div>
+            <p className="text-sm text-[var(--text-muted)]">{dateDisplay}</p>
+            <h1 className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-[var(--text-primary)] [text-wrap:balance] sm:text-4xl sm:tracking-[-0.05em] lg:text-[3.25rem] lg:leading-[1.05]">
+              {greeting}, {firstName}.
             </h1>
-            <p className="mt-2 text-base text-[var(--text-secondary)]">
-              {dateDisplay}
+            <p className="mt-5 max-w-xl text-lg leading-7 text-[var(--text-primary)]/80 lg:text-xl">
+              Cada animal, um{" "}
+              <strong className="font-semibold text-[var(--primary)]">
+                ativo digital
+              </strong>{" "}
+              — rastreável, auditável, mensurável e negociável. O resumo abaixo é a leitura do seu rebanho hoje.
             </p>
-            <p className="mt-5 text-lg leading-7 text-[var(--text-primary)]/85 lg:text-xl">
-              Cada animal, um <strong className="font-semibold text-[var(--primary)]">ativo digital</strong> — rastreável, auditável, mensurável e negociável.
-            </p>
+
+            <div className="mt-7 flex flex-wrap gap-3">
+              <Link href="/animais" className="ag-button-primary">
+                Explorar animais
+              </Link>
+              <Link href="/inteligencia" className="ag-button-secondary">
+                Inteligência
+              </Link>
+              <Link href="/cadeia" className="ag-button-secondary">
+                Cadeia
+              </Link>
+            </div>
           </div>
 
-          <div className="flex flex-wrap gap-3">
-            <Link href="/animais" className="ag-button-primary">
-              Explorar animais
-            </Link>
-            <Link href="/inteligencia" className="ag-button-secondary">
-              Inteligência
-            </Link>
-            <Link href="/cadeia" className="ag-button-secondary">
-              Cadeia
-            </Link>
-          </div>
-        </div>
+          {/* Hero KPI mestre + 3 satélites */}
+          <div className="rounded-3xl border border-[var(--border)] bg-white p-6 shadow-[var(--shadow-soft)]">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
+              Valor estimado do rebanho
+            </p>
+            <p
+              className="mt-2 truncate text-4xl font-bold leading-none tracking-[-0.05em] text-[var(--primary-hover)] sm:text-5xl"
+              title={estimatedValue}
+            >
+              {estimatedValue}
+            </p>
+            <p className="mt-2 text-xs text-[var(--text-muted)]">
+              base · R$ {cotacaoSnap.value.toFixed(2).replace(".", ",")}/@
+              {cotacaoSnap.isStale ? " (snapshot desatualizado)" : ""}
+            </p>
 
-        <div className="mt-8">
-          <div className="grid gap-4 md:grid-cols-3">
-            <HeroStat
-              label="Animais monitorados"
-              value={totalAnimals}
-              description="no passaporte vivo da Agraas"
-            />
-            <HeroStat
-              label="Propriedades ativas"
-              value={totalProperties}
-              description="unidades operacionais mapeadas"
-            />
-            <HeroStat
-              label="Alertas ativos"
-              value={totalActiveAlerts}
-              description={
-                totalActiveAlerts > 0
-                  ? "requerem atenção imediata"
-                  : "operação em dia"
-              }
-              alert={totalActiveAlerts > 0}
-            />
+            <div className="mt-5 grid grid-cols-3 gap-3 border-t border-[var(--border)] pt-5">
+              <HeroSatellite label="Animais" value={totalAnimals} />
+              <HeroSatellite label="Score médio" value={`${totalScoreAverage}`} sub="/100" />
+              <HeroSatellite label="Arrobas" value={`${totalArrobas}`} sub="@" />
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ── 2. Alertas críticos ── */}
+      {/* ── 2. Pulso operacional · faixa horizontal compacta ── */}
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {pulseItems.map((item) => (
+          <PulseCard key={item.label} {...item} />
+        ))}
+      </section>
+
+      {/* ── 3. Atenção imediata · alertas por animal ── */}
       <section>
-        <div className="mb-4 flex items-center justify-between gap-4">
+        <div className="mb-5 flex items-end justify-between gap-4">
           <div>
-            <h2 className="ag-section-title">Atenção imediata</h2>
+            <h2 className="ag-section-title">Animais que pedem atenção</h2>
             <p className="ag-section-subtitle">
-              Animais que requerem ação agora.
+              Ações pendentes detectadas pelo passaporte vivo da Agraas.
             </p>
           </div>
           <span
@@ -630,56 +682,32 @@ export default async function PainelPage() {
             }`}
           >
             {totalActiveAlerts > 0
-              ? `${totalActiveAlerts} alerta${totalActiveAlerts !== 1 ? "s" : ""}`
-              : "Tudo certo"}
+              ? `${totalActiveAlerts} item${totalActiveAlerts !== 1 ? "s" : ""}`
+              : "Tudo em dia"}
           </span>
         </div>
 
         {totalActiveAlerts === 0 ? (
-          <div className="flex items-center gap-4 rounded-3xl border border-green-200 bg-green-50 p-6">
-            <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-green-100">
-              <IconCheck />
+          <div className="flex items-center gap-4 rounded-3xl border border-emerald-200 bg-emerald-50/70 p-6">
+            <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-emerald-100">
+              <CircleCheck size={20} className="text-emerald-700" />
             </div>
             <div>
-              <p className="font-semibold text-green-800">
-                Operação em dia — nenhum alerta ativo
+              <p className="font-semibold text-emerald-900">
+                Rebanho dentro dos parâmetros esperados
               </p>
-              <p className="mt-1 text-sm text-green-700">
-                Todos os animais estão dentro dos parâmetros esperados.
+              <p className="mt-1 text-sm text-emerald-700">
+                Nenhuma carência expirando, pesagem em atraso ou certificação vencida no momento.
               </p>
             </div>
           </div>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {alerts.map((alert, i) => (
+            {alerts.slice(0, 6).map((alert, i) => (
               <AlertCard key={i} alert={alert} />
             ))}
           </div>
         )}
-      </section>
-
-      {/* ── 3. KPIs ── */}
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard
-          label="Animais"
-          value={totalAnimals}
-          sub="base animal monitorada"
-        />
-        <KpiCard
-          label="Score médio"
-          value={`${totalScoreAverage} pts`}
-          sub="confiança média do rebanho"
-        />
-        <KpiCard
-          label="Arrobas totais"
-          value={`${totalArrobas} @`}
-          sub="peso vivo estimado da base"
-        />
-        <KpiCard
-          label="Valor estimado"
-          value={estimatedValue}
-          sub={`base · R$ ${cotacaoSnap.value.toFixed(2).replace(".", ",")}/@${cotacaoSnap.isStale ? " (stale)" : ""}`}
-        />
       </section>
 
       {/* ── Score v3 · Pilares Embrapa Doc 237 ─────────────────────────────── */}
@@ -745,45 +773,24 @@ export default async function PainelPage() {
         </div>
       </section>
 
-      {/* ── Sprint B · Transparência LGPD: instituições parceiras ── */}
+      {/* ── Transparência LGPD: instituições parceiras (banco/cooperativa) ── */}
       {instituicoesParceiras.length > 0 && (
         <section>
           <InstituicoesParceirasCard parceiras={instituicoesParceiras} />
         </section>
       )}
 
-      {/* ── Insights Agraas (Claude Sonnet 4.6) ── */}
-      <PainelInsights
-        totalAnimals={totalAnimals}
-        totalScoreAverage={totalScoreAverage}
-        totalArrobas={totalArrobas}
-        totalProperties={totalProperties}
-        withdrawals7d={withdrawals7d}
-        noPesagem30d={noPesagem30d}
-        shipmentsStale={shipmentsStale}
-        lotsUpcoming={lotsUpcoming}
-        totalActiveAlerts={totalActiveAlerts}
-        expiredCertsCount={expiredCerts.length}
-        estimatedValue={estimatedValue}
-        topAnimal={
-          topAnimals.length > 0
-            ? {
-                code: topAnimals[0].internal_code,
-                score: topAnimals[0].total_score,
-              }
-            : null
-        }
-        isFsjbePilot={isFsjbePilot}
-      />
+      {/* ── 4. Leitura do dia · Insights Agraas (Claude Sonnet 4.6) ── */}
+      <DailyInsightsProdutor />
 
-      {/* ── 4. Mapa + Top 10 ── */}
-      <section className="grid gap-6 xl:grid-cols-2">
+      {/* ── 5. Mapa de propriedades + Top 10 ── */}
+      <section className="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
         <div className="ag-card p-8">
           <div className="mb-6 flex items-start justify-between gap-4">
             <div>
-              <h2 className="ag-section-title">Fazendas ativas</h2>
+              <h2 className="ag-section-title">Geografia do rebanho</h2>
               <p className="ag-section-subtitle">
-                Distribuição geográfica das propriedades com score médio.
+                Propriedades ativas mapeadas no Brasil — cor indica o score médio por unidade.
               </p>
             </div>
             <Link href="/propriedades" className="ag-button-secondary">
@@ -791,7 +798,7 @@ export default async function PainelPage() {
             </Link>
           </div>
 
-          <div className="h-[360px] overflow-hidden rounded-3xl">
+          <div className="h-[420px] overflow-hidden rounded-3xl">
             {propertiesForMap.length > 0 ? (
               <BrazilMapWrapper properties={propertiesForMap} />
             ) : (
@@ -801,7 +808,6 @@ export default async function PainelPage() {
             )}
           </div>
 
-          {/* Legend */}
           <div className="mt-4 flex items-center gap-6 text-xs text-[var(--text-muted)]">
             <span className="flex items-center gap-1.5">
               <span className="inline-block h-3 w-3 rounded-full bg-[var(--primary)]" />
@@ -821,13 +827,18 @@ export default async function PainelPage() {
         <div className="ag-card p-8">
           <div className="mb-6 flex items-start justify-between gap-4">
             <div>
-              <h2 className="ag-section-title">Top 10 animais</h2>
+              <div className="flex items-center gap-2">
+                <span className="inline-flex h-7 w-7 items-center justify-center rounded-xl bg-[var(--primary-soft)]">
+                  <Trophy size={14} className="text-[var(--primary-hover)]" />
+                </span>
+                <h2 className="ag-section-title">Top do rebanho</h2>
+              </div>
               <p className="ag-section-subtitle">
-                Maiores scores consolidados do rebanho.
+                Os 10 maiores scores consolidados pela metodologia v3.
               </p>
             </div>
             <Link href="/scores" className="ag-button-secondary">
-              Ver ranking
+              Ranking
             </Link>
           </div>
 
@@ -840,155 +851,165 @@ export default async function PainelPage() {
               Nenhum animal encontrado.
             </div>
           ) : (
-            <div className="space-y-3">
+            <ol className="space-y-2.5">
               {topAnimals.map((animal, index) => {
                 const scorePercent = Math.max(
                   6,
                   Math.round(Math.min(100, animal.total_score))
                 );
+                const isPodium = index < 3;
                 return (
-                  <Link
-                    key={animal.animal_id}
-                    href={`/animais/${animal.animal_id}`}
-                    className="block rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-4 transition hover:border-[rgba(93,156,68,0.25)] hover:bg-[var(--primary-soft)]"
-                  >
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-3">
-                        <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-2xl bg-white text-xs font-semibold shadow-[var(--shadow-soft)]">
-                          {index + 1}
-                        </span>
-                        <div>
-                          <p className="text-sm font-semibold text-[var(--text-primary)]">
+                  <li key={animal.animal_id}>
+                    <Link
+                      href={`/animais/${animal.animal_id}`}
+                      className="group flex items-center gap-4 rounded-2xl border border-[var(--border)] bg-white p-3.5 transition hover:border-[rgba(46,139,62,0.30)] hover:bg-[var(--primary-soft)]/40"
+                    >
+                      <span
+                        className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl text-sm font-bold ${
+                          isPodium
+                            ? "bg-[var(--primary)] text-white shadow-[0_2px_8px_rgba(46,139,62,0.25)]"
+                            : "bg-[var(--surface-soft)] text-[var(--text-secondary)]"
+                        }`}
+                      >
+                        {index + 1}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-baseline justify-between gap-3">
+                          <p className="truncate text-sm font-semibold text-[var(--text-primary)]">
                             {animal.internal_code}
                           </p>
-                          <div className="mt-1 flex items-center gap-2">
-                            <span className="rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-700">
-                              Score v3
+                          <p className="flex-shrink-0 text-lg font-semibold tracking-[-0.04em] text-[var(--primary-hover)]">
+                            {animal.total_score}
+                            <span className="ml-0.5 text-[10px] font-normal text-[var(--text-muted)]">
+                              /100
                             </span>
-                            <span className="text-xs text-[var(--text-muted)]">
-                              {animal.last_weight
-                                ? `${animal.last_weight} kg`
-                                : "—"}
-                            </span>
-                          </div>
+                          </p>
                         </div>
+                        <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-[rgba(46,139,62,0.10)]">
+                          <div
+                            className="h-full rounded-full bg-[linear-gradient(90deg,#3DA54C_0%,#2E8B3E_100%)]"
+                            style={{ width: `${scorePercent}%` }}
+                          />
+                        </div>
+                        <p className="mt-1.5 text-[11px] text-[var(--text-muted)]">
+                          {animal.last_weight ? `${animal.last_weight} kg` : "peso n/d"}
+                          {" · "}
+                          {formatStatus(animal.status)}
+                        </p>
                       </div>
-                      <p className="text-xl font-semibold tracking-[-0.04em] text-[var(--primary-hover)]">
-                        {animal.total_score}
-                      </p>
-                    </div>
-
-                    <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-[rgba(93,156,68,0.12)]">
-                      <div
-                        className="h-full rounded-full bg-[linear-gradient(90deg,#3DA54C_0%,#2E8B3E_100%)]"
-                        style={{ width: `${scorePercent}%` }}
-                      />
-                    </div>
-                  </Link>
+                    </Link>
+                  </li>
                 );
               })}
-            </div>
+            </ol>
           )}
         </div>
       </section>
 
-      {/* ── 5. Eventos recentes ── */}
-      <section className="ag-card p-8">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h2 className="ag-section-title">Últimos eventos</h2>
-            <p className="ag-section-subtitle">
-              Trilha operacional registrada na base.
-            </p>
-          </div>
-          <Link href="/eventos" className="ag-button-secondary">
-            Ver timeline
-          </Link>
-        </div>
-
-        <div className="mt-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {recentEvents.length === 0 ? (
-            <div className="col-span-full rounded-3xl bg-[var(--surface-soft)] p-6 text-sm text-[var(--text-muted)]">
-              Nenhum evento encontrado.
+      {/* ── 6. Eventos recentes + Inteligência de mercado · 2 colunas compactas ── */}
+      <section className="grid gap-6 xl:grid-cols-2">
+        <div className="ag-card p-8">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="ag-section-title">Trilha recente</h2>
+              <p className="ag-section-subtitle">
+                Últimos eventos registrados no passaporte vivo.
+              </p>
             </div>
-          ) : (
-            recentEvents.map((event, index) => (
-              <div
-                key={`${event.animal_id}-${event.event_date}-${index}`}
-                className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="ag-badge ag-badge-green text-xs">
-                    {formatEventType(event.event_type ?? "")}
-                  </span>
-                  <span className="text-xs text-[var(--text-muted)]">
-                    {event.event_date
-                      ? new Date(event.event_date).toLocaleDateString("pt-BR")
-                      : "-"}
-                  </span>
-                </div>
-                <p className="mt-3 text-sm font-medium text-[var(--text-primary)]">
-                  {event.animal_id
-                    ? animalMap.get(event.animal_id) ?? event.animal_id
-                    : "-"}
-                </p>
-                <p className="mt-1 line-clamp-2 text-xs leading-5 text-[var(--text-secondary)]">
-                  {event.notes ?? "Sem observações."}
-                </p>
+            <Link href="/eventos" className="ag-button-secondary">
+              Timeline
+            </Link>
+          </div>
+
+          <div className="mt-6 divide-y divide-[var(--border)]">
+            {recentEvents.length === 0 ? (
+              <div className="rounded-3xl bg-[var(--surface-soft)] p-6 text-sm text-[var(--text-muted)]">
+                Nenhum evento encontrado.
               </div>
-            ))
-          )}
-        </div>
-      </section>
-
-      {/* ── 6. Inteligência de Mercado ── */}
-      <section className="ag-card p-8">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h2 className="ag-section-title">Inteligência de Mercado</h2>
-            <p className="ag-section-subtitle">
-              Ativos mais fortes com leitura comercial imediata.
-            </p>
+            ) : (
+              recentEvents.map((event, index) => (
+                <div
+                  key={`${event.animal_id}-${event.event_date}-${index}`}
+                  className="flex items-start gap-3 py-4 first:pt-0 last:pb-0"
+                >
+                  <span className="mt-1.5 inline-block h-2 w-2 flex-shrink-0 rounded-full bg-[var(--primary)]" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-baseline justify-between gap-2">
+                      <p className="text-sm font-semibold text-[var(--text-primary)]">
+                        {formatEventType(event.event_type ?? "")}
+                        <span className="ml-2 font-normal text-[var(--text-muted)]">
+                          ·{" "}
+                          {event.animal_id
+                            ? animalMap.get(event.animal_id) ?? event.animal_id
+                            : "-"}
+                        </span>
+                      </p>
+                      <span className="text-[11px] text-[var(--text-muted)]">
+                        {event.event_date
+                          ? new Date(event.event_date).toLocaleDateString("pt-BR")
+                          : "-"}
+                      </span>
+                    </div>
+                    {event.notes && (
+                      <p className="mt-1 line-clamp-2 text-xs leading-5 text-[var(--text-secondary)]">
+                        {event.notes}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
-          <Link href="/market" className="ag-button-secondary">
-            Abrir market
-          </Link>
         </div>
 
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {marketRows.length === 0 ? (
-            <div className="col-span-full rounded-3xl bg-[var(--surface-soft)] p-6 text-sm text-[var(--text-muted)]">
-              Nenhum ativo disponível.
+        <div className="ag-card p-8">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="ag-section-title">Ativos em destaque</h2>
+              <p className="ag-section-subtitle">
+                Animais com leitura comercial imediata no mercado Agraas.
+              </p>
             </div>
-          ) : (
-            marketRows.slice(0, 4).map((animal) => (
-              <Link
-                key={animal.animal_id}
-                href={`/animais/${animal.animal_id}`}
-                className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5 transition hover:border-[rgba(93,156,68,0.24)] hover:bg-[var(--primary-soft)]"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <p className="text-base font-semibold tracking-[-0.02em] text-[var(--text-primary)]">
-                    {animal.internal_code ?? animal.animal_id}
+            <Link href="/market" className="ag-button-secondary">
+              Abrir
+            </Link>
+          </div>
+
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            {marketRows.length === 0 ? (
+              <div className="col-span-full rounded-3xl bg-[var(--surface-soft)] p-6 text-sm text-[var(--text-muted)]">
+                Nenhum ativo disponível.
+              </div>
+            ) : (
+              marketRows.slice(0, 4).map((animal) => (
+                <Link
+                  key={animal.animal_id}
+                  href={`/animais/${animal.animal_id}`}
+                  className="rounded-2xl border border-[var(--border)] bg-white p-4 transition hover:border-[rgba(46,139,62,0.30)] hover:bg-[var(--primary-soft)]/40"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="truncate text-sm font-semibold tracking-[-0.01em] text-[var(--text-primary)]">
+                      {animal.internal_code ?? animal.animal_id}
+                    </p>
+                    <p className="flex-shrink-0 text-lg font-semibold tracking-[-0.03em] text-[var(--primary-hover)]">
+                      {animal.total_score ?? "-"}
+                    </p>
+                  </div>
+                  <p className="mt-1 truncate text-[11px] text-[var(--text-muted)]">
+                    {animal.property_name ?? "Propriedade n/i"}
                   </p>
-                  <p className="text-xl font-semibold text-[var(--primary-hover)]">
-                    {animal.total_score ?? "-"}
-                  </p>
-                </div>
-                <p className="mt-1 text-xs text-[var(--text-secondary)]">
-                  {animal.property_name ?? "Propriedade não informada"}
-                </p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <span className="ag-badge ag-badge-green text-xs">
-                    {animal.last_weight ?? "-"} kg
-                  </span>
-                  <span className="ag-badge ag-badge-dark text-xs">
-                    {formatStatus(animal.status)}
-                  </span>
-                </div>
-              </Link>
-            ))
-          )}
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    <span className="rounded-full bg-[var(--primary-soft)] px-2 py-0.5 text-[10px] font-semibold text-[var(--primary-hover)]">
+                      {animal.last_weight ?? "-"} kg
+                    </span>
+                    <span className="rounded-full border border-[var(--border)] bg-white px-2 py-0.5 text-[10px] font-semibold text-[var(--text-secondary)]">
+                      {formatStatus(animal.status)}
+                    </span>
+                  </div>
+                </Link>
+              ))
+            )}
+          </div>
         </div>
       </section>
     </main>
@@ -997,37 +1018,105 @@ export default async function PainelPage() {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function HeroStat({
+function HeroSatellite({
   label,
   value,
-  description,
-  alert = false,
+  sub,
 }: {
   label: string;
   value: string | number;
-  description: string;
-  alert?: boolean;
+  sub?: string;
 }) {
   return (
-    <div
-      className={`rounded-3xl border p-5 ${
-        alert
-          ? "border-red-200 bg-red-50"
-          : "border-[var(--border)] bg-[var(--surface-soft)]"
-      }`}
-    >
-      <p className="text-sm text-[var(--text-muted)]">{label}</p>
+    <div className="min-w-0">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">
+        {label}
+      </p>
       <p
-        className={`mt-3 text-3xl font-semibold tracking-[-0.05em] ${
-          alert ? "text-red-600" : "text-[var(--text-primary)]"
-        }`}
+        className="mt-1.5 truncate text-2xl font-semibold tracking-[-0.04em] text-[var(--text-primary)]"
+        title={String(value)}
       >
         {value}
-      </p>
-      <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-        {description}
+        {sub && (
+          <span className="ml-0.5 text-xs font-normal text-[var(--text-muted)]">
+            {sub}
+          </span>
+        )}
       </p>
     </div>
+  );
+}
+
+type PulseTone = "neutral" | "amber" | "red";
+
+function PulseCard({
+  label,
+  value,
+  detail,
+  tone,
+  href,
+  Icon,
+}: {
+  label: string;
+  value: string | number;
+  detail: string;
+  tone: PulseTone;
+  href: string;
+  Icon: LucideIcon;
+}) {
+  const palette: Record<
+    PulseTone,
+    { border: string; iconBg: string; iconCl: string; valueCl: string }
+  > = {
+    neutral: {
+      border: "border-[var(--border)] hover:border-[rgba(46,139,62,0.30)]",
+      iconBg: "bg-[var(--primary-soft)]",
+      iconCl: "text-[var(--primary-hover)]",
+      valueCl: "text-[var(--text-primary)]",
+    },
+    amber: {
+      border: "border-amber-200 hover:border-amber-300",
+      iconBg: "bg-amber-100",
+      iconCl: "text-amber-700",
+      valueCl: "text-amber-800",
+    },
+    red: {
+      border: "border-red-200 hover:border-red-300",
+      iconBg: "bg-red-100",
+      iconCl: "text-red-700",
+      valueCl: "text-red-700",
+    },
+  };
+  const p = palette[tone];
+  return (
+    <Link
+      href={href}
+      className={`group flex items-center gap-4 rounded-2xl border bg-white p-4 transition ${p.border}`}
+    >
+      <span
+        className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl ${p.iconBg}`}
+      >
+        <Icon size={18} className={p.iconCl} />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">
+          {label}
+        </p>
+        <p
+          className={`mt-0.5 truncate text-xl font-semibold tracking-[-0.03em] ${p.valueCl}`}
+          title={String(value)}
+        >
+          {value}
+        </p>
+        <p className="mt-0.5 truncate text-[11px] text-[var(--text-muted)]">
+          {detail}
+        </p>
+      </div>
+      <ArrowUpRight
+        size={14}
+        className="flex-shrink-0 text-[var(--text-muted)] opacity-0 transition group-hover:opacity-100"
+      />
+    </Link>
   );
 }
 
@@ -1092,126 +1181,6 @@ function AlertCard({ alert }: { alert: Alert }) {
 
 
 // ─── Icons (inline SVG) ───────────────────────────────────────────────────────
-
-function IconAnimal() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="#2E8B3E"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="h-6 w-6"
-    >
-      <path d="M3 17l3-6 4 7 3-4 4 6" />
-      <circle cx="18" cy="5" r="2" />
-    </svg>
-  );
-}
-
-function IconScore() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="#2E8B3E"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="h-6 w-6"
-    >
-      <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
-      <polyline points="16 7 22 7 22 13" />
-    </svg>
-  );
-}
-
-function IconWeight() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="#2E8B3E"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="h-6 w-6"
-    >
-      <path d="M12 2a4 4 0 0 1 4 4H8a4 4 0 0 1 4-4z" />
-      <path d="M2 22l2.5-16h15L22 22H2z" />
-      <line x1="12" y1="12" x2="12" y2="18" />
-      <line x1="9" y1="15" x2="15" y2="15" />
-    </svg>
-  );
-}
-
-function IconCurrency() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="#2E8B3E"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="h-6 w-6"
-    >
-      <circle cx="12" cy="12" r="10" />
-      <path d="M16 8h-6a2 2 0 0 0 0 4h4a2 2 0 0 1 0 4H8" />
-      <line x1="12" y1="6" x2="12" y2="8" />
-      <line x1="12" y1="16" x2="12" y2="18" />
-    </svg>
-  );
-}
-
-function IconHalal() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="#2E8B3E"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="h-6 w-6"
-    >
-      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-    </svg>
-  );
-}
-
-function IconPlane() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="#2E8B3E"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="h-6 w-6"
-    >
-      <path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" />
-    </svg>
-  );
-}
-
-function IconCheck() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="#16a34a"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="h-5 w-5"
-    >
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
-  );
-}
 
 function IconAlertCritical() {
   return (
