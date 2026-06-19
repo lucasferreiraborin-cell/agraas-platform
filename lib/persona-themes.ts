@@ -5,14 +5,20 @@
  * Decisão Lucas 17/06/2026: "Cada tipo de perfil vai ter um layout e
  * configuração para entregarmos o que cada um foca em ver."
  *
+ * Pivot 19/06/2026: wedge primário passa a ser Contábil+Fiscal+Estoque.
+ * Persona "contador" adicionada — porta de canal #1 da Agraas, modelo Omie
+ * (27k escritórios contábeis). Tom institucional / profissional, navy +
+ * âmbar quente — distinto do verde de campo do produtor.
+ *
  * Filosofia:
  * - Produtor (verde floresta): operação, campo, vida — tema atual da Agraas
  * - Frigorífico (cobre/burgundy): industrial, abate, processamento de carne
  * - Banco (navy/dourado): instituicional, financeira, conservador
+ * - Contador (slate navy + âmbar): escritório, obrigações, profissional contábil
  * - Admin (grafite + vermelho): controle, operação interna Agraas
  */
 
-export type Persona = "produtor" | "frigorifico" | "banco" | "admin";
+export type Persona = "produtor" | "frigorifico" | "banco" | "contador" | "admin";
 
 export type PersonaTheme = {
   persona: Persona;
@@ -71,6 +77,18 @@ export const PERSONA_THEMES: Record<Persona, PersonaTheme> = {
     home: "/banco",
     topLabel: "Crédito · Análise",
   },
+  contador: {
+    persona: "contador",
+    label: "Escritório Contábil",
+    shortLabel: "Contador",
+    sidebarBg: "#0d1426",   // slate navy — institucional, profissional
+    accent: "#f59e0b",      // âmbar quente — diferencia de banco (dourado)
+    accentDark: "#b45309",
+    accentText: "#0d1426",
+    mainBg: "#07090f",
+    home: "/contador",
+    topLabel: "Portfólio · Obrigações",
+  },
   admin: {
     persona: "admin",
     label: "Admin Agraas",
@@ -94,6 +112,8 @@ export function roleToPersona(role: string | null | undefined): Persona {
       return "frigorifico";
     case "bank":
       return "banco";
+    case "accountant":
+      return "contador";
     case "client":
     default:
       return "produtor";

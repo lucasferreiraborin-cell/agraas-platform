@@ -17,6 +17,7 @@ const OPTIONS: { value: Persona; label: string }[] = [
   { value: "produtor", label: "Produtor" },
   { value: "frigorifico", label: "Frigorífico" },
   { value: "banco", label: "Banco" },
+  { value: "contador", label: "Contador" },
 ];
 
 export default function AdminSwitcher({

@@ -17,6 +17,7 @@ import { themeToCssVars } from "@/lib/persona-themes";
 import type { PersonaContext } from "@/lib/persona-resolver";
 import BuyerSidebarNav from "@/app/components/BuyerSidebarNav";
 import BankSidebarNav from "@/app/components/BankSidebarNav";
+import ContadorSidebarNav from "@/app/components/ContadorSidebarNav";
 import AdminSwitcher from "@/app/components/AdminSwitcher";
 
 export default function PersonaShell({
@@ -88,6 +89,8 @@ function getSidebar(persona: PersonaContext["effectivePersona"]) {
       return BuyerSidebarNav;
     case "banco":
       return BankSidebarNav;
+    case "contador":
+      return ContadorSidebarNav;
     default:
       return ProdutorSidebarStub;
   }

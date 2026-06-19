@@ -102,4 +102,5 @@ export async function requirePersona(allowed: Persona[]): Promise<PersonaContext
 export const PRODUCER_ROUTES: Persona[] = ["produtor", "admin"];
 export const FRIGORIFICO_ROUTES: Persona[] = ["frigorifico", "admin"];
 export const BANCO_ROUTES: Persona[] = ["banco", "admin"];
+export const CONTADOR_ROUTES: Persona[] = ["contador", "admin"];
 export const ADMIN_ONLY: Persona[] = ["admin"];
