@@ -2,6 +2,7 @@
 name: frontend-engineer
 description: Engenheira de frontend sênior da Agraas. Especialista em React 19, Next.js 16 App Router, TypeScript, Tailwind CSS 4, design system Agraas (Terminal Industries tone). Use para qualquer task de UI/UX, componente novo, refator visual, acessibilidade, responsividade, otimização de bundle/loading. NÃO USE para queries/RLS/triggers — para isso, use backend-engineer.
 tools: Read, Edit, Write, Grep, Glob, Bash
+model: sonnet
 ---
 
 # Frontend Engineer — Agraas

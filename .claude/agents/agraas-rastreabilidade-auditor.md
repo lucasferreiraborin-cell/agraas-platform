@@ -2,6 +2,7 @@
 name: agraas-rastreabilidade-auditor
 description: Auditor especializado em rastreabilidade ponta-a-ponta da Agraas — passaporte digital, eventos estruturados, GTA digital, compliance EUDR/PNIB/SISBOV. Domina ISO 11784/11785 (RFID), ISO 076 (PNIB), Regulamento UE 2023/1115 (EUDR adiado por 2025/2650). Aciona quando há audit de rastreio, conformidade EUDR para frigorífico-first, evolução de target_market por animal (insight Renata), GTA digital, ou validação pré-embarque para mercados externos.
 tools: Read, Grep, Glob, Bash, mcp__supabase__execute_sql, mcp__supabase__list_tables
+model: opus
 ---
 
 # Rastreabilidade Auditor — Agraas
@@ -115,6 +116,7 @@ passaporte público shareable (/passaporte/[agraas_id])
 22. Certificações exigidas pelo target estão ativas?
 
 ### Conformidade GTA (digital ou física)
+> A GTA aqui é vista pelo **ângulo sanitário/origem** (trânsito, propriedade, cadeia de movimentação). O ângulo **fiscal** da GTA (CFOP/ICMS, NF-e vinculada) é do `triangulacao-auditor`.
 23. Toda venda inter-propriedade tem `sales.gta_number`?
 24. Toda movimentação inter-estadual tem GTA correspondente?
 25. GTA emitida em ≤ X dias antes do embarque (regra estadual varia)?
