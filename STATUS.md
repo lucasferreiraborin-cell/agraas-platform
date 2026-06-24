@@ -54,14 +54,25 @@ Seu sistema fiscal **já tem mais coisa pronta do que a gente achava**: nota fis
 
 ---
 
+### Sprint J — 24/06 fim de tarde (P0/P1 matados)
+| O quê | Detalhe |
+|---|---|
+| 🔧 **proxy.ts fixado (P0 pentest)** | `/api/*` bypassa flow de auth do proxy. Stripe webhook, Vercel cron e self-heal voltam a funcionar (não mais 307 → /login). Removido redirect `/comprador → /em-breve` (código zumbi). |
+| 💰 **IBS/CBS 2026 schema (migration 143)** | Campos `cbs_value, ibs_value, cbs_credito_presumido, ibs_credito_presumido, valor_liquido_fiscal` em `fiscal_invoices` + `fiscal_notes`. Tabela `ibs_cbs_config` com seed 2026/2027 (0.9% + 0.1%). `clients.is_contribuinte_ibs_cbs` + `clients.receita_bruta_anual`. |
+| 📑 **LCDPR foundation (migration 144)** | `properties.nirf` + `properties.area_total_hectares` + tabela `bank_accounts` (registro 0050) + `cost_records.lcdpr_tipo`/`num_doc` + `lcdpr_exports` com histórico. Falta só endpoint exportador `/api/fiscal/export-lcdpr`. |
+| 📚 **Plano de contas rural CFC/CPC 29 (migration 145)** | **114 contas distintas** seedadas para os 8 clientes (912 rows). Hierarquia 5 níveis: Ativo (1.x com biológicos circulante/não-circulante), Passivo (2.x com CBS/IBS), PL (3.x com AVJ), Receitas (4.x), Custos (5.x com cria/recria/engorda separados), Despesas (6.x com rastreabilidade). Coluna `cpc29_categoria` para filtros. |
+| 🔄 **UPSERT accounting_entries em UPDATE de sales (migration 146)** | Trigger `_trg_sales_accounting_upsert` substitui o antigo. Quando `cost_at_sale` muda em UPDATE, gera ESTORNO + novo lançamento (com `reversed_by`/`reversal_of`/`reversed_at`). Fim do drift entre `sales` e `accounting_entries`. |
+| 🖥️ **Badges NF-e + GTA no /comprador/oportunidades** | API e UI agora mostram contadores (`GTA 5/10`, `NF-e pronta 3/10`). Persona Frigorífico vê numa olhada quais lotes têm papel pronto. |
+
 ## 🔜 O que vou fazer em seguida (sozinho)
 
-1. **Implementar IBS/CBS 2026** — campos no NF-e (cbs/ibs/crédito presumido) + tabela alíquotas transição 2026-2033 (controladoria-fiscal já mapeou DDL completo)
-2. **LCDPR exportador completo** — `properties.nirf` + `bank_accounts` + função geradora .txt layout 1.3 RFB
-3. **Plano de contas rural completo CFC/CPC 29** — seed ~150 contas (cria/recria/engorda separados, ativo biológico, AVJ)
-4. **Reagendar mentoria IZ-SP** — pauta pronta em `docs/research/2026-06-24-score-v3-1-validacao-cientifica.md`
-5. **Fix proxy.ts** — whitelist `/api/stripe/webhook` + `/api/cron/*` + `/api/self-heal` (P0 do pentest)
-6. **Testes pgTAP/Jest** por trigger crítico (anti-regressão)
+1. **Endpoint `/api/fiscal/export-lcdpr`** — função geradora `.txt` layout 1.3 RFB consumindo `accounting_entries` + `bank_accounts` + `properties.nirf`
+2. **Trigger autopopular plano de contas em new client** — `AFTER INSERT ON clients` chama `_seed_rural_chart_of_accounts(NEW.id)`
+3. **Animals CPC 29** — `animals.conta_contabil` + `animals.metodo_mensuracao` (custo_historico vs fair_value)
+4. **Estorno automático em sales cancelled** — extensão do trigger 146 pra cobrir `status = 'cancelled'`
+5. **Testes pgTAP/Jest** por trigger crítico (anti-regressão)
+6. **Reagendar mentoria IZ-SP** — pauta pronta em `docs/research/2026-06-24-score-v3-1-validacao-cientifica.md`
+7. **Hardening pentest P1/P2** — HSTS preload, remover sentry-release public, schema enumeration hints
 
 ---
 
