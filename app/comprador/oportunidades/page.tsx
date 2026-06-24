@@ -99,6 +99,20 @@ async function fetchLotesAbertos(): Promise<LoteOfertadoCard[]> {
     : { data: [] };
   const animaisEmCarencia = new Set((carencias ?? []).map((c) => c.animal_id));
 
+  // Sales com fiscal_invoice_id por animal (NF-e venda emitida — Sprint I migration 140)
+  type SaleNfeRow = { animal_id: string; fiscal_invoice_id: string | null };
+  let nfeByAnimal = new Set<string>();
+  try {
+    const { data: salesNfe } = allAnimalIds.length
+      ? await db
+          .from("sales")
+          .select("animal_id, fiscal_invoice_id")
+          .in("animal_id", allAnimalIds)
+          .not("fiscal_invoice_id", "is", null)
+      : { data: [] };
+    nfeByAnimal = new Set((salesNfe ?? []).map((s: SaleNfeRow) => s.animal_id));
+  } catch { /* schema antigo, ignora */ }
+
   return lotesAbertos.map((lot) => {
     const animalIds = lotToAnimals.get(lot.id) ?? [];
     const scores = animalIds.map((id) => scoreMap.get(id)).filter((s): s is number => typeof s === "number");
@@ -106,9 +120,14 @@ async function fetchLotesAbertos(): Promise<LoteOfertadoCard[]> {
 
     const certsLote = new Set<string>();
     let sanitarioOk = true;
+    let gtaCount = 0;
+    let nfeCount = 0;
     for (const aid of animalIds) {
-      (certsByAnimal.get(aid) ?? []).forEach((c) => certsLote.add(c));
+      const animalCerts = certsByAnimal.get(aid) ?? [];
+      animalCerts.forEach((c) => certsLote.add(c));
       if (animaisEmCarencia.has(aid)) sanitarioOk = false;
+      if (animalCerts.some((c) => c.toUpperCase().includes("GTA"))) gtaCount++;
+      if (nfeByAnimal.has(aid)) nfeCount++;
     }
 
     const prop = propsMap.get(lot.property_id);
@@ -123,9 +142,11 @@ async function fetchLotesAbertos(): Promise<LoteOfertadoCard[]> {
       status: lot.status,
       animals_count: animalIds.length,
       score_medio_lote: Number(scoreMedio.toFixed(1)),
+      gta_count: gtaCount,
+      nfe_emitida: nfeCount,
       compliance: {
         eudr_ready: Boolean(prop?.city && prop?.state),
-        gta_vigente: certsLote.has("GTA"),
+        gta_vigente: certsLote.has("GTA") || gtaCount > 0,
         sif_disponivel: certsLote.has("SIF") || exigidas.includes("SIF"),
         halal_disponivel: certsLote.has("Halal"),
         sanitario_ok: sanitarioOk,
@@ -236,11 +257,22 @@ export default async function OportunidadesPage() {
                       </div>
                       <div className="flex flex-wrap gap-1.5">
                         <ComplianceBadge label="EUDR" ok={lote.compliance.eudr_ready} />
-                        <ComplianceBadge label="GTA" ok={lote.compliance.gta_vigente} />
+                        <ComplianceBadge
+                          label={lote.gta_count && lote.gta_count > 0 ? `GTA ${lote.gta_count}/${lote.animals_count}` : "GTA"}
+                          ok={lote.compliance.gta_vigente}
+                        />
                         <ComplianceBadge label="SIF" ok={lote.compliance.sif_disponivel} />
                         <ComplianceBadge label="Sanitário" ok={lote.compliance.sanitario_ok} />
                         <ComplianceBadge label="Halal" ok={lote.compliance.halal_disponivel} optional />
                       </div>
+                      {lote.nfe_emitida !== undefined && lote.nfe_emitida > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          <ComplianceBadge
+                            label={`NF-e pronta ${lote.nfe_emitida}/${lote.animals_count}`}
+                            ok={true}
+                          />
+                        </div>
+                      )}
                     </div>
 
                     <button className="ag-button-primary mt-2 flex items-center justify-center gap-2">

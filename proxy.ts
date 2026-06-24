@@ -6,6 +6,13 @@ export async function proxy(request: NextRequest) {
   // Não dependem de auth — rodam antes da Supabase server client criar.
   const path = request.nextUrl.pathname;
 
+  // 0) Rotas API têm auth próprio (Bearer/x-vercel-cron/session/etc).
+  // Proxy NÃO deve forçar redirect /login em /api/* (quebra Stripe webhook,
+  // Vercel cron, self-heal, insights). Apontado pelo pentest 24/06/2026.
+  if (path.startsWith("/api/")) {
+    return NextResponse.next({ request });
+  }
+
   // 1) Cadeias pausadas → /em-breve
   const PAUSED_PREFIXES = ["/ovinos", "/caprinos", "/aves", "/agricultura"];
   for (const prefix of PAUSED_PREFIXES) {
@@ -14,13 +21,9 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // 2) Portal PIF /comprador pausado → /em-breve
-  // (/compradores plural é operacional financeiro do produtor, não pausar)
-  if (path === "/comprador" || path.startsWith("/comprador/")) {
-    return NextResponse.redirect(new URL("/em-breve", request.nextUrl));
-  }
-
-  // 3) /dashboard → /painel (redirect permanente 301)
+  // 2) /dashboard → /painel (redirect permanente 301)
+  // Removido em 24/06: /comprador NÃO redireciona mais pra /em-breve.
+  // Sprint B/C destravou persona Frigorífico — /comprador é ativo.
   if (path === "/dashboard" || path.startsWith("/dashboard/")) {
     const newUrl = new URL(path.replace(/^\/dashboard/, "/painel"), request.nextUrl);
     newUrl.search = request.nextUrl.search;
