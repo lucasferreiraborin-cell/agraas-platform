@@ -13,15 +13,9 @@ import { PageHeader } from "@/app/components/ui/PageHeader";
 import { KpiCard } from "@/app/components/ui/KpiCard";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { TrendingUp, TrendingDown, DollarSign, CalendarClock } from "lucide-react";
-import dynamicImport from "next/dynamic";
+import CashFlowChart from "@/app/components/controladoria/CashFlowChart";
 
 export const dynamic = "force-dynamic";
-
-// Recharts chart — client-only
-const CashFlowChart = dynamicImport(
-  () => import("@/app/components/controladoria/CashFlowChart"),
-  { ssr: false },
-);
 
 type MonthBucket = {
   month: string;       // "YYYY-MM"
