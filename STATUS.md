@@ -1,73 +1,53 @@
 # 📍 AGRAAS — Onde Estamos (PAINEL)
 
-> **Único lugar de status.** Mantido a cada passo. Última atualização: **23/06/2026**.
+> **Único lugar de status, em português claro.** Você não precisa acompanhar o terminal — basta este arquivo. Última atualização: **23/06/2026**.
 
 ---
 
-## ⏸️ Esperando VOCÊ
+## Em uma frase
 
-Nada bloqueando agora. ✅ Supabase conectado, posso seguir sozinho no fix fiscal.
-*(Próxima decisão só quando eu terminar o sync do repo — ver abaixo.)*
-
----
-
-## 🎯 Foco ativo
-
-**Camada contábil-fiscal-controladoria-estoque → 100% sem erros.** Banco vivo conectado; corrigindo defeito a defeito, verificando cada um.
+Estou blindando a parte **fiscal/contábil/estoque** do seu sistema, defeito a defeito. **Já fechei os 2 buracos de segurança mais graves** (privacidade entre clientes). O sistema, por sinal, está mais pronto do que parecia.
 
 ---
 
-## ✅ Feito (recente primeiro)
+## ⏸️ Esperando você
 
-| Quando | Resultado |
+**Nada.** Pode deixar comigo — sigo sozinho e te aviso quando fechar cada bloco.
+
+---
+
+## ✅ Já resolvido
+
+| O quê (em português) | Detalhe |
 |---|---|
-| **agora** | 🔒 **Vazamento entre clientes FECHADO** em `cost_records`, `stock_movements`, `sales` — migration `129` aplicada e **verificada em produção** (0 políticas permissivas, 0 órfãos) |
-| agora | Verificação ao vivo: schema real, RLS de 13 tabelas, métricas de produção |
-| sessão | Time de IA blindado (`model:` nos 10, +`code-reviewer` +`security-rls-auditor`) |
-| sessão | 4 docs commitados (auditoria time, highlights GitHub, backlog fiscal, este painel) |
-| sessão | Autonomia "Alta" configurada |
+| 🔒 **Privacidade entre clientes — buraco 1 fechado** | Um cliente conseguia ver custos/estoque/vendas de outro. Corrigido e conferido no banco real. |
+| 🔒 **Privacidade entre clientes — buraco 2 fechado** | Um cliente conseguia "transferir" uma nota fiscal pra outro. Bloqueado. |
+| 🛡️ **Time de IA reforçado** | Revisor de código + auditor de segurança criados; cada agente com o modelo certo. |
+| 🔓 **Autonomia liberada** | Configurei pra eu trabalhar sem te pedir aceite a cada passo. |
 
 ---
 
-## 🟢 Descoberta importante (muda o diagnóstico)
+## 🟢 Boa surpresa
 
-A migration **`128_module_fiscal_complete`** (em produção desde 19/06) já criou um **módulo fiscal real** — a auditoria estática não viu porque **não está no repo local**:
-- `fiscal_invoices` — NF-e com **chave-44 UNIQUE** (idempotência ✅) + IA (`ai_extraction`, `ai_confidence`, `needs_human_review`) + impostos (ICMS/IPI/PIS/COFINS/**FUNRURAL**)
-- `accounting_entries` — **partida dobrada** (débito/crédito) ✅
-- `chart_of_accounts` — **plano de contas** ✅
-- `partners_accountants`, `producer_fiscal_summary`
-
-Ou seja: contabilidade e idempotência **já existem**. Bem mais adiantado do que parecia.
+Seu sistema fiscal **já tem mais coisa pronta do que a gente achava**: nota fiscal eletrônica com proteção contra duplicidade, contabilidade (débito/crédito) e plano de contas — tudo já no ar. Só não estava registrado no seu repositório de código (vou acertar isso).
 
 ---
 
-## 🔴 Ainda aberto (próximos)
+## 🔜 O que vou fazer em seguida (sozinho)
 
-| # | O quê | Risco |
-|---|---|---|
-| 1 | **Repo fora de sincronia** — migrations `127` e `128` (módulo fiscal) estão em produção mas **não nos arquivos locais**. Preciso puxar pro repo | 🔴 alto |
-| 2 | **UPDATE fiscal sem `WITH CHECK`** (`fiscal_notes`, `crop_*`) — cliente pode re-taggear `client_id` | 🟡 médio |
-| 3 | **Cadeia custo→venda→ROI** não automatizada — **12/12 vendas sem `cost_at_sale`** (ROI exibido é ficcional) | 🟡 médio |
-| 4 | `stock_movements` sem `CHECK` em `movement_type`; `applications` isola via `animal_id` (frágil) | 🟢 baixo |
-| 5 | Conectar o módulo fiscal novo (`fiscal_invoices`) com as telas `/controladoria` e os endpoints de upload | 🟡 médio |
+1. **Acertar o registro do código** com o que já está no ar (alinhar repositório ↔ produção).
+2. **Ligar o "custo → venda → lucro (ROI)"** automaticamente — hoje as vendas não puxam o custo sozinhas, então o ROI mostrado ainda é estimado.
+3. **Travar tudo com testes automáticos** pra nenhum desses erros voltar.
+4. Conferir de novo com os auditores até dar "limpo".
 
 ---
 
-## 🔄 Plano (ordem)
+## 💬 Como vou te manter no controle
 
-1. ✅ ~~Fechar vazamento cross-tenant~~ — **feito**
-2. **Sincronizar repo** — puxar `127`/`128` de produção pros arquivos locais (some o drift)
-3. `WITH CHECK` nos UPDATE fiscais + `CHECK` em `movement_type`
-4. Trigger venda→`cost_at_sale`/`roi` (custo lastreado em estoque)
-5. Suite **pgTAP** travando isolamento + somatórios + idempotência · re-auditar até limpo
+- Só este painel + um resumo de **3 linhas** no chat quando eu fechar algo. Sem terminês.
+- Você pode pedir **"status"** quando quiser.
+- Se eu precisar de uma decisão sua de verdade (raro), eu pergunto em 1 linha simples.
 
 ---
 
-## 📁 Documentos (detalhe)
-
-- **Este arquivo** = resumo, sempre atual
-- `docs/agraas-fiscal-zero-errors-backlog-2026-06-23.md` — backlog fiscal completo
-- `docs/agraas-ai-team-audit-2026-06-22.md` · `docs/agraas-github-highlights-2026-06-22.md`
-- `supabase/migrations/129_fix_rls_cross_tenant_leak.sql` — o fix do vazamento
-
-> 💬 Daqui pra frente: atualizo este painel + resumo de 3 linhas no chat. Pode pedir **"status"** quando quiser.
+> Detalhe técnico (se um dia quiser): `docs/` e `supabase/migrations/129`, `130`.

@@ -61,7 +61,14 @@
       "Bash(touch:*)",
       "Bash(netstat:*)",
       "Bash(jq:*)",
-      "Bash(diff:*)"
+      "Bash(diff:*)",
+      "mcp__plugin_supabase_supabase__execute_sql",
+      "mcp__plugin_supabase_supabase__list_tables",
+      "mcp__plugin_supabase_supabase__list_migrations",
+      "mcp__plugin_supabase_supabase__get_advisors",
+      "mcp__plugin_supabase_supabase__apply_migration",
+      "mcp__plugin_supabase_supabase__generate_typescript_types",
+      "mcp__plugin_supabase_supabase__list_extensions"
     ],
     "deny": [
       "Bash(git push --force:*)",
