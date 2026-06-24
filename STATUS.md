@@ -1,81 +1,73 @@
 # 📍 AGRAAS — Onde Estamos (PAINEL)
 
-> **Único lugar de status.** Eu mantenho este arquivo atualizado a cada passo. Última atualização: **23/06/2026**.
+> **Único lugar de status.** Mantido a cada passo. Última atualização: **23/06/2026**.
 
 ---
 
-## ⏸️ Esperando VOCÊ (1 coisa só)
+## ⏸️ Esperando VOCÊ
 
-| O quê | Por quê | Como |
+Nada bloqueando agora. ✅ Supabase conectado, posso seguir sozinho no fix fiscal.
+*(Próxima decisão só quando eu terminar o sync do repo — ver abaixo.)*
+
+---
+
+## 🎯 Foco ativo
+
+**Camada contábil-fiscal-controladoria-estoque → 100% sem erros.** Banco vivo conectado; corrigindo defeito a defeito, verificando cada um.
+
+---
+
+## ✅ Feito (recente primeiro)
+
+| Quando | Resultado |
+|---|---|
+| **agora** | 🔒 **Vazamento entre clientes FECHADO** em `cost_records`, `stock_movements`, `sales` — migration `129` aplicada e **verificada em produção** (0 políticas permissivas, 0 órfãos) |
+| agora | Verificação ao vivo: schema real, RLS de 13 tabelas, métricas de produção |
+| sessão | Time de IA blindado (`model:` nos 10, +`code-reviewer` +`security-rls-auditor`) |
+| sessão | 4 docs commitados (auditoria time, highlights GitHub, backlog fiscal, este painel) |
+| sessão | Autonomia "Alta" configurada |
+
+---
+
+## 🟢 Descoberta importante (muda o diagnóstico)
+
+A migration **`128_module_fiscal_complete`** (em produção desde 19/06) já criou um **módulo fiscal real** — a auditoria estática não viu porque **não está no repo local**:
+- `fiscal_invoices` — NF-e com **chave-44 UNIQUE** (idempotência ✅) + IA (`ai_extraction`, `ai_confidence`, `needs_human_review`) + impostos (ICMS/IPI/PIS/COFINS/**FUNRURAL**)
+- `accounting_entries` — **partida dobrada** (débito/crédito) ✅
+- `chart_of_accounts` — **plano de contas** ✅
+- `partners_accountants`, `producer_fiscal_summary`
+
+Ou seja: contabilidade e idempotência **já existem**. Bem mais adiantado do que parecia.
+
+---
+
+## 🔴 Ainda aberto (próximos)
+
+| # | O quê | Risco |
 |---|---|---|
-| **Autorizar o Supabase** | Destrava o fix fiscal — preciso ler o banco real pra corrigir sem introduzir erro | Abrir o link de OAuth que te mandei no chat (~30s) |
-
-Enquanto isso não acontece, o programa fiscal fica parado no banco vivo. Todo o resto está feito ou pode seguir.
-
----
-
-## 🎯 Foco ativo agora
-
-**Deixar a camada contábil-fiscal-controladoria-estoque 100% sem erros.**
-Estado: auditoria **concluída** → defeitos mapeados → **bloqueado** na conexão do banco pra executar as correções.
+| 1 | **Repo fora de sincronia** — migrations `127` e `128` (módulo fiscal) estão em produção mas **não nos arquivos locais**. Preciso puxar pro repo | 🔴 alto |
+| 2 | **UPDATE fiscal sem `WITH CHECK`** (`fiscal_notes`, `crop_*`) — cliente pode re-taggear `client_id` | 🟡 médio |
+| 3 | **Cadeia custo→venda→ROI** não automatizada — **12/12 vendas sem `cost_at_sale`** (ROI exibido é ficcional) | 🟡 médio |
+| 4 | `stock_movements` sem `CHECK` em `movement_type`; `applications` isola via `animal_id` (frágil) | 🟢 baixo |
+| 5 | Conectar o módulo fiscal novo (`fiscal_invoices`) com as telas `/controladoria` e os endpoints de upload | 🟡 médio |
 
 ---
 
-## ✅ Feito nesta sessão
+## 🔄 Plano (ordem)
 
-| Frente | Resultado |
-|---|---|
-| **Autonomia** | Modo "Alta" — edito/rodo sem pedir; deny-list barra catástrofe |
-| **Time de IA blindado** | `model:` nos 10 agentes · criados `code-reviewer` + `security-rls-auditor` · colisão fiscal resolvida · commit `d5edc2c` |
-| **Auditoria do time** | `docs/agraas-ai-team-audit-2026-06-22.md` |
-| **Highlights GitHub** | `docs/agraas-github-highlights-2026-06-22.md` (38 repos curados) |
-| **Auditoria fiscal verificada** | `docs/agraas-fiscal-zero-errors-backlog-2026-06-23.md` (defeitos + roadmap 127→135) |
-| **Saúde da plataforma** | `tsc` 0 erros · 27/27 testes passando · dev server no ar |
+1. ✅ ~~Fechar vazamento cross-tenant~~ — **feito**
+2. **Sincronizar repo** — puxar `127`/`128` de produção pros arquivos locais (some o drift)
+3. `WITH CHECK` nos UPDATE fiscais + `CHECK` em `movement_type`
+4. Trigger venda→`cost_at_sale`/`roi` (custo lastreado em estoque)
+5. Suite **pgTAP** travando isolamento + somatórios + idempotência · re-auditar até limpo
 
 ---
 
-## 🔴 O que está errado na camada fiscal (resumo)
+## 📁 Documentos (detalhe)
 
-- **2 possíveis leaks cross-tenant** (`stock_movements`, `cost_records` sem RLS versionada) — confirmar no banco
-- **UPDATE fiscal sem `WITH CHECK`** (cliente pode injetar NF-e em outro tenant)
-- **`db reset` quebra** (5 tabelas criadas no dashboard, nunca versionadas)
-- **Sem contabilidade real** (partida dobrada), **sem idempotência** (re-upload duplica), **sem trilha imutável**
-- **ROI exibido é ficcional** (custo digitado à mão, não vem da NF-e)
-- ✅ Já corrigido antes: os 3 bugs Tier-1 (score órfão, duplo débito, FEFO) — pela migration 124
+- **Este arquivo** = resumo, sempre atual
+- `docs/agraas-fiscal-zero-errors-backlog-2026-06-23.md` — backlog fiscal completo
+- `docs/agraas-ai-team-audit-2026-06-22.md` · `docs/agraas-github-highlights-2026-06-22.md`
+- `supabase/migrations/129_fix_rls_cross_tenant_leak.sql` — o fix do vazamento
 
-> Detalhe completo e plano de correção: `docs/agraas-fiscal-zero-errors-backlog-2026-06-23.md`.
-
----
-
-## 🔄 Próximos passos (na ordem, assim que o banco conectar)
-
-1. Confirmar/corrigir os 2 leaks (maior risco primeiro)
-2. Migration **127** — canonicalizar as 5 tabelas órfãs (schema real do banco)
-3. Migrations **128-135** — idempotência, contabilidade, cadeia NF→estoque→custo→ROI
-4. Suite **pgTAP** travando cada correção · re-auditar até limpo
-5. Aplicar em produção só com rollback + seu OK
-
----
-
-## 🧭 Decisões abertas (quando chegarmos lá)
-
-| Decisão | Recomendação minha |
-|---|---|
-| Schema do backend NF-e | §5a canônico, reconciliado com `fiscal_notes` existente |
-| Ligar envio real do digest de sócios | hoje travado em `dryRun` |
-| Alíquota FUNRURAL (1,63%) | **validar com contador** antes de codar |
-
----
-
-## 📁 Mapa dos documentos (onde está o detalhe)
-
-- **Este arquivo** = resumo de tudo, sempre atual
-- `docs/agraas-fiscal-zero-errors-backlog-2026-06-23.md` — defeitos fiscais + roadmap
-- `docs/agraas-ai-team-audit-2026-06-22.md` — auditoria do time de IA
-- `docs/agraas-github-highlights-2026-06-22.md` — OSS recomendado
-- `docs/agraas-operating-model-2026-06-17.md` — como o time opera
-- `CLAUDE.md` — guia técnico
-
----
-
-> 💬 **Como vou te manter atualizado daqui pra frente:** atualizo este `STATUS.md` a cada passo e te dou um resumo de **3 linhas** no chat (feito / fazendo / esperando de você). Sem mais updates longos espalhados. Você pode pedir "status" a qualquer momento.
+> 💬 Daqui pra frente: atualizo este painel + resumo de 3 linhas no chat. Pode pedir **"status"** quando quiser.
