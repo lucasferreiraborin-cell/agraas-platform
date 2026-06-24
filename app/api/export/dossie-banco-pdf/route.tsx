@@ -85,16 +85,25 @@ export async function GET(req: NextRequest) {
 
   if (!producer) return new Response("Produtor não encontrado", { status: 404 });
 
-  const { data: topScores } = await db
-    .from("animal_scores")
-    .select("animal_id, total_score")
-    .eq("algorithm_version", "v3")
-    .order("total_score", { ascending: false })
-    .limit(10);
+  // SEGURANCA (132/security-rls C9): primeiro pegar IDs do producer,
+  // depois ranking restrito a esse subset (era top-10 GLOBAL antes).
+  const { data: producerAnimals } = await db
+    .from("animals")
+    .select("id, internal_code, breed, sex, birth_date")
+    .eq("client_id", clientId);
+  const producerIds = (producerAnimals ?? []).map((a) => a.id);
+
+  const { data: topScores } = producerIds.length
+    ? await db
+        .from("animal_scores")
+        .select("animal_id, total_score")
+        .eq("algorithm_version", "v3")
+        .in("animal_id", producerIds)
+        .order("total_score", { ascending: false })
+        .limit(10)
+    : { data: [] as Array<{ animal_id: string; total_score: number }> };
   const sampleIds = (topScores ?? []).map((t) => t.animal_id);
-  const { data: sampleAnimals } = sampleIds.length
-    ? await db.from("animals").select("id, internal_code, breed, sex, birth_date").in("id", sampleIds).eq("client_id", clientId)
-    : { data: [] };
+  const sampleAnimals = (producerAnimals ?? []).filter((a) => sampleIds.includes(a.id));
   const sampleMap = new Map((sampleAnimals ?? []).map((a) => [a.id, a]));
   const propsMap = new Map((properties ?? []).map((p) => [p.id, p]));
 

@@ -127,6 +127,20 @@ export async function GET(req: NextRequest) {
     : { data: [] };
   const animaisEmCarencia = new Set((carencias ?? []).map((c) => c.animal_id));
 
+  // NF-e emitida por animal (sales com fiscal_invoice_id preenchido)
+  type SaleNfeRow = { animal_id: string; fiscal_invoice_id: string | null };
+  let nfeByAnimal: Set<string> = new Set();
+  try {
+    const { data: salesNfe } = allAnimalIds.length
+      ? await db
+          .from("sales")
+          .select("animal_id, fiscal_invoice_id")
+          .in("animal_id", allAnimalIds)
+          .not("fiscal_invoice_id", "is", null)
+      : { data: [] };
+    nfeByAnimal = new Set((salesNfe ?? []).map((s: SaleNfeRow) => s.animal_id));
+  } catch { /* tabela ou coluna ainda não existe */ }
+
   // Monta cards
   const cards: LoteOfertadoCard[] = lotesAbertos.map((lot) => {
     const animalIds = lotToAnimals.get(lot.id) ?? [];
@@ -135,10 +149,15 @@ export async function GET(req: NextRequest) {
 
     const certsLote = new Set<string>();
     let sanitarioOk = true;
+    let gtaCount = 0;
+    let nfeCount = 0;
     for (const aid of animalIds) {
       const animalCerts = certsByAnimal.get(aid) ?? [];
       animalCerts.forEach((c) => certsLote.add(c));
       if (animaisEmCarencia.has(aid)) sanitarioOk = false;
+      // GTA vigente por animal (cert com nome contendo "GTA")
+      if (animalCerts.some((c) => c.toUpperCase().includes("GTA"))) gtaCount++;
+      if (nfeByAnimal.has(aid)) nfeCount++;
     }
 
     const prop = propsMap.get(lot.property_id);
@@ -155,9 +174,11 @@ export async function GET(req: NextRequest) {
       status: lot.status,
       animals_count: animalIds.length,
       score_medio_lote: Number(scoreMedio.toFixed(1)),
+      gta_count: gtaCount,
+      nfe_emitida: nfeCount,
       compliance: {
         eudr_ready: cartonaEUDR,
-        gta_vigente: certsLote.has("GTA"),
+        gta_vigente: certsLote.has("GTA") || gtaCount > 0,
         sif_disponivel: certsLote.has("SIF") || exigidas.includes("SIF"),
         halal_disponivel: certsLote.has("Halal"),
         sanitario_ok: sanitarioOk,

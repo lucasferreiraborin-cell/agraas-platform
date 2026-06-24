@@ -209,6 +209,86 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
       .order("created_at", { ascending: true }),
   ]);
 
+  // ── Dados fiscais do animal (defensivo — migration 132-140 em paralelo) ───
+  type FiscalSummary = {
+    total_cost: number | null;
+    cost_per_arroba: number | null;
+    roi_projected: number | null;
+  };
+  let fiscalSummary: FiscalSummary | null = null;
+  let fiscalScore: number | null = null;
+
+  try {
+    const { data: costRow } = await supabase
+      .from("animal_cost_summary")
+      .select("total_cost, cost_per_arroba, roi_projected")
+      .eq("animal_id", id)
+      .maybeSingle();
+    if (costRow) {
+      fiscalSummary = {
+        total_cost: costRow.total_cost != null ? Number(costRow.total_cost) : null,
+        cost_per_arroba: costRow.cost_per_arroba != null ? Number(costRow.cost_per_arroba) : null,
+        roi_projected: costRow.roi_projected != null ? Number(costRow.roi_projected) : null,
+      };
+    }
+  } catch { /* tabela ainda não existe */ }
+
+  // Se animal_cost_summary não existir, tenta passport_cache.fiscal_json
+  if (!fiscalSummary && passportData) {
+    try {
+      const fj = (passportData as { fiscal_json?: Record<string, unknown> }).fiscal_json;
+      if (fj && typeof fj === "object") {
+        const cs = fj.cost_summary as Record<string, unknown> | undefined;
+        fiscalSummary = {
+          total_cost: cs?.total_cost != null ? Number(cs.total_cost) : null,
+          cost_per_arroba: fj.cost_per_arroba != null ? Number(fj.cost_per_arroba) : null,
+          roi_projected: fj.roi_projected != null ? Number(fj.roi_projected) : null,
+        };
+      }
+    } catch { /* ignore */ }
+  }
+
+  try {
+    const { data: scoreRow } = await supabase
+      .from("animal_scores")
+      .select("fiscal_score")
+      .eq("animal_id", id)
+      .eq("algorithm_version", "v3")
+      .maybeSingle();
+    if (scoreRow?.fiscal_score != null) {
+      fiscalScore = Number(scoreRow.fiscal_score);
+    }
+  } catch { /* tabela ainda não existe */ }
+
+  // Venda confirmada — busca dados completos da última venda com roi
+  type SaleWithRoi = {
+    id: string;
+    sale_date: string | null;
+    total_value: number | null;
+    roi: number | null;
+    fiscal_invoice_id: string | null;
+  };
+  let lastSaleWithRoi: SaleWithRoi | null = null;
+  try {
+    const { data: saleRow } = await supabase
+      .from("sales")
+      .select("id, sale_date, total_value, roi, fiscal_invoice_id")
+      .eq("animal_id", id)
+      .order("sale_date", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (saleRow) lastSaleWithRoi = saleRow as SaleWithRoi;
+  } catch { /* tabela ainda não existe */ }
+
+  // GTA vigente
+  const today_str = new Date().toISOString().split("T")[0];
+  const hasGtaVigente = (certificationsData ?? []).some(
+    (c) =>
+      (c.certification_name ?? "").toUpperCase().includes("GTA") &&
+      (c.status ?? "").toLowerCase() === "active" &&
+      (!c.expires_at || c.expires_at >= today_str),
+  );
+
   if (animalError || !animalData) {
     return (
       <main className="space-y-8">
@@ -536,6 +616,125 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
           </div>
         </div>
       </section>
+
+      {/* ── Ativo financeiro ────────────────────────────────────────────── */}
+      {(fiscalSummary || lastSaleWithRoi || fiscalScore !== null || hasGtaVigente) && (
+        <section className="ag-card p-8">
+          <div className="flex items-start justify-between gap-4 mb-6">
+            <div>
+              <h2 className="ag-section-title">Ativo financeiro</h2>
+              <p className="ag-section-subtitle">
+                Custo acumulado, retorno projetado e dados fiscais deste animal.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              {hasGtaVigente && (
+                <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700">
+                  GTA vigente
+                </span>
+              )}
+              {fiscalScore !== null && (
+                <span className="inline-flex items-center rounded-full border border-[var(--primary)]/20 bg-[var(--primary-soft)] px-2.5 py-0.5 text-[11px] font-semibold text-[var(--primary-hover)]">
+                  Score fiscal {fiscalScore}/100
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Venda confirmada */}
+          {lastSaleWithRoi && lastSaleWithRoi.total_value != null && (
+            <div className="mb-6 rounded-2xl border border-[var(--primary)]/20 bg-[var(--primary-soft)] p-5">
+              <p className="text-xs uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                Vendido
+              </p>
+              <div className="mt-2 flex items-baseline gap-4">
+                <p className="text-2xl font-bold text-[var(--primary-hover)]">
+                  R${" "}
+                  {Number(lastSaleWithRoi.total_value).toLocaleString("pt-BR", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </p>
+                {lastSaleWithRoi.roi != null && (
+                  <p className="text-base font-semibold text-[var(--primary-hover)]">
+                    ROI {lastSaleWithRoi.roi > 0 ? "+" : ""}
+                    {Number(lastSaleWithRoi.roi).toFixed(1)}%
+                  </p>
+                )}
+              </div>
+              {lastSaleWithRoi.sale_date && (
+                <p className="mt-1 text-xs text-[var(--text-muted)]">
+                  Data da venda:{" "}
+                  {new Date(lastSaleWithRoi.sale_date).toLocaleDateString("pt-BR")}
+                  {lastSaleWithRoi.fiscal_invoice_id && " · NF-e emitida"}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* 3 cards de custo/ROI */}
+          {fiscalSummary && (
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div className="ag-kpi-card">
+                <p className="text-sm text-[var(--text-muted)]">Custo acumulado</p>
+                <p className="mt-2 text-2xl font-bold text-[var(--text-primary)]">
+                  {fiscalSummary.total_cost == null
+                    ? "—"
+                    : `R$ ${Number(fiscalSummary.total_cost).toLocaleString("pt-BR", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}`}
+                </p>
+                <p className="mt-1 text-xs text-[var(--text-secondary)]">
+                  Insumos + medicamentos
+                </p>
+              </div>
+
+              <div className="ag-kpi-card">
+                <p className="text-sm text-[var(--text-muted)]">Custo por arroba</p>
+                <p className="mt-2 text-2xl font-bold text-[var(--text-primary)]">
+                  {fiscalSummary.cost_per_arroba == null
+                    ? "—"
+                    : `R$ ${Number(fiscalSummary.cost_per_arroba).toLocaleString("pt-BR", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}`}
+                </p>
+                <p className="mt-1 text-xs text-[var(--text-secondary)]">
+                  Baseado no peso atual
+                </p>
+              </div>
+
+              <div className="ag-kpi-card">
+                <p className="text-sm text-[var(--text-muted)]">ROI projetado</p>
+                <p
+                  className={`mt-2 text-2xl font-bold ${
+                    fiscalSummary.roi_projected == null
+                      ? "text-[var(--text-primary)]"
+                      : Number(fiscalSummary.roi_projected) >= 0
+                      ? "text-[var(--primary-hover)]"
+                      : "text-red-600"
+                  }`}
+                >
+                  {fiscalSummary.roi_projected == null
+                    ? "—"
+                    : `${Number(fiscalSummary.roi_projected) > 0 ? "+" : ""}${Number(fiscalSummary.roi_projected).toFixed(1)}%`}
+                </p>
+                <p className="mt-1 text-xs text-[var(--text-secondary)]">
+                  Cotação atual + peso
+                </p>
+              </div>
+            </div>
+          )}
+
+          {!fiscalSummary && !lastSaleWithRoi && (
+            <p className="text-sm text-[var(--text-muted)]">
+              Dados fiscais ainda não disponíveis para este animal. O módulo de controladoria
+              calculará o custo acumulado quando NF-e de insumos forem importadas.
+            </p>
+          )}
+        </section>
+      )}
 
       {/* Score breakdown v3 — ancorado em Embrapa Documento Técnico 237 (Costa et al., 2018) */}
       <section className="ag-card p-8">

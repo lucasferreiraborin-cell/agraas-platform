@@ -62,22 +62,113 @@ export default async function DossieProdutor({ params }: Params) {
 
   const propMap = new Map((properties ?? []).map((p) => [p.id, p]));
 
+  // ── Saúde financeira — só quando acesso liberado (já garantido pelo rel check) ─
+  type FinancialData = {
+    receita12m: number;
+    despesa12m: number;
+    funrural12m: number;
+    projections: Array<{ month: string; inflow: number; outflow: number }>;
+    recentEntries: Array<{ entry_date: string | null; account_name: string | null; credit_amount: number | null; debit_amount: number | null }>;
+  };
+  let financial: FinancialData | null = null;
+
+  try {
+    const cutoff12 = new Date();
+    cutoff12.setMonth(cutoff12.getMonth() - 11);
+    cutoff12.setDate(1);
+    const iso12 = cutoff12.toISOString().split("T")[0];
+    const monthStart = new Date();
+    monthStart.setDate(1);
+    const monthStartIso = monthStart.toISOString().split("T")[0];
+    const todayIso2 = new Date().toISOString().split("T")[0];
+
+    const [invRes, projRes, entryRes] = await Promise.allSettled([
+      db
+        .from("fiscal_invoices")
+        .select("direction, total_amount, emission_date")
+        .eq("client_id", clientId)
+        .gte("emission_date", iso12),
+      db
+        .from("cash_flow_projections")
+        .select("projection_month, projected_inflow, projected_outflow")
+        .eq("client_id", clientId)
+        .gte("projection_month", todayIso2)
+        .order("projection_month", { ascending: true })
+        .limit(6),
+      db
+        .from("accounting_entries")
+        .select("entry_date, account_name, credit_amount, debit_amount")
+        .eq("client_id", clientId)
+        .order("entry_date", { ascending: false })
+        .limit(30),
+    ]);
+
+    const invoices =
+      invRes.status === "fulfilled" ? (invRes.value.data ?? []) : [];
+    const projRows =
+      projRes.status === "fulfilled" ? (projRes.value.data ?? []) : [];
+    const entryRows =
+      entryRes.status === "fulfilled" ? (entryRes.value.data ?? []) : [];
+
+    const receita12m = invoices
+      .filter((i) => i.direction === "inbound")
+      .reduce((s, i) => s + Number(i.total_amount ?? 0), 0);
+    const despesa12m = invoices
+      .filter((i) => i.direction === "outbound")
+      .reduce((s, i) => s + Number(i.total_amount ?? 0), 0);
+    const funrural12m = invoices
+      .filter(
+        (i) =>
+          i.direction === "outbound" &&
+          i.emission_date &&
+          i.emission_date >= monthStartIso,
+      )
+      .reduce((s, i) => s + Number(i.total_amount ?? 0) * 0.015, 0);
+
+    const months = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+    financial = {
+      receita12m,
+      despesa12m,
+      funrural12m,
+      projections: projRows.map((p) => {
+        const ym = (p.projection_month ?? "").slice(0, 7);
+        const [, m] = ym.split("-");
+        const idx = parseInt(m, 10) - 1;
+        return {
+          month: months[idx] ?? ym,
+          inflow: Number(p.projected_inflow ?? 0),
+          outflow: Number(p.projected_outflow ?? 0),
+        };
+      }),
+      recentEntries: entryRows as FinancialData["recentEntries"],
+    };
+  } catch {
+    financial = null;
+  }
+
   // Amostra: top 10 animais por score
-  const { data: topAnimals } = await db
-    .from("animal_scores")
-    .select("animal_id, total_score, score_produtivo, score_sanidade, score_rastreabilidade")
-    .eq("algorithm_version", "v3")
-    .order("total_score", { ascending: false })
-    .limit(10);
+  // SEGURANCA (132/security-rls C9): primeiro filtramos animais do clientId,
+  // depois buscamos scores cujo animal_id esteja nesse subset. Sem isso,
+  // animal_scores.select() retornava top-10 GLOBAL (vazamento cross-tenant).
+  const { data: producerAnimals } = await db
+    .from("animals")
+    .select("id, internal_code, breed, sex, birth_date, current_property_id")
+    .eq("client_id", clientId);
+
+  const producerAnimalIds = (producerAnimals ?? []).map((a) => a.id);
+
+  const { data: topAnimals } = producerAnimalIds.length
+    ? await db
+        .from("animal_scores")
+        .select("animal_id, total_score, score_produtivo, score_sanidade, score_rastreabilidade")
+        .eq("algorithm_version", "v3")
+        .in("animal_id", producerAnimalIds)
+        .order("total_score", { ascending: false })
+        .limit(10)
+    : { data: [] as Array<{ animal_id: string; total_score: number; score_produtivo: number | null; score_sanidade: number | null; score_rastreabilidade: number | null }> };
 
   const animalIds = (topAnimals ?? []).map((a) => a.animal_id);
-  const { data: animalsData } = animalIds.length
-    ? await db
-        .from("animals")
-        .select("id, internal_code, breed, sex, birth_date, current_property_id")
-        .in("id", animalIds)
-        .eq("client_id", clientId)
-    : { data: [] };
+  const animalsData = (producerAnimals ?? []).filter((a) => animalIds.includes(a.id));
   const animalMap = new Map((animalsData ?? []).map((a) => [a.id, a]));
 
   const psCls = scoreClassification(Number(ps?.score_total ?? 0));
@@ -280,6 +371,136 @@ export default async function DossieProdutor({ params }: Params) {
             </table>
           </section>
 
+          {/* Saúde financeira */}
+          {financial && (
+            <section className="ag-card mb-8 mt-8">
+              <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-[--text-primary]">
+                    Saúde financeira
+                  </h2>
+                  <p className="text-xs text-[--text-muted] mt-0.5">
+                    Dados fiscais dos últimos 12 meses · mascarados conforme LGPD
+                  </p>
+                </div>
+              </div>
+
+              {/* KPIs financeiros */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-6">
+                <FinKpi
+                  label="Receita bruta 12m"
+                  value={fmtBRL(financial.receita12m)}
+                />
+                <FinKpi
+                  label="Despesas 12m"
+                  value={fmtBRL(financial.despesa12m)}
+                />
+                <FinKpi
+                  label="FUNRURAL pago"
+                  value={fmtBRL(financial.funrural12m)}
+                />
+                <FinKpi
+                  label="Projeções disponíveis"
+                  value={
+                    financial.projections.length > 0
+                      ? `${financial.projections.length} meses`
+                      : "—"
+                  }
+                />
+              </div>
+
+              {/* Projeção próximos 6 meses */}
+              {financial.projections.length > 0 && (
+                <div className="px-6 pb-6 border-t border-[var(--border)] pt-4">
+                  <p className="text-xs uppercase tracking-[0.12em] text-[--text-muted] mb-3">
+                    Projeção próximos {financial.projections.length} meses
+                  </p>
+                  <div className="overflow-x-auto">
+                    <table className="ag-table">
+                      <thead>
+                        <tr>
+                          <th>Mês</th>
+                          <th className="text-right">Entrada prev.</th>
+                          <th className="text-right">Saída prev.</th>
+                          <th className="text-right">Saldo prev.</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {financial.projections.map((p, i) => {
+                          const net = p.inflow - p.outflow;
+                          return (
+                            <tr key={i}>
+                              <td>{p.month}</td>
+                              <td className="text-right tabular-nums text-[--text-secondary]">
+                                {fmtBRL(p.inflow)}
+                              </td>
+                              <td className="text-right tabular-nums text-[--text-secondary]">
+                                {fmtBRL(p.outflow)}
+                              </td>
+                              <td
+                                className={`text-right tabular-nums font-semibold ${
+                                  net >= 0
+                                    ? "text-[var(--primary-hover)]"
+                                    : "text-red-600"
+                                }`}
+                              >
+                                {net >= 0 ? "" : "-"}
+                                {fmtBRL(Math.abs(net))}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Lançamentos recentes (mascarados — só categoria + valor) */}
+              {financial.recentEntries.length > 0 && (
+                <div className="px-6 pb-6 border-t border-[var(--border)] pt-4">
+                  <p className="text-xs uppercase tracking-[0.12em] text-[--text-muted] mb-3">
+                    Últimos 30 lançamentos contábeis · categorias mascaradas
+                  </p>
+                  <div className="overflow-x-auto">
+                    <table className="ag-table">
+                      <thead>
+                        <tr>
+                          <th>Data</th>
+                          <th>Categoria</th>
+                          <th className="text-right">Débito</th>
+                          <th className="text-right">Crédito</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {financial.recentEntries.map((e, i) => (
+                          <tr key={i}>
+                            <td className="text-sm text-[--text-secondary]">
+                              {e.entry_date
+                                ? new Date(e.entry_date).toLocaleDateString("pt-BR")
+                                : "—"}
+                            </td>
+                            <td className="text-sm">{e.account_name ?? "—"}</td>
+                            <td className="text-right tabular-nums text-sm text-[--text-secondary]">
+                              {e.debit_amount && Number(e.debit_amount) > 0
+                                ? fmtBRL(Number(e.debit_amount))
+                                : "—"}
+                            </td>
+                            <td className="text-right tabular-nums text-sm text-[--text-secondary]">
+                              {e.credit_amount && Number(e.credit_amount) > 0
+                                ? fmtBRL(Number(e.credit_amount))
+                                : "—"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </section>
+          )}
+
           <p className="text-xs text-[--text-muted] mt-8 text-center max-w-2xl mx-auto">
             Dados liberados via consentimento expresso do produtor (LGPD Art. 7º, V).
             Identificadores individuais mascarados. Para análise complementar, solicite documentos
@@ -287,6 +508,22 @@ export default async function DossieProdutor({ params }: Params) {
           </p>
       </div>
     </PersonaShell>
+  );
+}
+
+function fmtBRL(v: number): string {
+  return `R$ ${v.toLocaleString("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+function FinKpi({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] p-4">
+      <p className="text-xs text-[--text-muted]">{label}</p>
+      <p className="mt-2 text-lg font-bold text-[--text-primary]">{value}</p>
+    </div>
   );
 }
 

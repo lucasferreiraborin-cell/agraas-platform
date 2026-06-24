@@ -53,6 +53,10 @@ export type LoteOfertadoCard = {
   status: string;
   animals_count: number;
   score_medio_lote: number;
+  /** Animais do lote com GTA vigente (cert contendo "GTA") */
+  gta_count?: number;
+  /** Animais do lote com NF-e emitida (sales.fiscal_invoice_id preenchido) */
+  nfe_emitida?: number;
   compliance: {
     eudr_ready: boolean;        // CAR + origem rastreada
     gta_vigente: boolean;       // GTA não expirado

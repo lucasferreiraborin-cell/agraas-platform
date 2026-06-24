@@ -46,6 +46,11 @@ jobs:
     needs: ci
     # Only deploy on pushes to main (not on PRs)
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    env:
+      # IDs publicos do projeto (de .vercel/project.json). O unico segredo
+      # necessario e VERCEL_TOKEN, configurado em Settings > Secrets > Actions.
+      VERCEL_ORG_ID: team_Ma43Bsja5lsfxCmpolaWanXq
+      VERCEL_PROJECT_ID: prj_gHHWszTrPJL9PtqiHM7bryyJjjA4
 
     steps:
       - name: Checkout
