@@ -7,6 +7,7 @@ import ScoresSection from "@/app/components/landing/ScoresSection";
 import PortosSection from "@/app/components/landing/PortosSection";
 import FSJBECaseSection from "@/app/components/landing/FSJBECaseSection";
 import OperationalSection from "@/app/components/landing/OperationalSection";
+import RegulatoryWindowSection from "@/app/components/landing/RegulatoryWindowSection";
 import HowItWorksSection from "@/app/components/landing/HowItWorksSection";
 import FAQSection from "@/app/components/landing/FAQSection";
 import BrazilAgroSection from "@/app/components/landing/BrazilAgroSection";
@@ -317,6 +318,9 @@ export default async function LandingPage() {
 
       {/* ═══ [8] FINANCEIRO / FISCAL / ESTOQUE ═════════════════════════════ */}
       <OperationalSection />
+
+      {/* ═══ [8.5] JANELA REGULATÓRIA 2026 — "por que agora" ═══════════════ */}
+      <RegulatoryWindowSection />
 
       {/* ═══ [9] MARKETPLACE PREVIEW ═══════════════════════════════════════ */}
       <section className="bg-[var(--bg)]">
