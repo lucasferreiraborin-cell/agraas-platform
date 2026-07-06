@@ -51,7 +51,7 @@ type NavGroup = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// PINNED — visão executiva (sempre visível, 9 itens essenciais)
+// PINNED — visão executiva (sempre visível, 7 itens essenciais)
 //
 // Curadoria para investidores/parceiros institucionais: cada item resolve uma
 // dor direta da tese "Rastreio + Gestão Eficiente". Itens secundários ficam
@@ -63,11 +63,9 @@ const PINNED: NavItem[] = [
   { href: "/inteligencia", label: "Inteligência", icon: Brain },
   { href: "/animais",      label: "Animais",      icon: Beef },
   { href: "/lotes",        label: "Lotes",        icon: Package },
-  { href: "/pesagens",     label: "Pesagens",     icon: Scale },
-  { href: "/reprodutivo",  label: "Reprodutivo",  icon: HeartPulse },
-  { href: "/aplicacoes",   label: "Aplicações",   icon: Syringe },
   { href: "/fiscal",       label: "Fiscal",       icon: Receipt },
-  { href: "/auditoria",    label: "Auditoria",    icon: ClipboardCheck },
+  { href: "/financeiro",   label: "Financeiro",   icon: DollarSign },
+  { href: "/alertas",      label: "Alertas",      icon: Bell },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -76,24 +74,22 @@ const PINNED: NavItem[] = [
 // ─────────────────────────────────────────────────────────────────────────────
 const ADVANCED_GROUPS: NavGroup[] = [
   {
-    label: "Rebanho",
+    label: "Rebanho & Sanidade",
     items: [
+      { href: "/pesagens",                label: "Pesagens",                icon: Scale },
+      { href: "/pesagens/historico",      label: "Histórico Pesagens",      icon: Scale, sub: true },
+      { href: "/reprodutivo",             label: "Reprodutivo",             icon: HeartPulse },
+      { href: "/aplicacoes",              label: "Aplicações",              icon: Syringe },
+      { href: "/aplicacoes/historico",    label: "Histórico Aplicações",    icon: Syringe, sub: true },
+      { href: "/calendario-sanitario",    label: "Calendário Sanitário",    icon: Activity },
+      { href: "/estoque",                 label: "Estoque",                 icon: Warehouse },
+      { href: "/estoque/dashboard",       label: "Dashboard Sanitário",     icon: Warehouse, sub: true },
+      { href: "/estoque/historico",       label: "Histórico Estoque",       icon: Warehouse, sub: true },
       { href: "/eventos",                 label: "Eventos",                 icon: Activity },
       { href: "/movimentacoes",           label: "Movimentações",           icon: ArrowLeftRight },
       { href: "/movimentacoes/historico", label: "Histórico Movimentações", icon: ArrowLeftRight, sub: true },
-      { href: "/pesagens/historico",      label: "Histórico Pesagens",      icon: Scale, sub: true },
       { href: "/metas",                   label: "Metas de Peso",           icon: TrendingUp },
-      { href: "/scores",                  label: "Scores",                  icon: BarChart2 },
-    ],
-  },
-  {
-    label: "Manejo & Sanidade",
-    items: [
-      { href: "/aplicacoes/historico", label: "Histórico Aplicações", icon: Syringe, sub: true },
-      { href: "/calendario-sanitario", label: "Calendário Sanitário", icon: Activity },
-      { href: "/estoque/dashboard",    label: "Dashboard Sanitário",  icon: Warehouse },
-      { href: "/estoque",              label: "Estoque",              icon: Warehouse },
-      { href: "/estoque/historico",    label: "Histórico Estoque",    icon: Warehouse, sub: true },
+      { href: "/auditoria",               label: "Auditoria",               icon: ClipboardCheck },
     ],
   },
   {
@@ -107,32 +103,26 @@ const ADVANCED_GROUPS: NavGroup[] = [
       { href: "/insumos",      label: "Insumos",      icon: Boxes },
       { href: "/operacoes",    label: "Operações",    icon: LayoutGrid },
       { href: "/marketplace",  label: "Marketplace",  icon: ShoppingBag },
-      { href: "/market",       label: "Market",       icon: TrendingUp },
+      { href: "/market",       label: "Cotação",      icon: TrendingUp },
     ],
   },
   {
-    label: "Financeiro",
+    label: "Gestão & Cadeia",
     items: [
-      { href: "/financeiro",       label: "Painel Financeiro", icon: DollarSign },
-      { href: "/custos",           label: "Custos",            icon: DollarSign },
-      { href: "/custos/historico", label: "Histórico Custos",  icon: DollarSign,      sub: true },
-      { href: "/custo-producao",   label: "Custo de Produção", icon: DollarSign,      sub: true },
-      { href: "/fiscal/relatorio", label: "Relatório Fiscal",  icon: FileSpreadsheet, sub: true },
+      { href: "/scores",           label: "Scores",             icon: BarChart2 },
+      { href: "/custos",           label: "Custos",             icon: DollarSign },
+      { href: "/custos/historico", label: "Histórico Custos",   icon: DollarSign, sub: true },
+      { href: "/custo-producao",   label: "Custo de Produção",  icon: DollarSign, sub: true },
+      { href: "/fiscal/relatorio", label: "Relatório Fiscal",   icon: FileSpreadsheet, sub: true },
+      { href: "/producao",         label: "Produção",           icon: BarChart3 },
+      { href: "/relatorios",       label: "Relatórios",         icon: FileText },
+      { href: "/certificacoes",    label: "Certificações",      icon: BadgeCheck },
+      { href: "/cadeia",           label: "Cadeia",             icon: Link2 },
+      { href: "/historico",        label: "Histórico",          icon: Clock },
     ],
   },
   {
-    label: "Inteligência & Cadeia",
-    items: [
-      { href: "/producao",      label: "Produção",      icon: BarChart3 },
-      { href: "/relatorios",    label: "Relatórios",    icon: FileText },
-      { href: "/certificacoes", label: "Certificações", icon: BadgeCheck },
-      { href: "/cadeia",        label: "Cadeia",        icon: Link2 },
-      { href: "/historico",     label: "Histórico",     icon: Clock },
-      { href: "/alertas",       label: "Alertas",       icon: Bell },
-    ],
-  },
-  {
-    label: "Plataforma",
+    label: "Configuração",
     items: [
       { href: "/propriedades", label: "Propriedades",     icon: MapPin },
       { href: "/migrar-dados", label: "Importar animais", icon: FileUp },
@@ -158,7 +148,7 @@ export default function SidebarNav() {
 
   return (
     <nav className="flex-1 overflow-y-auto px-4 py-5">
-      {/* ── PINNED (sempre visível, 9 itens) ────────────────────────────── */}
+      {/* ── PINNED (sempre visível, 7 itens) ────────────────────────────── */}
       <div className="space-y-0.5">
         {PINNED.map((item) => (
           <NavLink key={item.href} item={item} active={isActive(item.href)} />

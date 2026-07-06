@@ -3,12 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import { Package, Beef, Syringe, Scale, type LucideIcon } from "lucide-react";
 
-const actions = [
-  { href: "/lotes/novo",     label: "Criar lote exportação", icon: "✈", color: "emerald" },
-  { href: "/animais/novo",   label: "Adicionar animal",      icon: "◉", color: "sky"     },
-  { href: "/aplicacoes",     label: "Registrar aplicação",   icon: "💉", color: "amber"  },
-  { href: "/pesagens",       label: "Registrar pesagem",     icon: "⚖", color: "violet" },
+const actions: { href: string; label: string; icon: LucideIcon; color: string }[] = [
+  { href: "/lotes/novo",     label: "Criar lote exportação", icon: Package, color: "emerald" },
+  { href: "/animais/novo",   label: "Adicionar animal",      icon: Beef,    color: "sky"     },
+  { href: "/aplicacoes",     label: "Registrar aplicação",   icon: Syringe, color: "amber"  },
+  { href: "/pesagens",       label: "Registrar pesagem",     icon: Scale,   color: "violet" },
 ];
 
 const colorMap: Record<string, { bg: string; border: string; text: string; hover: string }> = {
@@ -34,7 +35,13 @@ export default function QuickActions() {
     return () => document.removeEventListener("mousedown", onMouseDown);
   }, [open]);
 
-  if (pathname.startsWith("/comprador")) return null;
+  if (
+    pathname.startsWith("/comprador") ||
+    pathname.startsWith("/banco") ||
+    pathname.startsWith("/contador") ||
+    pathname.startsWith("/controladoria")
+  )
+    return null;
 
   return (
     <div ref={ref} className="fixed bottom-6 right-[92px] z-50 flex flex-col items-end gap-2">
@@ -42,6 +49,7 @@ export default function QuickActions() {
       <div className="flex flex-col items-end gap-2 pb-1">
         {actions.map((action, i) => {
           const c = colorMap[action.color];
+          const Icon = action.icon;
           return (
             <Link
               key={action.href}
@@ -56,7 +64,7 @@ export default function QuickActions() {
                 transitionDelay: open ? `${i * 40}ms` : `${(actions.length - 1 - i) * 30}ms`,
               }}
             >
-              <span className="text-base leading-none">{action.icon}</span>
+              <Icon size={16} className="shrink-0" />
               <span className="whitespace-nowrap">{action.label}</span>
             </Link>
           );

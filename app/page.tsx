@@ -19,7 +19,7 @@ import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
 import {
   Fingerprint,
   BarChart2,
-  Wheat,
+  Receipt,
   ShoppingBag,
   MapPin,
   ArrowRight,
@@ -27,9 +27,9 @@ import {
 } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Agraas — Gestão completa do agro brasileiro, com rastreio como diferencial.",
+  title: "Agraas — Gestão fiscal, contábil e rastreio do agro brasileiro, numa camada só.",
   description:
-    "Uma camada única de dados verificáveis para produtores, compradores institucionais e instituições financeiras. Do nascimento do animal ao destino da arroba.",
+    "Uma camada única de dados verificáveis — contábil, fiscal, estoque e rastreio operacional — para produtores, contadores, compradores institucionais e instituições financeiras. Do lançamento da nota fiscal ao destino do animal.",
   alternates: { canonical: "/" },
 };
 
@@ -96,10 +96,10 @@ const CAPABILITIES = [
     href: "#score",
   },
   {
-    Icon: Wheat,
-    title: "Gestão da safra",
-    p1: "Talhões georreferenciados com CAR verificado e custo acumulado por propriedade. O mesmo motor que opera bovinos é a base para safra no roadmap.",
-    p2: "Preparado para os requisitos de origem que o mercado europeu e o asiático estão consolidando — sem prometer carimbo que ainda não é nosso.",
+    Icon: Receipt,
+    title: "Fiscal e contábil integrado",
+    p1: "NF-e de entrada e saída lançada por áudio, PDF, XML, CSV ou digitação simples. Classificação contábil automática, partida dobrada, DRE mensal sem input manual.",
+    p2: "LCDPR, ativo biológico sob CPC 29 e regime tributário parametrizado por cliente. O contador recebe apuração pronta, não uma pilha de nota fiscal pra classificar.",
   },
   {
     Icon: ShoppingBag,
@@ -142,7 +142,7 @@ export default async function LandingPage() {
               className="mt-6 max-w-[860px] text-[clamp(2.4rem,5.8vw,4.6rem)] font-medium leading-[1] tracking-[-.035em] text-white [text-wrap:balance]"
               style={{ textShadow: "0 2px 24px rgba(15,53,23,.55)" }}
             >
-              Gestão completa do agro, com rastreio como diferencial.
+              Gestão fiscal, contábil e rastreio do agro — numa camada só.
             </h1>
           </FadeIn>
 
@@ -151,7 +151,7 @@ export default async function LandingPage() {
               className="mt-7 max-w-[620px] text-[1.0625rem] leading-[1.75] text-white"
               style={{ textShadow: "0 2px 16px rgba(15,53,23,.7)" }}
             >
-              Uma camada única de dados verificáveis que conecta o produtor brasileiro ao comprador institucional e à instituição financeira. Do nascimento do animal ao destino da arroba.
+              Contábil, fiscal, estoque e rastreio operacional em uma única camada de dados verificáveis. Do lançamento da nota fiscal ao destino do animal — para o produtor, o contador, o comprador e o financiador.
             </p>
           </FadeIn>
 
@@ -249,18 +249,18 @@ export default async function LandingPage() {
             </FadeIn>
             <FadeIn delay={0.08}>
               <h2 className="mt-5 text-[clamp(1.8rem,4vw,2.8rem)] font-medium leading-[1.08] tracking-[-.02em] text-[var(--text-primary)] [text-wrap:balance]">
-                O mesmo dado serve três interlocutores do agro.
+                O mesmo dado serve quatro interlocutores do agro.
               </h2>
             </FadeIn>
             <FadeIn delay={0.16}>
               <p className="mt-6 max-w-[720px] text-[1rem] leading-[1.8] text-[var(--text-secondary)]">
-                A operação de campo gera um único registro auditável. Esse registro vira gestão para quem produz, prova para quem compra e leitura de risco para quem financia. Sem retrabalho, sem versão diferente do mesmo número em sistemas diferentes.
+                A operação de campo gera um único registro auditável. Esse registro vira gestão para quem produz, apuração pronta para quem contabiliza, prova para quem compra e leitura de risco para quem financia. Sem retrabalho, sem versão diferente do mesmo número em sistemas diferentes.
               </p>
             </FadeIn>
           </div>
 
           <StaggerContainer
-            className="mt-14 grid gap-6 md:grid-cols-3"
+            className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4"
             staggerChildren={0.08}
           >
             {[
@@ -270,6 +270,11 @@ export default async function LandingPage() {
                 text: "Manejo, sanitário, financeiro, fiscal e estoque em um só lugar. O rastreio é consequência da operação — não custo adicional.",
               },
               {
+                tag: "Contador",
+                title: "Apuração pronta, não retrabalho",
+                text: "NF-e classificada automaticamente, DRE mensal, LCDPR e obrigações fiscais geradas pela operação do cliente — sem pedir planilha, sem digitar duas vezes.",
+              },
+              {
                 tag: "Comprador institucional",
                 title: "Prova auditável de origem",
                 text: "Acesso ao histórico do animal ou do lote sem precisar confiar na palavra do vendedor. Score, eventos e documentos no mesmo QR.",
@@ -277,7 +282,7 @@ export default async function LandingPage() {
               {
                 tag: "Instituição financeira",
                 title: "Risco lido na fonte",
-                text: "Carteira de crédito agro avaliada com base no que está acontecendo no campo agora — não em demonstrativo de seis meses atrás.",
+                text: "Carteira de crédito agro avaliada com base no que está acontecendo no campo e na contabilidade agora — não em demonstrativo de seis meses atrás.",
               },
             ].map((p) => (
               <StaggerItem key={p.tag}>
@@ -485,7 +490,7 @@ export default async function LandingPage() {
                   Conversa direta com a fundação.
                 </h3>
                 <p className="mt-3 text-[.9375rem] leading-[1.75] text-white/65">
-                  Captação pré-seed, integrações com frigorífico ou avaliação de carteira de crédito agro.
+                  Captação pré-seed, integrações com frigorífico, parceria com escritório contábil ou avaliação de carteira de crédito agro.
                 </p>
                 <a
                   href="mailto:contato@agraas.com.br?subject=Conversa%20institucional%20—%20Agraas"

@@ -11,7 +11,7 @@ const PORTS = [
 ];
 
 const DESTINATIONS = [
-  { region: "Oriente Médio",    hubs: "Jeddah · Dubai · Doha" },
+  { region: "Oriente Médio",    hubs: "Dubai · Doha" },
   { region: "Europa",           hubs: "Rotterdam · Hamburgo" },
   { region: "Ásia",             hubs: "Xangai · Singapura" },
   { region: "América do Norte", hubs: "Houston · Long Beach" },

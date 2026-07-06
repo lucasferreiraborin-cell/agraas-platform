@@ -11,6 +11,10 @@ const FAQ = [
     a: "Substitui. A plataforma cobre toda a cadeia — rastreabilidade, operacional, financeiro (DRE, fluxo, balanço), fiscal (NF-e automática), estoque com carência MAPA, custo por animal e ROI. Quem migra reduz de 3-4 softwares para 1.",
   },
   {
+    q: "A Agraas resolve a obrigatoriedade da NFP-e e as mudanças fiscais de 2026?",
+    a: "Sim. Emissão e leitura de NF-e (entrada e saída) já rodam na plataforma, com classificação contábil automática, LCDPR e parametrização de regime tributário (incluindo FUNRURAL por tipo de produtor). O motor fiscal foi construído pensando na janela regulatória que se abre em 2026.",
+  },
+  {
     q: "Quanto tempo leva para uma fazenda começar a usar?",
     a: "Onboarding em até 72 horas para operações médias. Importação via CSV com template padronizado, cadastro de rebanho e talhões, primeiros scores calculados no mesmo dia. No Enterprise, o time Agraas faz a importação assistida.",
   },
