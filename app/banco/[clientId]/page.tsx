@@ -14,6 +14,7 @@ import Link from "next/link";
 import PersonaShell from "@/app/components/personas/PersonaShell";
 import { BANK_VIEW_ENABLED } from "@/lib/feature-flags";
 import { scoreClassification, maskEarTag } from "@/lib/personas";
+import { funruralValue } from "@/lib/funrural";
 import { requirePersona, BANCO_ROUTES } from "@/lib/persona-resolver";
 import { ArrowLeft, Download, MapPin, Calendar, Award } from "lucide-react";
 
@@ -43,7 +44,7 @@ export default async function DossieProdutor({ params }: Params) {
 
   const { data: producer } = await db
     .from("clients")
-    .select("id, name, email")
+    .select("id, name, email, funrural_rate, tax_regime")
     .eq("id", clientId)
     .single();
   if (!producer) notFound();
@@ -116,6 +117,8 @@ export default async function DossieProdutor({ params }: Params) {
     const despesa12m = invoices
       .filter((i) => i.direction === "outbound")
       .reduce((s, i) => s + Number(i.total_amount ?? 0), 0);
+    // Alíquota FUNRURAL parametrizada por cliente (LC 224/2025). Analista de
+    // banco vê este número — precisa bater com a lei, não hardcode 1,5%.
     const funrural12m = invoices
       .filter(
         (i) =>
@@ -123,7 +126,7 @@ export default async function DossieProdutor({ params }: Params) {
           i.emission_date &&
           i.emission_date >= monthStartIso,
       )
-      .reduce((s, i) => s + Number(i.total_amount ?? 0) * 0.015, 0);
+      .reduce((s, i) => s + funruralValue(Number(i.total_amount ?? 0), producer), 0);
 
     const months = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
     financial = {
@@ -231,22 +234,32 @@ export default async function DossieProdutor({ params }: Params) {
               <div className="space-y-2 col-span-2">
                 <ScoreBreakdown label="Ativos · qualidade do rebanho" value={Number(ps?.score_ativos ?? 0)} />
                 <ScoreBreakdown
-                  label="Relacionamento institucional"
-                  value={Number(ps?.score_relacionamento ?? 0)}
-                  placeholder={!ps?.score_relacionamento}
-                />
-                <ScoreBreakdown
                   label="Financeiro"
                   value={Number(ps?.score_financeiro ?? 0)}
                   placeholder={!ps?.score_financeiro}
+                  hint="Fonte: ROI real das vendas + regularidade fiscal (NF-e)"
                 />
                 <ScoreBreakdown
-                  label="Institucional · CAR + IBAMA + sanitário"
+                  label="Relacionamento comercial"
+                  value={Number(ps?.score_relacionamento ?? 0)}
+                  placeholder={!ps?.score_relacionamento}
+                  hint="Fonte: recorrência de compradores + vendas com NF-e vinculada"
+                />
+                <ScoreBreakdown
+                  label="Institucional · certificações e rastreabilidade"
                   value={Number(ps?.score_institucional ?? 0)}
                   placeholder={!ps?.score_institucional}
+                  hint="Fonte: certificações ativas + prontidão LCDPR"
                 />
               </div>
             </div>
+            <p className="text-xs text-[--text-muted] mt-6 border-t border-[var(--border)] pt-4 leading-relaxed">
+              A nota agregada é ancorada na dimensão <strong>Ativos</strong> (qualidade do rebanho),
+              calculada pela metodologia Embrapa Doc 237 (Costa et al., 2018). As dimensões de crédito
+              — financeiro, relacionamento e institucional — estão <strong>em calibração</strong> a
+              partir de dados fiscais e comerciais reais do produtor; metodologia analítica Agraas em
+              validação, não derivada da Embrapa.
+            </p>
           </section>
 
           {/* KPIs do produtor */}
@@ -531,10 +544,12 @@ function ScoreBreakdown({
   label,
   value,
   placeholder = false,
+  hint,
 }: {
   label: string;
   value: number;
   placeholder?: boolean;
+  hint?: string;
 }) {
   if (placeholder) {
     return (
@@ -542,8 +557,11 @@ function ScoreBreakdown({
         <div className="flex-1">
           <div className="flex items-center justify-between">
             <span className="text-sm text-[--text-secondary]">{label}</span>
-            <span className="text-xs text-[--text-muted] italic">não calculado</span>
+            <span className="text-[10px] uppercase tracking-wider rounded-full border border-[var(--border)] px-2 py-0.5 text-[--text-muted]">
+              em calibração
+            </span>
           </div>
+          {hint && <p className="text-[11px] text-[--text-muted] mt-1">{hint}</p>}
           <div className="h-1.5 bg-white/5 rounded-full mt-1.5" />
         </div>
       </div>

@@ -140,6 +140,11 @@ export async function GET(req: NextRequest) {
               <Row label="Institucional" value={Number(ps?.score_institucional ?? 0)} placeholder={!ps?.score_institucional} />
             </View>
           </View>
+          <Text style={{ fontSize: 6.5, color: "#8a9280", marginTop: 8, lineHeight: 1.4 }}>
+            Nota agregada ancorada na dimensão Ativos (rebanho), metodologia Embrapa Doc 237 (Costa et al., 2018).
+            Dimensões de crédito — financeiro, relacionamento e institucional — em calibração a partir de dados
+            fiscais e comerciais reais do produtor; metodologia analítica Agraas em validação, não derivada da Embrapa.
+          </Text>
         </View>
 
         <View style={s.kpiRow}>
@@ -232,8 +237,8 @@ function Row({ label, value, placeholder = false }: { label: string; value: numb
   return (
     <View style={s.breakdownRow}>
       <Text style={{ fontSize: 8, color: "#5b6957" }}>{label}</Text>
-      <Text style={{ fontSize: 8, fontWeight: "bold", color: placeholder ? "#a3aa9c" : "#1e2a1b" }}>
-        {placeholder ? "—" : value.toFixed(0)}
+      <Text style={{ fontSize: placeholder ? 6.5 : 8, fontWeight: placeholder ? "normal" : "bold", color: placeholder ? "#a3aa9c" : "#1e2a1b" }}>
+        {placeholder ? "em calibração" : value.toFixed(0)}
       </Text>
     </View>
   );
