@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
       cotacao,
     ] = await Promise.all([
       db.from("animals").select("*", { count: "exact", head: true }).eq("status", "Ativo"),
-      db.from("animal_scores").select("total_score").eq("algorithm_version", "v3"),
+      db.from("animal_scores").select("total_score").in("algorithm_version", ["v3", "v3.1", "v3.2"]),
       db.from("properties").select("*", { count: "exact", head: true }),
       db.from("market_signals").select("source, kind, title, summary, raw_value, raw_unit, priority, published_at")
         .gte("published_at", since24h).order("priority", { ascending: true }).order("published_at", { ascending: false }).limit(8),

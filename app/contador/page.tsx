@@ -157,8 +157,8 @@ export default async function ContadorPage() {
               obrigações já organizados.
             </p>
             <div className="mt-7 flex items-center justify-center gap-3">
-              <button
-                type="button"
+              <a
+                href="mailto:contato@agraas.com.br?subject=Convite%20de%20produtor%20—%20Agraas"
                 className="rounded-xl px-4 py-2 text-sm font-medium transition"
                 style={{
                   backgroundColor: "var(--persona-accent)",
@@ -166,7 +166,7 @@ export default async function ContadorPage() {
                 }}
               >
                 Convidar produtor
-              </button>
+              </a>
               <Link
                 href="/contador/produtores"
                 className="rounded-xl border border-white/15 px-4 py-2 text-sm font-medium text-white/85 transition hover:bg-white/8"

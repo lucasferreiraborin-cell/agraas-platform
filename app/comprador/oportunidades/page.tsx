@@ -275,10 +275,17 @@ export default async function OportunidadesPage() {
                       )}
                     </div>
 
-                    <button className="ag-button-primary mt-2 flex items-center justify-center gap-2">
+                    <a
+                      href={`mailto:contato@agraas.com.br?subject=${encodeURIComponent(
+                        `Interesse no lote ${lote.lot_name} — Agraas`,
+                      )}&body=${encodeURIComponent(
+                        `Gostaria de iniciar contato com o produtor responsável pelo lote "${lote.lot_name}" (${lote.origem.propriedade_nome}).`,
+                      )}`}
+                      className="ag-button-primary mt-2 flex items-center justify-center gap-2"
+                    >
                       Solicitar contato com produtor
                       <ArrowRight size={14} />
-                    </button>
+                    </a>
                   </article>
                 );
               })}

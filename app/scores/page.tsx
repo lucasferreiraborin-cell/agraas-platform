@@ -70,7 +70,7 @@ export default async function ScoresPage() {
       ? supabase.from("animal_scores")
           .select("animal_id, productive_score, sanitary_score, operational_score")
           .in("animal_id", myAnimalIds)
-          .eq("algorithm_version", "v3")
+          .in("algorithm_version", ["v3", "v3.1", "v3.2"])
       : Promise.resolve({ data: [] }),
   ]);
 

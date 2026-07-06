@@ -161,7 +161,7 @@ export default async function DossieProdutor({ params }: Params) {
     ? await db
         .from("animal_scores")
         .select("animal_id, total_score, score_produtivo, score_sanidade, score_rastreabilidade")
-        .eq("algorithm_version", "v3")
+        .in("algorithm_version", ["v3", "v3.1", "v3.2"])
         .in("animal_id", producerAnimalIds)
         .order("total_score", { ascending: false })
         .limit(10)

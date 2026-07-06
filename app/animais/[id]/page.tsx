@@ -253,7 +253,7 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
       .from("animal_scores")
       .select("fiscal_score")
       .eq("animal_id", id)
-      .eq("algorithm_version", "v3")
+      .in("algorithm_version", ["v3", "v3.1", "v3.2"])
       .maybeSingle();
     if (scoreRow?.fiscal_score != null) {
       fiscalScore = Number(scoreRow.fiscal_score);
@@ -509,21 +509,36 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
             <div className="mt-6 rounded-3xl border border-[var(--border)] bg-[linear-gradient(135deg,#f0f7ec,#ffffff)] p-6 shadow-[var(--shadow-soft)]">
               <p className="text-xs uppercase tracking-[0.2em] text-[var(--text-muted)]">
                 Status do ativo
-               </p>
+              </p>
 
               <p className="mt-3 text-2xl font-semibold text-[var(--primary-hover)]">
                 {getPassportConfidenceText(calculatedAgraasScore)}
               </p>
 
-            <div className="mt-4 flex flex-wrap gap-2">
-             <span className="ag-badge ag-badge-green">Certificado</span>
-              <span className="ag-badge ag-badge-green">Rastreável</span>
-              <span className="ag-badge ag-badge-green">Score elevado</span>
-            </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {calculatedAgraasScore > 0 && (
+                  <span className="ag-badge ag-badge-green">Rastreável</span>
+                )}
+                {hasGtaVigente && (
+                  <span className="ag-badge ag-badge-green">GTA vigente</span>
+                )}
+                {calculatedAgraasScore >= 80 && (
+                  <span className="ag-badge ag-badge-green">Score elevado</span>
+                )}
+                {calculatedAgraasScore > 0 && calculatedAgraasScore < 60 && (
+                  <span className="ag-badge border border-amber-200 bg-amber-50 text-amber-800">
+                    Score em consolidação
+                  </span>
+                )}
+              </div>
 
-             <p className="mt-4 text-sm text-[var(--text-secondary)]">
-              Ativo apto para operações comerciais exigentes e mercados de maior rigor sanitário.
-            </p>
+              <p className="mt-4 text-sm text-[var(--text-secondary)]">
+                {calculatedAgraasScore >= 80
+                  ? "Ativo apto para operações comerciais exigentes e mercados de maior rigor sanitário."
+                  : calculatedAgraasScore >= 60
+                  ? "Ativo em consolidação de histórico — apto para operações comerciais padrão."
+                  : "Ativo em fase inicial de rastreabilidade — enriqueça o histórico para elevar o score."}
+              </p>
             </div>
 
             <div className="mt-10 grid gap-4 md:grid-cols-3">
@@ -594,18 +609,24 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
                 value={formatDate(sanitary.withdrawal_end_date)}
               />
             </div>
-            <div className="mt-6 rounded-3xl border border border-[rgba(93,156,68,0.15)] bg[linear-gradient(135deg,#ffffff,#f8fbf6)] p-6 shadow-[var(--shadow-soft)]">
-            <p className="text-xs uppercase tracking-[0.2em] text-[var(--text-muted)]">
-            Inteligência Agraas
-            </p>
+            <div className="mt-6 rounded-3xl border border-[rgba(93,156,68,0.15)] bg-[linear-gradient(135deg,#ffffff,#f8fbf6)] p-6 shadow-[var(--shadow-soft)]">
+              <p className="text-xs uppercase tracking-[0.2em] text-[var(--text-muted)]">
+                Inteligência Agraas
+              </p>
 
-            <p className="mt-3 text-base text-[var(--text-primary)]">
-            Este animal apresenta consistência operacional, histórico sanitário estruturado e evolução de peso estável.
-            </p>
+              <p className="mt-3 text-base text-[var(--text-primary)]">
+                {calculatedAgraasScore >= 80
+                  ? "Este animal apresenta consistência operacional, histórico sanitário estruturado e evolução de peso estável."
+                  : calculatedAgraasScore >= 60
+                  ? "Este animal está consolidando histórico operacional e sanitário — score em evolução constante."
+                  : "Histórico ainda em formação. Registros de peso e sanidade adicionais elevam a leitura do ativo."}
+              </p>
 
-            <p className="mt-2 text-sm text-[var(--text-secondary)]">
-            Recomendado para comercialização em mercados com maior exigência de rastreabilidade e conformidade.
-            </p>
+              <p className="mt-2 text-sm text-[var(--text-secondary)]">
+                {calculatedAgraasScore >= 60
+                  ? "Recomendado para comercialização em mercados com maior exigência de rastreabilidade e conformidade."
+                  : "Enriqueça pesagens e eventos sanitários para elevar a leitura comercial deste ativo."}
+              </p>
             </div>
 
           <div className="mt-6 grid gap-4 sm:grid-cols-3">

@@ -97,7 +97,7 @@ export async function GET(req: NextRequest) {
     ? await db
         .from("animal_scores")
         .select("animal_id, total_score")
-        .eq("algorithm_version", "v3")
+        .in("algorithm_version", ["v3", "v3.1", "v3.2"])
         .in("animal_id", producerIds)
         .order("total_score", { ascending: false })
         .limit(10)
