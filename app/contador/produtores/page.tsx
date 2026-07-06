@@ -9,6 +9,7 @@
 
 import Link from "next/link";
 import { createSupabaseServiceClient } from "@/lib/supabase-service";
+import { funruralValue, type FunruralClient } from "@/lib/funrural";
 import { requirePersona, CONTADOR_ROUTES } from "@/lib/persona-resolver";
 import PersonaShell from "@/app/components/personas/PersonaShell";
 import { Search, Users, ChevronRight } from "lucide-react";
@@ -39,14 +40,29 @@ export default async function ContadorProdutoresPage() {
     producerIds = [];
   }
 
-  let producers: { id: string; name: string; email: string | null }[] = [];
+  // Cada produtor pode ter regime tributário diferente — trazemos
+  // funrural_rate/tax_regime para aplicar a alíquota certa POR cliente
+  // (LC 224/2025). Nunca uma alíquota global.
+  let producers: (FunruralClient & {
+    id: string;
+    name: string;
+    email: string | null;
+  })[] = [];
   if (producerIds.length > 0) {
     const { data } = await db
       .from("clients")
-      .select("id, name, email")
+      .select("id, name, email, funrural_rate, tax_regime")
       .in("id", producerIds);
     producers = data ?? [];
   }
+
+  // Índice de dados fiscais por client_id, para o helper por cliente no reduce.
+  const funruralClientById = new Map<string, FunruralClient>(
+    producers.map((p) => [
+      p.id,
+      { funrural_rate: p.funrural_rate, tax_regime: p.tax_regime },
+    ]),
+  );
 
   const pendingByClient = new Map<string, number>();
   const funruralByClient = new Map<string, number>();
@@ -79,7 +95,10 @@ export default async function ContadorProdutoresPage() {
         funruralByClient.set(
           row.client_id,
           (funruralByClient.get(row.client_id) ?? 0) +
-            Number(row.total_amount ?? 0) * 0.015,
+            funruralValue(
+              Number(row.total_amount ?? 0),
+              funruralClientById.get(row.client_id) ?? null,
+            ),
         );
       }
     } catch {

@@ -20,6 +20,7 @@
 
 import Link from "next/link";
 import { createSupabaseServiceClient } from "@/lib/supabase-service";
+import { funruralValue, type FunruralClient } from "@/lib/funrural";
 import { requirePersona, CONTADOR_ROUTES } from "@/lib/persona-resolver";
 import PersonaShell from "@/app/components/personas/PersonaShell";
 import {
@@ -59,14 +60,23 @@ export default async function ContadorPage() {
   }
 
   // ── Dados dos produtores ─────────────────────────────────────────────────
-  let producers: { id: string; name: string }[] = [];
+  // Traz funrural_rate/tax_regime para aplicar a alíquota FUNRURAL por cliente
+  // (regimes podem divergir na carteira — LC 224/2025). Nunca global.
+  let producers: (FunruralClient & { id: string; name: string })[] = [];
   if (producerIds.length > 0) {
     const { data } = await db
       .from("clients")
-      .select("id, name")
+      .select("id, name, funrural_rate, tax_regime")
       .in("id", producerIds);
     producers = data ?? [];
   }
+
+  const funruralClientById = new Map<string, FunruralClient>(
+    producers.map((p) => [
+      p.id,
+      { funrural_rate: p.funrural_rate, tax_regime: p.tax_regime },
+    ]),
+  );
 
   // ── Notas pendentes por produtor ─────────────────────────────────────────
   const pendingByClient = new Map<string, number>();
@@ -100,7 +110,10 @@ export default async function ContadorPage() {
         funruralByClient.set(
           row.client_id,
           (funruralByClient.get(row.client_id) ?? 0) +
-            Number(row.total_amount ?? 0) * 0.015,
+            funruralValue(
+              Number(row.total_amount ?? 0),
+              funruralClientById.get(row.client_id) ?? null,
+            ),
         );
       }
     } catch {

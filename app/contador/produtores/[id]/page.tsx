@@ -6,6 +6,7 @@
  */
 
 import { createSupabaseServiceClient } from "@/lib/supabase-service";
+import { funruralValue, funruralRateLabel } from "@/lib/funrural";
 import { requirePersona, CONTADOR_ROUTES } from "@/lib/persona-resolver";
 import PersonaShell from "@/app/components/personas/PersonaShell";
 import { redirect, notFound } from "next/navigation";
@@ -57,10 +58,11 @@ export default async function ContadorProdutorPage({ params }: Params) {
     if (!link) redirect("/contador");
   }
 
-  // Dados do produtor
+  // Dados do produtor — inclui campos fiscais para a alíquota FUNRURAL
+  // parametrizada (funrural_rate/tax_regime, LC 224/2025).
   const { data: producer } = await db
     .from("clients")
-    .select("id, name, email")
+    .select("id, name, email, funrural_rate, tax_regime")
     .eq("id", producerId)
     .single();
   if (!producer) notFound();
@@ -110,7 +112,8 @@ export default async function ContadorProdutorPage({ params }: Params) {
         i.emission_date &&
         i.emission_date >= monthStartIso,
     )
-    .reduce((s, i) => s + Number(i.total_amount ?? 0) * 0.015, 0);
+    .reduce((s, i) => s + funruralValue(Number(i.total_amount ?? 0), producer), 0);
+  const funruralLabel = funruralRateLabel(producer);
 
   // Totais balancete
   const totalDebitos = entries.reduce((s, e) => s + Number(e.debit_amount ?? 0), 0);
@@ -158,7 +161,7 @@ export default async function ContadorProdutorPage({ params }: Params) {
             icon={Receipt}
           />
           <DarkKpi
-            label="FUNRURAL (mês)"
+            label={`FUNRURAL (mês) · ${funruralLabel}`}
             value={fmt(funruralMes)}
             icon={Landmark}
           />

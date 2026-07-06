@@ -24,6 +24,7 @@ import {
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { PageHeader } from "@/app/components/ui/PageHeader";
 import { KpiCard } from "@/app/components/ui/KpiCard";
+import { funruralValue, funruralRateLabel } from "@/lib/funrural";
 
 export const dynamic = "force-dynamic";
 
@@ -77,8 +78,8 @@ export default async function ControladoriaPage() {
   );
 
   // KPI 2: FUNRURAL devido mês corrente — agrega total_amount de saídas
-  // (direction = 'outbound') no mês corrente. 1.5% sobre receita bruta
-  // (alíquota padrão atual produtor pessoa física com opção pela folha).
+  // (direction = 'outbound') no mês corrente. Alíquota parametrizada por
+  // cliente (funrural_rate / tax_regime), conforme LC 224/2025.
   const outbound = await safeSelect<FiscalInvoiceRow>(() =>
     supabase
       .from("fiscal_invoices")
@@ -86,6 +87,20 @@ export default async function ControladoriaPage() {
       .gte("emission_date", monthStartIso)
       .eq("direction", "outbound"),
   );
+
+  // Cliente logado — alíquota FUNRURAL parametrizada (funrural_rate/tax_regime).
+  // Resolve client via auth.uid() → clients.auth_user_id (padrão da RLS).
+  // Cliente antigo sem os campos cai no fallback PF do helper.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: funruralClient } = user
+    ? await supabase
+        .from("clients")
+        .select("funrural_rate, tax_regime")
+        .eq("auth_user_id", user.id)
+        .maybeSingle()
+    : { data: null };
 
   // KPI 3: Alertas pendentes (notas com status pending_review)
   const pendingReviewCount = await safeCount(() =>
@@ -99,7 +114,9 @@ export default async function ControladoriaPage() {
   const totalNotas30d = invoices30d?.length ?? null;
   const receitaMes =
     outbound?.reduce((s, n) => s + Number(n.total_amount ?? 0), 0) ?? null;
-  const funruralDevido = receitaMes !== null ? receitaMes * 0.015 : null;
+  const funruralDevido =
+    receitaMes !== null ? funruralValue(receitaMes, funruralClient) : null;
+  const funruralLabel = funruralRateLabel(funruralClient);
 
   const today = new Date();
   const proximaObrigacao = nextObligation(today);
@@ -185,7 +202,7 @@ export default async function ControladoriaPage() {
           sub={
             funruralDevido === null
               ? "Sem receitas registradas"
-              : "Estimativa · 1,5% sobre receita bruta"
+              : `Estimativa · ${funruralLabel} sobre receita bruta`
           }
           icon={Landmark}
         />

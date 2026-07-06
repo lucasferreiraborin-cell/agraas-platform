@@ -10,6 +10,7 @@
  */
 
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { funruralValue } from "@/lib/funrural";
 import { PageHeader } from "@/app/components/ui/PageHeader";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { notFound } from "next/navigation";
@@ -75,6 +76,20 @@ export default async function NotaDetailPage({
   if (error || !raw) notFound();
   const nota = raw as FiscalInvoice;
 
+  // Alíquota FUNRURAL parametrizada do cliente logado — só usada quando a nota
+  // não tem funrural_value gravado (fallback de exibição). RLS já garante que
+  // a nota pertence a este cliente. Cliente sem os campos cai no fallback PF.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: funruralClient } = user
+    ? await supabase
+        .from("clients")
+        .select("funrural_rate, tax_regime")
+        .eq("auth_user_id", user.id)
+        .maybeSingle()
+    : { data: null };
+
   // Lançamentos contábeis relacionados (defensivo)
   let entries: AccountingEntry[] = [];
   try {
@@ -105,7 +120,7 @@ export default async function NotaDetailPage({
   const funrural =
     nota.funrural_value ??
     (nota.direction === "outbound" && nota.total_amount
-      ? Number(nota.total_amount) * 0.015
+      ? funruralValue(Number(nota.total_amount), funruralClient)
       : null);
 
   return (

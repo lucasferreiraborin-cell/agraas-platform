@@ -8,6 +8,7 @@
  */
 
 import { createSupabaseServiceClient } from "@/lib/supabase-service";
+import { funruralValue, type FunruralClient } from "@/lib/funrural";
 import { requirePersona, CONTADOR_ROUTES } from "@/lib/persona-resolver";
 import PersonaShell from "@/app/components/personas/PersonaShell";
 import { CalendarClock, CheckCircle, AlertTriangle, Clock } from "lucide-react";
@@ -49,7 +50,7 @@ function buildObligations(now: Date): ObligationType[] {
       frequency: "Mensal",
       due: `Vence dia 20/${String(nextMonthDay(20).getMonth() + 1).padStart(2, "0")}/${nextMonthDay(20).getFullYear()}`,
       description:
-        "Contribuição previdenciária rural sobre receita bruta. Alíquota padrão: 1,5% PF + 0,1% RAT + 0,2% SENAR.",
+        "Contribuição previdenciária rural sobre a receita bruta da comercialização (INSS + RAT + SENAR consolidados). Alíquotas LC 224/2025: PF 1,63% · PJ 2,23% · segurado especial 1,50%.",
     },
     {
       id: "dctf-web",
@@ -111,14 +112,23 @@ export default async function ContadorObrigacoesPage() {
     producerIds = [];
   }
 
-  let producers: { id: string; name: string }[] = [];
+  // Traz campos fiscais para aplicar a alíquota FUNRURAL por cliente
+  // (regimes divergem na carteira — LC 224/2025).
+  let producers: (FunruralClient & { id: string; name: string })[] = [];
   if (producerIds.length > 0) {
     const { data } = await db
       .from("clients")
-      .select("id, name")
+      .select("id, name, funrural_rate, tax_regime")
       .in("id", producerIds);
     producers = data ?? [];
   }
+
+  const funruralClientById = new Map<string, FunruralClient>(
+    producers.map((p) => [
+      p.id,
+      { funrural_rate: p.funrural_rate, tax_regime: p.tax_regime },
+    ]),
+  );
 
   // Por produtor: FUNRURAL mês + NF-e pendentes
   const monthStart = new Date();
@@ -149,7 +159,12 @@ export default async function ContadorObrigacoesPage() {
         const prev = statsByProducer.get(r.client_id) ?? { funrural: 0, pending: 0 };
         statsByProducer.set(r.client_id, {
           ...prev,
-          funrural: prev.funrural + Number(r.total_amount ?? 0) * 0.015,
+          funrural:
+            prev.funrural +
+            funruralValue(
+              Number(r.total_amount ?? 0),
+              funruralClientById.get(r.client_id) ?? null,
+            ),
         });
       }
     } catch {
