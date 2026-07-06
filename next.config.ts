@@ -66,6 +66,13 @@ const nextConfig: NextConfig = {
   },
   compress: true,
   poweredByHeader: false,
+  async redirects() {
+    return [
+      // Planos ocultado enquanto pricing não está definido (foco 100% bovino,
+      // decisão Lucas 06/07/2026). Página e código mantidos — só a rota redireciona.
+      { source: "/planos", destination: "/em-breve", permanent: false },
+    ];
+  },
   async headers() {
     return [
       {

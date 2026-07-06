@@ -28,9 +28,6 @@ export default function PublicFooter() {
             <Link href="/marketplace" style={WHITE} className="text-[.875rem] transition-opacity hover:opacity-80">
               Marketplace
             </Link>
-            <Link href="/planos" style={WHITE} className="text-[.875rem] transition-opacity hover:opacity-80">
-              Planos
-            </Link>
             <Link href="/login" style={WHITE} className="text-[.875rem] transition-opacity hover:opacity-80">
               Login
             </Link>

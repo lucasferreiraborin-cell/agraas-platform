@@ -134,10 +134,8 @@ const ADVANCED_GROUPS: NavGroup[] = [
   {
     label: "Plataforma",
     items: [
-      { href: "/propriedades",             label: "Propriedades",     icon: MapPin },
-      { href: "/migrar-dados",             label: "Importar animais", icon: FileUp },
-      { href: "/planos",                   label: "Planos",           icon: BadgeCheck },
-      { href: "/configuracoes/assinatura", label: "Assinatura",       icon: BadgeCheck, sub: true },
+      { href: "/propriedades", label: "Propriedades",     icon: MapPin },
+      { href: "/migrar-dados", label: "Importar animais", icon: FileUp },
     ],
   },
 ];

@@ -2,14 +2,15 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { LayoutDashboard, Beef, Wheat, Truck, FileText, Store, Users } from "lucide-react";
+import { LayoutDashboard, Beef, Truck, FileText, Store, Users } from "lucide-react";
 
+// Foco 100% bovino: aba "Commodities Agrícolas" (grains) removida da navegação
+// enquanto agricultura está pausada. Tab e componente permanecem no código.
 const BUYER_NAV = [
   { href: "/comprador",                  label: "Visão Geral",          icon: LayoutDashboard, tab: null },
   { href: "/comprador/oportunidades",    label: "Oportunidades",        icon: Store,           tab: null },
   { href: "/comprador/produtores",       label: "Produtores",           icon: Users,           tab: null },
   { href: "/comprador?tab=livestock",    label: "Pecuária Brasileira",  icon: Beef,            tab: "livestock" },
-  { href: "/comprador?tab=grains",       label: "Commodities Agrícolas",icon: Wheat,           tab: "grains" },
   { href: "/tracking",                   label: "Rastreio ao Vivo",     icon: Truck,           tab: null },
   { href: "/certificacoes",              label: "Relatórios",           icon: FileText,        tab: null },
 ];
