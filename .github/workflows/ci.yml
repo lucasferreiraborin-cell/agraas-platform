@@ -40,6 +40,36 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: placeholder
           ANTHROPIC_API_KEY: placeholder
 
+  pgtap:
+    name: pgTAP · Triggers críticos (anti-regressão)
+    runs-on: ubuntu-latest
+    # Só roda se o secret SUPABASE_DB_URL_SERVICE estiver configurado
+    # (staging ou local CI). Caso contrário, é skip silencioso.
+    if: ${{ github.event_name == 'pull_request' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Skip if secret missing
+        id: gate
+        run: |
+          if [ -z "${{ secrets.SUPABASE_DB_URL_SERVICE }}" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Secret SUPABASE_DB_URL_SERVICE não configurado — pulando suíte pgTAP."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install psql
+        if: steps.gate.outputs.skip != 'true'
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Run pgTAP suite
+        if: steps.gate.outputs.skip != 'true'
+        env:
+          SUPABASE_DB_URL_SERVICE: ${{ secrets.SUPABASE_DB_URL_SERVICE }}
+        run: bash supabase/tests/run-all.sh
+
   deploy:
     name: Deploy to Vercel
     runs-on: ubuntu-latest

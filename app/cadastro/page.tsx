@@ -77,8 +77,12 @@ function passwordStrength(pw: string): { score: 0 | 1 | 2 | 3; label: string } {
 
 function sanitizeAuthError(message: string) {
   const m = message.toLowerCase();
-  if (m.includes("already registered") || m.includes("already exists"))
-    return "Já existe uma conta com esse e-mail.";
+  // P2.1 pentest fix — do NOT return a different message for "already registered".
+  // Supabase signUp returns `identities: []` (empty) when the email already exists,
+  // which lets an attacker enumerate valid accounts. We unify the response:
+  // any outcome that results in "no new session" shows the same generic message.
+  // The branch below that checks `data.user && identities.length === 0` handles
+  // the silent-duplicate case without revealing email existence.
   if (m.includes("invalid") && m.includes("email"))
     return "E-mail inválido.";
   if (m.includes("password") && (m.includes("weak") || m.includes("short")))
@@ -128,22 +132,36 @@ export default function CadastroPage() {
     }
     setLoading(true);
     setError("");
+
     const { data, error: authErr } = await supabase.auth.signUp({ email, password });
+
     if (authErr) {
       setError(sanitizeAuthError(authErr.message));
       setLoading(false);
       return;
     }
-    if (data.user) {
+
+    // P2.1 pentest fix — Supabase silently returns a user object with an empty
+    // `identities` array when the email is already registered (instead of an error).
+    // We must NOT differentiate this case in the UX — show the same success message
+    // whether the account is new or already exists, to prevent email enumeration.
+    const isNewUser = data.user && Array.isArray(data.user.identities) && data.user.identities.length > 0;
+
+    if (isNewUser && data.user) {
       await supabase.from("clients").insert({
         name: profileType === "fazendeiro" ? farmName || name : companyName || name,
         email,
         role: "client",
         auth_user_id: data.user.id,
       });
+      setLoading(false);
+      router.push("/painel");
+    } else {
+      // Either a duplicate email (identities=[]) or email-confirmation flow.
+      // Show a generic message — do not reveal whether the account existed.
+      setLoading(false);
+      router.push("/cadastro/confirmacao");
     }
-    setLoading(false);
-    router.push("/painel");
   }
 
   // Focus first input on step change

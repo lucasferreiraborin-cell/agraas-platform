@@ -43,9 +43,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Persona inválida" }, { status: 400 });
   }
 
+  // P2.2 pentest fix — cookie attributes hardened:
+  // - httpOnly: true  → not accessible via document.cookie (XSS mitigation)
+  // - sameSite: "strict" → no cross-site send, even on top-level navigation
+  //   (upgraded from "lax" — the switcher is only used within the Agraas app)
+  // - secure: true in prod → HTTPS only
   cookieStore.set(VIEW_AS_COOKIE, persona as Persona, {
     httpOnly: true,
-    sameSite: "lax",
+    sameSite: "strict",
     secure: process.env.NODE_ENV === "production",
     maxAge: COOKIE_MAX_AGE,
     path: "/",

@@ -5,9 +5,25 @@ const supabaseHost = process.env.NEXT_PUBLIC_SUPABASE_URL
   ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).host
   : "*.supabase.co";
 
+// P1.3 pentest note — CSP unsafe-inline (accepted risk, documented below)
+// ---------------------------------------------------------------------
+// `script-src 'unsafe-inline'` is required by Next.js App Router because it
+// inlines a small bootstrap/hydration JSON blob in a <script> tag on every
+// page. Removing it without a nonce infrastructure causes hydration failures.
+//
+// Nonce-based CSP would fix this but requires:
+//   1. Middleware that generates a per-request nonce + sets res header
+//   2. `next.config.ts` cspHeader moved to middleware (dynamic, not static)
+//   3. All <script> + <style> tags in layout.tsx receiving the nonce prop
+// TODO: Implement nonce-based CSP in a dedicated sprint.
+//       Reference: https://nextjs.org/docs/app/building-your-application/configuring/content-security-policy
+//
+// `style-src 'unsafe-inline'` is needed for Tailwind's runtime class injection
+// and Next.js critical CSS inlining. This is a known acceptable risk.
+
 const cspHeader = [
   "default-src 'self'",
-  // Scripts: self + Sentry CDN
+  // Scripts: self + Sentry CDN. 'unsafe-inline' required by Next.js — see note above.
   "script-src 'self' 'unsafe-inline' https://browser.sentry-cdn.com",
   // Styles: self + inline (Next.js injects critical CSS)
   "style-src 'self' 'unsafe-inline'",
@@ -56,6 +72,13 @@ const nextConfig: NextConfig = {
         source: "/(.*)",
         headers: [
           { key: "Content-Security-Policy", value: cspHeader },
+          // HSTS: includeSubDomains + preload required for submission to https://hstspreload.org
+          // Once submitted, www.agraas.com.br and all subdomains are hardcoded HTTPS in browsers.
+          // WARNING: preload is irreversible short-term — only add if all subdomains serve HTTPS.
+          {
+            key: "Strict-Transport-Security",
+            value: "max-age=63072000; includeSubDomains; preload",
+          },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "X-Frame-Options", value: "DENY" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
@@ -84,4 +107,10 @@ export default withSentryConfig(nextConfig, {
   disableLogger: true,
   // Upload source maps only in CI/production
   widenClientFileUpload: true,
+  // P1.2 pentest fix — strip source maps from the client bundle after uploading
+  // to Sentry so they are not publicly accessible via the Vercel CDN.
+  // @sentry/nextjs v8+ uses `sourcemaps.deleteSourcemapsAfterUpload` instead of `hideSourceMaps`.
+  sourcemaps: {
+    deleteSourcemapsAfterUpload: true,
+  },
 });

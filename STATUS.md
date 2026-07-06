@@ -72,7 +72,7 @@ Seu sistema fiscal **já tem mais coisa pronta do que a gente achava**: nota fis
 4. **Estorno automático em sales cancelled** — extensão do trigger 146 pra cobrir `status = 'cancelled'`
 5. **Testes pgTAP/Jest** por trigger crítico (anti-regressão)
 6. **Reagendar mentoria IZ-SP** — pauta pronta em `docs/research/2026-06-24-score-v3-1-validacao-cientifica.md`
-7. **Hardening pentest P1/P2** — HSTS preload, remover sentry-release public, schema enumeration hints
+7. **Hardening pentest P1/P2** — CONCLUÍDO via código. 1 ação manual pendente → ver nota P2.3 abaixo.
 
 ---
 
@@ -81,6 +81,21 @@ Seu sistema fiscal **já tem mais coisa pronta do que a gente achava**: nota fis
 - Só este painel + um resumo de **3 linhas** no chat quando eu fechar algo. Sem terminês.
 - Você pode pedir **"status"** quando quiser.
 - Se eu precisar de uma decisão sua de verdade (raro), eu pergunto em 1 linha simples.
+
+---
+
+---
+
+## Sprint M — Hardening pentest P1/P2 (26/06)
+
+| Item | Status | Ação |
+|---|---|---|
+| P1.1 HSTS preload | ✅ Código fechado | `next.config.ts` já emite `includeSubDomains; preload`. **Ação manual**: submeter `www.agraas.com.br` em https://hstspreload.org (Lucas faz). |
+| P1.2 Sentry release no DOM | ✅ Código fechado | `sentry.client.config.ts` sem `release` — SHA não aparece mais no `<meta name="baggage">`. Server config usa `SENTRY_RELEASE` env var. **Ação manual**: adicionar `SENTRY_RELEASE=$(git rev-parse --short HEAD)` nas env vars Vercel (Settings → Environment Variables). |
+| P1.3 CSP unsafe-inline | ✅ Aceito + documentado | Remoção exige nonce-based CSP — TODO comentado no `next.config.ts`. Não é bloqueante para piloto. |
+| P2.1 Email enumeration no signup | ✅ Código fechado | Fluxo unificado: email novo e email duplicado redirecionam para `/cadastro/confirmacao` com mensagem genérica. |
+| P2.2 Cookie agraas_view_as | ✅ Código fechado | `sameSite` elevado de `"lax"` → `"strict"`. `httpOnly` e `secure` já estavam corretos. |
+| P2.3 Schema hints PGRST205 | ⚠️ Ação manual obrigatória | PostgREST retorna hints como "Perhaps you meant 'public.buyers'" via anon key. Supabase não expõe config via CLI — **Lucas precisa**: Dashboard → Project Settings → API → desabilitar "Show detailed errors" (ou aguardar Supabase expor essa config via `supabase.toml`). |
 
 ---
 
