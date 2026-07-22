@@ -57,7 +57,7 @@ export default async function DossieProdutor({ params }: Params) {
   ] = await Promise.all([
     db.from("producer_scores").select("*").eq("client_id", clientId).single(),
     db.from("farm_scores").select("*").eq("client_id", clientId),
-    db.from("properties").select("id, name, city, state, area_ha").eq("client_id", clientId),
+    db.from("properties").select("id, name, city, state, area_hectares").eq("client_id", clientId),
     db.from("animals").select("*", { count: "exact", head: true }).eq("client_id", clientId).eq("status", "Ativo"),
   ]);
 
@@ -303,7 +303,7 @@ export default async function DossieProdutor({ params }: Params) {
                           "—"
                         )}
                       </td>
-                      <td className="text-right">{prop?.area_ha?.toLocaleString("pt-BR") ?? "—"}</td>
+                      <td className="text-right">{prop?.area_hectares?.toLocaleString("pt-BR") ?? "—"}</td>
                       <td className="text-right">{f.animals_count_active ?? 0}</td>
                       <td className="text-right font-semibold" style={{ color: cls.color }}>
                         {Number(f.score_total).toFixed(0)}

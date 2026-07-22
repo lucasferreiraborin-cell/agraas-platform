@@ -39,7 +39,7 @@ export default async function BancoAnalyticsPage() {
     : { data: [] };
 
   const { data: properties } = producerIds.length
-    ? await db.from("properties").select("id, state, area_ha").in("client_id", producerIds)
+    ? await db.from("properties").select("id, state, area_hectares").in("client_id", producerIds)
     : { data: [] };
 
   // Distribuição por faixa
@@ -69,7 +69,7 @@ export default async function BancoAnalyticsPage() {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5);
 
-  const totalAreaHa = (properties ?? []).reduce((acc, p) => acc + Number(p.area_ha ?? 0), 0);
+  const totalAreaHa = (properties ?? []).reduce((acc, p) => acc + Number(p.area_hectares ?? 0), 0);
   const totalAnimais = (farmScores ?? []).reduce((acc, f) => acc + (f.animals_count_active ?? 0), 0);
   const scoreMedio = total > 0
     ? (producerScores ?? []).reduce((acc, p) => acc + Number(p.score_total), 0) / total

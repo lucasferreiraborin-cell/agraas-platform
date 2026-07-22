@@ -79,7 +79,7 @@ export async function GET(req: NextRequest) {
     db.from("clients").select("id, name").eq("id", clientId).single(),
     db.from("producer_scores").select("*").eq("client_id", clientId).single(),
     db.from("farm_scores").select("*").eq("client_id", clientId),
-    db.from("properties").select("id, name, city, state, area_ha").eq("client_id", clientId),
+    db.from("properties").select("id, name, city, state, area_hectares").eq("client_id", clientId),
     db.from("animals").select("*", { count: "exact", head: true }).eq("client_id", clientId).eq("status", "Ativo"),
   ]);
 
@@ -179,7 +179,7 @@ export async function GET(req: NextRequest) {
                 <View key={f.id} style={s.tableRow}>
                   <Text style={[s.td, { flex: 2 }]}>{p?.name ?? "—"}</Text>
                   <Text style={[s.td, { flex: 2 }]}>{p?.city ? `${p.city}/${p.state}` : "—"}</Text>
-                  <Text style={[s.td, { flex: 1, textAlign: "right" as const }]}>{p?.area_ha?.toLocaleString("pt-BR") ?? "—"}</Text>
+                  <Text style={[s.td, { flex: 1, textAlign: "right" as const }]}>{p?.area_hectares?.toLocaleString("pt-BR") ?? "—"}</Text>
                   <Text style={[s.td, { flex: 1, textAlign: "right" as const }]}>{f.animals_count_active ?? 0}</Text>
                   <Text style={[s.td, { flex: 1, textAlign: "right" as const, color: fcls.color, fontWeight: "bold" }]}>
                     {Number(f.score_total).toFixed(0)}
