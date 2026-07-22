@@ -69,7 +69,7 @@ export default async function DossieProdutor({ params }: Params) {
     despesa12m: number;
     funrural12m: number;
     projections: Array<{ month: string; inflow: number; outflow: number }>;
-    recentEntries: Array<{ entry_date: string | null; account_name: string | null; credit_amount: number | null; debit_amount: number | null }>;
+    recentEntries: Array<{ entry_date: string | null; description: string | null; amount: number | null }>;
   };
   let financial: FinancialData | null = null;
 
@@ -78,27 +78,24 @@ export default async function DossieProdutor({ params }: Params) {
     cutoff12.setMonth(cutoff12.getMonth() - 11);
     cutoff12.setDate(1);
     const iso12 = cutoff12.toISOString().split("T")[0];
-    const monthStart = new Date();
-    monthStart.setDate(1);
-    const monthStartIso = monthStart.toISOString().split("T")[0];
     const todayIso2 = new Date().toISOString().split("T")[0];
 
     const [invRes, projRes, entryRes] = await Promise.allSettled([
       db
         .from("fiscal_invoices")
-        .select("direction, total_amount, emission_date")
+        .select("direction, gross_value, funrural_value, issued_at")
         .eq("client_id", clientId)
-        .gte("emission_date", iso12),
+        .gte("issued_at", iso12),
       db
         .from("cash_flow_projections")
-        .select("projection_month, projected_inflow, projected_outflow")
+        .select("projection_date, expected_inflow, expected_outflow")
         .eq("client_id", clientId)
-        .gte("projection_month", todayIso2)
-        .order("projection_month", { ascending: true })
+        .gte("projection_date", todayIso2)
+        .order("projection_date", { ascending: true })
         .limit(6),
       db
         .from("accounting_entries")
-        .select("entry_date, account_name, credit_amount, debit_amount")
+        .select("entry_date, description, amount")
         .eq("client_id", clientId)
         .order("entry_date", { ascending: false })
         .limit(30),
@@ -111,22 +108,27 @@ export default async function DossieProdutor({ params }: Params) {
     const entryRows =
       entryRes.status === "fulfilled" ? (entryRes.value.data ?? []) : [];
 
+    // Semântica real do banco: direction 'saida' = nota emitida pelo produtor
+    // (venda → receita bruta); 'entrada' = nota recebida (compra → despesa).
     const receita12m = invoices
-      .filter((i) => i.direction === "inbound")
-      .reduce((s, i) => s + Number(i.total_amount ?? 0), 0);
+      .filter((i) => i.direction === "saida")
+      .reduce((s, i) => s + Number(i.gross_value ?? 0), 0);
     const despesa12m = invoices
-      .filter((i) => i.direction === "outbound")
-      .reduce((s, i) => s + Number(i.total_amount ?? 0), 0);
-    // Alíquota FUNRURAL parametrizada por cliente (LC 224/2025). Analista de
-    // banco vê este número — precisa bater com a lei, não hardcode 1,5%.
+      .filter((i) => i.direction === "entrada")
+      .reduce((s, i) => s + Number(i.gross_value ?? 0), 0);
+    // FUNRURAL PROVISIONADO nas notas de saída — usa o valor real da nota quando
+    // presente, senão calcula pela alíquota do cliente (LC 224/2025). É valor
+    // provisionado/calculado, NÃO comprovante de recolhimento à Receita.
     const funrural12m = invoices
-      .filter(
-        (i) =>
-          i.direction === "outbound" &&
-          i.emission_date &&
-          i.emission_date >= monthStartIso,
-      )
-      .reduce((s, i) => s + funruralValue(Number(i.total_amount ?? 0), producer), 0);
+      .filter((i) => i.direction === "saida")
+      .reduce(
+        (s, i) =>
+          s +
+          (i.funrural_value != null
+            ? Number(i.funrural_value)
+            : funruralValue(Number(i.gross_value ?? 0), producer)),
+        0,
+      );
 
     const months = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
     financial = {
@@ -134,13 +136,13 @@ export default async function DossieProdutor({ params }: Params) {
       despesa12m,
       funrural12m,
       projections: projRows.map((p) => {
-        const ym = (p.projection_month ?? "").slice(0, 7);
+        const ym = (p.projection_date ?? "").slice(0, 7);
         const [, m] = ym.split("-");
         const idx = parseInt(m, 10) - 1;
         return {
           month: months[idx] ?? ym,
-          inflow: Number(p.projected_inflow ?? 0),
-          outflow: Number(p.projected_outflow ?? 0),
+          inflow: Number(p.expected_inflow ?? 0),
+          outflow: Number(p.expected_outflow ?? 0),
         };
       }),
       recentEntries: entryRows as FinancialData["recentEntries"],
@@ -409,7 +411,7 @@ export default async function DossieProdutor({ params }: Params) {
                   value={fmtBRL(financial.despesa12m)}
                 />
                 <FinKpi
-                  label="FUNRURAL pago"
+                  label="FUNRURAL provisionado (12m)"
                   value={fmtBRL(financial.funrural12m)}
                 />
                 <FinKpi
@@ -480,9 +482,8 @@ export default async function DossieProdutor({ params }: Params) {
                       <thead>
                         <tr>
                           <th>Data</th>
-                          <th>Categoria</th>
-                          <th className="text-right">Débito</th>
-                          <th className="text-right">Crédito</th>
+                          <th>Lançamento</th>
+                          <th className="text-right">Valor</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -493,15 +494,10 @@ export default async function DossieProdutor({ params }: Params) {
                                 ? new Date(e.entry_date).toLocaleDateString("pt-BR")
                                 : "—"}
                             </td>
-                            <td className="text-sm">{e.account_name ?? "—"}</td>
+                            <td className="text-sm">{e.description ?? "—"}</td>
                             <td className="text-right tabular-nums text-sm text-[--text-secondary]">
-                              {e.debit_amount && Number(e.debit_amount) > 0
-                                ? fmtBRL(Number(e.debit_amount))
-                                : "—"}
-                            </td>
-                            <td className="text-right tabular-nums text-sm text-[--text-secondary]">
-                              {e.credit_amount && Number(e.credit_amount) > 0
-                                ? fmtBRL(Number(e.credit_amount))
+                              {e.amount && Number(e.amount) > 0
+                                ? fmtBRL(Number(e.amount))
                                 : "—"}
                             </td>
                           </tr>
