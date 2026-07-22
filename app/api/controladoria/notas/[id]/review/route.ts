@@ -35,7 +35,12 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
   }
 
   const newStatus = action === "approve" ? "reviewed" : "rejected";
-  const update: Record<string, string> = { status: newStatus };
+  // Ao acionar (aprovar OU rejeitar) a nota deixa de precisar de revisão humana —
+  // limpar a flag aqui evita o bug de "N pendentes" fantasma quando status já mudou.
+  const update: Record<string, string | boolean> = {
+    status: newStatus,
+    needs_human_review: false,
+  };
   if (action === "reject") update.rejection_reason = reason!.trim();
 
   const { error } = await supabase
