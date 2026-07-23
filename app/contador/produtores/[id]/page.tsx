@@ -25,20 +25,23 @@ type Params = { params: Promise<{ id: string }> };
 
 type InvoiceRow = {
   id: string;
-  invoice_number: string | null;
-  emission_date: string | null;
-  total_amount: number | null;
+  number: string | null;
+  issued_at: string | null;
+  gross_value: number | null;
   direction: string | null;
   status: string | null;
 };
 
+// accounting_entries usa partida dobrada: UM `amount` + dois FKs de conta
+// (debit_account_id / credit_account_id → chart_of_accounts). Não existem
+// colunas debit_amount/credit_amount/account_name — schema drift antigo.
 type EntryRow = {
   id: string;
   entry_date: string | null;
-  account_code: string | null;
-  account_name: string | null;
-  debit_amount: number | null;
-  credit_amount: number | null;
+  amount: number | null;
+  description: string | null;
+  debit_account_id: string | null;
+  credit_account_id: string | null;
 };
 
 export default async function ContadorProdutorPage({ params }: Params) {
@@ -51,7 +54,7 @@ export default async function ContadorProdutorPage({ params }: Params) {
     const { data: link } = await db
       .from("partners_accountants")
       .select("status")
-      .eq("accountant_client_id", ctx.clientId)
+      .eq("contador_client_id", ctx.clientId)
       .eq("producer_client_id", producerId)
       .eq("status", "active")
       .single();
@@ -74,14 +77,15 @@ export default async function ContadorProdutorPage({ params }: Params) {
 
   let invoices: InvoiceRow[] = [];
   try {
-    const { data } = await db
+    const { data, error } = await db
       .from("fiscal_invoices")
-      .select("id, invoice_number, emission_date, total_amount, direction, status")
+      .select("id, number, issued_at, gross_value, direction, status")
       .eq("client_id", producerId)
-      .gte("emission_date", isoCutoff)
-      .order("emission_date", { ascending: false })
+      .gte("issued_at", isoCutoff)
+      .order("issued_at", { ascending: false })
       .limit(50);
-    invoices = (data ?? []) as InvoiceRow[];
+    if (error) console.error("[contador/dossie] fiscal_invoices:", error.message);
+    invoices = (data ?? []) as unknown as InvoiceRow[];
   } catch {
     invoices = [];
   }
@@ -89,17 +93,45 @@ export default async function ContadorProdutorPage({ params }: Params) {
   // Lançamentos (balancete últimos 30d)
   let entries: EntryRow[] = [];
   try {
-    const { data } = await db
+    const { data, error } = await db
       .from("accounting_entries")
-      .select("id, entry_date, account_code, account_name, debit_amount, credit_amount")
+      .select("id, entry_date, amount, description, debit_account_id, credit_account_id")
       .eq("client_id", producerId)
       .gte("entry_date", isoCutoff)
       .order("entry_date", { ascending: false })
       .limit(100);
-    entries = (data ?? []) as EntryRow[];
+    if (error) console.error("[contador/dossie] accounting_entries:", error.message);
+    entries = (data ?? []) as unknown as EntryRow[];
   } catch {
     entries = [];
   }
+
+  // Nome/código das contas para o balancete: lookup em chart_of_accounts pelos
+  // FKs de débito/crédito (partida dobrada). Two-step para não depender de join.
+  const accountIds = Array.from(
+    new Set(
+      entries
+        .flatMap((e) => [e.debit_account_id, e.credit_account_id])
+        .filter((v): v is string => Boolean(v)),
+    ),
+  );
+  const accountById = new Map<string, { code: string | null; name: string | null }>();
+  if (accountIds.length > 0) {
+    const { data: accts, error: acctErr } = await db
+      .from("chart_of_accounts")
+      .select("id, code, name")
+      .in("id", accountIds);
+    if (acctErr) console.error("[contador/dossie] chart_of_accounts:", acctErr.message);
+    for (const a of accts ?? []) {
+      accountById.set(a.id, { code: a.code, name: a.name });
+    }
+  }
+  const acctLabel = (id: string | null): string => {
+    if (!id) return "—";
+    const a = accountById.get(id);
+    if (!a) return "—";
+    return [a.code, a.name].filter(Boolean).join(" ") || "—";
+  };
 
   // FUNRURAL mês corrente
   const monthStart = new Date();
@@ -108,16 +140,16 @@ export default async function ContadorProdutorPage({ params }: Params) {
   const funruralMes = invoices
     .filter(
       (i) =>
-        i.direction === "outbound" &&
-        i.emission_date &&
-        i.emission_date >= monthStartIso,
+        i.direction === "saida" &&
+        i.issued_at &&
+        i.issued_at >= monthStartIso,
     )
-    .reduce((s, i) => s + funruralValue(Number(i.total_amount ?? 0), producer), 0);
+    .reduce((s, i) => s + funruralValue(Number(i.gross_value ?? 0), producer), 0);
   const funruralLabel = funruralRateLabel(producer);
 
-  // Totais balancete
-  const totalDebitos = entries.reduce((s, e) => s + Number(e.debit_amount ?? 0), 0);
-  const totalCreditos = entries.reduce((s, e) => s + Number(e.credit_amount ?? 0), 0);
+  // Total lançado no balancete: em partida dobrada cada lançamento tem UM
+  // valor (amount) que movimenta uma conta a débito e outra a crédito.
+  const totalLancado = entries.reduce((s, e) => s + Number(e.amount ?? 0), 0);
 
   const fmt = (v: number) =>
     `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -201,22 +233,22 @@ export default async function ContadorProdutorPage({ params }: Params) {
                       className="border-t border-white/6 hover:bg-white/3"
                     >
                       <td className="px-6 py-3 font-medium text-white">
-                        {inv.invoice_number ?? inv.id.slice(0, 8)}
+                        {inv.number ?? inv.id.slice(0, 8)}
                       </td>
                       <td className="px-6 py-3 text-white/75">
-                        {formatDate(inv.emission_date)}
+                        {formatDate(inv.issued_at)}
                       </td>
                       <td className="px-6 py-3 text-white/75">
-                        {inv.direction === "inbound"
+                        {inv.direction === "entrada"
                           ? "Entrada"
-                          : inv.direction === "outbound"
+                          : inv.direction === "saida"
                           ? "Saída"
                           : "—"}
                       </td>
                       <td className="px-6 py-3 text-right tabular-nums text-white/85">
-                        {inv.total_amount == null
+                        {inv.gross_value == null
                           ? "—"
-                          : fmt(Number(inv.total_amount))}
+                          : fmt(Number(inv.gross_value))}
                       </td>
                       <td className="px-6 py-3">
                         <StatusDot status={inv.status} />
@@ -246,9 +278,8 @@ export default async function ContadorProdutorPage({ params }: Params) {
                   <thead className="bg-white/3">
                     <tr className="text-left text-[11px] uppercase tracking-wider text-white/55">
                       <th className="px-6 py-3">Data</th>
-                      <th className="px-6 py-3">Conta</th>
-                      <th className="px-6 py-3 text-right">Débito</th>
-                      <th className="px-6 py-3 text-right">Crédito</th>
+                      <th className="px-6 py-3">Lançamento</th>
+                      <th className="px-6 py-3 text-right">Valor</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -257,25 +288,20 @@ export default async function ContadorProdutorPage({ params }: Params) {
                         key={e.id}
                         className="border-t border-white/6 hover:bg-white/3"
                       >
-                        <td className="px-6 py-3 text-white/75">
+                        <td className="px-6 py-3 align-top text-white/75">
                           {formatDate(e.entry_date)}
                         </td>
                         <td className="px-6 py-3 text-white/85">
-                          {e.account_code && (
-                            <span className="text-white/45 font-mono text-xs mr-1">
-                              {e.account_code}
-                            </span>
-                          )}
-                          {e.account_name ?? "—"}
+                          <div>{e.description ?? "—"}</div>
+                          <div className="mt-0.5 text-[11px] text-white/45">
+                            <span className="font-mono">D</span> {acctLabel(e.debit_account_id)}
+                            {"  ·  "}
+                            <span className="font-mono">C</span> {acctLabel(e.credit_account_id)}
+                          </div>
                         </td>
-                        <td className="px-6 py-3 text-right tabular-nums text-white/85">
-                          {e.debit_amount && Number(e.debit_amount) > 0
-                            ? fmt(Number(e.debit_amount))
-                            : "—"}
-                        </td>
-                        <td className="px-6 py-3 text-right tabular-nums text-white/85">
-                          {e.credit_amount && Number(e.credit_amount) > 0
-                            ? fmt(Number(e.credit_amount))
+                        <td className="px-6 py-3 align-top text-right tabular-nums text-white/85">
+                          {e.amount && Number(e.amount) > 0
+                            ? fmt(Number(e.amount))
                             : "—"}
                         </td>
                       </tr>
@@ -284,15 +310,10 @@ export default async function ContadorProdutorPage({ params }: Params) {
                 </table>
               </div>
               <div className="flex items-center justify-between px-6 py-4 border-t border-white/8 bg-white/3">
-                <span className="text-xs text-white/55">Total</span>
-                <div className="flex items-center gap-8">
-                  <span className="text-sm text-white/85">
-                    Déb: <strong className="text-white">{fmt(totalDebitos)}</strong>
-                  </span>
-                  <span className="text-sm text-white/85">
-                    Créd: <strong className="text-white">{fmt(totalCreditos)}</strong>
-                  </span>
-                </div>
+                <span className="text-xs text-white/55">Total lançado (30 dias)</span>
+                <span className="text-sm text-white/85">
+                  <strong className="text-white">{fmt(totalLancado)}</strong>
+                </span>
               </div>
             </>
           )}

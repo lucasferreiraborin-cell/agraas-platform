@@ -24,11 +24,16 @@ export async function DELETE(req: NextRequest) {
       .eq("id", note_id).eq("client_id", clientData.id).single();
     if (!note) return Response.json({ error: "Nota não encontrada" }, { status: 404 });
 
-    // Deleta em cascata: alertas + itens primeiro, depois a nota
-    await Promise.all([
-      supabase.from("fiscal_alerts").delete().eq("note_id", note_id),
+    // Deleta em cascata: alertas + itens primeiro, depois a nota.
+    // Nota do modelo legado (fiscal_notes) → alertas ficam em fiscal_notes_alerts_legacy.
+    // fiscal_alerts (sistema novo) usa fiscal_invoice_id e não tem note_id — o delete
+    // não casava nada e deixava alertas órfãos.
+    const [alertsDel, itemsDel] = await Promise.all([
+      supabase.from("fiscal_notes_alerts_legacy").delete().eq("note_id", note_id),
       supabase.from("fiscal_note_items").delete().eq("note_id", note_id),
     ]);
+    if (alertsDel.error) console.error("[fiscal/delete] falha ao apagar alertas:", alertsDel.error.message);
+    if (itemsDel.error) console.error("[fiscal/delete] falha ao apagar itens:", itemsDel.error.message);
     await supabase.from("fiscal_notes").delete().eq("id", note_id);
 
     return Response.json({ success: true });

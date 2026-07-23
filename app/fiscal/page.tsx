@@ -10,14 +10,18 @@ export default async function FiscalPage() {
 
   const [
     { data: notes },
-    { data: alertsData },
+    { data: alertsData, error: alertsError },
   ] = await Promise.all([
     supabase
       .from("fiscal_notes")
       .select("id, numero_nota, serie, emitente_nome, data_emissao, valor_total, status, created_at")
       .order("created_at", { ascending: false }),
-    supabase.from("fiscal_alerts").select("note_id, severidade").eq("resolvido", false),
+    // Modelo LEGADO (fiscal_notes): os alertas ficam em fiscal_notes_alerts_legacy,
+    // que carrega as colunas em PT (note_id/severidade/resolvido). O antigo .from("fiscal_alerts")
+    // apontava para a tabela do modelo NOVO (colunas em inglês) → 0 linhas silenciosas.
+    supabase.from("fiscal_notes_alerts_legacy").select("note_id, severidade").eq("resolvido", false),
   ]);
+  if (alertsError) console.error("[fiscal] fiscal_notes_alerts_legacy:", alertsError);
 
   const noteList = notes ?? [];
   const alertsByNote = new Map<string, number>();

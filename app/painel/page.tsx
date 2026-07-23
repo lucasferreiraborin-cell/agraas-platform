@@ -180,8 +180,8 @@ export default async function PainelPage() {
 
   const [
     { data: passportsData, error: passportsError },
-    { data: halalCertsData },
-    { data: expiredCertsData },
+    { data: halalCertsData, error: halalCertsError },
+    { data: expiredCertsData, error: expiredCertsError },
     { data: propertiesData },
     { data: marketData },
     { data: eventsData },
@@ -197,17 +197,24 @@ export default async function PainelPage() {
       .select("*")
       .eq("client_id", clientId),
 
+    // Schema drift: animal_certifications NÃO tem client_id. Escopamos por cliente
+    // via join animals!inner(client_id) — mesmo padrão do dossiê. Sem isso, esta
+    // query vazava Halal cross-tenant no KPI de exportação.
     supabaseServer
       .from("animal_certifications")
-      .select("animal_id, certification_name, status")
+      .select("animal_id, certification_name, status, animals!inner(client_id)")
       .ilike("certification_name", "%Halal%")
-      .eq("status", "active"),
+      .eq("status", "active")
+      .eq("animals.client_id", clientId),
 
+    // Schema drift: .eq("client_id", clientId) apontava para coluna inexistente →
+    // supabase retornava error e data null (calado), então o alerta de "Certificação
+    // vencida" nunca aparecia. Correção: filtrar via animais do cliente.
     supabaseServer
       .from("animal_certifications")
-      .select("animal_id, certification_name, status")
+      .select("animal_id, certification_name, status, animals!inner(client_id)")
       .eq("status", "expired")
-      .eq("client_id", clientId),
+      .eq("animals.client_id", clientId),
 
     supabaseServer
       .from("properties")
@@ -295,8 +302,11 @@ export default async function PainelPage() {
   const weighings = (weighingsData as WeighingRow[] | null) ?? [];
   const activeApps = (activeAppsData as ActiveAppRow[] | null) ?? [];
   // BUG 3 fix: use direct cert queries instead of certifications_json (never populated)
-  const halalCerts = (halalCertsData as CertRow[] | null) ?? [];
-  const expiredCerts = (expiredCertsData as CertRow[] | null) ?? [];
+  // Log de erro do supabase: schema drift antes escondia essas falhas silenciosamente.
+  if (halalCertsError) console.error("[painel] animal_certifications (Halal):", halalCertsError);
+  if (expiredCertsError) console.error("[painel] animal_certifications (expired):", expiredCertsError);
+  const halalCerts = (halalCertsData as unknown as CertRow[] | null) ?? [];
+  const expiredCerts = (expiredCertsData as unknown as CertRow[] | null) ?? [];
 
   const animalMap = new Map<string, string>();
   for (const animal of animals) {

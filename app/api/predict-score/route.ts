@@ -86,13 +86,17 @@ export const POST = withApiSentry(async function POST(req: NextRequest) {
       .single(),
     supabase
       .from("weight_records")
-      .select("weight_kg, recorded_at")
+      .select("weight, record_date")
       .eq("animal_id", animalId)
-      .order("recorded_at", { ascending: false })
+      .order("record_date", { ascending: false })
       .limit(5),
+    // A tabela é "applications" (não "sanitary_applications", que não existe). As
+    // colunas product_type/withdrawal_period_days também não existem aqui — a carência
+    // é registrada em withdrawal_date. Selecionar coluna inexistente faria o supabase-js
+    // devolver { data:null, error } e zerar TODA a leitura de aplicações silenciosamente.
     supabase
-      .from("sanitary_applications")
-      .select("product_name, application_date, product_type, withdrawal_period_days")
+      .from("applications")
+      .select("product_name, application_date, withdrawal_date")
       .eq("animal_id", animalId)
       .gte("application_date", new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().split("T")[0])
       .order("application_date", { ascending: false }),
@@ -103,7 +107,7 @@ export const POST = withApiSentry(async function POST(req: NextRequest) {
       .eq("status", "active"),
     supabase
       .from("events")
-      .select("event_type, description, event_date, notes")
+      .select("event_type, event_date, notes")
       .eq("animal_id", animalId)
       .gte("event_date", new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString().split("T")[0])
       .order("event_date", { ascending: false })
@@ -118,16 +122,16 @@ export const POST = withApiSentry(async function POST(req: NextRequest) {
 
   // Build prompt
   const weights = (weightsRes.data ?? []).map(
-    w => `${w.recorded_at}: ${w.weight_kg} kg`
+    w => `${w.record_date}: ${w.weight} kg`
   );
   const applications = (appsRes.data ?? []).map(
-    a => `${a.application_date}: ${a.product_name} (type: ${a.product_type ?? "?"}, withdrawal: ${a.withdrawal_period_days ?? "?"}d)`
+    a => `${a.application_date}: ${a.product_name} (withdrawal ends: ${a.withdrawal_date ?? "?"})`
   );
   const certs = (certsRes.data ?? []).map(
     c => `${c.certification_name} (active, expires: ${c.expires_at ?? "no expiry"})`
   );
   const events = (eventsRes.data ?? []).map(
-    e => `${e.event_date} [${e.event_type}]: ${e.description ?? ""}`
+    e => `${e.event_date} [${e.event_type}]: ${e.notes ?? ""}`
   );
 
   const birthDate = animal.birth_date ?? "unknown";

@@ -102,11 +102,12 @@ export default async function ContadorObrigacoesPage() {
   // Produtores vinculados
   let producerIds: string[] = [];
   try {
-    const { data } = await db
+    const { data, error } = await db
       .from("partners_accountants")
       .select("producer_client_id")
-      .eq("accountant_client_id", ctx.clientId)
+      .eq("contador_client_id", ctx.clientId)
       .eq("status", "active");
+    if (error) console.error("[contador/obrigacoes] partners_accountants:", error.message);
     producerIds = (data ?? []).map((r) => r.producer_client_id);
   } catch {
     producerIds = [];
@@ -139,22 +140,25 @@ export default async function ContadorObrigacoesPage() {
 
   if (producerIds.length > 0) {
     try {
-      const { data: pendingInv } = await db
+      const { data: pendingInv, error: pendErr } = await db
         .from("fiscal_invoices")
         .select("client_id")
         .in("client_id", producerIds)
         .eq("status", "pending_review");
+      if (pendErr) console.error("[contador/obrigacoes] fiscal_invoices pending:", pendErr.message);
       for (const r of pendingInv ?? []) {
         const prev = statsByProducer.get(r.client_id) ?? { funrural: 0, pending: 0 };
         statsByProducer.set(r.client_id, { ...prev, pending: prev.pending + 1 });
       }
 
-      const { data: outbound } = await db
+      // FUNRURAL incide sobre a receita da comercialização → notas de 'saida'.
+      const { data: outbound, error: outErr } = await db
         .from("fiscal_invoices")
-        .select("client_id, total_amount")
+        .select("client_id, gross_value")
         .in("client_id", producerIds)
-        .eq("direction", "outbound")
-        .gte("emission_date", monthStartIso);
+        .eq("direction", "saida")
+        .gte("issued_at", monthStartIso);
+      if (outErr) console.error("[contador/obrigacoes] fiscal_invoices saida:", outErr.message);
       for (const r of outbound ?? []) {
         const prev = statsByProducer.get(r.client_id) ?? { funrural: 0, pending: 0 };
         statsByProducer.set(r.client_id, {
@@ -162,7 +166,7 @@ export default async function ContadorObrigacoesPage() {
           funrural:
             prev.funrural +
             funruralValue(
-              Number(r.total_amount ?? 0),
+              Number(r.gross_value ?? 0),
               funruralClientById.get(r.client_id) ?? null,
             ),
         });

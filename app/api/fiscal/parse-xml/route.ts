@@ -200,11 +200,15 @@ async function saveNote(
     });
   }
 
-  // Insere itens e alertas em paralelo
-  await Promise.all([
-    dbItems.length > 0 ? supabase.from("fiscal_note_items").insert(dbItems) : Promise.resolve(),
-    alerts.length  > 0 ? supabase.from("fiscal_alerts").insert(alerts)      : Promise.resolve(),
+  // Insere itens e alertas em paralelo.
+  // Modelo legado: os alertas em PT casam com fiscal_notes_alerts_legacy (não com
+  // fiscal_alerts, que é do sistema novo fiscal_invoices e rejeitava o insert calado).
+  const [itemsRes, alertsRes] = await Promise.all([
+    dbItems.length > 0 ? supabase.from("fiscal_note_items").insert(dbItems) : Promise.resolve({ error: null }),
+    alerts.length  > 0 ? supabase.from("fiscal_notes_alerts_legacy").insert(alerts) : Promise.resolve({ error: null }),
   ]);
+  if (itemsRes.error) console.error("[fiscal/parse-xml] falha ao salvar itens:", itemsRes.error.message);
+  if (alertsRes.error) console.error("[fiscal/parse-xml] falha ao salvar alertas:", alertsRes.error.message);
 
   const hasCritical = alerts.some(a => a.severidade === "critico");
   if (hasCritical) await supabase.from("fiscal_notes").update({ status: "erro" }).eq("id", noteId);

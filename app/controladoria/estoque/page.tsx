@@ -17,27 +17,37 @@ import { Boxes, AlertTriangle, Package, ArrowRightLeft } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
+// Nome/unidade do produto vêm de join em `products` via `product_id`.
+type ProductJoin = { name: string | null; unit: string | null };
+
+// stock_batches NÃO tem product_name/unit/status; validade é `expiration_date`.
 type StockBatch = {
   id: string;
-  product_name: string | null;
   batch_number: string | null;
   quantity: number | null;
-  unit: string | null;
   unit_cost: number | null;
-  expiry_date: string | null;
-  status: string | null;
+  expiration_date: string | null;
+  document_source: string | null;
   created_at: string | null;
+  products: ProductJoin | ProductJoin[] | null;
 };
 
+// stock_movements: data é `created_at`; sem product_name/unit/notes.
+// Origem do movimento em `reference_table`; produto via join.
 type StockMovement = {
   id: string;
-  movement_date: string | null;
+  created_at: string | null;
   movement_type: string | null;
-  product_name: string | null;
   quantity: number | null;
-  unit: string | null;
-  notes: string | null;
+  reference_table: string | null;
+  products: ProductJoin | ProductJoin[] | null;
 };
+
+// Normaliza join to-one do Supabase (pode vir objeto, array ou null).
+function firstJoin<T>(val: T | T[] | null | undefined): T | null {
+  if (!val) return null;
+  return Array.isArray(val) ? (val[0] ?? null) : val;
+}
 
 export default async function EstoquePage({
   searchParams,
@@ -54,53 +64,52 @@ export default async function EstoquePage({
   in30Days.setDate(in30Days.getDate() + 30);
   const in30Iso = in30Days.toISOString().split("T")[0];
 
-  // Lotes de estoque
+  // Lotes de estoque. Produto (nome/unidade) via join em `products`.
   let batches: StockBatch[] = [];
-  try {
-    const { data } = await supabase
+  {
+    const { data, error } = await supabase
       .from("stock_batches")
       .select(
-        "id, product_name, batch_number, quantity, unit, unit_cost, expiry_date, status, created_at",
+        "id, batch_number, quantity, unit_cost, expiration_date, document_source, created_at, products(name, unit)",
       )
-      .order("expiry_date", { ascending: true })
+      .order("expiration_date", { ascending: true })
       .limit(200);
+    if (error) console.error("[controladoria/estoque] stock_batches:", error);
     batches = (data ?? []) as StockBatch[];
-  } catch {
-    batches = [];
   }
 
-  // KPIs
+  // KPIs — validade = `expiration_date`.
   const totalLotes = batches.length;
   const vencendoEm30 = batches.filter(
-    (b) => b.expiry_date && b.expiry_date >= todayIso && b.expiry_date <= in30Iso,
+    (b) =>
+      b.expiration_date &&
+      b.expiration_date >= todayIso &&
+      b.expiration_date <= in30Iso,
   ).length;
   const vencidos = batches.filter(
-    (b) => b.expiry_date && b.expiry_date < todayIso,
+    (b) => b.expiration_date && b.expiration_date < todayIso,
   ).length;
   const valorTotalEstoque = batches.reduce(
     (s, b) => s + Number(b.quantity ?? 0) * Number(b.unit_cost ?? 0),
     0,
   );
 
-  // Movimentações últimas 30d
+  // Movimentações últimas 30d — data = `created_at`, produto via join.
   let movements: StockMovement[] = [];
   if (tab === "movimentos") {
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - 30);
     const isoCutoff = cutoff.toISOString().split("T")[0];
-    try {
-      const { data } = await supabase
-        .from("stock_movements")
-        .select(
-          "id, movement_date, movement_type, product_name, quantity, unit, notes",
-        )
-        .gte("movement_date", isoCutoff)
-        .order("movement_date", { ascending: false })
-        .limit(200);
-      movements = (data ?? []) as StockMovement[];
-    } catch {
-      movements = [];
-    }
+    const { data, error } = await supabase
+      .from("stock_movements")
+      .select(
+        "id, created_at, movement_type, quantity, reference_table, products(name, unit)",
+      )
+      .gte("created_at", isoCutoff)
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (error) console.error("[controladoria/estoque] stock_movements:", error);
+    movements = (data ?? []) as StockMovement[];
   }
 
   const fmt = (v: number) =>
@@ -189,10 +198,16 @@ export default async function EstoquePage({
               <tbody>
                 {batches.map((b) => {
                   const isExpiring =
-                    b.expiry_date &&
-                    b.expiry_date >= todayIso &&
-                    b.expiry_date <= in30Iso;
-                  const isExpired = b.expiry_date && b.expiry_date < todayIso;
+                    b.expiration_date &&
+                    b.expiration_date >= todayIso &&
+                    b.expiration_date <= in30Iso;
+                  const isExpired = b.expiration_date && b.expiration_date < todayIso;
+                  const prod = firstJoin(b.products);
+                  const batchStatus = isExpired
+                    ? "expired"
+                    : isExpiring
+                    ? "expiring"
+                    : "available";
                   return (
                     <tr
                       key={b.id}
@@ -214,7 +229,7 @@ export default async function EstoquePage({
                               }
                             />
                           )}
-                          {b.product_name ?? "—"}
+                          {prod?.name ?? b.document_source ?? "—"}
                         </div>
                       </td>
                       <td className="font-mono text-sm text-[var(--text-muted)]">
@@ -222,9 +237,9 @@ export default async function EstoquePage({
                       </td>
                       <td className="text-right tabular-nums">
                         {b.quantity?.toLocaleString("pt-BR") ?? "—"}
-                        {b.unit && (
+                        {prod?.unit && (
                           <span className="ml-1 text-xs text-[var(--text-muted)]">
-                            {b.unit}
+                            {prod.unit}
                           </span>
                         )}
                       </td>
@@ -236,7 +251,7 @@ export default async function EstoquePage({
                             })}`}
                       </td>
                       <td>
-                        {b.expiry_date ? (
+                        {b.expiration_date ? (
                           <span
                             className={
                               isExpired
@@ -246,7 +261,7 @@ export default async function EstoquePage({
                                 : "text-[var(--text-secondary)]"
                             }
                           >
-                            {new Date(b.expiry_date).toLocaleDateString("pt-BR")}
+                            {new Date(b.expiration_date).toLocaleDateString("pt-BR")}
                             {isExpired && (
                               <span className="ml-1 text-xs">(vencido)</span>
                             )}
@@ -259,7 +274,7 @@ export default async function EstoquePage({
                         )}
                       </td>
                       <td>
-                        <BatchStatusChip status={b.status} />
+                        <BatchStatusChip status={batchStatus} />
                       </td>
                     </tr>
                   );
@@ -286,33 +301,36 @@ export default async function EstoquePage({
                   <th>Tipo</th>
                   <th>Produto</th>
                   <th className="text-right">Qtd</th>
-                  <th>Observação</th>
+                  <th>Origem</th>
                 </tr>
               </thead>
               <tbody>
-                {movements.map((m) => (
+                {movements.map((m) => {
+                  const prod = firstJoin(m.products);
+                  return (
                   <tr key={m.id}>
-                    <td className="text-sm">{formatDate(m.movement_date)}</td>
+                    <td className="text-sm">{formatDate(m.created_at)}</td>
                     <td>
                       <MovementTypeChip type={m.movement_type} />
                     </td>
-                    <td className="font-medium">{m.product_name ?? "—"}</td>
+                    <td className="font-medium">{prod?.name ?? "—"}</td>
                     <td className="text-right tabular-nums">
                       {m.quantity?.toLocaleString("pt-BR") ?? "—"}
-                      {m.unit && (
+                      {prod?.unit && (
                         <span className="ml-1 text-xs text-[var(--text-muted)]">
-                          {m.unit}
+                          {prod.unit}
                         </span>
                       )}
                     </td>
                     <td
                       className="max-w-[200px] truncate text-sm text-[var(--text-secondary)]"
-                      title={m.notes ?? ""}
+                      title={m.reference_table ?? ""}
                     >
-                      {m.notes ?? "—"}
+                      {m.reference_table ?? "—"}
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           )}
@@ -339,6 +357,10 @@ function BatchStatusChip({ status }: { status: string | null | undefined }) {
     available: {
       label: "Disponível",
       cls: "bg-[var(--primary-soft)] text-[var(--primary-hover)] border-[var(--primary)]/20",
+    },
+    expiring: {
+      label: "Vence em breve",
+      cls: "bg-amber-50 text-amber-700 border-amber-200",
     },
     depleted: {
       label: "Esgotado",

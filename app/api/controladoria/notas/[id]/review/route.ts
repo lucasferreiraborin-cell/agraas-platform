@@ -41,7 +41,9 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     status: newStatus,
     needs_human_review: false,
   };
-  if (action === "reject") update.rejection_reason = reason!.trim();
+  // fiscal_invoices não tem coluna rejection_reason — o motivo de rejeição vai em
+  // review_notes. Gravar a coluna inexistente fazia o update falhar e a rejeição dar 500.
+  if (action === "reject") update.review_notes = reason!.trim();
 
   const { error } = await supabase
     .from("fiscal_invoices")

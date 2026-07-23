@@ -19,11 +19,11 @@ export const dynamic = "force-dynamic";
 
 type FiscalInvoice = {
   id: string;
-  invoice_number: string | null;
+  number: string | null;
   series: string | null;
   issuer_name: string | null;
-  emission_date: string | null;
-  total_amount: number | null;
+  issued_at: string | null;
+  gross_value: number | null;
   direction: string | null;
   status: string | null;
 };
@@ -35,10 +35,12 @@ const STATUS_FILTERS = [
   { value: "rejected", label: "Rejeitadas" },
 ] as const;
 
+// Direção real da NF-e no schema: 'entrada' (compra) e 'saida' (venda).
+// Não existe inbound/outbound — usar esses valores retornava lista vazia.
 const DIRECTION_FILTERS = [
   { value: "all", label: "Todas" },
-  { value: "inbound", label: "Entrada" },
-  { value: "outbound", label: "Saída" },
+  { value: "entrada", label: "Entrada" },
+  { value: "saida", label: "Saída" },
 ] as const;
 
 type StatusFilter = (typeof STATUS_FILTERS)[number]["value"];
@@ -63,20 +65,24 @@ export default async function NotasPage({
 
   let notes: FiscalInvoice[] | null = null;
   try {
+    // Colunas reais: `number`, `issued_at`, `gross_value`
+    // (invoice_number/emission_date/total_amount nunca existiram).
     let q = supabase
       .from("fiscal_invoices")
       .select(
-        "id, invoice_number, series, issuer_name, emission_date, total_amount, direction, status",
+        "id, number, series, issuer_name, issued_at, gross_value, direction, status",
       )
-      .order("emission_date", { ascending: false })
+      .order("issued_at", { ascending: false })
       .limit(200);
 
     if (status !== "all") q = q.eq("status", status);
     if (direction !== "all") q = q.eq("direction", direction);
 
-    const { data } = await q;
+    const { data, error } = await q;
+    if (error) console.error("[controladoria/notas] fiscal_invoices:", error);
     notes = (data ?? []) as FiscalInvoice[];
-  } catch {
+  } catch (e) {
+    console.error("[controladoria/notas] fiscal_invoices threw:", e);
     notes = null;
   }
 
@@ -144,7 +150,7 @@ export default async function NotasPage({
               {notes.map((n) => (
                 <tr key={n.id}>
                   <td className="font-medium">
-                    {n.invoice_number ?? "—"}
+                    {n.number ?? "—"}
                     {n.series && (
                       <span className="ml-1 text-xs text-[var(--text-muted)]">
                         ·{n.series}
@@ -154,14 +160,14 @@ export default async function NotasPage({
                   <td className="max-w-[260px] truncate" title={n.issuer_name ?? ""}>
                     {n.issuer_name ?? "—"}
                   </td>
-                  <td>{formatDate(n.emission_date)}</td>
+                  <td>{formatDate(n.issued_at)}</td>
                   <td>
                     <DirectionBadge direction={n.direction} />
                   </td>
                   <td className="text-right tabular-nums">
-                    {n.total_amount == null
+                    {n.gross_value == null
                       ? "—"
-                      : `R$ ${Number(n.total_amount).toLocaleString("pt-BR", {
+                      : `R$ ${Number(n.gross_value).toLocaleString("pt-BR", {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
                         })}`}
@@ -229,7 +235,7 @@ function StatusBadge({ status }: { status: string | null }) {
 }
 
 function DirectionBadge({ direction }: { direction: string | null }) {
-  if (direction === "inbound") {
+  if (direction === "entrada") {
     return (
       <span className="inline-flex items-center gap-1.5 text-sm text-[var(--text-secondary)]">
         <ArrowDownToLine size={13} className="text-[var(--primary)]" />
@@ -237,7 +243,7 @@ function DirectionBadge({ direction }: { direction: string | null }) {
       </span>
     );
   }
-  if (direction === "outbound") {
+  if (direction === "saida") {
     return (
       <span className="inline-flex items-center gap-1.5 text-sm text-[var(--text-secondary)]">
         <ArrowUpFromLine size={13} className="text-amber-600" />

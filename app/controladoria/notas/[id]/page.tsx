@@ -29,31 +29,40 @@ export const dynamic = "force-dynamic";
 
 type FiscalInvoice = {
   id: string;
-  invoice_number: string | null;
+  number: string | null;
   series: string | null;
   access_key: string | null;
   issuer_name: string | null;
   issuer_cnpj: string | null;
   recipient_name: string | null;
-  emission_date: string | null;
-  total_amount: number | null;
+  issued_at: string | null;
+  gross_value: number | null;
   direction: string | null;
   status: string | null;
   source: string | null;
-  items_json: unknown;
   funrural_value: number | null;
-  rejection_reason: string | null;
+  review_notes: string | null;
 };
 
+// Itens vêm da tabela `fiscal_invoice_items` (não de um items_json inexistente).
+type InvoiceItemRow = {
+  description: string | null;
+  quantity: number | null;
+  unit: string | null;
+  unit_price: number | null;
+  total_price: number | null;
+  ncm: string | null;
+  cfop: string | null;
+};
+
+// Partida dobrada: UM valor (`amount`) + duas contas (débito/crédito).
+// Não existem debit_amount/credit_amount/account_code/account_name/entry_type.
 type AccountingEntry = {
   id: string;
   entry_date: string | null;
   description: string | null;
-  account_code: string | null;
-  account_name: string | null;
-  debit_amount: number | null;
-  credit_amount: number | null;
-  entry_type: string | null;
+  amount: number | null;
+  source_type: string | null;
 };
 
 export default async function NotaDetailPage({
@@ -64,11 +73,12 @@ export default async function NotaDetailPage({
   const { id } = await params;
   const supabase = await createSupabaseServerClient();
 
-  // Busca a nota
+  // Busca a nota. Colunas reais: `number`, `issued_at`, `gross_value`,
+  // `review_notes` (motivo de revisão/rejeição). Itens são carregados à parte.
   const { data: raw, error } = await supabase
     .from("fiscal_invoices")
     .select(
-      "id, invoice_number, series, access_key, issuer_name, issuer_cnpj, recipient_name, emission_date, total_amount, direction, status, source, items_json, funrural_value, rejection_reason",
+      "id, number, series, access_key, issuer_name, issuer_cnpj, recipient_name, issued_at, gross_value, direction, status, source, funrural_value, review_notes",
     )
     .eq("id", id)
     .single();
@@ -90,37 +100,37 @@ export default async function NotaDetailPage({
         .maybeSingle()
     : { data: null };
 
-  // Lançamentos contábeis relacionados (defensivo)
+  // Lançamentos contábeis relacionados (defensivo). Partida dobrada:
+  // `amount` único + contas de débito/crédito. Filtra por source_id = id da nota.
   let entries: AccountingEntry[] = [];
-  try {
-    const { data } = await supabase
+  {
+    const { data, error: entriesErr } = await supabase
       .from("accounting_entries")
-      .select(
-        "id, entry_date, description, account_code, account_name, debit_amount, credit_amount, entry_type",
-      )
+      .select("id, entry_date, description, amount, source_type")
       .eq("source_id", id)
       .order("entry_date", { ascending: false });
+    if (entriesErr)
+      console.error("[controladoria/notas/:id] accounting_entries:", entriesErr);
     entries = (data ?? []) as AccountingEntry[];
-  } catch {
-    entries = [];
   }
 
-  // Itens da nota (JSON)
-  type InvoiceItem = {
-    description?: string;
-    quantity?: number;
-    unit_price?: number;
-    total?: number;
-    ncm?: string;
-    cfop?: string;
-  };
-  const items: InvoiceItem[] =
-    Array.isArray(nota.items_json) ? (nota.items_json as InvoiceItem[]) : [];
+  // Itens da nota vêm de `fiscal_invoice_items` (FK fiscal_invoice_id).
+  let items: InvoiceItemRow[] = [];
+  {
+    const { data, error: itemsErr } = await supabase
+      .from("fiscal_invoice_items")
+      .select("description, quantity, unit, unit_price, total_price, ncm, cfop")
+      .eq("fiscal_invoice_id", id)
+      .order("sequence", { ascending: true });
+    if (itemsErr)
+      console.error("[controladoria/notas/:id] fiscal_invoice_items:", itemsErr);
+    items = (data ?? []) as InvoiceItemRow[];
+  }
 
   const funrural =
     nota.funrural_value ??
-    (nota.direction === "outbound" && nota.total_amount
-      ? funruralValue(Number(nota.total_amount), funruralClient)
+    (nota.direction === "saida" && nota.gross_value
+      ? funruralValue(Number(nota.gross_value), funruralClient)
       : null);
 
   return (
@@ -136,19 +146,19 @@ export default async function NotaDetailPage({
       </div>
 
       <PageHeader
-        badge={`Controladoria · NF-e ${nota.invoice_number ?? id.slice(0, 8)}`}
-        title={`Nota ${nota.invoice_number ?? "—"}${nota.series ? ` · Série ${nota.series}` : ""}`}
+        badge={`Controladoria · NF-e ${nota.number ?? id.slice(0, 8)}`}
+        title={`Nota ${nota.number ?? "—"}${nota.series ? ` · Série ${nota.series}` : ""}`}
         description="Confira os dados extraídos e os lançamentos contábeis gerados. Aprove ou rejeite para finalizar."
         actions={<NotaReviewActions notaId={id} currentStatus={nota.status} />}
       />
 
-      {/* Status Banner */}
-      {nota.status === "rejected" && nota.rejection_reason && (
+      {/* Status Banner — motivo de rejeição vem de `review_notes`. */}
+      {nota.status === "rejected" && nota.review_notes && (
         <div className="rounded-2xl border border-red-200 bg-red-50 p-5 flex items-start gap-3">
           <XCircle size={18} className="text-red-600 shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-semibold text-red-800">Nota rejeitada</p>
-            <p className="mt-1 text-sm text-red-700">{nota.rejection_reason}</p>
+            <p className="mt-1 text-sm text-red-700">{nota.review_notes}</p>
           </div>
         </div>
       )}
@@ -178,19 +188,19 @@ export default async function NotaDetailPage({
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <DataItem label="Número" value={nota.invoice_number ?? "—"} />
+            <DataItem label="Número" value={nota.number ?? "—"} />
             <DataItem label="Série" value={nota.series ?? "—"} />
-            <DataItem label="Emissão" value={formatDate(nota.emission_date)} />
+            <DataItem label="Emissão" value={formatDate(nota.issued_at)} />
             <DataItem
               label="Direção"
-              value={nota.direction === "inbound" ? "Entrada" : nota.direction === "outbound" ? "Saída" : "—"}
+              value={nota.direction === "entrada" ? "Entrada" : nota.direction === "saida" ? "Saída" : "—"}
             />
             <DataItem
               label="Valor total"
               value={
-                nota.total_amount == null
+                nota.gross_value == null
                   ? "—"
-                  : `R$ ${Number(nota.total_amount).toLocaleString("pt-BR", {
+                  : `R$ ${Number(nota.gross_value).toLocaleString("pt-BR", {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
                     })}`
@@ -254,9 +264,9 @@ export default async function NotaDetailPage({
                             : `R$ ${Number(item.unit_price).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`}
                         </td>
                         <td className="text-right tabular-nums font-medium">
-                          {item.total == null
+                          {item.total_price == null
                             ? "—"
-                            : `R$ ${Number(item.total).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`}
+                            : `R$ ${Number(item.total_price).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`}
                         </td>
                       </tr>
                     ))}
@@ -296,43 +306,35 @@ export default async function NotaDetailPage({
             />
           ) : (
             <div className="overflow-x-auto">
+              {/* Partida dobrada: cada lançamento tem UM valor (`amount`) que
+                  débita uma conta e credita outra. Colapsamos as antigas colunas
+                  Débito/Crédito num único "Valor" para refletir o schema real. */}
               <table className="ag-table">
                 <thead>
                   <tr>
                     <th>Data</th>
-                    <th>Conta</th>
-                    <th>Descrição</th>
-                    <th className="text-right">Débito</th>
-                    <th className="text-right">Crédito</th>
+                    <th>Histórico</th>
+                    <th>Origem</th>
+                    <th className="text-right">Valor</th>
                   </tr>
                 </thead>
                 <tbody>
                   {entries.map((e) => (
                     <tr key={e.id}>
                       <td className="text-sm">{formatDate(e.entry_date)}</td>
-                      <td>
-                        {e.account_code && (
-                          <span className="text-xs font-mono text-[var(--text-muted)] mr-1">
-                            {e.account_code}
-                          </span>
-                        )}
-                        <span className="text-sm">{e.account_name ?? "—"}</span>
-                      </td>
                       <td
-                        className="max-w-[180px] truncate text-sm text-[var(--text-secondary)]"
+                        className="max-w-[220px] truncate text-sm text-[var(--text-secondary)]"
                         title={e.description ?? ""}
                       >
                         {e.description ?? "—"}
                       </td>
-                      <td className="text-right tabular-nums text-sm">
-                        {e.debit_amount == null || e.debit_amount === 0
-                          ? "—"
-                          : `R$ ${Number(e.debit_amount).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`}
+                      <td className="text-sm text-[var(--text-muted)]">
+                        {sourceTypeLabel(e.source_type)}
                       </td>
                       <td className="text-right tabular-nums text-sm">
-                        {e.credit_amount == null || e.credit_amount === 0
+                        {e.amount == null || e.amount === 0
                           ? "—"
-                          : `R$ ${Number(e.credit_amount).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`}
+                          : `R$ ${Number(e.amount).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`}
                       </td>
                     </tr>
                   ))}
@@ -341,24 +343,15 @@ export default async function NotaDetailPage({
             </div>
           )}
 
-          {/* Totais de débito/crédito */}
+          {/* Total dos lançamentos (soma dos amounts) */}
           {entries.length > 0 && (
-            <div className="border-t border-[var(--border)] pt-4 flex items-center justify-between gap-4">
+            <div className="border-t border-[var(--border)] pt-4 flex items-center justify-end gap-4">
               <div className="text-sm text-[var(--text-muted)]">
-                Total déb:{" "}
+                Total lançado:{" "}
                 <span className="font-semibold text-[var(--text-primary)]">
                   R${" "}
                   {entries
-                    .reduce((s, e) => s + Number(e.debit_amount ?? 0), 0)
-                    .toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                </span>
-              </div>
-              <div className="text-sm text-[var(--text-muted)]">
-                Total créd:{" "}
-                <span className="font-semibold text-[var(--text-primary)]">
-                  R${" "}
-                  {entries
-                    .reduce((s, e) => s + Number(e.credit_amount ?? 0), 0)
+                    .reduce((s, e) => s + Number(e.amount ?? 0), 0)
                     .toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                 </span>
               </div>
@@ -392,6 +385,21 @@ function sourceLabel(source: string | null | undefined): string {
   };
   if (!source) return "Origem não informada";
   return map[source] ?? source;
+}
+
+// Origem do lançamento contábil (accounting_entries.source_type).
+function sourceTypeLabel(sourceType: string | null | undefined): string {
+  const map: Record<string, string> = {
+    sale: "Venda",
+    purchase: "Compra",
+    invoice: "NF-e",
+    fiscal_invoice: "NF-e",
+    application: "Aplicação",
+    adjustment: "Ajuste",
+    manual: "Manual",
+  };
+  if (!sourceType) return "—";
+  return map[sourceType] ?? sourceType;
 }
 
 function DataItem({ label, value }: { label: string; value: string }) {

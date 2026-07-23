@@ -38,7 +38,10 @@ export default function NovoAnimalPage() {
   const [birthWeight, setBirthWeight] = useState("");
   const [propertyId, setPropertyId] = useState("");
   const [notes, setNotes] = useState("");
-  const [status, setStatus] = useState("active");
+  // Schema drift: o dado semeado e TODOS os leitores usam status em PT capitalizado
+  // ("Ativo"/"Vendido"), enquanto o form gravava "active" (inglês) — o animal novo
+  // sumia de toda a UI (filtros .eq("status","Ativo")). Padronizado para PT.
+  const [status, setStatus] = useState("Ativo");
 
   // Busca de pai e mãe
   const [sireQuery, setSireQuery] = useState("");
@@ -266,9 +269,9 @@ export default function NovoAnimalPage() {
               {/* Status */}
               <Field label="Status">
                 <select value={status} onChange={e => setStatus(e.target.value)} className={selectClass}>
-                  <option value="active">Ativo</option>
-                  <option value="sold">Vendido</option>
-                  <option value="slaughtered">Abatido</option>
+                  <option value="Ativo">Ativo</option>
+                  <option value="Vendido">Vendido</option>
+                  <option value="Abatido">Abatido</option>
                 </select>
               </Field>
             </div>

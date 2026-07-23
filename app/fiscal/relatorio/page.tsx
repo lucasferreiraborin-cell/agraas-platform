@@ -53,10 +53,13 @@ export default function FiscalRelatorioPage() {
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const [{ data: n }, { data: a }] = await Promise.all([
+      const [{ data: n }, { data: a, error: aError }] = await Promise.all([
         supabase.from("fiscal_notes").select("id, numero_nota, emitente_nome, data_emissao, valor_total, status").order("data_emissao", { ascending: false }),
-        supabase.from("fiscal_alerts").select("note_id, tipo, severidade, descricao, resolvido"),
+        // Modelo LEGADO (fiscal_notes): alertas em fiscal_notes_alerts_legacy, colunas PT
+        // (note_id/tipo/severidade/descricao/resolvido). fiscal_alerts é do modelo NOVO (inglês).
+        supabase.from("fiscal_notes_alerts_legacy").select("note_id, tipo, severidade, descricao, resolvido"),
       ]);
+      if (aError) console.error("[fiscal/relatorio] fiscal_notes_alerts_legacy:", aError);
       setNotes(n ?? []);
       setAlerts(a ?? []);
       setLoading(false);

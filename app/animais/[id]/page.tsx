@@ -210,25 +210,28 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
   ]);
 
   // ── Dados fiscais do animal (defensivo — migration 132-140 em paralelo) ───
+  // Schema drift: animal_cost_summary NÃO tem cost_per_arroba nem roi_projected.
+  // Colunas reais: total_cost, total_input_cost, labor_cost, other_costs, cost_estimated…
+  // total_cost vem do banco; custo/@ é computado adiante (só se houver peso vivo);
+  // ROI projetado foi removido — não há fonte honesta para projeção.
   type FiscalSummary = {
     total_cost: number | null;
     cost_per_arroba: number | null;
-    roi_projected: number | null;
   };
   let fiscalSummary: FiscalSummary | null = null;
   let fiscalScore: number | null = null;
 
   try {
-    const { data: costRow } = await supabase
+    const { data: costRow, error: costError } = await supabase
       .from("animal_cost_summary")
-      .select("total_cost, cost_per_arroba, roi_projected")
+      .select("total_cost")
       .eq("animal_id", id)
       .maybeSingle();
+    if (costError) console.error("[animal] animal_cost_summary:", costError);
     if (costRow) {
       fiscalSummary = {
         total_cost: costRow.total_cost != null ? Number(costRow.total_cost) : null,
-        cost_per_arroba: costRow.cost_per_arroba != null ? Number(costRow.cost_per_arroba) : null,
-        roi_projected: costRow.roi_projected != null ? Number(costRow.roi_projected) : null,
+        cost_per_arroba: null, // computado adiante a partir do peso vivo
       };
     }
   } catch { /* tabela ainda não existe */ }
@@ -241,8 +244,7 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
         const cs = fj.cost_summary as Record<string, unknown> | undefined;
         fiscalSummary = {
           total_cost: cs?.total_cost != null ? Number(cs.total_cost) : null,
-          cost_per_arroba: fj.cost_per_arroba != null ? Number(fj.cost_per_arroba) : null,
-          roi_projected: fj.roi_projected != null ? Number(fj.roi_projected) : null,
+          cost_per_arroba: null, // computado adiante a partir do peso vivo
         };
       }
     } catch { /* ignore */ }
@@ -357,15 +359,17 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
       ? supabase.from("properties").select("id, name, city, state")
           .eq("id", animal.current_property_id).single().then(r => r.data as { id: string; name: string | null; city: string | null; state: string | null } | null)
       : Promise.resolve(null),
+    // Schema drift: score_json usa a chave total_score (não "overall"). Antes,
+    // o score de pai/mãe no card de genealogia vinha sempre null.
     animal.sire_animal_id
       ? supabase.from("agraas_master_passport_cache").select("score_json")
           .eq("animal_id", animal.sire_animal_id).maybeSingle()
-          .then(r => { const v = (r.data?.score_json as any)?.overall; return v != null ? Number(v) : null; })
+          .then(r => { const v = (r.data?.score_json as any)?.total_score; return v != null ? Number(v) : null; })
       : Promise.resolve(null as number | null),
     animal.dam_animal_id
       ? supabase.from("agraas_master_passport_cache").select("score_json")
           .eq("animal_id", animal.dam_animal_id).maybeSingle()
-          .then(r => { const v = (r.data?.score_json as any)?.overall; return v != null ? Number(v) : null; })
+          .then(r => { const v = (r.data?.score_json as any)?.total_score; return v != null ? Number(v) : null; })
       : Promise.resolve(null as number | null),
   ]);
   const sireScore = sireScoreRaw;
@@ -418,6 +422,15 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
     latestWeight !== null && previousWeight !== null
       ? latestWeight - previousWeight
       : null;
+
+  // Custo por arroba (@) — computado só quando há peso vivo registrado, já que a
+  // coluna cost_per_arroba não existe em animal_cost_summary. Convenção Agraas:
+  // 1 @ carcaça ≈ 30 kg de peso vivo (rendimento ~50%), mesma base do painel do
+  // produtor. Sem peso, permanece null → a UI mostra "—" (não inventamos valor).
+  if (fiscalSummary && fiscalSummary.total_cost != null && latestWeight && latestWeight > 0) {
+    const arrobas = latestWeight / 30;
+    fiscalSummary.cost_per_arroba = arrobas > 0 ? fiscalSummary.total_cost / arrobas : null;
+  }
 
   const birthDate = animal.birth_date ?? null;
   const ageMonths = birthDate ? calculateAgeInMonths(birthDate) : null;
@@ -645,7 +658,7 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
             <div>
               <h2 className="ag-section-title">Ativo financeiro</h2>
               <p className="ag-section-subtitle">
-                Custo acumulado, retorno projetado e dados fiscais deste animal.
+                Custo acumulado e dados fiscais deste animal.
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -693,9 +706,11 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
             </div>
           )}
 
-          {/* 3 cards de custo/ROI */}
+          {/* Cards de custo — total_cost real + custo/@ computado a partir do peso.
+              ROI projetado removido: não há fonte honesta (o ROI realizado da venda
+              aparece no bloco "Vendido" acima quando a venda é concretizada). */}
           {fiscalSummary && (
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2">
               <div className="ag-kpi-card">
                 <p className="text-sm text-[var(--text-muted)]">Custo acumulado</p>
                 <p className="mt-2 text-2xl font-bold text-[var(--text-primary)]">
@@ -723,26 +738,6 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
                 </p>
                 <p className="mt-1 text-xs text-[var(--text-secondary)]">
                   Baseado no peso atual
-                </p>
-              </div>
-
-              <div className="ag-kpi-card">
-                <p className="text-sm text-[var(--text-muted)]">ROI projetado</p>
-                <p
-                  className={`mt-2 text-2xl font-bold ${
-                    fiscalSummary.roi_projected == null
-                      ? "text-[var(--text-primary)]"
-                      : Number(fiscalSummary.roi_projected) >= 0
-                      ? "text-[var(--primary-hover)]"
-                      : "text-red-600"
-                  }`}
-                >
-                  {fiscalSummary.roi_projected == null
-                    ? "—"
-                    : `${Number(fiscalSummary.roi_projected) > 0 ? "+" : ""}${Number(fiscalSummary.roi_projected).toFixed(1)}%`}
-                </p>
-                <p className="mt-1 text-xs text-[var(--text-secondary)]">
-                  Cotação atual + peso
                 </p>
               </div>
             </div>

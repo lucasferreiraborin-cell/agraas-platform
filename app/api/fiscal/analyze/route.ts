@@ -63,7 +63,12 @@ Responda SEMPRE em JSON com esta estrutura: {"risks": [{"item": string, "descric
         descricao: `[IA] ${r.item ? r.item + ": " : ""}${r.descricao}`,
         severidade: r.severidade === "alto" ? "critico" : r.severidade === "medio" ? "aviso" : "info",
       }));
-      await supabase.from("fiscal_alerts").insert(iaAlerts);
+      // Esta rota trabalha no modelo legado (fiscal_notes / fiscal_note_items); os
+      // alertas em PT (note_id/tipo/descricao/severidade) casam com fiscal_notes_alerts_legacy.
+      // fiscal_alerts (novo, colunas em inglês, FK fiscal_invoice_id) rejeitava o payload
+      // e os alertas de IA NUNCA eram gravados — falha silenciosa do supabase-js.
+      const { error: alertErr } = await supabase.from("fiscal_notes_alerts_legacy").insert(iaAlerts);
+      if (alertErr) console.error("[fiscal/analyze] falha ao salvar alertas IA:", alertErr.message);
     }
 
     return Response.json(analysis);

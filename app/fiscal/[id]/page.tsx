@@ -13,12 +13,15 @@ export default async function FiscalNotePage({ params }: PageProps) {
   const [
     { data: note },
     { data: items },
-    { data: alerts },
+    { data: alerts, error: alertsError },
   ] = await Promise.all([
     supabase.from("fiscal_notes").select("*").eq("id", id).single(),
     supabase.from("fiscal_note_items").select("*").eq("note_id", id).order("descricao"),
-    supabase.from("fiscal_alerts").select("*").eq("note_id", id).order("severidade"),
+    // Modelo LEGADO: alertas desta nota vivem em fiscal_notes_alerts_legacy
+    // (colunas PT: note_id/severidade/descricao). A tabela fiscal_alerts é do modelo NOVO.
+    supabase.from("fiscal_notes_alerts_legacy").select("*").eq("note_id", id).order("severidade"),
   ]);
+  if (alertsError) console.error("[fiscal/id] fiscal_notes_alerts_legacy:", alertsError);
 
   if (!note) {
     return (

@@ -46,7 +46,7 @@ export default async function MarketPage() {
     supabase
       .from("animal_certifications")
       .select("animal_id")
-      .eq("type", "Halal")
+      .eq("certification_name", "Halal")
       .eq("status", "active"),
     supabase
       .from("platform_settings")

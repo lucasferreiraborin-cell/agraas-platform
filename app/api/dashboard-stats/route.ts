@@ -23,23 +23,46 @@ const fetchHerdStats = (clientId: string) =>
       const today = new Date().toISOString().split("T")[0];
       const cutoff30d = new Date(Date.now() - 30 * 86400000).toISOString().split("T")[0];
 
+      // animal_scores / weights / animal_certifications / applications são tabelas
+      // denormalizadas e NÃO possuem client_id — o vínculo com o cliente é sempre
+      // via animal_id. Buscamos primeiro os IDs do rebanho ativo do cliente e
+      // filtramos as demais tabelas por .in("animal_id", ids) (mesmo padrão do dossiê).
+      // Obs.: o dado semeado usa status "Ativo"/"Vendido" (PT capitalizado); "active"
+      // (inglês) zerava a contagem por não existir na base.
+      const { data: animalRows, error: animalErr } = await db
+        .from("animals")
+        .select("id")
+        .eq("client_id", clientId)
+        .eq("status", "Ativo");
+      if (animalErr) console.error("[dashboard-stats] animals:", animalErr.message);
+      const animalIds = (animalRows ?? []).map(a => a.id);
+      const totalAnimals = animalIds.length;
+
       const [
-        { count: totalAnimals },
-        { data: scoreRows },
-        { data: weightRows },
-        { data: halalRows },
-        { data: carenciaRows },
-        { data: fieldsData },
-        { data: shipmentsData },
+        { data: scoreRows, error: scoreErr },
+        { data: weightRows, error: weightErr },
+        { data: halalRows, error: halalErr },
+        { data: carenciaRows, error: carenciaErr },
+        { data: fieldsData, error: fieldsErr },
+        { data: shipmentsData, error: shipmentsErr },
       ] = await Promise.all([
-        db.from("animals").select("*", { count: "exact", head: true }).eq("client_id", clientId).eq("status", "active"),
-        db.from("animal_scores").select("total_score").eq("client_id", clientId),
-        db.from("weights").select("animal_id, weight, weighing_date").eq("client_id", clientId).order("weighing_date", { ascending: false }).limit(500),
-        db.from("animal_certifications").select("animal_id").eq("client_id", clientId).ilike("certification_name", "%Halal%").eq("status", "active"),
-        db.from("applications").select("animal_id").eq("client_id", clientId).gte("withdrawal_date", today),
+        db.from("animal_scores").select("total_score").in("animal_id", animalIds),
+        db.from("weights").select("animal_id, weight, weighing_date").in("animal_id", animalIds).order("weighing_date", { ascending: false }).limit(500),
+        db.from("animal_certifications").select("animal_id").in("animal_id", animalIds).ilike("certification_name", "%Halal%").eq("status", "active"),
+        db.from("applications").select("animal_id").in("animal_id", animalIds).gte("withdrawal_date", today),
         db.from("crop_fields").select("id, status").eq("client_id", clientId).in("status", ["plantado", "em_desenvolvimento"]),
         db.from("crop_shipments").select("id, quantity_tons, status").eq("client_id", clientId),
       ]);
+
+      // supabase-js não lança em erro de schema — só logando evitamos que uma nova
+      // deriva de coluna volte a zerar leituras silenciosamente.
+      for (const [label, err] of [
+        ["animal_scores", scoreErr], ["weights", weightErr],
+        ["animal_certifications", halalErr], ["applications", carenciaErr],
+        ["crop_fields", fieldsErr], ["crop_shipments", shipmentsErr],
+      ] as const) {
+        if (err) console.error(`[dashboard-stats] ${label}:`, err.message);
+      }
 
       // Score médio
       const scores = (scoreRows ?? []).map(r => Number(r.total_score ?? 0)).filter(s => s > 0);

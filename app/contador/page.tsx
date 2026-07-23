@@ -11,11 +11,11 @@
  * trocar `requirePersona(CONTADOR_ROUTES)` segue funcionando — a constante
  * já inclui 'contador' e 'admin'.
  *
- * Schema esperado (migration 128, em construção):
- *   partners_accountants(accountant_client_id, producer_client_id, status,
- *                       linked_at)
- *   fiscal_invoices(client_id, status, total_amount, emission_date,
- *                  direction)
+ * Schema real (partners_accountants já aplicada):
+ *   partners_accountants(contador_client_id, producer_client_id, status,
+ *                       access_level, granted_at)
+ *   fiscal_invoices(client_id, status, gross_value, issued_at,
+ *                  direction 'entrada'|'saida')
  */
 
 import Link from "next/link";
@@ -49,11 +49,12 @@ export default async function ContadorPage() {
   // Tabela ainda em construção (migration 128). Guard defensivo.
   let producerIds: string[] = [];
   try {
-    const { data } = await db
+    const { data, error } = await db
       .from("partners_accountants")
       .select("producer_client_id, status")
-      .eq("accountant_client_id", ctx.clientId)
+      .eq("contador_client_id", ctx.clientId)
       .eq("status", "active");
+    if (error) console.error("[contador] partners_accountants:", error.message);
     producerIds = (data ?? []).map((r) => r.producer_client_id);
   } catch {
     producerIds = [];
@@ -84,11 +85,12 @@ export default async function ContadorPage() {
 
   if (producerIds.length > 0) {
     try {
-      const { data: pending } = await db
+      const { data: pending, error: pendErr } = await db
         .from("fiscal_invoices")
         .select("client_id, id")
         .in("client_id", producerIds)
         .eq("status", "pending_review");
+      if (pendErr) console.error("[contador] fiscal_invoices pending:", pendErr.message);
       for (const row of pending ?? []) {
         pendingByClient.set(
           row.client_id,
@@ -100,18 +102,20 @@ export default async function ContadorPage() {
       monthStart.setDate(1);
       const monthStartIso = monthStart.toISOString().split("T")[0];
 
-      const { data: outbound } = await db
+      // FUNRURAL incide sobre a receita da comercialização → notas de 'saida'.
+      const { data: outbound, error: outErr } = await db
         .from("fiscal_invoices")
-        .select("client_id, total_amount")
+        .select("client_id, gross_value")
         .in("client_id", producerIds)
-        .eq("direction", "outbound")
-        .gte("emission_date", monthStartIso);
+        .eq("direction", "saida")
+        .gte("issued_at", monthStartIso);
+      if (outErr) console.error("[contador] fiscal_invoices saida:", outErr.message);
       for (const row of outbound ?? []) {
         funruralByClient.set(
           row.client_id,
           (funruralByClient.get(row.client_id) ?? 0) +
             funruralValue(
-              Number(row.total_amount ?? 0),
+              Number(row.gross_value ?? 0),
               funruralClientById.get(row.client_id) ?? null,
             ),
         );

@@ -32,28 +32,34 @@ type FiscalInvoiceRow = {
   id: string;
   status: string | null;
   direction: string | null;
-  emission_date: string | null;
-  total_amount: number | null;
+  issued_at: string | null;
+  gross_value: number | null;
 };
 
 async function safeCount(
-  fn: () => PromiseLike<{ count: number | null }>,
+  fn: () => PromiseLike<{ count: number | null; error?: unknown }>,
 ): Promise<number | null> {
   try {
-    const { count } = await fn();
+    const { count, error } = await fn();
+    // supabase-js não lança em erro de schema — o erro vem no campo `error`.
+    // Logar aqui evita que futuros drifts de coluna voltem a "sumir calados".
+    if (error) console.error("[controladoria] safeCount:", error);
     return count ?? 0;
-  } catch {
+  } catch (e) {
+    console.error("[controladoria] safeCount threw:", e);
     return null;
   }
 }
 
 async function safeSelect<T>(
-  fn: () => PromiseLike<{ data: T[] | null }>,
+  fn: () => PromiseLike<{ data: T[] | null; error?: unknown }>,
 ): Promise<T[] | null> {
   try {
-    const { data } = await fn();
+    const { data, error } = await fn();
+    if (error) console.error("[controladoria] safeSelect:", error);
     return data ?? [];
-  } catch {
+  } catch (e) {
+    console.error("[controladoria] safeSelect threw:", e);
     return null;
   }
 }
@@ -70,22 +76,25 @@ export default async function ControladoriaPage() {
   const monthStartIso = monthStart.toISOString().split("T")[0];
 
   // KPI 1: NF-e processadas últimos 30 dias
+  // Schema real (migration 128+): a data é `issued_at` (timestamptz) e o valor
+  // bruto é `gross_value`. `emission_date`/`total_amount` nunca existiram.
   const invoices30d = await safeSelect<FiscalInvoiceRow>(() =>
     supabase
       .from("fiscal_invoices")
-      .select("id, status, direction, emission_date, total_amount")
-      .gte("emission_date", isoCutoff),
+      .select("id, status, direction, issued_at, gross_value")
+      .gte("issued_at", isoCutoff),
   );
 
-  // KPI 2: FUNRURAL devido mês corrente — agrega total_amount de saídas
-  // (direction = 'outbound') no mês corrente. Alíquota parametrizada por
-  // cliente (funrural_rate / tax_regime), conforme LC 224/2025.
-  const outbound = await safeSelect<FiscalInvoiceRow>(() =>
+  // KPI 2: FUNRURAL devido mês corrente — agrega `gross_value` das VENDAS
+  // (direction = 'saida') no mês corrente. FUNRURAL incide sobre a receita
+  // bruta de comercialização (vendas), não sobre compras. Alíquota
+  // parametrizada por cliente (funrural_rate / tax_regime), conforme LC 224/2025.
+  const vendasMes = await safeSelect<FiscalInvoiceRow>(() =>
     supabase
       .from("fiscal_invoices")
-      .select("id, status, direction, emission_date, total_amount")
-      .gte("emission_date", monthStartIso)
-      .eq("direction", "outbound"),
+      .select("id, status, direction, issued_at, gross_value")
+      .gte("issued_at", monthStartIso)
+      .eq("direction", "saida"),
   );
 
   // Cliente logado — alíquota FUNRURAL parametrizada (funrural_rate/tax_regime).
@@ -113,7 +122,7 @@ export default async function ControladoriaPage() {
   // ── Cálculos ─────────────────────────────────────────────────────────────
   const totalNotas30d = invoices30d?.length ?? null;
   const receitaMes =
-    outbound?.reduce((s, n) => s + Number(n.total_amount ?? 0), 0) ?? null;
+    vendasMes?.reduce((s, n) => s + Number(n.gross_value ?? 0), 0) ?? null;
   const funruralDevido =
     receitaMes !== null ? funruralValue(receitaMes, funruralClient) : null;
   const funruralLabel = funruralRateLabel(funruralClient);
