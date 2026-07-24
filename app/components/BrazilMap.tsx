@@ -68,8 +68,10 @@ export default function BrazilMap({
       minZoom={3}
     >
       <TileLayer
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        attribution=""
+        url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+        attribution='&copy; <a href="https://carto.com/attributions">CARTO</a> &copy; OpenStreetMap'
+        detectRetina
+        maxZoom={19}
       />
       <FitBounds pins={properties} />
       {properties.map((p) => (
