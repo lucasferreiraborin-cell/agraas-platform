@@ -33,7 +33,8 @@ type Props = {
     status: string | null;
     rfid_device_type: RfidDeviceType;
   };
-  property: { name: string | null } | null;
+  property: { name: string | null; city?: string | null; state?: string | null; lat?: number | null; lng?: number | null } | null;
+  stage: string | null;
   score: number;
   certifications: Cert[];
   sanitaryHistory: SanitaryEntry[];
@@ -73,6 +74,7 @@ function resolveInitialLang(): Lang {
 export default function PublicPassportView({
   animal,
   property,
+  stage,
   score,
   certifications,
   sanitaryHistory,
@@ -151,6 +153,13 @@ export default function PublicPassportView({
                 <p className="mt-1 font-mono text-sm text-white/60" dir="ltr">
                   {animal.agraas_id}
                 </p>
+                {property?.name && (
+                  <p className="mt-2 text-sm text-white/70">
+                    {property.name}
+                    {(property.city || property.state) &&
+                      ` · ${[property.city, property.state].filter(Boolean).join("/")}`}
+                  </p>
+                )}
               </div>
               <div className="flex flex-col items-end gap-2">
                 {hasHalal && (
@@ -161,6 +170,11 @@ export default function PublicPassportView({
                 <span className="rounded-full bg-white/10 px-3 py-1 text-xs text-white/70">
                   {t(lang, "verified")}
                 </span>
+                {stage && (
+                  <span className="rounded-full bg-[var(--primary)] px-3 py-1 text-xs font-semibold text-white">
+                    {stage}
+                  </span>
+                )}
               </div>
             </div>
           </div>

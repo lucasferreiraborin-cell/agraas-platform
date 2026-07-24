@@ -7,6 +7,17 @@ import { checkRateLimitByIp } from "@/lib/rate-limit";
 
 type PageProps = { params: Promise<{ agraas_id: string }> };
 
+// Estágio produtivo a partir da conta contábil (CPC 29, migration 150).
+function stageFromContaContabil(conta: string | null | undefined): string | null {
+  if (!conta) return null;
+  if (conta.startsWith("1.1.06.03")) return "Cria";
+  if (conta.startsWith("1.1.06.02")) return "Recria";
+  if (conta.startsWith("1.1.06.01")) return "Engorda";
+  if (conta.startsWith("1.2.01.01")) return "Matriz";
+  if (conta.startsWith("1.2.01.02")) return "Reprodutor";
+  return null;
+}
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { agraas_id } = await params;
   return {
@@ -39,11 +50,16 @@ export default async function PublicPassportPage({ params }: PageProps) {
   // Busca animal pelo agraas_id
   const { data: animal } = await supabase
     .from("animals")
-    .select("id, agraas_id, internal_code, nickname, sex, breed, birth_date, status, current_property_id, rfid_device_type")
+    .select("id, agraas_id, internal_code, nickname, sex, breed, birth_date, status, current_property_id, rfid_device_type, conta_contabil")
     .eq("agraas_id", agraas_id)
     .single();
 
   if (!animal) notFound();
+
+  // Estágio produtivo derivado da conta contábil (CPC 29 — classificação limpa,
+  // não do campo `category` que tem vocabulário misto). Cria/Recria/Engorda para
+  // animais de crescimento; matriz/reprodutor para plantel.
+  const stage = stageFromContaContabil(animal.conta_contabil);
 
   // Dados paralelos
   const [
@@ -60,7 +76,7 @@ export default async function PublicPassportPage({ params }: PageProps) {
       .single(),
 
     animal.current_property_id
-      ? supabase.from("properties").select("name").eq("id", animal.current_property_id).single()
+      ? supabase.from("properties").select("name, city, state, lat, lng").eq("id", animal.current_property_id).single()
       : Promise.resolve({ data: null }),
 
     supabase.from("animal_certifications")
@@ -114,6 +130,7 @@ export default async function PublicPassportPage({ params }: PageProps) {
         rfid_device_type: (animal.rfid_device_type ?? "brinco_auricular") as import("@/lib/passport-i18n").RfidDeviceType,
       }}
       property={propertyData ?? null}
+      stage={stage}
       score={score}
       certifications={certsData ?? []}
       sanitaryHistory={sanitaryHistory}
