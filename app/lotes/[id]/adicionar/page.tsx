@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
@@ -23,10 +23,10 @@ type LotRow = {
 export default function AdicionarAnimalAoLotePage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
   const router = useRouter();
-  const lotId = params.id;
+  const { id: lotId } = use(params);
 
   const [lot, setLot] = useState<LotRow | null>(null);
   const [animals, setAnimals] = useState<AnimalRow[]>([]);

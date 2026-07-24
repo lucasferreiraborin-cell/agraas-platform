@@ -109,7 +109,7 @@ export default function JourneySection() {
               Identidade digital<br />desde o primeiro dia.
             </h3>
             <p className="mt-5 text-[.9375rem] leading-[1.8] text-white/40">
-              Bovino, ovino, caprino ou ave — cada animal recebe um ID Agraas único no nascimento. Soja, milho ou cana — cada talhão é georeferenciado com CAR verificado.
+              Bovino, ovino, caprino ou ave — cada animal recebe um ID Agraas único no nascimento. Soja, milho ou cana — cada talhão é georreferenciado com CAR verificado.
             </p>
             <div className="mt-6 flex flex-wrap gap-2">
               {["RFID bolus", "Tag auricular", "GPS talhão", "QR passaporte"].map(t => (

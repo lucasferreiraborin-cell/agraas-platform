@@ -8,7 +8,7 @@ const STEPS = [
   {
     Icon: Fingerprint,
     title: "Identidade desde o primeiro dia",
-    text: "Cada animal nasce com um ID Agraas único. Cada talhão ganha um polígono georeferenciado com CAR verificado. A rastreabilidade começa antes da primeira pesagem — e nunca para. O produtor sabe exatamente o que tem, onde está e o que vale.",
+    text: "Cada animal nasce com um ID Agraas único. Cada talhão ganha um polígono georreferenciado com CAR verificado. A rastreabilidade começa antes da primeira pesagem — e nunca para. O produtor sabe exatamente o que tem, onde está e o que vale.",
     tags: ["RFID bolus", "GPS talhão", "CAR verificado", "ID único vitalício"],
   },
   {
