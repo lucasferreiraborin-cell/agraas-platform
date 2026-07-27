@@ -32,7 +32,7 @@ const cspHeader = [
   // Fonts: self
   "font-src 'self'",
   // API connections: self + Supabase + Sentry + OpenStreetMap + Carto (Leaflet tile attribution)
-  `connect-src 'self' https://${supabaseHost} https://o*.ingest.sentry.io https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com`,
+  `connect-src 'self' https://${supabaseHost} https://*.ingest.sentry.io https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com`,
   // Frames: none
   "frame-src 'none'",
   // Objects: none

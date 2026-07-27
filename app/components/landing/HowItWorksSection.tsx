@@ -80,10 +80,10 @@ export default function HowItWorksSection() {
               <ArrowRight size={15} />
             </Link>
             <Link
-              href="/planos"
+              href="/marketplace"
               className="inline-flex items-center gap-2 rounded-xl border-2 border-[var(--primary)] bg-white px-6 py-3 text-[.9375rem] font-semibold text-[var(--primary)] transition hover:bg-[var(--primary-soft)]"
             >
-              Ver planos
+              Explorar marketplace
             </Link>
           </div>
         </FadeIn>
