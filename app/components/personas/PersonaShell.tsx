@@ -96,11 +96,8 @@ function getSidebar(persona: PersonaContext["effectivePersona"]) {
   }
 }
 
-// Produtor já usa AppSidebar global em outro lugar — stub no-op aqui
+// Produtor usa a AppSidebar global — aqui não renderiza navegação própria
+// (evita duplicar sidebar e nunca expõe texto interno de dev ao usuário).
 function ProdutorSidebarStub() {
-  return (
-    <nav className="flex-1 overflow-y-auto px-4 py-5 text-white/40 text-xs">
-      Sidebar produtor — use AppSidebar global em /painel
-    </nav>
-  );
+  return <nav className="flex-1 overflow-y-auto" aria-hidden />;
 }
