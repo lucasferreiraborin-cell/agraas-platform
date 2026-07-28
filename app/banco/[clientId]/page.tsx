@@ -10,13 +10,13 @@
 
 import { createSupabaseServiceClient } from "@/lib/supabase-service";
 import { redirect, notFound } from "next/navigation";
-import Link from "next/link";
 import PersonaShell from "@/app/components/personas/PersonaShell";
+import { BackLink } from "@/app/components/ui/BackLink";
 import { BANK_VIEW_ENABLED } from "@/lib/feature-flags";
 import { scoreClassification, maskEarTag } from "@/lib/personas";
 import { funruralValue } from "@/lib/funrural";
 import { requirePersona, BANCO_ROUTES } from "@/lib/persona-resolver";
-import { ArrowLeft, Download, MapPin, Calendar, Award } from "lucide-react";
+import { Download, MapPin, Calendar, Award } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -181,10 +181,11 @@ export default async function DossieProdutor({ params }: Params) {
   return (
     <PersonaShell ctx={ctx}>
       <div className="max-w-6xl mx-auto px-8 py-10">
-          <Link href="/banco" className="inline-flex items-center gap-1 text-[--text-secondary] text-sm hover:text-[--text-primary] mb-6">
-            <ArrowLeft size={14} />
-            Portfólio
-          </Link>
+          <BackLink
+            href="/banco"
+            label="Voltar para o portfólio"
+            className="!text-white/65 hover:!text-white/90"
+          />
 
           <header className="mb-10 flex items-start justify-between gap-6">
             <div>

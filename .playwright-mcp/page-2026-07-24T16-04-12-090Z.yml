@@ -1,0 +1,421 @@
+- generic [active] [ref=f3e1]:
+  - generic [ref=f3e3]:
+    - complementary [ref=f3e4]:
+      - generic [ref=f3e7]:
+        - paragraph [ref=f3e8]: Plataforma
+        - heading "Agraas" [level=1] [ref=f3e9]
+        - paragraph [ref=f3e10]: Plataforma do agro
+      - generic [ref=f3e12]:
+        - paragraph [ref=f3e13]: Status
+        - generic [ref=f3e15]:
+          - paragraph [ref=f3e16]: Ambiente ativo
+          - paragraph [ref=f3e17]: Fase 1 entregue
+      - navigation [ref=f3e19]:
+        - generic [ref=f3e20]:
+          - link "Painel" [ref=f3e21] [cursor=pointer]:
+            - /url: /painel
+          - link "Inteligência" [ref=f3e28] [cursor=pointer]:
+            - /url: /inteligencia
+          - link "Animais" [ref=f3e39] [cursor=pointer]:
+            - /url: /animais
+          - link "Lotes" [ref=f3e46] [cursor=pointer]:
+            - /url: /lotes
+          - link "Fiscal" [ref=f3e53] [cursor=pointer]:
+            - /url: /fiscal
+          - link "Financeiro" [ref=f3e59] [cursor=pointer]:
+            - /url: /financeiro
+          - link "Alertas" [ref=f3e64] [cursor=pointer]:
+            - /url: /alertas
+        - button "Avançado" [ref=f3e71]
+      - generic [ref=f3e76]:
+        - paragraph [ref=f3e77]: Visão
+        - paragraph [ref=f3e78]: Rastreabilidade, performance produtiva, identidade digital animal e inteligência operacional para a cadeia pecuária.
+        - generic [ref=f3e79]:
+          - generic [ref=f3e80]:
+            - paragraph [ref=f3e81]: Stack
+            - paragraph [ref=f3e82]: Next + Supabase
+          - generic [ref=f3e83]:
+            - paragraph [ref=f3e84]: Fase
+            - paragraph [ref=f3e85]: Fase 1 entregue
+    - generic [ref=f3e86]:
+      - banner [ref=f3e87]:
+        - generic [ref=f3e88]:
+          - generic [ref=f3e90]:
+            - paragraph [ref=f3e91]: Plataforma Agraas
+            - heading "Infraestrutura digital da pecuária bovina" [level=2] [ref=f3e92]
+          - generic [ref=f3e93]:
+            - generic "Score Agraas v3 ancorado em Embrapa Documento Técnico 237 (Costa et al., 2018) — Plataforma +Precoce. Primeiro piloto em tombamento real." [ref=f3e94]: v1.0 · Score Engine Embrapa
+            - generic [ref=f3e98]: lucas@agraas.com.br
+            - button "Sair" [ref=f3e99]
+      - main [ref=f3e100]:
+        - main [ref=f3e102]:
+          - generic [ref=f3e103]:
+            - generic [ref=f3e104]:
+              - generic [ref=f3e105]: Painel do produtor
+              - generic "Atualizada há 6 h · CEPEA/Esalq" [ref=f3e106]: R$ 330,00/@
+              - button "Admin" [ref=f3e112]
+            - generic [ref=f3e115]:
+              - generic [ref=f3e116]:
+                - paragraph [ref=f3e117]: Sexta-feira, 24 de julho de 2026
+                - heading "Boa tarde, Lucas." [level=1] [ref=f3e118]
+                - paragraph [ref=f3e119]:
+                  - text: Cada animal, um
+                  - strong [ref=f3e120]: ativo digital
+                  - text: — rastreável, auditável, mensurável e negociável. O resumo abaixo é a leitura do seu rebanho hoje.
+                - generic [ref=f3e121]:
+                  - link "Explorar animais" [ref=f3e122] [cursor=pointer]:
+                    - /url: /animais
+                  - link "Inteligência" [ref=f3e123] [cursor=pointer]:
+                    - /url: /inteligencia
+                  - link "Cadeia" [ref=f3e124] [cursor=pointer]:
+                    - /url: /cadeia
+              - generic [ref=f3e125]:
+                - paragraph [ref=f3e126]: Valor estimado do rebanho
+                - paragraph [ref=f3e127]: R$ 116.160
+                - paragraph [ref=f3e128]: base · R$ 330,00/@
+                - generic [ref=f3e129]:
+                  - generic [ref=f3e130]:
+                    - paragraph [ref=f3e131]: Animais
+                    - paragraph [ref=f3e132]: "23"
+                  - generic [ref=f3e133]:
+                    - paragraph [ref=f3e134]: Score médio
+                    - paragraph [ref=f3e135]: 53/100
+                  - generic [ref=f3e136]:
+                    - paragraph [ref=f3e137]: Arrobas
+                    - paragraph [ref=f3e138]: 352@
+          - generic [ref=f3e139]:
+            - link [ref=f3e140] [cursor=pointer]:
+              - /url: /alertas
+              - generic [ref=f3e145]:
+                - paragraph [ref=f3e146]: Carências
+                - paragraph [ref=f3e147]: "0"
+                - paragraph [ref=f3e148]: nenhuma vencendo
+            - link [ref=f3e152] [cursor=pointer]:
+              - /url: /animais
+              - generic [ref=f3e158]:
+                - paragraph [ref=f3e159]: Sem pesagem
+                - paragraph [ref=f3e160]: "23"
+                - paragraph [ref=f3e161]: há mais de 30 dias
+            - link [ref=f3e165] [cursor=pointer]:
+              - /url: /tracking
+              - generic [ref=f3e172]:
+                - paragraph [ref=f3e173]: Embarques
+                - paragraph [ref=f3e174]: "9"
+                - paragraph [ref=f3e175]: sem atualização há 5+ dias
+            - link [ref=f3e179] [cursor=pointer]:
+              - /url: /inteligencia
+              - generic [ref=f3e190]:
+                - paragraph [ref=f3e191]: Cotação @
+                - paragraph [ref=f3e192]: R$ 330
+                - paragraph [ref=f3e193]: snapshot CEPEA recente
+          - generic [ref=f3e197]:
+            - generic [ref=f3e198]:
+              - generic [ref=f3e199]:
+                - heading "Animais que pedem atenção" [level=2] [ref=f3e200]
+                - paragraph [ref=f3e201]: Ações pendentes detectadas pelo passaporte vivo da Agraas.
+              - generic [ref=f3e202]: 24 items
+            - generic [ref=f3e203]:
+              - generic [ref=f3e204]:
+                - generic [ref=f3e209]:
+                  - paragraph [ref=f3e210]: ATL-001
+                  - paragraph [ref=f3e211]: Sem pesagem há 129 dias
+                - link "Ver passaporte →" [ref=f3e212] [cursor=pointer]:
+                  - /url: /animais/00000000-0000-0003-0001-000000000007
+              - generic [ref=f3e213]:
+                - generic [ref=f3e218]:
+                  - paragraph [ref=f3e219]: EST-001
+                  - paragraph [ref=f3e220]: Sem pesagem há 132 dias
+                - link "Ver passaporte →" [ref=f3e221] [cursor=pointer]:
+                  - /url: /animais/00000000-0000-0003-0001-000000000002
+              - generic [ref=f3e222]:
+                - generic [ref=f3e227]:
+                  - paragraph [ref=f3e228]: SAU-005
+                  - paragraph [ref=f3e229]: Sem pesagem há 107 dias
+                - link "Ver passaporte →" [ref=f3e230] [cursor=pointer]:
+                  - /url: /animais/4dccc216-5210-4ed7-8e0b-c423db7056ab
+              - generic [ref=f3e231]:
+                - generic [ref=f3e236]:
+                  - paragraph [ref=f3e237]: VEN-001
+                  - paragraph [ref=f3e238]: Sem pesagem há 134 dias
+                - link "Ver passaporte →" [ref=f3e239] [cursor=pointer]:
+                  - /url: /animais/00000000-0000-0003-0001-000000000009
+              - generic [ref=f3e240]:
+                - generic [ref=f3e245]:
+                  - paragraph [ref=f3e246]: SAU-004
+                  - paragraph [ref=f3e247]: Sem pesagem há 107 dias
+                - link "Ver passaporte →" [ref=f3e248] [cursor=pointer]:
+                  - /url: /animais/57144312-fafd-42a8-8a46-acf80c5ae003
+              - generic [ref=f3e249]:
+                - generic [ref=f3e254]:
+                  - paragraph [ref=f3e255]: AGR-239185
+                  - paragraph [ref=f3e256]: Sem pesagem há 135 dias
+                - link "Ver passaporte →" [ref=f3e257] [cursor=pointer]:
+                  - /url: /animais/ddcdf835-88a1-494a-bc0c-c2ac80e548e2
+          - generic [ref=f3e258]:
+            - generic [ref=f3e259]:
+              - generic [ref=f3e260]:
+                - generic [ref=f3e261]:
+                  - generic [ref=f3e262]: v3 · Embrapa Doc 237
+                  - generic [ref=f3e263]: Implementação Agraas da Plataforma +Precoce
+                - heading "Score Agraas · pilares do rebanho" [level=2] [ref=f3e264]
+                - paragraph [ref=f3e265]: Médias agregadas dos 5 pilares ancorados na metodologia Embrapa Gado de Corte (Costa et al., 2018).
+              - generic [ref=f3e266]:
+                - paragraph [ref=f3e267]: Score médio total
+                - paragraph [ref=f3e268]: 53/100
+            - generic [ref=f3e269]:
+              - generic [ref=f3e270]:
+                - generic [ref=f3e271]:
+                  - paragraph [ref=f3e272]: Produtivo
+                  - generic [ref=f3e273]: 36%
+                - generic [ref=f3e274]:
+                  - generic [ref=f3e275]: "60"
+                  - generic [ref=f3e276]: /100
+                - paragraph [ref=f3e279]: GMD + Peso × Idade
+              - generic [ref=f3e280]:
+                - generic [ref=f3e281]:
+                  - paragraph [ref=f3e282]: Sanidade
+                  - generic [ref=f3e283]: 25%
+                - generic [ref=f3e284]:
+                  - generic [ref=f3e285]: "68"
+                  - generic [ref=f3e286]: /100
+                - paragraph [ref=f3e289]: histórico + carência + recência
+              - generic [ref=f3e290]:
+                - generic [ref=f3e291]:
+                  - paragraph [ref=f3e292]: Rastreabilidade
+                  - generic [ref=f3e293]: 29%
+                - generic [ref=f3e294]:
+                  - generic [ref=f3e295]: "46"
+                  - generic [ref=f3e296]: /100
+                - paragraph [ref=f3e299]: RFID + genealogia + eventos
+              - generic [ref=f3e300]:
+                - generic [ref=f3e301]:
+                  - paragraph [ref=f3e302]: Certificações
+                  - generic [ref=f3e303]: 10%
+                - generic [ref=f3e304]:
+                  - generic [ref=f3e305]: "46"
+                  - generic [ref=f3e306]: /100
+                - paragraph [ref=f3e309]: Boi Verde · BR · GAP
+            - paragraph [ref=f3e311]:
+              - strong [ref=f3e312]: Pilar Reprodutivo (15%) preparado
+              - text: — IEP, taxa de prenhez individual, idade ao primeiro parto. Peso redistribuído (40% Produtivo, 60% Rastreabilidade) enquanto os dados estruturados não são populados. Ativação prevista pós-mentoria IZ-SP.
+          - generic [ref=f3e320]:
+            - heading "Leitura do dia" [level=2] [ref=f3e321]
+            - paragraph [ref=f3e322]: Cruzamento de sinais de mercado e métricas do seu rebanho — produzido pela inteligência Agraas.
+          - generic [ref=f3e345]:
+            - generic [ref=f3e346]:
+              - generic [ref=f3e347]:
+                - generic [ref=f3e348]:
+                  - heading "Geografia do rebanho" [level=2] [ref=f3e349]
+                  - paragraph [ref=f3e350]: Propriedades ativas mapeadas no Brasil — cor indica o score médio por unidade.
+                - link "Ver todas" [ref=f3e351] [cursor=pointer]:
+                  - /url: /propriedades
+              - generic [ref=f3e353]:
+                - generic [ref=f3e354]: Score ≥ 70
+                - generic [ref=f3e356]: 50 – 69
+                - generic [ref=f3e358]: < 50
+            - generic [ref=f3e360]:
+              - generic [ref=f3e361]:
+                - generic [ref=f3e362]:
+                  - heading "Top do rebanho" [level=2] [ref=f3e371]
+                  - paragraph [ref=f3e372]: Os 10 maiores scores consolidados pela metodologia v3.
+                - link "Ranking" [ref=f3e373] [cursor=pointer]:
+                  - /url: /scores
+              - list [ref=f3e374]:
+                - listitem [ref=f3e375]:
+                  - link "1 AG003 68.84/100 496 kg · Ativo" [ref=f3e376] [cursor=pointer]:
+                    - /url: /animais/7813fa0c-15fe-4fe2-ac1c-20f3f0ea4a09
+                    - generic [ref=f3e377]: "1"
+                    - generic [ref=f3e378]:
+                      - generic [ref=f3e379]:
+                        - paragraph [ref=f3e380]: AG003
+                        - paragraph [ref=f3e381]: 68.84/100
+                      - paragraph [ref=f3e384]: 496 kg · Ativo
+                - listitem [ref=f3e385]:
+                  - link "2 SAU-005 65.2/100 570 kg · Ativo" [ref=f3e386] [cursor=pointer]:
+                    - /url: /animais/4dccc216-5210-4ed7-8e0b-c423db7056ab
+                    - generic [ref=f3e387]: "2"
+                    - generic [ref=f3e388]:
+                      - generic [ref=f3e389]:
+                        - paragraph [ref=f3e390]: SAU-005
+                        - paragraph [ref=f3e391]: 65.2/100
+                      - paragraph [ref=f3e394]: 570 kg · Ativo
+                - listitem [ref=f3e395]:
+                  - link "3 IMP-001 64.67/100 485 kg · Ativo" [ref=f3e396] [cursor=pointer]:
+                    - /url: /animais/00000000-0000-0003-0001-000000000001
+                    - generic [ref=f3e397]: "3"
+                    - generic [ref=f3e398]:
+                      - generic [ref=f3e399]:
+                        - paragraph [ref=f3e400]: IMP-001
+                        - paragraph [ref=f3e401]: 64.67/100
+                      - paragraph [ref=f3e404]: 485 kg · Ativo
+                - listitem [ref=f3e405]:
+                  - link "4 SAU-003 63.85/100 540 kg · Ativo" [ref=f3e406] [cursor=pointer]:
+                    - /url: /animais/3c8f9a40-a812-4151-b2be-ca74e7573896
+                    - generic [ref=f3e407]: "4"
+                    - generic [ref=f3e408]:
+                      - generic [ref=f3e409]:
+                        - paragraph [ref=f3e410]: SAU-003
+                        - paragraph [ref=f3e411]: 63.85/100
+                      - paragraph [ref=f3e414]: 540 kg · Ativo
+                - listitem [ref=f3e415]:
+                  - link "5 SAU-004 62.05/100 500 kg · Ativo" [ref=f3e416] [cursor=pointer]:
+                    - /url: /animais/57144312-fafd-42a8-8a46-acf80c5ae003
+                    - generic [ref=f3e417]: "5"
+                    - generic [ref=f3e418]:
+                      - generic [ref=f3e419]:
+                        - paragraph [ref=f3e420]: SAU-004
+                        - paragraph [ref=f3e421]: 62.05/100
+                      - paragraph [ref=f3e424]: 500 kg · Ativo
+                - listitem [ref=f3e425]:
+                  - link "6 SAU-001 61.14/100 480 kg · Ativo" [ref=f3e426] [cursor=pointer]:
+                    - /url: /animais/7f8101f8-c912-4267-9a20-ae3c48fd61bf
+                    - generic [ref=f3e427]: "6"
+                    - generic [ref=f3e428]:
+                      - generic [ref=f3e429]:
+                        - paragraph [ref=f3e430]: SAU-001
+                        - paragraph [ref=f3e431]: 61.14/100
+                      - paragraph [ref=f3e434]: 480 kg · Ativo
+                - listitem [ref=f3e435]:
+                  - link "7 AG100 60.85/100 500 kg · Ativo" [ref=f3e436] [cursor=pointer]:
+                    - /url: /animais/a0b03c02-b816-41b0-a764-4e352abbde02
+                    - generic [ref=f3e437]: "7"
+                    - generic [ref=f3e438]:
+                      - generic [ref=f3e439]:
+                        - paragraph [ref=f3e440]: AG100
+                        - paragraph [ref=f3e441]: 60.85/100
+                      - paragraph [ref=f3e444]: 500 kg · Ativo
+                - listitem [ref=f3e445]:
+                  - link "8 SAU-002 60.24/100 460 kg · Ativo" [ref=f3e446] [cursor=pointer]:
+                    - /url: /animais/e0b6d1b5-00f2-4f6e-88b5-7f377c9c49c1
+                    - generic [ref=f3e447]: "8"
+                    - generic [ref=f3e448]:
+                      - generic [ref=f3e449]:
+                        - paragraph [ref=f3e450]: SAU-002
+                        - paragraph [ref=f3e451]: 60.24/100
+                      - paragraph [ref=f3e454]: 460 kg · Ativo
+                - listitem [ref=f3e455]:
+                  - link "9 ATL-001 58.27/100 562 kg · Ativo" [ref=f3e456] [cursor=pointer]:
+                    - /url: /animais/00000000-0000-0003-0001-000000000007
+                    - generic [ref=f3e457]: "9"
+                    - generic [ref=f3e458]:
+                      - generic [ref=f3e459]:
+                        - paragraph [ref=f3e460]: ATL-001
+                        - paragraph [ref=f3e461]: 58.27/100
+                      - paragraph [ref=f3e464]: 562 kg · Ativo
+                - listitem [ref=f3e465]:
+                  - link "10 AG001 56.65/100 420 kg · Ativo" [ref=f3e466] [cursor=pointer]:
+                    - /url: /animais/05ac9205-c1f1-4409-baee-e34b4ee1db0f
+                    - generic [ref=f3e467]: "10"
+                    - generic [ref=f3e468]:
+                      - generic [ref=f3e469]:
+                        - paragraph [ref=f3e470]: AG001
+                        - paragraph [ref=f3e471]: 56.65/100
+                      - paragraph [ref=f3e474]: 420 kg · Ativo
+          - generic [ref=f3e475]:
+            - generic [ref=f3e476]:
+              - generic [ref=f3e477]:
+                - generic [ref=f3e478]:
+                  - heading "Trilha recente" [level=2] [ref=f3e479]
+                  - paragraph [ref=f3e480]: Últimos eventos registrados no passaporte vivo.
+                - link "Timeline" [ref=f3e481] [cursor=pointer]:
+                  - /url: /eventos
+              - generic [ref=f3e482]:
+                - generic [ref=f3e485]:
+                  - generic [ref=f3e486]:
+                    - paragraph [ref=f3e487]:
+                      - text: vacinacao
+                      - generic [ref=f3e488]: · SAU-004
+                    - generic [ref=f3e489]: 09/04/2026
+                  - paragraph [ref=f3e490]: Vacinação reforço — Yusuf
+                - generic [ref=f3e493]:
+                  - generic [ref=f3e494]:
+                    - paragraph [ref=f3e495]:
+                      - text: Pesagem
+                      - generic [ref=f3e496]: · SAU-005
+                    - generic [ref=f3e497]: 08/04/2026
+                  - paragraph [ref=f3e498]: Pesagem semanal — Ibrahim
+                - generic [ref=f3e501]:
+                  - generic [ref=f3e502]:
+                    - paragraph [ref=f3e503]:
+                      - text: Pesagem
+                      - generic [ref=f3e504]: · SAU-001
+                    - generic [ref=f3e505]: 08/04/2026
+                  - paragraph [ref=f3e506]: Pesagem semanal — Abdullah
+                - generic [ref=f3e509]:
+                  - generic [ref=f3e510]:
+                    - paragraph [ref=f3e511]:
+                      - text: Pesagem
+                      - generic [ref=f3e512]: · SAU-002
+                    - generic [ref=f3e513]: 08/04/2026
+                  - paragraph [ref=f3e514]: Pesagem semanal — Khalid
+                - generic [ref=f3e517]:
+                  - generic [ref=f3e518]:
+                    - paragraph [ref=f3e519]:
+                      - text: Pesagem
+                      - generic [ref=f3e520]: · SAU-003
+                    - generic [ref=f3e521]: 08/04/2026
+                  - paragraph [ref=f3e522]: Pesagem semanal — Omar
+                - generic [ref=f3e525]:
+                  - generic [ref=f3e526]:
+                    - paragraph [ref=f3e527]:
+                      - text: Pesagem
+                      - generic [ref=f3e528]: · SAU-004
+                    - generic [ref=f3e529]: 08/04/2026
+                  - paragraph [ref=f3e530]: Pesagem semanal — Yusuf
+            - generic [ref=f3e531]:
+              - generic [ref=f3e532]:
+                - generic [ref=f3e533]:
+                  - heading "Ativos em destaque" [level=2] [ref=f3e534]
+                  - paragraph [ref=f3e535]: Animais com leitura comercial imediata no mercado Agraas.
+                - link "Abrir" [ref=f3e536] [cursor=pointer]:
+                  - /url: /market
+              - generic [ref=f3e537]:
+                - link "AG003 68.84 Fazenda Santa Cruz - kg Vendido" [ref=f3e538] [cursor=pointer]:
+                  - /url: /animais/7813fa0c-15fe-4fe2-ac1c-20f3f0ea4a09
+                  - generic [ref=f3e539]:
+                    - paragraph [ref=f3e540]: AG003
+                    - paragraph [ref=f3e541]: "68.84"
+                  - paragraph [ref=f3e542]: Fazenda Santa Cruz
+                  - generic [ref=f3e543]:
+                    - generic [ref=f3e544]: "- kg"
+                    - generic [ref=f3e545]: Vendido
+                - link "SAU-005 65.2 Fazenda Santa Cruz - kg Ativo" [ref=f3e546] [cursor=pointer]:
+                  - /url: /animais/4dccc216-5210-4ed7-8e0b-c423db7056ab
+                  - generic [ref=f3e547]:
+                    - paragraph [ref=f3e548]: SAU-005
+                    - paragraph [ref=f3e549]: "65.2"
+                  - paragraph [ref=f3e550]: Fazenda Santa Cruz
+                  - generic [ref=f3e551]:
+                    - generic [ref=f3e552]: "- kg"
+                    - generic [ref=f3e553]: Ativo
+                - link "IMP-001 64.67 Fazenda Santa Cruz - kg Ativo" [ref=f3e554] [cursor=pointer]:
+                  - /url: /animais/00000000-0000-0003-0001-000000000001
+                  - generic [ref=f3e555]:
+                    - paragraph [ref=f3e556]: IMP-001
+                    - paragraph [ref=f3e557]: "64.67"
+                  - paragraph [ref=f3e558]: Fazenda Santa Cruz
+                  - generic [ref=f3e559]:
+                    - generic [ref=f3e560]: "- kg"
+                    - generic [ref=f3e561]: Ativo
+                - link "SAU-003 63.85 Fazenda Santa Cruz - kg Ativo" [ref=f3e562] [cursor=pointer]:
+                  - /url: /animais/3c8f9a40-a812-4151-b2be-ca74e7573896
+                  - generic [ref=f3e563]:
+                    - paragraph [ref=f3e564]: SAU-003
+                    - paragraph [ref=f3e565]: "63.85"
+                  - paragraph [ref=f3e566]: Fazenda Santa Cruz
+                  - generic [ref=f3e567]:
+                    - generic [ref=f3e568]: "- kg"
+                    - generic [ref=f3e569]: Ativo
+      - generic [ref=f3e570]:
+        - generic [ref=f3e571]:
+          - link "Criar lote exportação":
+            - /url: /lotes/novo
+          - link "Adicionar animal":
+            - /url: /animais/novo
+          - link "Registrar aplicação":
+            - /url: /aplicacoes
+          - link "Registrar pesagem":
+            - /url: /pesagens
+        - button "Abrir menu de ações rápidas" [ref=f3e572]
+      - button "Assistente Agraas" [ref=f3e574]
+  - alert [ref=f3e583]

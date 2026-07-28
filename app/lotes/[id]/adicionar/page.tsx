@@ -2,7 +2,7 @@
 
 import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { BackLink } from "@/app/components/ui/BackLink";
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -106,12 +106,7 @@ export default function AdicionarAnimalAoLotePage({
 
   return (
     <main className="space-y-8">
-      <Link
-        href={`/lotes/${lotId}`}
-        className="text-sm font-medium text-[var(--primary-hover)] hover:underline"
-      >
-        ← Voltar para Lote
-      </Link>
+      <BackLink href={`/lotes/${lotId}`} label="Voltar para o Lote" />
 
       <section className="ag-card-strong overflow-hidden">
         <div className="grid gap-0 xl:grid-cols-[1.05fr_0.95fr]">

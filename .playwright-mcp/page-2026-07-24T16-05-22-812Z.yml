@@ -1,0 +1,122 @@
+- generic [active] [ref=f4e1]:
+  - generic [ref=f4e3]:
+    - complementary [ref=f4e4]:
+      - generic [ref=f4e7]:
+        - paragraph [ref=f4e8]: Plataforma
+        - heading "Agraas" [level=1] [ref=f4e9]
+        - paragraph [ref=f4e10]: Plataforma do agro
+      - generic [ref=f4e12]:
+        - paragraph [ref=f4e13]: Status
+        - generic [ref=f4e15]:
+          - paragraph [ref=f4e16]: Ambiente ativo
+          - paragraph [ref=f4e17]: Fase 1 entregue
+      - navigation [ref=f4e19]:
+        - generic [ref=f4e20]:
+          - link "Painel" [ref=f4e21] [cursor=pointer]:
+            - /url: /painel
+          - link "Inteligência" [ref=f4e27] [cursor=pointer]:
+            - /url: /inteligencia
+          - link "Animais" [ref=f4e38] [cursor=pointer]:
+            - /url: /animais
+          - link "Lotes" [ref=f4e45] [cursor=pointer]:
+            - /url: /lotes
+          - link "Fiscal" [ref=f4e52] [cursor=pointer]:
+            - /url: /fiscal
+          - link "Financeiro" [ref=f4e58] [cursor=pointer]:
+            - /url: /financeiro
+          - link "Alertas" [ref=f4e63] [cursor=pointer]:
+            - /url: /alertas
+        - button "Avançado" [ref=f4e70]
+      - generic [ref=f4e75]:
+        - paragraph [ref=f4e76]: Visão
+        - paragraph [ref=f4e77]: Rastreabilidade, performance produtiva, identidade digital animal e inteligência operacional para a cadeia pecuária.
+        - generic [ref=f4e78]:
+          - generic [ref=f4e79]:
+            - paragraph [ref=f4e80]: Stack
+            - paragraph [ref=f4e81]: Next + Supabase
+          - generic [ref=f4e82]:
+            - paragraph [ref=f4e83]: Fase
+            - paragraph [ref=f4e84]: Fase 1 entregue
+    - generic [ref=f4e85]:
+      - banner [ref=f4e86]:
+        - generic [ref=f4e87]:
+          - generic [ref=f4e89]:
+            - paragraph [ref=f4e90]: Plataforma Agraas
+            - heading "Infraestrutura digital da pecuária bovina" [level=2] [ref=f4e91]
+          - generic [ref=f4e92]:
+            - generic "Score Agraas v3 ancorado em Embrapa Documento Técnico 237 (Costa et al., 2018) — Plataforma +Precoce. Primeiro piloto em tombamento real." [ref=f4e93]: v1.0 · Score Engine Embrapa
+            - generic [ref=f4e97]: lucas@agraas.com.br
+            - button "Sair" [ref=f4e98]
+      - main [ref=f4e99]:
+        - generic [ref=f4e101]:
+          - complementary [ref=f4e102]:
+            - navigation [ref=f4e104]:
+              - generic [ref=f4e105]:
+                - paragraph [ref=f4e106]: Controladoria
+                - paragraph [ref=f4e107]: Contábil · Fiscal · Estoque
+              - link "Painel" [ref=f4e109] [cursor=pointer]:
+                - /url: /controladoria
+              - link "Notas" [ref=f4e118] [cursor=pointer]:
+                - /url: /controladoria/notas
+              - link "Contas" [ref=f4e125] [cursor=pointer]:
+                - /url: /controladoria/contas
+              - link "Cash flow" [ref=f4e131] [cursor=pointer]:
+                - /url: /controladoria/cash-flow
+              - link "Estoque" [ref=f4e138] [cursor=pointer]:
+                - /url: /controladoria/estoque
+              - link "Voltar ao painel" [ref=f4e153] [cursor=pointer]:
+                - /url: /painel
+          - main [ref=f4e159]:
+            - generic [ref=f4e160]:
+              - generic [ref=f4e161]: Controladoria
+              - heading "Painel da controladoria" [level=1] [ref=f4e162]
+              - paragraph [ref=f4e163]: Operação contábil, fiscal e de estoque do produtor rural em uma só camada. Importe NF-e, acompanhe obrigações fiscais e mantenha o cash flow projetado.
+              - generic [ref=f4e164]:
+                - link "Subir NF-e" [ref=f4e165] [cursor=pointer]:
+                  - /url: /controladoria/notas
+                - link "Plano de contas" [ref=f4e166] [cursor=pointer]:
+                  - /url: /controladoria/contas
+            - generic [ref=f4e167]:
+              - generic [ref=f4e168]:
+                - paragraph [ref=f4e173]: NF-e últimos 30 dias
+                - paragraph [ref=f4e174]: "0"
+                - paragraph [ref=f4e175]: Importadas e classificadas
+              - generic [ref=f4e176]:
+                - paragraph [ref=f4e180]: FUNRURAL devido (mês)
+                - paragraph [ref=f4e181]: R$ 0,00
+                - paragraph [ref=f4e182]: Estimativa · 1,63% sobre receita bruta
+              - generic [ref=f4e183]:
+                - paragraph [ref=f4e187]: Alertas pendentes
+                - paragraph [ref=f4e188]: "0"
+                - paragraph [ref=f4e189]: Nenhuma pendência
+              - generic [ref=f4e190]:
+                - paragraph [ref=f4e196]: Próxima obrigação
+                - paragraph [ref=f4e197]: DIRPF
+                - paragraph [ref=f4e198]: Vence em 30 de abr.
+            - generic [ref=f4e199]:
+              - generic [ref=f4e200]:
+                - heading "Áreas do módulo" [level=2] [ref=f4e201]
+                - paragraph [ref=f4e202]: 4 áreas · 1 wedge
+              - generic [ref=f4e203]:
+                - link [ref=f4e204] [cursor=pointer]:
+                  - /url: /controladoria/notas
+                  - heading "Notas fiscais" [level=3] [ref=f4e213]
+                  - paragraph [ref=f4e214]: Importe NF-e (XML, PDF, ditado ou CSV) e revise extrações de IA.
+                  - paragraph [ref=f4e215]: Tudo revisado
+                - link [ref=f4e216] [cursor=pointer]:
+                  - /url: /controladoria/contas
+                  - heading "Plano de contas" [level=3] [ref=f4e224]
+                  - paragraph [ref=f4e225]: Lançamentos contábeis e plano de contas adaptado ao produtor rural.
+                  - paragraph [ref=f4e226]: Plano de contas ativo
+                - link [ref=f4e227] [cursor=pointer]:
+                  - /url: /controladoria/cash-flow
+                  - heading "Cash flow" [level=3] [ref=f4e236]
+                  - paragraph [ref=f4e237]: Projeção de fluxo de caixa por safra e ciclo produtivo.
+                  - paragraph [ref=f4e238]: Projeção ativa
+                - link [ref=f4e239] [cursor=pointer]:
+                  - /url: /controladoria/estoque
+                  - heading "Estoque" [level=3] [ref=f4e255]
+                  - paragraph [ref=f4e256]: Controle de insumos com baixa automática via NF-e validada.
+                  - paragraph [ref=f4e257]: Controle ativo
+      - button "Assistente Agraas" [ref=f4e258]
+  - alert [ref=f4e267]

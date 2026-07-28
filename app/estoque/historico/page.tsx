@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import { BackLink } from "@/app/components/ui/BackLink";
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -116,10 +116,8 @@ export default function HistoricoEstoquePage() {
   return (
     <main className="space-y-8">
       <section className="ag-card-strong p-8">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <h1 className="ag-page-title">Histórico de Movimentações</h1>
-          <Link href="/estoque" className="ag-button-primary">Voltar ao Estoque</Link>
-        </div>
+        <BackLink href="/estoque" label="Voltar ao Estoque" />
+        <h1 className="ag-page-title">Histórico de Movimentações</h1>
       </section>
 
       {loading && (

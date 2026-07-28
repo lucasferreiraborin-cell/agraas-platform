@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { BackLink } from "@/app/components/ui/BackLink";
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -52,12 +52,7 @@ export default function NovoLotePage() {
 
   return (
     <main className="space-y-8">
-      <Link
-        href="/lotes"
-        className="text-sm font-medium text-[var(--primary-hover)] hover:underline"
-      >
-        ← Voltar para Lotes
-      </Link>
+      <BackLink href="/lotes" label="Voltar para Lotes" />
 
       <section className="ag-card-strong overflow-hidden">
         <div className="grid gap-0 xl:grid-cols-[1.05fr_0.95fr]">

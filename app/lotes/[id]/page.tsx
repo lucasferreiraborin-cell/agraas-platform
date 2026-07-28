@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
+import { BackLink } from "@/app/components/ui/BackLink";
 import { use } from "react";
 import { calculateDailyGain } from "@/lib/agraas-analytics";
 import ExportConformityReport from "@/app/components/ExportConformityReport";
@@ -300,14 +301,14 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
 
   if (!lot) return (
     <main className="space-y-4">
-      <Link href="/lotes" className="text-sm text-[var(--primary-hover)] hover:underline">← Lotes</Link>
+      <BackLink href="/lotes" label="Voltar para Lotes" />
       <p className="text-[var(--text-secondary)]">Lote não encontrado.</p>
     </main>
   );
 
   return (
     <main className="space-y-8">
-      <Link href="/lotes" className="text-sm font-medium text-[var(--primary-hover)] hover:underline">← Lotes</Link>
+      <BackLink href="/lotes" label="Voltar para Lotes" />
 
       {/* ── Hero — visual diferenciado para exportação ── */}
       {isExportLot ? (

@@ -5,6 +5,7 @@ import { createBrowserClient } from "@supabase/ssr";
 import Link from "next/link";
 import { FileText, DollarSign, AlertTriangle, ShieldCheck, Download, TrendingUp } from "lucide-react";
 import { KpiCard } from "@/app/components/ui/KpiCard";
+import { BackLink } from "@/app/components/ui/BackLink";
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -127,7 +128,7 @@ export default function FiscalRelatorioPage() {
           {/* Left */}
           <div className="relative p-8 lg:p-10">
             <div className="pointer-events-none absolute right-0 top-0 h-48 w-48 rounded-full bg-[radial-gradient(circle,rgba(122,168,76,0.12)_0%,rgba(122,168,76,0)_70%)]" />
-            <Link href="/fiscal" className="text-sm text-[var(--primary)] hover:underline">← Fiscal</Link>
+            <BackLink href="/fiscal" label="Voltar para Fiscal" />
             <h1 className="ag-page-title">Relatório Fiscal</h1>
             <p className="mt-4 max-w-lg text-[1rem] leading-7 text-[var(--text-secondary)]">
               Consolidado para o contador — todas as NF-e do período com alertas, valores e status de validação.

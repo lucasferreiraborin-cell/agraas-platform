@@ -10,9 +10,8 @@ import { funruralValue, funruralRateLabel } from "@/lib/funrural";
 import { requirePersona, CONTADOR_ROUTES } from "@/lib/persona-resolver";
 import PersonaShell from "@/app/components/personas/PersonaShell";
 import { redirect, notFound } from "next/navigation";
-import Link from "next/link";
+import { BackLink } from "@/app/components/ui/BackLink";
 import {
-  ArrowLeft,
   Receipt,
   BookOpen,
   FileText,
@@ -157,13 +156,11 @@ export default async function ContadorProdutorPage({ params }: Params) {
   return (
     <PersonaShell ctx={ctx}>
       <div className="mx-auto max-w-6xl px-8 py-10">
-        <Link
+        <BackLink
           href="/contador"
-          className="inline-flex items-center gap-1 text-sm text-white/65 hover:text-white/90 mb-6"
-        >
-          <ArrowLeft size={14} />
-          Portfólio
-        </Link>
+          label="Voltar para o portfólio"
+          className="!text-white/65 hover:!text-white/90"
+        />
 
         {/* Header */}
         <header className="mb-10 flex items-start justify-between gap-6">

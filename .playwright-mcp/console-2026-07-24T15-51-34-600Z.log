@@ -1,0 +1,1 @@
+[     357ms] [ERROR] The source list for the Content Security Policy directive 'connect-src' contains an invalid source: 'https://o*.ingest.sentry.io'. It will be ignored. @ https://agraas-platform.vercel.app/:0

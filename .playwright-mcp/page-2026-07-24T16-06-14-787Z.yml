@@ -1,0 +1,348 @@
+- generic [active] [ref=f5e1]:
+  - generic [ref=f5e3]:
+    - complementary [ref=f5e4]:
+      - generic [ref=f5e7]:
+        - paragraph [ref=f5e8]: Plataforma
+        - heading "Agraas" [level=1] [ref=f5e9]
+        - paragraph [ref=f5e10]: Plataforma do agro
+      - generic [ref=f5e12]:
+        - paragraph [ref=f5e13]: Status
+        - generic [ref=f5e15]:
+          - paragraph [ref=f5e16]: Ambiente ativo
+          - paragraph [ref=f5e17]: Fase 1 entregue
+      - navigation [ref=f5e19]:
+        - generic [ref=f5e20]:
+          - link "Painel" [ref=f5e21] [cursor=pointer]:
+            - /url: /painel
+          - link "Inteligência" [ref=f5e27] [cursor=pointer]:
+            - /url: /inteligencia
+          - link "Animais" [ref=f5e38] [cursor=pointer]:
+            - /url: /animais
+          - link "Lotes" [ref=f5e45] [cursor=pointer]:
+            - /url: /lotes
+          - link "Fiscal" [ref=f5e52] [cursor=pointer]:
+            - /url: /fiscal
+          - link "Financeiro" [ref=f5e58] [cursor=pointer]:
+            - /url: /financeiro
+          - link "Alertas" [ref=f5e63] [cursor=pointer]:
+            - /url: /alertas
+        - button "Avançado" [ref=f5e70]
+      - generic [ref=f5e75]:
+        - paragraph [ref=f5e76]: Visão
+        - paragraph [ref=f5e77]: Rastreabilidade, performance produtiva, identidade digital animal e inteligência operacional para a cadeia pecuária.
+        - generic [ref=f5e78]:
+          - generic [ref=f5e79]:
+            - paragraph [ref=f5e80]: Stack
+            - paragraph [ref=f5e81]: Next + Supabase
+          - generic [ref=f5e82]:
+            - paragraph [ref=f5e83]: Fase
+            - paragraph [ref=f5e84]: Fase 1 entregue
+    - generic [ref=f5e85]:
+      - banner [ref=f5e86]:
+        - generic [ref=f5e87]:
+          - generic [ref=f5e89]:
+            - paragraph [ref=f5e90]: Plataforma Agraas
+            - heading "Infraestrutura digital da pecuária bovina" [level=2] [ref=f5e91]
+          - generic [ref=f5e92]:
+            - generic "Score Agraas v3 ancorado em Embrapa Documento Técnico 237 (Costa et al., 2018) — Plataforma +Precoce. Primeiro piloto em tombamento real." [ref=f5e93]: v1.0 · Score Engine Embrapa
+            - generic [ref=f5e97]: lucas@agraas.com.br
+            - button "Sair" [ref=f5e98]
+      - main [ref=f5e99]:
+        - generic [ref=f5e101]:
+          - complementary [ref=f5e102]:
+            - navigation [ref=f5e104]:
+              - generic [ref=f5e105]:
+                - paragraph [ref=f5e106]: Controladoria
+                - paragraph [ref=f5e107]: Contábil · Fiscal · Estoque
+              - link "Painel" [ref=f5e109] [cursor=pointer]:
+                - /url: /controladoria
+              - link "Notas" [ref=f5e118] [cursor=pointer]:
+                - /url: /controladoria/notas
+              - link "Contas" [ref=f5e125] [cursor=pointer]:
+                - /url: /controladoria/contas
+              - link "Cash flow" [ref=f5e131] [cursor=pointer]:
+                - /url: /controladoria/cash-flow
+              - link "Estoque" [ref=f5e138] [cursor=pointer]:
+                - /url: /controladoria/estoque
+              - link "Voltar ao painel" [ref=f5e153] [cursor=pointer]:
+                - /url: /painel
+          - main [ref=f5e159]:
+            - generic [ref=f5e160]:
+              - generic [ref=f5e161]: Controladoria · Notas
+              - heading "Notas fiscais" [level=1] [ref=f5e162]
+              - paragraph [ref=f5e163]: NF-e importadas, classificadas e prontas para revisão humana. Use o botão Subir NF-e para enviar XML, PDF, ditado ou planilha CSV.
+              - button "Subir NF-e" [ref=f5e165]
+            - generic [ref=f5e170]:
+              - generic [ref=f5e171]:
+                - generic [ref=f5e172]: Status
+                - generic [ref=f5e173]:
+                  - link "Todas" [ref=f5e174] [cursor=pointer]:
+                    - /url: /controladoria/notas
+                  - link "Pendentes" [ref=f5e175] [cursor=pointer]:
+                    - /url: /controladoria/notas?status=pending_review
+                  - link "Revisadas" [ref=f5e176] [cursor=pointer]:
+                    - /url: /controladoria/notas?status=reviewed
+                  - link "Rejeitadas" [ref=f5e177] [cursor=pointer]:
+                    - /url: /controladoria/notas?status=rejected
+              - generic [ref=f5e178]:
+                - generic [ref=f5e179]: Direção
+                - generic [ref=f5e180]:
+                  - link "Todas" [ref=f5e181] [cursor=pointer]:
+                    - /url: /controladoria/notas
+                  - link "Entrada" [ref=f5e182] [cursor=pointer]:
+                    - /url: /controladoria/notas?direction=entrada
+                  - link "Saída" [ref=f5e183] [cursor=pointer]:
+                    - /url: /controladoria/notas?direction=saida
+            - table [ref=f5e185]:
+              - rowgroup [ref=f5e186]:
+                - row [ref=f5e187]:
+                  - columnheader "Número" [ref=f5e188]
+                  - columnheader "Emitente" [ref=f5e189]
+                  - columnheader "Emissão" [ref=f5e190]
+                  - columnheader "Direção" [ref=f5e191]
+                  - columnheader "Valor" [ref=f5e192]
+                  - columnheader "Status" [ref=f5e193]
+                  - columnheader [ref=f5e194]
+              - rowgroup [ref=f5e195]:
+                - row [ref=f5e196]:
+                  - cell "PDF-2026-001·-" [ref=f5e197]:
+                    - text: PDF-2026-001
+                    - generic [ref=f5e198]: ·-
+                  - cell [ref=f5e199]
+                  - cell "—" [ref=f5e200]
+                  - cell [ref=f5e201]
+                  - cell "—" [ref=f5e205]
+                  - cell "Revisada" [ref=f5e206]
+                  - cell [ref=f5e208]:
+                    - link "Revisar" [ref=f5e209] [cursor=pointer]:
+                      - /url: /controladoria/notas/6629bb02-3372-447b-8f95-4d5d94824b60
+                - row [ref=f5e212]:
+                  - cell "VENDA-BACKFILL-bd815290·1" [ref=f5e213]:
+                    - text: VENDA-BACKFILL-bd815290
+                    - generic [ref=f5e214]: ·1
+                  - cell "—" [ref=f5e215]
+                  - cell "12/05/2026" [ref=f5e216]
+                  - cell [ref=f5e217]
+                  - cell "R$ 5.924,80" [ref=f5e221]
+                  - cell "Revisada" [ref=f5e222]
+                  - cell [ref=f5e224]:
+                    - link "Revisar" [ref=f5e225] [cursor=pointer]:
+                      - /url: /controladoria/notas/415fe66a-0736-47a9-a745-c4b98e0025db
+                - row [ref=f5e228]:
+                  - cell "VENDA-BACKFILL-6cd036f3·1" [ref=f5e229]:
+                    - text: VENDA-BACKFILL-6cd036f3
+                    - generic [ref=f5e230]: ·1
+                  - cell "—" [ref=f5e231]
+                  - cell "04/05/2026" [ref=f5e232]
+                  - cell [ref=f5e233]
+                  - cell "R$ 6.396,46" [ref=f5e237]
+                  - cell "Revisada" [ref=f5e238]
+                  - cell [ref=f5e240]:
+                    - link "Revisar" [ref=f5e241] [cursor=pointer]:
+                      - /url: /controladoria/notas/94398845-d364-4cff-9041-3e35494986db
+                - row [ref=f5e244]:
+                  - cell "VENDA-BACKFILL-c6b8423b·1" [ref=f5e245]:
+                    - text: VENDA-BACKFILL-c6b8423b
+                    - generic [ref=f5e246]: ·1
+                  - cell "—" [ref=f5e247]
+                  - cell "04/05/2026" [ref=f5e248]
+                  - cell [ref=f5e249]
+                  - cell "R$ 6.451,81" [ref=f5e253]
+                  - cell "Revisada" [ref=f5e254]
+                  - cell [ref=f5e256]:
+                    - link "Revisar" [ref=f5e257] [cursor=pointer]:
+                      - /url: /controladoria/notas/2bf37f1b-88c6-4598-9768-8b862ef4486b
+                - row [ref=f5e260]:
+                  - cell "VENDA-BACKFILL-2ebd0aa1·1" [ref=f5e261]:
+                    - text: VENDA-BACKFILL-2ebd0aa1
+                    - generic [ref=f5e262]: ·1
+                  - cell "—" [ref=f5e263]
+                  - cell "15/04/2026" [ref=f5e264]
+                  - cell [ref=f5e265]
+                  - cell "R$ 5.671,00" [ref=f5e269]
+                  - cell "Revisada" [ref=f5e270]
+                  - cell [ref=f5e272]:
+                    - link "Revisar" [ref=f5e273] [cursor=pointer]:
+                      - /url: /controladoria/notas/ffb7458d-a32d-495c-8c39-6d87515398f2
+                - row [ref=f5e276]:
+                  - cell "VENDA-BACKFILL-c02fcc23·1" [ref=f5e277]:
+                    - text: VENDA-BACKFILL-c02fcc23
+                    - generic [ref=f5e278]: ·1
+                  - cell "—" [ref=f5e279]
+                  - cell "15/04/2026" [ref=f5e280]
+                  - cell [ref=f5e281]
+                  - cell "R$ 5.724,00" [ref=f5e285]
+                  - cell "Revisada" [ref=f5e286]
+                  - cell [ref=f5e288]:
+                    - link "Revisar" [ref=f5e289] [cursor=pointer]:
+                      - /url: /controladoria/notas/478f8591-37a2-447b-8ca9-49fb4da99a85
+                - row [ref=f5e292]:
+                  - cell "NF-DEMO-006·1" [ref=f5e293]:
+                    - text: NF-DEMO-006
+                    - generic [ref=f5e294]: ·1
+                  - cell "Elanco Saúde Animal" [ref=f5e295]
+                  - cell "02/04/2026" [ref=f5e296]
+                  - cell [ref=f5e297]
+                  - cell "R$ 670,00" [ref=f5e301]
+                  - cell "Revisada" [ref=f5e302]
+                  - cell [ref=f5e304]:
+                    - link "Revisar" [ref=f5e305] [cursor=pointer]:
+                      - /url: /controladoria/notas/fdb20f3e-9ef6-4919-be02-6f7427e9fc1d
+                - row [ref=f5e308]:
+                  - cell "217·1" [ref=f5e309]:
+                    - text: "217"
+                    - generic [ref=f5e310]: ·1
+                  - cell "PROTON" [ref=f5e311]
+                  - cell "24/03/2026" [ref=f5e312]
+                  - cell [ref=f5e313]
+                  - cell "R$ 204,60" [ref=f5e317]
+                  - cell "Revisada" [ref=f5e318]
+                  - cell [ref=f5e320]:
+                    - link "Revisar" [ref=f5e321] [cursor=pointer]:
+                      - /url: /controladoria/notas/d7fadf61-ddc6-4541-b54e-8815d0583458
+                - row [ref=f5e324]:
+                  - cell "NF-DEMO-005·1" [ref=f5e325]:
+                    - text: NF-DEMO-005
+                    - generic [ref=f5e326]: ·1
+                  - cell "Zoetis Brasil" [ref=f5e327]
+                  - cell "22/03/2026" [ref=f5e328]
+                  - cell [ref=f5e329]
+                  - cell "R$ 4.780,00" [ref=f5e333]
+                  - cell "Revisada" [ref=f5e334]
+                  - cell [ref=f5e336]:
+                    - link "Revisar" [ref=f5e337] [cursor=pointer]:
+                      - /url: /controladoria/notas/457c8c4e-ecb4-47c1-b136-56d72b279f1e
+                - row [ref=f5e340]:
+                  - cell "VENDA-BACKFILL-1539dd19·1" [ref=f5e341]:
+                    - text: VENDA-BACKFILL-1539dd19
+                    - generic [ref=f5e342]: ·1
+                  - cell "—" [ref=f5e343]
+                  - cell "20/03/2026" [ref=f5e344]
+                  - cell [ref=f5e345]
+                  - cell "R$ 0,00" [ref=f5e349]
+                  - cell "Revisada" [ref=f5e350]
+                  - cell [ref=f5e352]:
+                    - link "Revisar" [ref=f5e353] [cursor=pointer]:
+                      - /url: /controladoria/notas/f97640de-2272-46e4-a996-707e98f26a7e
+                - row [ref=f5e356]:
+                  - cell "NF-DEMO-004·1" [ref=f5e357]:
+                    - text: NF-DEMO-004
+                    - generic [ref=f5e358]: ·1
+                  - cell "Ourofino Saúde Animal" [ref=f5e359]
+                  - cell "12/03/2026" [ref=f5e360]
+                  - cell [ref=f5e361]
+                  - cell "R$ 2.100,00" [ref=f5e365]
+                  - cell "Revisada" [ref=f5e366]
+                  - cell [ref=f5e368]:
+                    - link "Revisar" [ref=f5e369] [cursor=pointer]:
+                      - /url: /controladoria/notas/e2a229d0-8793-4740-827e-7339beb3324b
+                - row [ref=f5e372]:
+                  - cell "VENDA-BACKFILL-7fd21040·1" [ref=f5e373]:
+                    - text: VENDA-BACKFILL-7fd21040
+                    - generic [ref=f5e374]: ·1
+                  - cell "—" [ref=f5e375]
+                  - cell "11/03/2026" [ref=f5e376]
+                  - cell [ref=f5e377]
+                  - cell "R$ 0,00" [ref=f5e381]
+                  - cell "Revisada" [ref=f5e382]
+                  - cell [ref=f5e384]:
+                    - link "Revisar" [ref=f5e385] [cursor=pointer]:
+                      - /url: /controladoria/notas/669061be-0a6d-4d20-b68e-2b18ca077a5a
+                - row [ref=f5e388]:
+                  - cell "VENDA-BACKFILL-16fc6378·1" [ref=f5e389]:
+                    - text: VENDA-BACKFILL-16fc6378
+                    - generic [ref=f5e390]: ·1
+                  - cell "—" [ref=f5e391]
+                  - cell "11/03/2026" [ref=f5e392]
+                  - cell [ref=f5e393]
+                  - cell "R$ 0,00" [ref=f5e397]
+                  - cell "Revisada" [ref=f5e398]
+                  - cell [ref=f5e400]:
+                    - link "Revisar" [ref=f5e401] [cursor=pointer]:
+                      - /url: /controladoria/notas/e691d732-db49-4c07-a616-0ab90a1e1319
+                - row [ref=f5e404]:
+                  - cell "VENDA-BACKFILL-35cf7911·1" [ref=f5e405]:
+                    - text: VENDA-BACKFILL-35cf7911
+                    - generic [ref=f5e406]: ·1
+                  - cell "—" [ref=f5e407]
+                  - cell "08/03/2026" [ref=f5e408]
+                  - cell [ref=f5e409]
+                  - cell "R$ 6.186,42" [ref=f5e413]
+                  - cell "Revisada" [ref=f5e414]
+                  - cell [ref=f5e416]:
+                    - link "Revisar" [ref=f5e417] [cursor=pointer]:
+                      - /url: /controladoria/notas/d55c9f1b-601a-4a16-bf0d-4c1cafb2c8c3
+                - row [ref=f5e420]:
+                  - cell "VENDA-BACKFILL-28c28536·1" [ref=f5e421]:
+                    - text: VENDA-BACKFILL-28c28536
+                    - generic [ref=f5e422]: ·1
+                  - cell "—" [ref=f5e423]
+                  - cell "08/03/2026" [ref=f5e424]
+                  - cell [ref=f5e425]
+                  - cell "R$ 6.088,83" [ref=f5e429]
+                  - cell "Revisada" [ref=f5e430]
+                  - cell [ref=f5e432]:
+                    - link "Revisar" [ref=f5e433] [cursor=pointer]:
+                      - /url: /controladoria/notas/49a66560-d3e5-4b4f-8baa-f9746cf5f88b
+                - row [ref=f5e436]:
+                  - cell "NF-DEMO-003·1" [ref=f5e437]:
+                    - text: NF-DEMO-003
+                    - generic [ref=f5e438]: ·1
+                  - cell "Elanco Saúde Animal" [ref=f5e439]
+                  - cell "05/03/2026" [ref=f5e440]
+                  - cell [ref=f5e441]
+                  - cell "R$ 890,00" [ref=f5e445]
+                  - cell "Revisada" [ref=f5e446]
+                  - cell [ref=f5e448]:
+                    - link "Revisar" [ref=f5e449] [cursor=pointer]:
+                      - /url: /controladoria/notas/2d885e73-3679-4f59-af70-05fdddeb487c
+                - row [ref=f5e452]:
+                  - cell "NF-DEMO-002·1" [ref=f5e453]:
+                    - text: NF-DEMO-002
+                    - generic [ref=f5e454]: ·1
+                  - cell "Zoetis Brasil" [ref=f5e455]
+                  - cell "25/02/2026" [ref=f5e456]
+                  - cell [ref=f5e457]
+                  - cell "R$ 3.450,00" [ref=f5e461]
+                  - cell "Revisada" [ref=f5e462]
+                  - cell [ref=f5e464]:
+                    - link "Revisar" [ref=f5e465] [cursor=pointer]:
+                      - /url: /controladoria/notas/ce5a0385-6485-4945-ae5a-45cc9eff4212
+                - row [ref=f5e468]:
+                  - cell "NF-DEMO-001·1" [ref=f5e469]:
+                    - text: NF-DEMO-001
+                    - generic [ref=f5e470]: ·1
+                  - cell "Ourofino Saúde Animal" [ref=f5e471]
+                  - cell "12/02/2026" [ref=f5e472]
+                  - cell [ref=f5e473]
+                  - cell "R$ 1.200,00" [ref=f5e477]
+                  - cell "Revisada" [ref=f5e478]
+                  - cell [ref=f5e480]:
+                    - link "Revisar" [ref=f5e481] [cursor=pointer]:
+                      - /url: /controladoria/notas/0ffcfb03-c453-434d-bfa8-b51585799cda
+                - row [ref=f5e484]:
+                  - cell "VENDA-BACKFILL-6c4cae99·1" [ref=f5e485]:
+                    - text: VENDA-BACKFILL-6c4cae99
+                    - generic [ref=f5e486]: ·1
+                  - cell "—" [ref=f5e487]
+                  - cell "12/02/2026" [ref=f5e488]
+                  - cell [ref=f5e489]
+                  - cell "R$ 5.952,00" [ref=f5e493]
+                  - cell "Revisada" [ref=f5e494]
+                  - cell [ref=f5e496]:
+                    - link "Revisar" [ref=f5e497] [cursor=pointer]:
+                      - /url: /controladoria/notas/14773868-7114-4d38-aa66-2c92a628148e
+                - row [ref=f5e500]:
+                  - cell "VENDA-BACKFILL-cfd83167·1" [ref=f5e501]:
+                    - text: VENDA-BACKFILL-cfd83167
+                    - generic [ref=f5e502]: ·1
+                  - cell "—" [ref=f5e503]
+                  - cell "12/02/2026" [ref=f5e504]
+                  - cell [ref=f5e505]
+                  - cell "R$ 5.813,33" [ref=f5e509]
+                  - cell "Revisada" [ref=f5e510]
+                  - cell [ref=f5e512]:
+                    - link "Revisar" [ref=f5e513] [cursor=pointer]:
+                      - /url: /controladoria/notas/fa638339-f31e-433a-bf5c-41c75d6466cf
+      - button "Assistente Agraas" [ref=f5e516]
+  - alert [ref=f5e525]

@@ -1,7 +1,8 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Layers, Warehouse, Ship } from "lucide-react";
+import { Layers, Warehouse, Ship } from "lucide-react";
+import { BackLink } from "@/app/components/ui/BackLink";
 
 type Field = {
   id: string; field_code: string; field_name: string | null;
@@ -130,9 +131,7 @@ export default async function TalhaoDetailPage({ params }: { params: Promise<{ i
 
   return (
     <main className="space-y-8">
-      <Link href="/agricultura/talhoes" className="flex items-center gap-2 text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition">
-        <ArrowLeft size={14} /> Talhões
-      </Link>
+      <BackLink href="/agricultura/talhoes" label="Voltar para Talhões" />
 
       {/* ── Header ── */}
       <section className="ag-card-strong overflow-hidden">

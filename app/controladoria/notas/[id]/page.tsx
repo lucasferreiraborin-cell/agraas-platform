@@ -14,9 +14,8 @@ import { funruralValue } from "@/lib/funrural";
 import { PageHeader } from "@/app/components/ui/PageHeader";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { notFound } from "next/navigation";
-import Link from "next/link";
+import { BackLink } from "@/app/components/ui/BackLink";
 import {
-  ArrowLeft,
   Receipt,
   CheckCircle,
   XCircle,
@@ -135,15 +134,7 @@ export default async function NotaDetailPage({
 
   return (
     <main className="space-y-8">
-      <div>
-        <Link
-          href="/controladoria/notas"
-          className="inline-flex items-center gap-1.5 text-sm text-[var(--text-secondary)] hover:text-[var(--primary-hover)]"
-        >
-          <ArrowLeft size={14} />
-          Voltar para Notas
-        </Link>
-      </div>
+      <BackLink href="/controladoria/notas" label="Voltar para Notas" />
 
       <PageHeader
         badge={`Controladoria · NF-e ${nota.number ?? id.slice(0, 8)}`}

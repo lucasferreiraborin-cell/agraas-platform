@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { BackLink } from "@/app/components/ui/BackLink";
 
 type PropertyRow = { id: string; name: string };
 
@@ -90,9 +91,7 @@ export default function OvinosNovoPage() {
   return (
     <main className="space-y-8">
       <section className="ag-card-strong p-8">
-        <Link href="/ovinos" className="mb-6 flex items-center gap-2 text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition">
-          <ArrowLeft size={14} /> Voltar para Ovinos
-        </Link>
+        <BackLink href="/ovinos" label="Voltar para Ovinos" />
         <span className="ag-badge ag-badge-green">Pecuária Expandida</span>
         <h1 className="ag-page-title">Novo animal</h1>
         <p className="mt-3 text-[var(--text-secondary)]">Cadastro individual de ovino ou caprino.</p>

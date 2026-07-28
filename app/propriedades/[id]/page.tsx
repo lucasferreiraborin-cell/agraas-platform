@@ -2,6 +2,7 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getCotacaoArroba } from "@/lib/cotacao";
 import Link from "next/link";
 import TargetArrobasEditor from "@/app/components/TargetArrobasEditor";
+import { BackLink } from "@/app/components/ui/BackLink";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -66,12 +67,7 @@ export default async function PropriedadeDetailPage({ params }: PageProps) {
   if (propertyError || !propertyData) {
     return (
       <main className="space-y-8">
-        <Link
-          href="/propriedades"
-          className="text-sm font-medium text-[var(--primary-hover)] hover:underline"
-        >
-          ← Voltar para Propriedades
-        </Link>
+        <BackLink href="/propriedades" label="Voltar para Propriedades" />
 
         <div className="ag-card-strong p-8">
           <h1 className="text-3xl font-semibold text-[var(--text-primary)]">
@@ -186,12 +182,7 @@ export default async function PropriedadeDetailPage({ params }: PageProps) {
 
   return (
     <main className="space-y-8">
-      <Link
-        href="/propriedades"
-        className="text-sm font-medium text-[var(--primary-hover)] hover:underline"
-      >
-        ← Voltar para Propriedades
-      </Link>
+      <BackLink href="/propriedades" label="Voltar para Propriedades" />
 
       {/* Hero */}
       <section className="ag-card-strong overflow-hidden">

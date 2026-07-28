@@ -1,0 +1,197 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e7]:
+        - paragraph [ref=e8]: Plataforma
+        - heading "Agraas" [level=1] [ref=e9]
+        - paragraph [ref=e10]: Plataforma do agro
+      - generic [ref=e12]:
+        - paragraph [ref=e13]: Status
+        - generic [ref=e15]:
+          - paragraph [ref=e16]: Ambiente ativo
+          - paragraph [ref=e17]: Fase 1 entregue
+      - navigation [ref=e19]:
+        - generic [ref=e20]:
+          - link "Painel" [ref=e21] [cursor=pointer]:
+            - /url: /painel
+          - link "Inteligência" [ref=e27] [cursor=pointer]:
+            - /url: /inteligencia
+          - link "Animais" [ref=e38] [cursor=pointer]:
+            - /url: /animais
+          - link "Lotes" [ref=e45] [cursor=pointer]:
+            - /url: /lotes
+          - link "Fiscal" [ref=e52] [cursor=pointer]:
+            - /url: /fiscal
+          - link "Financeiro" [ref=e59] [cursor=pointer]:
+            - /url: /financeiro
+          - link "Alertas" [ref=e64] [cursor=pointer]:
+            - /url: /alertas
+        - button "Avançado" [ref=e71]
+      - generic [ref=e76]:
+        - paragraph [ref=e77]: Visão
+        - paragraph [ref=e78]: Rastreabilidade, performance produtiva, identidade digital animal e inteligência operacional para a cadeia pecuária.
+        - generic [ref=e79]:
+          - generic [ref=e80]:
+            - paragraph [ref=e81]: Stack
+            - paragraph [ref=e82]: Next + Supabase
+          - generic [ref=e83]:
+            - paragraph [ref=e84]: Fase
+            - paragraph [ref=e85]: Fase 1 entregue
+    - generic [ref=e86]:
+      - banner [ref=e87]:
+        - generic [ref=e88]:
+          - generic [ref=e90]:
+            - paragraph [ref=e91]: Plataforma Agraas
+            - heading "Infraestrutura digital da pecuária bovina" [level=2] [ref=e92]
+          - generic [ref=e93]:
+            - generic "Score Agraas v3 ancorado em Embrapa Documento Técnico 237 (Costa et al., 2018) — Plataforma +Precoce. Primeiro piloto em tombamento real." [ref=e94]: v1.0 · Score Engine Embrapa
+            - generic [ref=e98]: lucas@agraas.com.br
+            - button "Sair" [ref=e99]
+      - main [ref=e100]:
+        - main [ref=e102]:
+          - generic [ref=e104]:
+            - generic [ref=e105]:
+              - generic [ref=e106]: Módulo Fiscal
+              - heading "Gestão fiscal de NF-e" [level=1] [ref=e107]
+              - paragraph [ref=e108]: Importe XMLs de notas fiscais, valide NCMs e CFOPs automaticamente, analise riscos com IA e aplique compras ao estoque de insumos.
+              - generic [ref=e109]:
+                - link "Relatório Fiscal" [ref=e110] [cursor=pointer]:
+                  - /url: /fiscal/relatorio
+                - link "Ver estoque" [ref=e111] [cursor=pointer]:
+                  - /url: /insumos
+            - generic [ref=e113]:
+              - generic [ref=e114]:
+                - paragraph [ref=e119]: Notas importadas
+                - paragraph [ref=e120]: "6"
+                - paragraph [ref=e121]: total no período
+              - generic [ref=e122]:
+                - paragraph [ref=e126]: Com alerta
+                - paragraph [ref=e127]: "0"
+                - paragraph [ref=e128]: nenhum alerta ativo
+              - generic [ref=e129]:
+                - paragraph [ref=e134]: Validadas
+                - paragraph [ref=e135]: "6"
+                - paragraph [ref=e136]: aplicadas ao estoque
+              - generic [ref=e137]:
+                - paragraph [ref=e141]: Valor total
+                - paragraph [ref=e142]: R$ 13.090,00
+                - paragraph [ref=e143]: soma de todas as notas
+          - generic [ref=e144]:
+            - generic [ref=e145]:
+              - heading "Importar NF-e" [level=2] [ref=e146]
+              - paragraph [ref=e147]: Arraste o arquivo XML ou clique para selecionar
+            - generic [ref=e154] [cursor=pointer]:
+              - paragraph [ref=e155]: Arraste o XML ou PDF da NF-e aqui
+              - paragraph [ref=e156]: ou clique para selecionar • aceita .xml e .pdf
+          - generic [ref=e157]:
+            - generic [ref=e159]:
+              - heading "Notas fiscais" [level=2] [ref=e160]
+              - paragraph [ref=e161]: 6 notas importadas
+            - table [ref=e163]:
+              - rowgroup [ref=e164]:
+                - row [ref=e165]:
+                  - columnheader "Número / Série" [ref=e166]
+                  - columnheader "Emitente" [ref=e167]
+                  - columnheader "Data emissão" [ref=e168]
+                  - columnheader "Valor total" [ref=e169]
+                  - columnheader "Alertas" [ref=e170]
+                  - columnheader "Status" [ref=e171]
+                  - columnheader [ref=e172]
+              - rowgroup [ref=e173]:
+                - row [ref=e174]:
+                  - cell "NF-DEMO-002-1" [ref=e175]:
+                    - text: NF-DEMO-002
+                    - generic [ref=e176]: "-1"
+                  - cell "Zoetis Brasil" [ref=e177]
+                  - cell "25/02/2026" [ref=e178]
+                  - cell "R$3.450,00" [ref=e179]
+                  - cell "OK" [ref=e180]
+                  - cell "Validada" [ref=e182]
+                  - cell [ref=e184]:
+                    - generic [ref=e185]:
+                      - link "Ver →" [ref=e186] [cursor=pointer]:
+                        - /url: /fiscal/ce5a0385-6485-4945-ae5a-45cc9eff4212
+                      - button "Excluir nota" [ref=e187]
+                - row [ref=e191]:
+                  - cell "NF-DEMO-003-1" [ref=e192]:
+                    - text: NF-DEMO-003
+                    - generic [ref=e193]: "-1"
+                  - cell "Elanco Saúde Animal" [ref=e194]
+                  - cell "05/03/2026" [ref=e195]
+                  - cell "R$890,00" [ref=e196]
+                  - cell "OK" [ref=e197]
+                  - cell "Validada" [ref=e199]
+                  - cell [ref=e201]:
+                    - generic [ref=e202]:
+                      - link "Ver →" [ref=e203] [cursor=pointer]:
+                        - /url: /fiscal/2d885e73-3679-4f59-af70-05fdddeb487c
+                      - button "Excluir nota" [ref=e204]
+                - row [ref=e208]:
+                  - cell "NF-DEMO-004-1" [ref=e209]:
+                    - text: NF-DEMO-004
+                    - generic [ref=e210]: "-1"
+                  - cell "Ourofino Saúde Animal" [ref=e211]
+                  - cell "12/03/2026" [ref=e212]
+                  - cell "R$2.100,00" [ref=e213]
+                  - cell "OK" [ref=e214]
+                  - cell "Validada" [ref=e216]
+                  - cell [ref=e218]:
+                    - generic [ref=e219]:
+                      - link "Ver →" [ref=e220] [cursor=pointer]:
+                        - /url: /fiscal/e2a229d0-8793-4740-827e-7339beb3324b
+                      - button "Excluir nota" [ref=e221]
+                - row [ref=e225]:
+                  - cell "NF-DEMO-005-1" [ref=e226]:
+                    - text: NF-DEMO-005
+                    - generic [ref=e227]: "-1"
+                  - cell "Zoetis Brasil" [ref=e228]
+                  - cell "22/03/2026" [ref=e229]
+                  - cell "R$4.780,00" [ref=e230]
+                  - cell "OK" [ref=e231]
+                  - cell "Validada" [ref=e233]
+                  - cell [ref=e235]:
+                    - generic [ref=e236]:
+                      - link "Ver →" [ref=e237] [cursor=pointer]:
+                        - /url: /fiscal/457c8c4e-ecb4-47c1-b136-56d72b279f1e
+                      - button "Excluir nota" [ref=e238]
+                - row [ref=e242]:
+                  - cell "NF-DEMO-006-1" [ref=e243]:
+                    - text: NF-DEMO-006
+                    - generic [ref=e244]: "-1"
+                  - cell "Elanco Saúde Animal" [ref=e245]
+                  - cell "02/04/2026" [ref=e246]
+                  - cell "R$670,00" [ref=e247]
+                  - cell "OK" [ref=e248]
+                  - cell "Validada" [ref=e250]
+                  - cell [ref=e252]:
+                    - generic [ref=e253]:
+                      - link "Ver →" [ref=e254] [cursor=pointer]:
+                        - /url: /fiscal/fdb20f3e-9ef6-4919-be02-6f7427e9fc1d
+                      - button "Excluir nota" [ref=e255]
+                - row [ref=e259]:
+                  - cell "NF-DEMO-001-1" [ref=e260]:
+                    - text: NF-DEMO-001
+                    - generic [ref=e261]: "-1"
+                  - cell "Ourofino Saúde Animal" [ref=e262]
+                  - cell "12/02/2026" [ref=e263]
+                  - cell "R$1.200,00" [ref=e264]
+                  - cell "OK" [ref=e265]
+                  - cell "Validada" [ref=e267]
+                  - cell [ref=e269]:
+                    - generic [ref=e270]:
+                      - link "Ver →" [ref=e271] [cursor=pointer]:
+                        - /url: /fiscal/0ffcfb03-c453-434d-bfa8-b51585799cda
+                      - button "Excluir nota" [ref=e272]
+      - generic [ref=e276]:
+        - generic [ref=e277]:
+          - link "Criar lote exportação":
+            - /url: /lotes/novo
+          - link "Adicionar animal":
+            - /url: /animais/novo
+          - link "Registrar aplicação":
+            - /url: /aplicacoes
+          - link "Registrar pesagem":
+            - /url: /pesagens
+        - button "Abrir menu de ações rápidas" [ref=e278]
+      - button "Assistente Agraas" [ref=e280]
+  - alert [ref=e289]

@@ -1,16 +1,15 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { createSupabaseServiceClient } from "@/lib/supabase-service";
 import PublicShell from "@/app/components/ui/PublicShell";
 import ScoreRing from "@/app/components/ui/ScoreRing";
+import { BackLink } from "@/app/components/ui/BackLink";
 import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
 import { HALAL_ENABLED } from "@/lib/feature-flags";
 import { FadeIn } from "@/app/components/ui/Motion";
 import OfferPanel from "@/app/components/marketplace/OfferPanel";
 import {
-  ArrowLeft,
   MapPin,
   Package,
   Calendar,
@@ -175,13 +174,7 @@ export default async function ListingDetailPage({
   return (
     <PublicShell>
       <div className="mx-auto max-w-[1200px] px-6 py-8 lg:px-10 lg:py-12">
-        <Link
-          href="/marketplace"
-          className="inline-flex items-center gap-1.5 text-[.8125rem] font-medium text-[var(--text-muted)] transition hover:text-[var(--primary)]"
-        >
-          <ArrowLeft size={13} />
-          Voltar ao marketplace
-        </Link>
+        <BackLink href="/marketplace" label="Voltar ao marketplace" />
 
         <div className="mt-6 grid gap-10 lg:grid-cols-[1.6fr_1fr] lg:gap-14">
           {/* ─── LEFT: main content ─────────────────────────────────── */}

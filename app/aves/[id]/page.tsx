@@ -1,7 +1,7 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, AlertTriangle, Calendar, MapPin, ShieldCheck } from "lucide-react";
+import { AlertTriangle, Calendar, MapPin, ShieldCheck } from "lucide-react";
+import { BackLink } from "@/app/components/ui/BackLink";
 import PoultryEventForm from "@/app/components/PoultryEventForm";
 import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
 
@@ -131,9 +131,7 @@ export default async function AveDetailPage({ params }: { params: Promise<{ id: 
 
   return (
     <main className="space-y-8">
-      <Link href="/aves" className="flex items-center gap-2 text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition">
-        <ArrowLeft size={14} /> Aves & Frangos
-      </Link>
+      <BackLink href="/aves" label="Voltar para Aves" />
 
       {/* ── Header ── */}
       <section className="ag-card-strong overflow-hidden">

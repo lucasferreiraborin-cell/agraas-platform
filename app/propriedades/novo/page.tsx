@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { BackLink } from "@/app/components/ui/BackLink";
 import { showToast } from "@/app/components/Toast";
 
 const UF_LIST = [
@@ -98,11 +98,7 @@ export default function NovaPropriedadePage() {
   return (
     <main className="min-h-screen bg-[#F5F7F4] text-[#1F2A1F]">
       <div className="mx-auto max-w-3xl px-6 py-8">
-        <div className="mb-6">
-          <Link href="/propriedades" className="text-sm text-[#4A7C3A] hover:underline">
-            ← Voltar para Propriedades
-          </Link>
-        </div>
+        <BackLink href="/propriedades" label="Voltar para Propriedades" />
 
         <header className="mb-8">
           <h1 className="text-3xl font-semibold tracking-tight">Nova propriedade</h1>

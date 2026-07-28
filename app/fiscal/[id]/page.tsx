@@ -1,8 +1,8 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import Link from "next/link";
 import { Building2, Calendar, DollarSign, ShieldCheck, AlertTriangle, Info } from "lucide-react";
 import FiscalNoteActions from "@/app/components/FiscalNoteActions";
 import { KpiCard } from "@/app/components/ui/KpiCard";
+import { BackLink } from "@/app/components/ui/BackLink";
 
 type PageProps = { params: Promise<{ id: string }> };
 
@@ -26,7 +26,7 @@ export default async function FiscalNotePage({ params }: PageProps) {
   if (!note) {
     return (
       <main className="space-y-4">
-        <Link href="/fiscal" className="text-sm text-[var(--primary)] hover:underline">← Voltar</Link>
+        <BackLink href="/fiscal" label="Voltar para Fiscal" />
         <p className="text-[var(--text-secondary)]">Nota não encontrada.</p>
       </main>
     );
@@ -58,7 +58,7 @@ export default async function FiscalNotePage({ params }: PageProps) {
           {/* Left */}
           <div className="relative p-8 lg:p-10">
             <div className="pointer-events-none absolute right-0 top-0 h-48 w-48 rounded-full bg-[radial-gradient(circle,rgba(122,168,76,0.12)_0%,rgba(122,168,76,0)_70%)]" />
-            <Link href="/fiscal" className="text-sm text-[var(--primary)] hover:underline">← Fiscal</Link>
+            <BackLink href="/fiscal" label="Voltar para Fiscal" />
             <h1 className="ag-page-title">NF-e nº {note.numero_nota}</h1>
             <p className="mt-1 text-[var(--text-secondary)]">
               Série {note.serie}

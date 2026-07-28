@@ -1,7 +1,7 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Calendar, Weight, ShieldCheck, Clock, Syringe, Activity } from "lucide-react";
+import { Calendar, Weight, ShieldCheck, Clock, Syringe, Activity } from "lucide-react";
+import { BackLink } from "@/app/components/ui/BackLink";
 import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
 
 type Animal = {
@@ -160,9 +160,7 @@ export default async function OvinoDetailPage({ params }: { params: Promise<{ id
 
   return (
     <main className="space-y-8">
-      <Link href="/ovinos" className="flex items-center gap-2 text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition">
-        <ArrowLeft size={14} /> Ovinos & Caprinos
-      </Link>
+      <BackLink href="/ovinos" label="Voltar para Ovinos" />
 
       {/* ── Header ── */}
       <section className="ag-card-strong overflow-hidden">

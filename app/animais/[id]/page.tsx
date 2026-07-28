@@ -1,5 +1,6 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import Link from "next/link";
+import { BackLink } from "@/app/components/ui/BackLink";
 import {
   getPassportConfidenceText,
   getPassportClassification,
@@ -294,12 +295,7 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
   if (animalError || !animalData) {
     return (
       <main className="space-y-8">
-        <Link
-          href="/animais"
-          className="text-sm font-medium text-[var(--primary-hover)] hover:underline"
-        >
-          ← Voltar para Animais
-        </Link>
+        <BackLink href="/animais" label="Voltar para Animais" />
 
         <div className="ag-card-strong p-8">
           <h1 className="text-3xl font-semibold text-[var(--text-primary)]">
@@ -461,12 +457,7 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
 
   return (
     <main className="space-y-8">
-      <Link
-        href="/animais"
-        className="text-sm font-medium text-[var(--primary-hover)] hover:underline"
-      >
-        ← Voltar para Animais
-      </Link>
+      <BackLink href="/animais" label="Voltar para Animais" />
 
       <section className="ag-card-strong overflow-hidden">
         <div className="grid xl:grid-cols-[1.08fr_0.92fr]">
