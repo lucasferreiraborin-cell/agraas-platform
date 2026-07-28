@@ -49,3 +49,11 @@ next-env.d.ts
 
 # supabase cli temp + linked project state
 supabase/.temp/
+
+# Playwright MCP artifacts (browser screenshots/snapshots)
+.playwright-mcp/
+/lp-full.png
+/painel.png
+/controladoria.png
+/notas.png
+/fiscal.png
