@@ -22,6 +22,7 @@ const colorMap: Record<string, { bg: string; border: string; text: string; hover
 export default function QuickActions() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [assistantOpen, setAssistantOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   // ⚠️ Rules of Hooks: todos os hooks ANTES de qualquer return condicional.
@@ -35,16 +36,31 @@ export default function QuickActions() {
     return () => document.removeEventListener("mousedown", onMouseDown);
   }, [open]);
 
+  // Empilhado sobre o AgroAssistant (mesma coluna, right-6) — quando o
+  // painel de chat (380px) abre, o FAB de ações rápidas some pra não colidir.
+  useEffect(() => {
+    function onAssistantToggle(e: Event) {
+      const detail = (e as CustomEvent<{ open: boolean }>).detail;
+      setAssistantOpen(detail.open);
+      if (detail.open) setOpen(false);
+    }
+    window.addEventListener("agraas:assistant-toggle", onAssistantToggle);
+    return () => window.removeEventListener("agraas:assistant-toggle", onAssistantToggle);
+  }, []);
+
   if (
     pathname.startsWith("/comprador") ||
     pathname.startsWith("/banco") ||
     pathname.startsWith("/contador") ||
-    pathname.startsWith("/controladoria")
+    pathname.startsWith("/controladoria") ||
+    pathname.startsWith("/passaporte")
   )
     return null;
 
+  if (assistantOpen) return null;
+
   return (
-    <div ref={ref} className="fixed bottom-6 right-[92px] z-50 flex flex-col items-end gap-2">
+    <div ref={ref} className="fixed bottom-24 right-6 z-50 flex flex-col items-end gap-2">
       {/* Action items */}
       <div className="flex flex-col items-end gap-2 pb-1">
         {actions.map((action, i) => {

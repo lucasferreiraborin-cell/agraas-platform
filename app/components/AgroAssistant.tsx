@@ -27,8 +27,15 @@ export default function AgroAssistant() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
-  // Não renderiza na página do comprador
-  if (pathname.startsWith("/comprador")) return null;
+  // Avisa o QuickActions (FAB de ações rápidas) quando o chat abre/fecha —
+  // evita os dois flutuantes se sobreporem quando o painel de 380px abre.
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent("agraas:assistant-toggle", { detail: { open } }));
+  }, [open]);
+
+  // Não renderiza na página do comprador, nem no passaporte público (o
+  // certificado é uma peça pública/QR — sem chrome interno de admin).
+  if (pathname.startsWith("/comprador") || pathname.startsWith("/passaporte")) return null;
 
   async function send() {
     if (!input.trim() || loading) return;
