@@ -31,8 +31,11 @@ export default function PersonaShell({
   const SidebarNav = getSidebar(effectivePersona);
 
   return (
+    // Overlay full-screen: cobre o chrome global (sidebar verde + header + FABs)
+    // do root layout nas rotas de persona, eliminando o "double sidebar" sem
+    // tocar no middleware/auth. z alto para ficar acima de qualquer FAB global.
     <div
-      className="flex h-screen"
+      className="fixed inset-0 z-[60] flex"
       style={{ ...themeToCssVars(theme), backgroundColor: theme.mainBg }}
     >
       <aside
