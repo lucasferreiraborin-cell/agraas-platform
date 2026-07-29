@@ -13,6 +13,13 @@ import {
   tRfidDevice,
   fmtDateI18n,
 } from "@/lib/passport-i18n";
+import dynamic from "next/dynamic";
+
+// Mapa da propriedade — Leaflet precisa de window, então carrega client-only.
+const PassportPropertyMap = dynamic(() => import("./PassportPropertyMap"), {
+  ssr: false,
+  loading: () => <div className="h-full w-full animate-pulse bg-[#eef1ee]" />,
+});
 
 type Cert = {
   certification_name: string | null;
@@ -228,13 +235,36 @@ export default function PublicPassportView({
             </div>
           )}
 
-          {property && (
-            <div className="border-t border-[#e5e7eb] px-8 py-4">
-              <span className="text-xs text-[#9ca3af]">{t(lang, "farmOrigin")}: </span>
-              <span className="text-sm font-semibold text-[#1a1a2e]">{property.name}</span>
-            </div>
-          )}
         </section>
+
+        {/* ── Localização da propriedade (mapa Carto) ────────────────────── */}
+        {property && property.lat != null && property.lng != null && (
+          <section className="overflow-hidden rounded-3xl bg-white shadow-sm border border-[#e5e7eb]">
+            <div className="px-6 pt-5 pb-3">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#9ca3af]">
+                {t(lang, "farmOrigin")}
+              </p>
+              <p className="mt-1 text-sm font-semibold text-[#1a1a2e]">
+                {property.name}
+                {(property.city || property.state) && (
+                  <span className="font-normal text-[#6b7280]">
+                    {" · "}
+                    {[property.city, property.state].filter(Boolean).join("/")}
+                  </span>
+                )}
+              </p>
+            </div>
+            <div className="h-56 w-full" dir="ltr">
+              <PassportPropertyMap
+                lat={property.lat}
+                lng={property.lng}
+                name={property.name}
+                city={property.city}
+                state={property.state}
+              />
+            </div>
+          </section>
+        )}
 
         {/* ── Score ──────────────────────────────────────────────────────── */}
         <section className="rounded-3xl bg-white p-6 shadow-sm border border-[#e5e7eb]">
