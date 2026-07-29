@@ -25,6 +25,10 @@ type PropertyRow = {
   lat: number | null;
   lng: number | null;
   client_id: string | null;
+  city: string | null;
+  nirf: string | null;
+  area_hectares: number | null;
+  area_total_hectares: number | null;
 };
 
 export default function PropriedadesPage() {
@@ -44,7 +48,7 @@ export default function PropriedadesPage() {
           supabase
             .from("properties")
             .select(
-              "id, name, code, region, state, status, profile, x, y, lat, lng, client_id"
+              "id, name, code, region, state, status, profile, x, y, lat, lng, client_id, city, nirf, area_hectares, area_total_hectares"
             )
             .order("name"),
           supabase.from("animals").select("id, current_property_id"),
@@ -470,6 +474,47 @@ export default function PropriedadesPage() {
                           style={{ width: `${concentrationIndex}%` }}
                         />
                       </div>
+                    </div>
+
+                    {/* Documentação oficial da propriedade */}
+                    <div className="mt-5 rounded-2xl border border-[var(--border)] bg-white px-4 py-4">
+                      <p className="text-xs uppercase tracking-[0.12em] text-[var(--text-muted)]">
+                        Documentação oficial
+                      </p>
+                      <dl className="mt-3 space-y-2 text-sm">
+                        <div className="flex items-center justify-between gap-3">
+                          <dt className="text-[var(--text-muted)]">NIRF (Receita Federal)</dt>
+                          <dd className="font-medium text-[var(--text-primary)]">
+                            {selectedProperty.nirf ?? "—"}
+                          </dd>
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <dt className="text-[var(--text-muted)]">Área</dt>
+                          <dd className="font-medium text-[var(--text-primary)]">
+                            {selectedProperty.area_hectares != null
+                              ? `${Number(selectedProperty.area_hectares).toLocaleString("pt-BR")} ha`
+                              : "—"}
+                          </dd>
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <dt className="text-[var(--text-muted)]">Município / UF</dt>
+                          <dd className="font-medium text-[var(--text-primary)]">
+                            {[selectedProperty.city, selectedProperty.state].filter(Boolean).join(" / ") || "—"}
+                          </dd>
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <dt className="text-[var(--text-muted)]">Coordenadas</dt>
+                          <dd className="font-medium text-[var(--text-primary)]" dir="ltr">
+                            {selectedProperty.lat != null && selectedProperty.lng != null
+                              ? `${Number(selectedProperty.lat).toFixed(4)}, ${Number(selectedProperty.lng).toFixed(4)}`
+                              : "—"}
+                          </dd>
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <dt className="text-[var(--text-muted)]">CAR / Matrícula</dt>
+                          <dd className="text-xs text-[var(--text-muted)]">a integrar</dd>
+                        </div>
+                      </dl>
                     </div>
 
                     <div className="mt-5">
