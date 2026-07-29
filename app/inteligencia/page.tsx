@@ -2,8 +2,11 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import Link from "next/link";
 import {
   calculateDailyGain,
-  getProductiveRiskLabel,
-  getRiskBadgeClass,
+  computeGmdTrajectory,
+  assessLifecycleRisk,
+  phaseLabel,
+  type LifecycleFlag,
+  type LifecyclePhase,
 } from "@/lib/agraas-analytics";
 import { KpiCard } from "@/app/components/ui/KpiCard";
 
@@ -14,6 +17,7 @@ type AnimalRow = {
   birth_date: string | null;
   breed: string | null;
   status: string | null;
+  conta_contabil: string | null;
 };
 
 type WeightRow = {
@@ -55,7 +59,12 @@ type InsightRow = {
   gmd: number | null;
   age_months: number | null;
   score: number;
-  risk_label: string;
+  // Leitura honesta de trajetória (v1) — referência técnica, não previsão.
+  phase: LifecyclePhase;
+  lifecycle_flag: LifecycleFlag;
+  lifecycle_reason: string;
+  avg_gmd: number | null;
+  latest_gmd: number | null;
 };
 
 export default async function InteligenciaPage() {
@@ -69,7 +78,9 @@ export default async function InteligenciaPage() {
   ] = await Promise.all([
     supabase
       .from("animals")
-      .select("id, internal_code, agraas_id, birth_date, breed, status")
+      .select(
+        "id, internal_code, agraas_id, birth_date, breed, status, conta_contabil"
+      )
       .order("internal_code", { ascending: true }),
 
     supabase
@@ -92,6 +103,8 @@ export default async function InteligenciaPage() {
   const events = (eventsData ?? []) as EventRow[];
   const passports = (passportsData ?? []) as PassportRow[];
 
+  // Todas as pesagens de cada animal (não só as 2 últimas) — necessário para
+  // computar a trajetória de GMD por intervalo.
   const weightsByAnimal = new Map<string, WeightRow[]>();
   for (const row of weights) {
     const list = weightsByAnimal.get(row.animal_id) ?? [];
@@ -122,6 +135,8 @@ export default async function InteligenciaPage() {
   }
 
   const insights: InsightRow[] = animals.map((animal) => {
+    // weights vem ordenado desc; [0] = mais recente. A trajetória reordena
+    // internamente por data crescente, então a ordem aqui não importa.
     const animalWeights = weightsByAnimal.get(animal.id) ?? [];
     const current = animalWeights[0];
     const previous = animalWeights[1];
@@ -147,6 +162,7 @@ export default async function InteligenciaPage() {
     const scoreJson = passportMap.get(animal.id);
     const score     = Number(scoreJson?.total_score ?? 0);
 
+    // GMD snapshot (2 últimas pesagens) — mantido para "Maior ganho diário".
     const gmd = calculateDailyGain(
       currentWeight,
       previousWeight,
@@ -154,7 +170,17 @@ export default async function InteligenciaPage() {
       previous?.weighing_date
     );
 
-    const riskLabel = getProductiveRiskLabel(delta, gmd);
+    // Trajetória honesta de GMD por intervalo + leitura de risco por fase.
+    const trajectory = computeGmdTrajectory(
+      animalWeights
+        .filter((w) => w.weighing_date)
+        .map((w) => ({ weight: Number(w.weight), date: w.weighing_date as string }))
+    );
+    const assessment = assessLifecycleRisk({
+      trajectory,
+      ageMonths,
+      contaContabil: animal.conta_contabil,
+    });
 
     return {
       animal_id: animal.id,
@@ -171,7 +197,11 @@ export default async function InteligenciaPage() {
       gmd,
       age_months: ageMonths,
       score: Number(score),
-      risk_label: riskLabel,
+      phase: assessment.phase,
+      lifecycle_flag: assessment.flag,
+      lifecycle_reason: assessment.reason,
+      avg_gmd: assessment.avgGmd,
+      latest_gmd: assessment.latestGmd,
     };
   });
 
@@ -185,12 +215,11 @@ export default async function InteligenciaPage() {
     .sort((a, b) => Number(b.gmd) - Number(a.gmd))
     .slice(0, 5);
 
-  const risks = [...insights]
-    .filter(
-      (item) => item.risk_label === "Risco" || item.risk_label === "Atenção"
-    )
-    .sort((a, b) => (a.gmd ?? 0) - (b.gmd ?? 0))
-    .slice(0, 6);
+  // Somente animais com o gatilho honesto de "risco de atraso no ciclo"
+  // (recria com trajetória sustentada abaixo da faixa de referência).
+  const lifecycleRisks = insights
+    .filter((item) => item.lifecycle_flag === "risco_atraso")
+    .sort((a, b) => (a.avg_gmd ?? 0) - (b.avg_gmd ?? 0));
 
   const bestScore = [...insights].sort((a, b) => b.score - a.score).slice(0, 5);
 
@@ -207,7 +236,7 @@ export default async function InteligenciaPage() {
 
             <p className="mt-5 max-w-3xl text-[1.05rem] leading-8 text-[var(--text-secondary)]">
               A Agraas transforma dados operacionais do rebanho em sinais executivos:
-              evolução, risco, consistência e qualidade da base.
+              evolução, ganho por fase, consistência e qualidade da base.
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
@@ -231,9 +260,9 @@ export default async function InteligenciaPage() {
                 sub="base já com leitura de ganho diário"
               />
               <KpiCard
-                label="Riscos detectados"
-                value={risks.length}
-                sub="animais com atenção ou risco"
+                label="Risco de atraso no ciclo"
+                value={lifecycleRisks.length}
+                sub="recria com trajetória abaixo da referência"
               />
               <KpiCard
                 label="Top evolução"
@@ -268,23 +297,27 @@ export default async function InteligenciaPage() {
       <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
         <div className="ag-card p-8">
           <div>
-            <h2 className="ag-section-title">Riscos produtivos</h2>
+            <h2 className="ag-section-title">Risco de atraso no ciclo</h2>
             <p className="ag-section-subtitle">
-              Animais com sinais de atenção ou risco na leitura produtiva.
+              Sinal técnico de recria com trajetória de ganho abaixo da faixa de
+              referência Embrapa em pesagens consecutivas. Não é previsão nem
+              veredito — é um gatilho para investigar a causa.
             </p>
           </div>
 
           <div className="mt-6 space-y-4">
-            {risks.length === 0 ? (
-              <div className="rounded-3xl bg-[var(--surface-soft)] p-6 text-sm text-[var(--text-muted)]">
-                Nenhum risco relevante detectado.
+            {lifecycleRisks.length === 0 ? (
+              <div className="rounded-3xl border border-[rgba(93,156,68,0.24)] bg-[var(--primary-soft)] p-6 text-sm leading-6 text-[var(--text-secondary)]">
+                Nenhum animal em recria com trajetória de ganho abaixo da faixa de
+                referência. A leitura cobre apenas animais com pelo menos dois
+                intervalos confiáveis de pesagem (≥ 21 dias cada).
               </div>
             ) : (
-              risks.map((item) => (
+              lifecycleRisks.map((item) => (
                 <Link
                   key={item.animal_id}
                   href={`/animais/${item.animal_id}`}
-                  className="block rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5 transition hover:border-[rgba(93,156,68,0.24)] hover:bg-[var(--primary-soft)]"
+                  className="block rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5 transition hover:border-[rgba(217,163,67,0.35)] hover:bg-[rgba(217,163,67,0.08)]"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div>
@@ -292,13 +325,17 @@ export default async function InteligenciaPage() {
                         {item.internal_code}
                       </p>
                       <p className="mt-1 text-sm text-[var(--text-muted)]">
-                        {item.agraas_id}
+                        {item.agraas_id} · {phaseLabel(item.phase)}
                       </p>
                     </div>
-                    <span className={getRiskBadgeClass(item.risk_label)}>
-                      {item.risk_label}
+                    <span className="inline-flex shrink-0 rounded-full bg-[rgba(217,163,67,0.14)] px-3 py-1.5 text-xs font-semibold text-[var(--warning)]">
+                      Risco de atraso no ciclo
                     </span>
                   </div>
+
+                  <p className="mt-3 text-sm leading-6 text-[var(--text-secondary)]">
+                    {item.lifecycle_reason}
+                  </p>
 
                   <div className="mt-4 grid gap-3 sm:grid-cols-3">
                     <MiniInfo
@@ -308,21 +345,35 @@ export default async function InteligenciaPage() {
                       }
                     />
                     <MiniInfo
-                      label="Variação"
+                      label="GMD médio"
                       value={
-                        item.delta !== null
-                          ? `${item.delta > 0 ? "+" : ""}${item.delta} kg`
+                        item.avg_gmd !== null
+                          ? `${item.avg_gmd} kg/dia`
                           : "-"
                       }
                     />
                     <MiniInfo
-                      label="GMD"
-                      value={item.gmd !== null ? `${item.gmd} kg/dia` : "-"}
+                      label="GMD recente"
+                      value={
+                        item.latest_gmd !== null
+                          ? `${item.latest_gmd} kg/dia`
+                          : "-"
+                      }
                     />
                   </div>
                 </Link>
               ))
             )}
+
+            <p className="rounded-2xl bg-[var(--surface-soft)] p-4 text-xs leading-5 text-[var(--text-muted)]">
+              Metodologia: referência técnica Embrapa Gado de Corte por fase
+              (cria / recria / engorda), sazonal na recria. Um GMD baixo isolado —
+              por exemplo na seca — não condena o animal: o ganho compensatório pode
+              recuperar na estação das águas. Antes de qualquer decisão de manejo,
+              investigue verminose, suplementação mineral, qualidade do pasto e
+              disputa de cocho. Faixas de referência pendentes de validação
+              científica (Renata / Franzon).
+            </p>
           </div>
         </div>
 
