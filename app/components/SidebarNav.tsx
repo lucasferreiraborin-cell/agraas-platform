@@ -117,6 +117,7 @@ const ADVANCED_GROUPS: NavGroup[] = [
       { href: "/producao",         label: "Produção",           icon: BarChart3 },
       { href: "/relatorios",       label: "Relatórios",         icon: FileText },
       { href: "/certificacoes",    label: "Certificações",      icon: BadgeCheck },
+      { href: "/gta",              label: "GTA",                icon: Truck },
       { href: "/cadeia",           label: "Cadeia",             icon: Link2 },
       { href: "/historico",        label: "Histórico",          icon: Clock },
     ],
