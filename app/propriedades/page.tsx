@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import BrazilMapWrapper from "@/app/components/BrazilMapWrapper";
+import { Globe, Beef, Package, BarChart3, Tractor } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 type ClientRow = {
   id: string;
@@ -312,25 +314,25 @@ export default function PropriedadesPage() {
         <KpiCard
           label="Propriedades"
           value={loading ? "—" : filteredProperties.length}
-          icon="🌎"
+          Icon={Globe}
           subtitle="unidades cadastradas"
         />
         <KpiCard
           label="Animais"
           value={loading ? "—" : totalAnimals}
-          icon="🐂"
+          Icon={Beef}
           subtitle="ativos distribuídos"
         />
         <KpiCard
           label="Lotes"
           value={loading ? "—" : totalLots}
-          icon="📦"
+          Icon={Package}
           subtitle="grupos produtivos"
         />
         <KpiCard
           label="Média por unidade"
           value={loading ? "—" : averageAnimals}
-          icon="📊"
+          Icon={BarChart3}
           subtitle="animais por propriedade"
         />
       </section>
@@ -428,7 +430,7 @@ export default function PropriedadesPage() {
                   <div className="mt-6 rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-6">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-2xl shadow-[var(--shadow-soft)]">
-                        🏡
+                        <Tractor size={28} className="text-[var(--primary)]" />
                       </div>
 
                       <span className="ag-badge ag-badge-green">
@@ -631,7 +633,7 @@ export default function PropriedadesPage() {
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-2xl shadow-[var(--shadow-soft)]">
-                      🏡
+                      <Tractor size={28} className="text-[var(--primary)]" />
                     </div>
 
                     <span className={getStatusBadgeClass(property.status)}>
@@ -748,7 +750,7 @@ function WelcomeEmpty() {
     <div className="ag-card-strong overflow-hidden">
       <div className="flex flex-col items-center px-8 py-16 text-center">
         <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-[var(--primary-soft)] text-4xl shadow-[var(--shadow-soft)]">
-          🏡
+          <Tractor size={28} className="text-[var(--primary)]" />
         </div>
 
         <div className="ag-badge ag-badge-green mt-8">Bem-vindo à Agraas</div>
@@ -814,19 +816,19 @@ function SnapshotCard({ label, value }: { label: string; value: string }) {
 function KpiCard({
   label,
   value,
-  icon,
+  Icon,
   subtitle,
 }: {
   label: string;
   value: string | number;
-  icon: string;
+  Icon: LucideIcon;
   subtitle: string;
 }) {
   return (
     <div className="ag-card p-6">
       <div className="flex items-start justify-between gap-4">
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--primary-soft)] text-xl shadow-[var(--shadow-soft)]">
-          {icon}
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--primary-soft)] shadow-[var(--shadow-soft)]">
+          <Icon size={20} className="text-[var(--primary)]" />
         </div>
 
         <span className="text-xs uppercase tracking-[0.14em] text-[var(--text-muted)]">
@@ -883,10 +885,8 @@ function LegendItem({
 }
 
 function getRankingIcon(index: number) {
-  if (index === 0) return "🥇";
-  if (index === 1) return "🥈";
-  if (index === 2) return "🥉";
-  return "🏅";
+  // Ranking numérico institucional (substitui as medalhas emoji 🥇🥈🥉).
+  return <span className="font-semibold text-[var(--text-primary)]">{index + 1}</span>;
 }
 
 function getStatusBadgeClass(value: string) {
