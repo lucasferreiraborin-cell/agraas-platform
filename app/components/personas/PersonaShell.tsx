@@ -13,6 +13,8 @@
  *   </PersonaShell>
  */
 
+import Link from "next/link";
+import { Home } from "lucide-react";
 import { themeToCssVars } from "@/lib/persona-themes";
 import type { PersonaContext } from "@/lib/persona-resolver";
 import BuyerSidebarNav from "@/app/components/BuyerSidebarNav";
@@ -99,8 +101,19 @@ function getSidebar(persona: PersonaContext["effectivePersona"]) {
   }
 }
 
-// Produtor usa a AppSidebar global — aqui não renderiza navegação própria
-// (evita duplicar sidebar e nunca expõe texto interno de dev ao usuário).
+// Produtor usa a AppSidebar global. Aqui (admin vendo rota de persona sem
+// simular) mostramos só wayfinding — nunca vazio (parecia app quebrado) nem
+// texto interno de dev.
 function ProdutorSidebarStub() {
-  return <nav className="flex-1 overflow-y-auto" aria-hidden />;
+  return (
+    <nav className="flex-1 overflow-y-auto px-4 py-5">
+      <Link
+        href="/painel"
+        className="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm text-white/70 transition hover:bg-white/10 hover:text-white"
+      >
+        <Home size={15} className="opacity-70" />
+        Voltar ao painel
+      </Link>
+    </nav>
+  );
 }
