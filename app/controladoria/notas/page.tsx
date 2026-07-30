@@ -149,7 +149,10 @@ export default async function NotasPage({
             <tbody>
               {notes.map((n) => (
                 <tr key={n.id}>
-                  <td className="font-medium">
+                  <td
+                    className="max-w-[180px] truncate font-medium"
+                    title={`${n.number ?? "—"}${n.series ? " ·" + n.series : ""}`}
+                  >
                     {n.number ?? "—"}
                     {n.series && (
                       <span className="ml-1 text-xs text-[var(--text-muted)]">

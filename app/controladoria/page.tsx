@@ -318,7 +318,13 @@ function nextObligation(now: Date): { label: string; due: string } {
 
   // Se a do mês corrente já passou, joga pro mês seguinte
   const adjusted = obligations.map((o) => {
-    if (o.label === "DIRPF") return o;
+    if (o.label === "DIRPF") {
+      // DIRPF é anual (30/abr) — se já passou, rola pro ano seguinte
+      // (senão o painel mostra "vencida em 30/abr" o ano todo).
+      return o.date.getTime() < now.getTime()
+        ? { ...o, date: new Date(year + 1, 3, 30) }
+        : o;
+    }
     if (o.date.getDate() < d) {
       return { ...o, date: new Date(year, m + 1, o.date.getDate()) };
     }

@@ -50,10 +50,12 @@ type Props = {
   photoUrl?: string | null;
 };
 
-const SCORE_META: Record<string, { key: "excellent" | "regular" | "basic"; color: string }> = {
-  high:   { key: "excellent", color: "text-emerald-600" },
-  medium: { key: "regular",   color: "text-amber-600"   },
-  low:    { key: "basic",     color: "text-red-500"      },
+// Cor por faixa de score — número E barra usam a MESMA (evita sinal contraditório).
+// "Básico" é baseline, não risco → slate neutro, não vermelho (danger reservado a risco real).
+const SCORE_META: Record<string, { key: "excellent" | "regular" | "basic"; color: string; bar: string }> = {
+  high:   { key: "excellent", color: "text-emerald-600", bar: "bg-emerald-500" },
+  medium: { key: "regular",   color: "text-amber-600",   bar: "bg-amber-500"   },
+  low:    { key: "basic",     color: "text-slate-500",   bar: "bg-slate-400"   },
 };
 
 function scoreLevel(s: number) {
@@ -281,7 +283,7 @@ export default function PublicPassportView({
             <div className="flex-1">
               <div className="h-3 overflow-hidden rounded-full bg-[#f3f4f6]">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-[#3DA54C] to-[var(--primary)] transition-all"
+                  className={`h-full rounded-full transition-all ${sm.bar}`}
                   style={{ width: `${scorePercent}%` }}
                 />
               </div>
