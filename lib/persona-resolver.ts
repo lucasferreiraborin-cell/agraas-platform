@@ -85,10 +85,25 @@ export async function requirePersona(allowed: Persona[]): Promise<PersonaContext
   const ctx = await resolvePersona();
   if (!ctx) redirect("/login");
 
-  // Admin sem cookie de view_as: passa em tudo.
-  // Admin com cookie: respeita simulação (tem que estar em `allowed`).
-  if (ctx.isAdmin && !ctx.isViewingAs) return ctx;
+  // Admin sem cookie de view_as: passa em tudo, MAS adota o tema + sidebar da
+  // própria rota (contador→âmbar, banco→navy/ouro, frigorífico→cobre). Assim,
+  // navegar direto a uma rota de persona já renderiza aquela identidade visual
+  // completa (accent + nav correta) sem depender do AdminSwitcher — o banner
+  // "Modo Admin · acesso total" continua aparecendo (isAdmin && !isViewingAs).
+  // Rotas admin-only (sem persona em `allowed`) mantêm o tema admin.
+  if (ctx.isAdmin && !ctx.isViewingAs) {
+    const routePersona = allowed.find((p) => p !== "admin");
+    if (routePersona) {
+      return {
+        ...ctx,
+        effectivePersona: routePersona,
+        theme: PERSONA_THEMES[routePersona],
+      };
+    }
+    return ctx;
+  }
 
+  // Admin com cookie: respeita simulação (tem que estar em `allowed`).
   if (!allowed.includes(ctx.effectivePersona)) {
     redirect(ctx.theme.home);
   }
