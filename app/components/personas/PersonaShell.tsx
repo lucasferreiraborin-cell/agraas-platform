@@ -21,7 +21,7 @@ import BuyerSidebarNav from "@/app/components/BuyerSidebarNav";
 import BankSidebarNav from "@/app/components/BankSidebarNav";
 import ContadorSidebarNav from "@/app/components/ContadorSidebarNav";
 import AdminSwitcher from "@/app/components/AdminSwitcher";
-import PersonaLogoutButton from "@/app/components/personas/PersonaLogoutButton";
+import PersonaSidebar from "@/app/components/personas/PersonaSidebar";
 
 export default function PersonaShell({
   ctx,
@@ -41,28 +41,17 @@ export default function PersonaShell({
       className="fixed inset-0 z-[60] flex"
       style={{ ...themeToCssVars(theme), backgroundColor: theme.mainBg }}
     >
-      <aside
-        className="w-72 shrink-0 border-r border-white/8 flex flex-col"
-        style={{ backgroundColor: theme.sidebarBg }}
-      >
-        <div className="px-6 py-5 border-b border-white/8">
-          <div className="text-[11px] uppercase tracking-[0.16em] text-white/55">Agraas</div>
-          <div className="text-white font-semibold text-lg mt-1">{theme.shortLabel}</div>
-          <div className="text-white/60 text-xs mt-0.5">{clientName}</div>
-        </div>
+      <PersonaSidebar theme={theme} clientName={clientName}>
         <SidebarNav />
-        <div className="border-t border-white/8 px-4 py-3 space-y-2">
-          <PersonaLogoutButton />
-          <div className="px-3 text-[10px] uppercase tracking-wider text-white/40">
-            {theme.topLabel}
-          </div>
-        </div>
-      </aside>
+      </PersonaSidebar>
 
-      <main className="flex-1 overflow-y-auto" style={{ backgroundColor: theme.mainBg }}>
+      <main
+        className="flex-1 overflow-y-auto pt-14 lg:pt-0"
+        style={{ backgroundColor: theme.mainBg }}
+      >
         {(isAdmin || isViewingAs) && (
           <div
-            className="sticky top-0 z-40 border-b border-white/8 backdrop-blur"
+            className="sticky top-14 z-40 border-b border-white/8 backdrop-blur lg:top-0"
             style={{ backgroundColor: `${theme.mainBg}cc` }}
           >
             <div className="max-w-7xl mx-auto px-8 py-2 flex items-center justify-between gap-4">
