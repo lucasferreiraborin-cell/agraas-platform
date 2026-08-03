@@ -32,7 +32,7 @@ export default function RefreshButton() {
   return (
     <div className="flex items-center gap-3">
       {result && (
-        <span className="text-xs text-[--text-secondary]">{result}</span>
+        <span className="text-xs text-[var(--text-secondary)]">{result}</span>
       )}
       <button
         onClick={handleRefresh}

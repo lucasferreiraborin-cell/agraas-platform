@@ -54,13 +54,13 @@ export default async function BancoDossiesPage() {
     <PersonaShell ctx={ctx}>
       <div className="max-w-7xl mx-auto px-8 py-10">
         <header className="mb-8">
-          <div className="text-[11px] uppercase tracking-[0.16em] text-[--text-muted]">
+          <div className="text-[11px] uppercase tracking-[0.16em] text-[var(--text-muted)]">
             Dossiês · Exportação
           </div>
-          <h1 className="text-3xl font-semibold text-[--text-primary] mt-2">
+          <h1 className="text-3xl font-semibold text-[var(--text-primary)] mt-2">
             Dossiês exportados
           </h1>
-          <p className="text-[--text-secondary] mt-3 max-w-2xl">
+          <p className="text-[var(--text-secondary)] mt-3 max-w-2xl">
             Gere o PDF de análise de crédito para qualquer produtor com dossiê liberado.
             O documento é montado no momento da exportação, com o score e a saúde financeira
             mais recentes.
@@ -69,11 +69,11 @@ export default async function BancoDossiesPage() {
 
         {rows.length === 0 ? (
           <div className="ag-card p-12 text-center">
-            <FileText size={36} className="text-[--text-muted] mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-[--text-primary]">
+            <FileText size={36} className="text-[var(--text-muted)] mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-[var(--text-primary)]">
               Nenhum dossiê disponível para exportação
             </h2>
-            <p className="text-[--text-secondary] mt-2 max-w-md mx-auto">
+            <p className="text-[var(--text-secondary)] mt-2 max-w-md mx-auto">
               Quando um produtor liberar o acesso ao dossiê, ele aparecerá aqui com um atalho
               direto para exportação em PDF.
             </p>
@@ -95,7 +95,7 @@ export default async function BancoDossiesPage() {
                   return (
                     <tr key={r.clientId}>
                       <td className="font-medium">{r.name}</td>
-                      <td className="text-[--text-secondary] text-sm">
+                      <td className="text-[var(--text-secondary)] text-sm">
                         {r.grantedAt
                           ? new Date(r.grantedAt).toLocaleDateString("pt-BR")
                           : "—"}

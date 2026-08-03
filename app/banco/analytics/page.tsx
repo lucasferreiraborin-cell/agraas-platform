@@ -79,13 +79,13 @@ export default async function BancoAnalyticsPage() {
     <PersonaShell ctx={ctx}>
       <div className="max-w-7xl mx-auto px-8 py-10">
         <header className="mb-8">
-          <div className="text-[11px] uppercase tracking-[0.16em] text-[--text-muted]">
+          <div className="text-[11px] uppercase tracking-[0.16em] text-[var(--text-muted)]">
             Analytics · Visão do portfólio
           </div>
-          <h1 className="text-3xl font-semibold text-[--text-primary] mt-2">
+          <h1 className="text-3xl font-semibold text-[var(--text-primary)] mt-2">
             Indicadores agregados
           </h1>
-          <p className="text-[--text-secondary] mt-3 max-w-2xl">
+          <p className="text-[var(--text-secondary)] mt-3 max-w-2xl">
             Visão analítica do portfólio. Todos os produtores incluídos liberaram acesso
             via consentimento explícito.
           </p>
@@ -93,8 +93,8 @@ export default async function BancoAnalyticsPage() {
 
         {total === 0 ? (
           <div className="ag-card p-12 text-center">
-            <BarChart3 size={36} className="text-[--text-muted] mx-auto mb-3" />
-            <p className="text-[--text-secondary]">
+            <BarChart3 size={36} className="text-[var(--text-muted)] mx-auto mb-3" />
+            <p className="text-[var(--text-secondary)]">
               Sem dados de produtores com consentimento ativo. Acesse <strong>Portfólio</strong> para ver pendências.
             </p>
           </div>
@@ -109,8 +109,8 @@ export default async function BancoAnalyticsPage() {
 
             <section className="ag-card mb-8">
               <div className="px-6 py-4 border-b border-white/8 flex items-center gap-2">
-                <Activity size={16} className="text-[--text-secondary]" />
-                <h2 className="text-lg font-semibold text-[--text-primary]">
+                <Activity size={16} className="text-[var(--text-secondary)]" />
+                <h2 className="text-lg font-semibold text-[var(--text-primary)]">
                   Distribuição por faixa de score
                 </h2>
               </div>
@@ -125,10 +125,10 @@ export default async function BancoAnalyticsPage() {
                             className="inline-block w-2.5 h-2.5 rounded-full"
                             style={{ backgroundColor: f.color }}
                           />
-                          <span className="text-sm text-[--text-primary] font-medium">{f.label}</span>
-                          <span className="text-xs text-[--text-muted]">({f.min}-{f.max})</span>
+                          <span className="text-sm text-[var(--text-primary)] font-medium">{f.label}</span>
+                          <span className="text-xs text-[var(--text-muted)]">({f.min}-{f.max})</span>
                         </div>
-                        <span className="text-sm text-[--text-primary] font-semibold">
+                        <span className="text-sm text-[var(--text-primary)] font-semibold">
                           {f.count} · {pct.toFixed(0)}%
                         </span>
                       </div>
@@ -146,14 +146,14 @@ export default async function BancoAnalyticsPage() {
 
             <section className="ag-card">
               <div className="px-6 py-4 border-b border-white/8 flex items-center gap-2">
-                <TrendingUp size={16} className="text-[--text-secondary]" />
-                <h2 className="text-lg font-semibold text-[--text-primary]">
+                <TrendingUp size={16} className="text-[var(--text-secondary)]" />
+                <h2 className="text-lg font-semibold text-[var(--text-primary)]">
                   Concentração geográfica · top 5 UF
                 </h2>
               </div>
               <div className="p-6">
                 {ufRanking.length === 0 ? (
-                  <p className="text-sm text-[--text-secondary]">Sem dados de localização</p>
+                  <p className="text-sm text-[var(--text-secondary)]">Sem dados de localização</p>
                 ) : (
                   <div className="space-y-2">
                     {ufRanking.map(([uf, count]) => {
@@ -161,14 +161,14 @@ export default async function BancoAnalyticsPage() {
                       const pct = (count / totalProps) * 100;
                       return (
                         <div key={uf} className="flex items-center gap-3">
-                          <div className="w-10 text-sm font-mono font-semibold text-[--text-primary]">{uf}</div>
+                          <div className="w-10 text-sm font-mono font-semibold text-[var(--text-primary)]">{uf}</div>
                           <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
                             <div
                               className="h-full rounded-full"
                               style={{ width: `${pct}%`, backgroundColor: "var(--persona-accent)" }}
                             />
                           </div>
-                          <div className="text-sm text-[--text-primary] font-medium w-16 text-right">{count} fazenda{count !== 1 ? "s" : ""}</div>
+                          <div className="text-sm text-[var(--text-primary)] font-medium w-16 text-right">{count} fazenda{count !== 1 ? "s" : ""}</div>
                         </div>
                       );
                     })}
@@ -186,7 +186,7 @@ export default async function BancoAnalyticsPage() {
 function Kpi({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
   return (
     <div className="ag-card p-5">
-      <div className="text-[11px] uppercase tracking-wider text-[--text-muted]">{label}</div>
+      <div className="text-[11px] uppercase tracking-wider text-[var(--text-muted)]">{label}</div>
       <div className="text-2xl font-bold mt-2" style={{ color: accent ? "var(--persona-accent)" : "var(--text-primary)" }}>
         {value}
       </div>

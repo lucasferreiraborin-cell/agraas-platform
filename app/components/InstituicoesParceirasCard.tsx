@@ -37,14 +37,14 @@ export default function InstituicoesParceirasCard({
     <div className="ag-card">
       <div className="px-6 py-4 border-b border-white/8 flex items-start justify-between gap-4">
         <div>
-          <div className="text-[11px] uppercase tracking-wider text-[--text-muted] flex items-center gap-1.5">
+          <div className="text-[11px] uppercase tracking-wider text-[var(--text-muted)] flex items-center gap-1.5">
             <ShieldCheck size={12} />
             Transparência LGPD
           </div>
-          <h3 className="text-lg font-semibold text-[--text-primary] mt-0.5">
+          <h3 className="text-lg font-semibold text-[var(--text-primary)] mt-0.5">
             Instituições parceiras
           </h3>
-          <p className="text-sm text-[--text-secondary] mt-1.5 max-w-xl">
+          <p className="text-sm text-[var(--text-secondary)] mt-1.5 max-w-xl">
             Estas instituições financeiras solicitaram acesso ao seu dossiê. Você controla
             o compartilhamento — pode liberar ou revogar a qualquer momento.
           </p>
@@ -89,18 +89,18 @@ function RowInstituicao({ parceira }: { parceira: InstituicaoParceira }) {
 
   return (
     <div className="px-6 py-4 flex items-center gap-4">
-      <div className="h-10 w-10 rounded-xl bg-[--surface-soft] border border-[--border] flex items-center justify-center shrink-0">
-        <Building2 size={18} className="text-[--text-secondary]" />
+      <div className="h-10 w-10 rounded-xl bg-[var(--surface-soft)] border border-[var(--border)] flex items-center justify-center shrink-0">
+        <Building2 size={18} className="text-[var(--text-secondary)]" />
       </div>
       <div className="flex-1 min-w-0">
-        <div className="font-medium text-[--text-primary] truncate">{parceira.bank_name}</div>
-        <div className="text-xs text-[--text-secondary] mt-0.5">
+        <div className="font-medium text-[var(--text-primary)] truncate">{parceira.bank_name}</div>
+        <div className="text-xs text-[var(--text-secondary)] mt-0.5">
           {RELATIONSHIP_LABEL[parceira.relationship_type] ?? parceira.relationship_type}
           {granted && parceira.granted_at && (
             <> · liberado em {new Date(parceira.granted_at).toLocaleDateString("pt-BR")}</>
           )}
         </div>
-        {error && <div className="text-xs text-[--danger] mt-1">{error}</div>}
+        {error && <div className="text-xs text-[var(--danger)] mt-1">{error}</div>}
       </div>
       <button
         onClick={handleToggle}

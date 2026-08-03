@@ -60,13 +60,13 @@ export default async function BancoProdutoresPage() {
     <PersonaShell ctx={ctx}>
       <div className="max-w-7xl mx-auto px-8 py-10">
         <header className="mb-8">
-          <div className="text-[11px] uppercase tracking-[0.16em] text-[--text-muted]">
+          <div className="text-[11px] uppercase tracking-[0.16em] text-[var(--text-muted)]">
             Produtores · Catálogo
           </div>
-          <h1 className="text-3xl font-semibold text-[--text-primary] mt-2">
+          <h1 className="text-3xl font-semibold text-[var(--text-primary)] mt-2">
             Produtores no relacionamento
           </h1>
-          <p className="text-[--text-secondary] mt-3 max-w-2xl">
+          <p className="text-[var(--text-secondary)] mt-3 max-w-2xl">
             {rows.length} produtor{rows.length !== 1 ? "es" : ""} · {liberados} com dossiê
             liberado · {pendentes} pendente{pendentes !== 1 ? "s" : ""} de consentimento
           </p>
@@ -74,20 +74,20 @@ export default async function BancoProdutoresPage() {
 
         <div className="mb-6 flex items-center gap-3">
           <div className="ag-card px-4 py-2 flex items-center gap-2 flex-1 max-w-md">
-            <Search size={14} className="text-[--text-muted]" />
+            <Search size={14} className="text-[var(--text-muted)]" />
             <input
               placeholder="Buscar por nome (futuro)"
               disabled
-              className="bg-transparent outline-none text-sm flex-1 text-[--text-secondary] placeholder-[--text-muted]"
+              className="bg-transparent outline-none text-sm flex-1 text-[var(--text-secondary)] placeholder-[var(--text-muted)]"
             />
           </div>
         </div>
 
         {rows.length === 0 ? (
           <div className="ag-card p-12 text-center">
-            <Building2 size={36} className="text-[--text-muted] mx-auto mb-3" />
-            <h2 className="text-lg font-semibold text-[--text-primary]">Nenhum relacionamento ainda</h2>
-            <p className="text-[--text-secondary] mt-2 max-w-sm mx-auto">
+            <Building2 size={36} className="text-[var(--text-muted)] mx-auto mb-3" />
+            <h2 className="text-lg font-semibold text-[var(--text-primary)]">Nenhum relacionamento ainda</h2>
+            <p className="text-[var(--text-secondary)] mt-2 max-w-sm mx-auto">
               Quando a Agraas cadastrar produtores associados ao seu portfólio, eles aparecerão aqui.
             </p>
           </div>
@@ -110,7 +110,7 @@ export default async function BancoProdutoresPage() {
                   return (
                     <tr key={r.clientId}>
                       <td className="font-medium">{r.name}</td>
-                      <td className="text-[--text-secondary] text-sm">
+                      <td className="text-[var(--text-secondary)] text-sm">
                         {relationshipLabel(r.relationshipType)}
                       </td>
                       <td>
@@ -136,7 +136,7 @@ export default async function BancoProdutoresPage() {
                             {cls.label}
                           </span>
                         ) : (
-                          <span className="text-[--text-muted] text-xs">—</span>
+                          <span className="text-[var(--text-muted)] text-xs">—</span>
                         )}
                       </td>
                       <td className="text-right">
@@ -146,7 +146,7 @@ export default async function BancoProdutoresPage() {
                             <ChevronRight size={14} />
                           </Link>
                         ) : (
-                          <span className="text-[--text-muted] text-xs">acesso bloqueado</span>
+                          <span className="text-[var(--text-muted)] text-xs">acesso bloqueado</span>
                         )}
                       </td>
                     </tr>

@@ -89,13 +89,13 @@ export default async function AdminSaudePage() {
       <div className="max-w-7xl mx-auto px-8 py-10">
         <header className="mb-8 flex items-start justify-between gap-4">
           <div>
-            <div className="text-[11px] uppercase tracking-[0.16em] text-[--text-muted]">
+            <div className="text-[11px] uppercase tracking-[0.16em] text-[var(--text-muted)]">
               Admin · Saúde operacional
             </div>
-            <h1 className="text-3xl font-semibold text-[--text-primary] mt-2">
+            <h1 className="text-3xl font-semibold text-[var(--text-primary)] mt-2">
               Plataforma Agraas
             </h1>
-            <p className="text-[--text-secondary] mt-3 max-w-2xl">
+            <p className="text-[var(--text-secondary)] mt-3 max-w-2xl">
               Estado real-time dos jobs, fontes de mercado e geração de insights.
             </p>
           </div>
@@ -106,14 +106,14 @@ export default async function AdminSaudePage() {
         <section className={`ag-card-strong p-5 mb-6 ${cotacao.isStale ? "border-amber-500/40" : ""}`}>
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
-              <div className="text-[11px] uppercase tracking-wider text-[--text-muted]">
+              <div className="text-[11px] uppercase tracking-wider text-[var(--text-muted)]">
                 Cotação @ Boi gordo (CEPEA/B3)
               </div>
               <div className="flex items-baseline gap-3 mt-1">
-                <span className="text-4xl font-bold text-[--text-primary]">
+                <span className="text-4xl font-bold text-[var(--text-primary)]">
                   R$ {cotacao.value.toFixed(2)}
                 </span>
-                <span className="text-sm text-[--text-secondary]">
+                <span className="text-sm text-[var(--text-secondary)]">
                   atualizada {formatCotacaoAge(cotacao.updatedAt)}
                 </span>
               </div>
@@ -133,8 +133,8 @@ export default async function AdminSaudePage() {
         {/* Jobs */}
         <section className="ag-card mb-6">
           <div className="px-6 py-4 border-b border-white/8">
-            <h2 className="text-lg font-semibold text-[--text-primary]">Crons</h2>
-            <p className="text-xs text-[--text-muted] mt-0.5">Última execução de cada job agendado</p>
+            <h2 className="text-lg font-semibold text-[var(--text-primary)]">Crons</h2>
+            <p className="text-xs text-[var(--text-muted)] mt-0.5">Última execução de cada job agendado</p>
           </div>
           <table className="ag-table">
             <thead>
@@ -153,14 +153,14 @@ export default async function AdminSaudePage() {
                 return (
                   <tr key={j.name}>
                     <td className="font-medium flex items-center gap-2">
-                      <Icon size={14} className="text-[--text-secondary]" />
+                      <Icon size={14} className="text-[var(--text-secondary)]" />
                       {j.label}
                     </td>
-                    <td className="text-[--text-secondary] text-sm font-mono">{j.schedule}</td>
+                    <td className="text-[var(--text-secondary)] text-sm font-mono">{j.schedule}</td>
                     <td className="text-sm">
                       {last
                         ? new Date(last.ran_at).toLocaleString("pt-BR")
-                        : <span className="text-[--text-muted] italic">nunca</span>}
+                        : <span className="text-[var(--text-muted)] italic">nunca</span>}
                     </td>
                     <td>
                       {!last ? (
@@ -173,7 +173,7 @@ export default async function AdminSaudePage() {
                         <Badge tone="danger" label="Falhou" />
                       )}
                     </td>
-                    <td className="text-xs text-[--text-muted] max-w-xs truncate">
+                    <td className="text-xs text-[var(--text-muted)] max-w-xs truncate">
                       {last?.details ? JSON.stringify(last.details).slice(0, 80) : "—"}
                     </td>
                   </tr>
@@ -187,8 +187,8 @@ export default async function AdminSaudePage() {
         <section className="ag-card mb-6">
           <div className="px-6 py-4 border-b border-white/8 flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-[--text-primary]">Configuração da plataforma</h2>
-              <p className="text-xs text-[--text-muted] mt-0.5">
+              <h2 className="text-lg font-semibold text-[var(--text-primary)]">Configuração da plataforma</h2>
+              <p className="text-xs text-[var(--text-muted)] mt-0.5">
                 Variáveis de ambiente que mantêm crons e IA funcionando
               </p>
             </div>
@@ -211,12 +211,12 @@ export default async function AdminSaudePage() {
               {envStatus.map((v) => (
                 <tr key={v.key}>
                   <td className="font-mono text-xs">{v.key}</td>
-                  <td className="text-[--text-secondary] text-sm">{v.purpose}</td>
+                  <td className="text-[var(--text-secondary)] text-sm">{v.purpose}</td>
                   <td className="text-xs">
                     {v.required ? (
                       <span className="text-red-300">Obrigatória</span>
                     ) : (
-                      <span className="text-[--text-muted]">Opcional</span>
+                      <span className="text-[var(--text-muted)]">Opcional</span>
                     )}
                   </td>
                   <td>
@@ -239,8 +239,8 @@ export default async function AdminSaudePage() {
           <section className="ag-card mb-6">
             <div className="px-6 py-4 border-b border-white/8 flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-semibold text-[--text-primary]">Última auto-cura</h2>
-                <p className="text-xs text-[--text-muted] mt-0.5">
+                <h2 className="text-lg font-semibold text-[var(--text-primary)]">Última auto-cura</h2>
+                <p className="text-xs text-[var(--text-muted)] mt-0.5">
                   {new Date(lastSelfHeal.ran_at).toLocaleString("pt-BR")}
                 </p>
               </div>
@@ -254,22 +254,22 @@ export default async function AdminSaudePage() {
             </div>
             <div className="p-6 space-y-2">
               {selfHealActions.length === 0 ? (
-                <p className="text-sm text-[--text-secondary]">Sem detalhes</p>
+                <p className="text-sm text-[var(--text-secondary)]">Sem detalhes</p>
               ) : (
                 selfHealActions.map((a, i) => (
                   <div key={i} className="flex items-start gap-3">
                     {a.status === "ok" ? (
                       <CheckCircle size={14} className="text-green-400 mt-0.5 shrink-0" />
                     ) : a.status === "skipped" ? (
-                      <CheckCircle size={14} className="text-[--text-muted] mt-0.5 shrink-0" />
+                      <CheckCircle size={14} className="text-[var(--text-muted)] mt-0.5 shrink-0" />
                     ) : (
                       <XCircle size={14} className="text-red-400 mt-0.5 shrink-0" />
                     )}
                     <div className="flex-1">
-                      <div className="text-sm font-medium text-[--text-primary]">{a.step}</div>
-                      {a.detail && <div className="text-xs text-[--text-muted]">{a.detail}</div>}
+                      <div className="text-sm font-medium text-[var(--text-primary)]">{a.step}</div>
+                      {a.detail && <div className="text-xs text-[var(--text-muted)]">{a.detail}</div>}
                     </div>
-                    <span className="text-[10px] uppercase tracking-wider text-[--text-muted]">{a.status}</span>
+                    <span className="text-[10px] uppercase tracking-wider text-[var(--text-muted)]">{a.status}</span>
                   </div>
                 ))
               )}
@@ -280,16 +280,16 @@ export default async function AdminSaudePage() {
         {/* Insights por persona */}
         <section className="ag-card mb-6">
           <div className="px-6 py-4 border-b border-white/8">
-            <h2 className="text-lg font-semibold text-[--text-primary]">Insights gerados hoje</h2>
+            <h2 className="text-lg font-semibold text-[var(--text-primary)]">Insights gerados hoje</h2>
           </div>
           <div className="p-6 grid grid-cols-3 gap-4">
             {["produtor", "frigorifico", "banco"].map((p) => (
               <div key={p} className="ag-card p-4">
-                <div className="text-[11px] uppercase tracking-wider text-[--text-muted]">{p}</div>
-                <div className="text-2xl font-bold text-[--text-primary] mt-1">
+                <div className="text-[11px] uppercase tracking-wider text-[var(--text-muted)]">{p}</div>
+                <div className="text-2xl font-bold text-[var(--text-primary)] mt-1">
                   {insightsByPersona.get(p) ?? 0}
                 </div>
-                <div className="text-xs text-[--text-secondary] mt-1">clientes com insight</div>
+                <div className="text-xs text-[var(--text-secondary)] mt-1">clientes com insight</div>
               </div>
             ))}
           </div>
@@ -299,12 +299,12 @@ export default async function AdminSaudePage() {
         <section className="ag-card">
           <div className="px-6 py-4 border-b border-white/8 flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-[--text-primary]">Sinais de mercado · últimos 15</h2>
-              <p className="text-xs text-[--text-muted] mt-0.5">CEPEA + Embrapa + MAPA + Notícias Agrícolas</p>
+              <h2 className="text-lg font-semibold text-[var(--text-primary)]">Sinais de mercado · últimos 15</h2>
+              <p className="text-xs text-[var(--text-muted)] mt-0.5">CEPEA + Embrapa + MAPA + Notícias Agrícolas</p>
             </div>
           </div>
           {!signals || signals.length === 0 ? (
-            <div className="p-8 text-center text-[--text-secondary]">
+            <div className="p-8 text-center text-[var(--text-secondary)]">
               Nenhum sinal coletado ainda. Clique em <strong>Atualizar mercado agora</strong> acima.
             </div>
           ) : (
@@ -323,13 +323,13 @@ export default async function AdminSaudePage() {
                 {signals.map((s, i) => (
                   <tr key={i}>
                     <td className="text-sm font-mono">{s.source}</td>
-                    <td className="text-[--text-secondary] text-sm">{s.kind}</td>
+                    <td className="text-[var(--text-secondary)] text-sm">{s.kind}</td>
                     <td className="font-medium max-w-md truncate">{s.title}</td>
                     <td className="text-right text-sm">
                       {s.raw_value != null ? `${Number(s.raw_value).toFixed(2)} ${s.raw_unit ?? ""}` : "—"}
                     </td>
                     <td className="text-center text-sm">{s.priority}</td>
-                    <td className="text-xs text-[--text-muted]">
+                    <td className="text-xs text-[var(--text-muted)]">
                       {new Date(s.collected_at).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
                     </td>
                   </tr>

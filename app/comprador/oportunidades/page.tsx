@@ -168,13 +168,13 @@ export default async function OportunidadesPage() {
     <PersonaShell ctx={ctx}>
       <div className="max-w-7xl mx-auto px-8 py-10">
           <header className="mb-10">
-            <div className="text-[11px] uppercase tracking-[0.16em] text-[--text-muted]">
+            <div className="text-[11px] uppercase tracking-[0.16em] text-[var(--text-muted)]">
               Oportunidades · Lotes disponíveis
             </div>
-            <h1 className="text-3xl font-semibold text-[--text-primary] mt-2">
+            <h1 className="text-3xl font-semibold text-[var(--text-primary)] mt-2">
               Lotes ofertados no marketplace
             </h1>
-            <p className="text-[--text-secondary] mt-3 max-w-2xl">
+            <p className="text-[var(--text-secondary)] mt-3 max-w-2xl">
               Lotes ativos disponíveis pra avaliação. Score médio agregado de Embrapa Doc 237,
               compliance EUDR + GTA + sanitário, origem rastreada por município/CAR.
               Dados granulares só após contrato formal com o produtor.
@@ -183,9 +183,9 @@ export default async function OportunidadesPage() {
 
           {lotes.length === 0 ? (
             <div className="ag-card p-12 text-center">
-              <div className="text-[--text-secondary]">
+              <div className="text-[var(--text-secondary)]">
                 Nenhum lote aberto no momento. Lotes ativos com vínculo prévio aparecem em
-                <Link href="/comprador" className="text-[--primary] hover:underline mx-1">Visão Geral</Link>.
+                <Link href="/comprador" className="text-[var(--primary)] hover:underline mx-1">Visão Geral</Link>.
               </div>
             </div>
           ) : (
@@ -197,13 +197,13 @@ export default async function OportunidadesPage() {
                   <article key={lote.lot_id} className="ag-card-strong p-6 flex flex-col gap-4">
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <div className="text-[11px] uppercase tracking-wider text-[--text-muted]">
+                        <div className="text-[11px] uppercase tracking-wider text-[var(--text-muted)]">
                           Lote
                         </div>
-                        <h3 className="text-xl font-semibold text-[--text-primary] mt-0.5">
+                        <h3 className="text-xl font-semibold text-[var(--text-primary)] mt-0.5">
                           {lote.lot_name}
                         </h3>
-                        <div className="flex items-center gap-2 text-sm text-[--text-secondary] mt-2">
+                        <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)] mt-2">
                           <MapPin size={14} />
                           <span>
                             {lote.origem.propriedade_nome}
@@ -228,22 +228,22 @@ export default async function OportunidadesPage() {
 
                     <div className="grid grid-cols-3 gap-3 py-3 border-y border-white/8">
                       <div>
-                        <div className="text-[11px] uppercase tracking-wider text-[--text-muted]">Animais</div>
-                        <div className="flex items-center gap-1.5 text-[--text-primary] font-semibold mt-1">
-                          <Beef size={14} className="text-[--text-secondary]" />
+                        <div className="text-[11px] uppercase tracking-wider text-[var(--text-muted)]">Animais</div>
+                        <div className="flex items-center gap-1.5 text-[var(--text-primary)] font-semibold mt-1">
+                          <Beef size={14} className="text-[var(--text-secondary)]" />
                           {lote.animals_count}
                         </div>
                       </div>
                       <div>
-                        <div className="text-[11px] uppercase tracking-wider text-[--text-muted]">Destino</div>
-                        <div className="text-[--text-primary] font-medium mt-1 truncate">
+                        <div className="text-[11px] uppercase tracking-wider text-[var(--text-muted)]">Destino</div>
+                        <div className="text-[var(--text-primary)] font-medium mt-1 truncate">
                           {lote.pais_destino ?? "—"}
                         </div>
                       </div>
                       <div>
-                        <div className="text-[11px] uppercase tracking-wider text-[--text-muted]">Embarque</div>
-                        <div className="flex items-center gap-1.5 text-[--text-primary] font-medium mt-1">
-                          <Calendar size={14} className="text-[--text-secondary]" />
+                        <div className="text-[11px] uppercase tracking-wider text-[var(--text-muted)]">Embarque</div>
+                        <div className="flex items-center gap-1.5 text-[var(--text-primary)] font-medium mt-1">
+                          <Calendar size={14} className="text-[var(--text-secondary)]" />
                           {lote.data_embarque
                             ? new Date(lote.data_embarque).toLocaleDateString("pt-BR")
                             : "—"}
@@ -252,7 +252,7 @@ export default async function OportunidadesPage() {
                     </div>
 
                     <div>
-                      <div className="text-[11px] uppercase tracking-wider text-[--text-muted] mb-2">
+                      <div className="text-[11px] uppercase tracking-wider text-[var(--text-muted)] mb-2">
                         Compliance ({complianceCount}/5)
                       </div>
                       <div className="flex flex-wrap gap-1.5">

@@ -41,24 +41,24 @@ export default async function BancoPage() {
       <PersonaShell ctx={ctx}>
       <div className="max-w-7xl mx-auto px-8 py-10">
         <header className="mb-10">
-          <div className="text-[11px] uppercase tracking-[0.16em] text-[--text-on-dark-muted]">
+          <div className="text-[11px] uppercase tracking-[0.16em] text-[var(--text-on-dark-muted)]">
             Portfólio · Análise de crédito rural
           </div>
-          <h1 className="text-3xl font-semibold text-[--text-on-dark] mt-2">
+          <h1 className="text-3xl font-semibold text-[var(--text-on-dark)] mt-2">
             Bem-vindo, {clientData.name}
           </h1>
         </header>
         <div className="ag-card p-12 text-center">
-          <Building2 size={36} className="text-[--text-muted] mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-[--text-primary]">
+          <Building2 size={36} className="text-[var(--text-muted)] mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-[var(--text-primary)]">
             Nenhum produtor concedeu acesso ainda
           </h2>
-          <p className="text-[--text-secondary] mt-2 max-w-md mx-auto">
+          <p className="text-[var(--text-secondary)] mt-2 max-w-md mx-auto">
             {aguardandoCount > 0
               ? `${aguardandoCount} relacionamento(s) pendentes — aguardando o produtor liberar o dossiê para análise.`
               : "Quando um produtor incluir esta instituição como parceira e liberar o dossiê, ele aparecerá aqui."}
           </p>
-          <p className="text-[--text-muted] text-sm mt-6">
+          <p className="text-[var(--text-muted)] text-sm mt-6">
             Procedimento: o produtor acessa <code>/painel</code> e ativa o compartilhamento no card "Instituições parceiras".
           </p>
         </div>
@@ -118,13 +118,13 @@ export default async function BancoPage() {
     <PersonaShell ctx={ctx}>
       <div className="max-w-7xl mx-auto px-8 py-10">
       <header className="mb-10">
-        <div className="text-[11px] uppercase tracking-[0.16em] text-[--text-on-dark-muted]">
+        <div className="text-[11px] uppercase tracking-[0.16em] text-[var(--text-on-dark-muted)]">
           Portfólio · Análise de crédito rural
         </div>
-        <h1 className="text-3xl font-semibold text-[--text-on-dark] mt-2">
+        <h1 className="text-3xl font-semibold text-[var(--text-on-dark)] mt-2">
           {rows.length} produtor{rows.length > 1 ? "es" : ""} sob análise
         </h1>
-        <p className="text-[--text-on-dark-muted] mt-3 max-w-2xl">
+        <p className="text-[var(--text-on-dark-muted)] mt-3 max-w-2xl">
           Score agregado de portfólio anchorado em Embrapa Doc 237 (Costa et al., 2018).
           Dossiês liberados pelos produtores via consentimento explícito.
         </p>
@@ -154,10 +154,10 @@ export default async function BancoPage() {
       <section className="ag-card">
         <div className="px-6 py-4 border-b border-white/8 flex items-center justify-between">
           <div>
-            <div className="text-[11px] uppercase tracking-wider text-[--text-muted]">
+            <div className="text-[11px] uppercase tracking-wider text-[var(--text-muted)]">
               Portfólio
             </div>
-            <h2 className="text-lg font-semibold text-[--text-primary] mt-0.5">
+            <h2 className="text-lg font-semibold text-[var(--text-primary)] mt-0.5">
               Produtores e scores agregados
             </h2>
           </div>
@@ -198,7 +198,7 @@ export default async function BancoPage() {
                   <td className="text-right">
                     <Link
                       href={`/banco/${r.client_id}`}
-                      className="inline-flex items-center gap-1 text-[--primary] hover:underline text-sm"
+                      className="inline-flex items-center gap-1 text-[var(--primary)] hover:underline text-sm"
                     >
                       Dossiê
                       <ChevronRight size={14} />
@@ -230,7 +230,7 @@ function KpiCard({
     tone === "good" ? "#16a34a" : tone === "warn" ? "#dc2626" : "var(--text-primary)";
   return (
     <div className="ag-card p-5">
-      <div className="text-[11px] uppercase tracking-wider text-[--text-muted] flex items-center gap-1.5">
+      <div className="text-[11px] uppercase tracking-wider text-[var(--text-muted)] flex items-center gap-1.5">
         {icon}
         {label}
       </div>

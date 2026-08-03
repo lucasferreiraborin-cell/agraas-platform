@@ -189,13 +189,13 @@ export default async function DossieProdutor({ params }: Params) {
 
           <header className="mb-10 flex items-start justify-between gap-6">
             <div>
-              <div className="text-[11px] uppercase tracking-[0.16em] text-[--text-on-dark-muted]">
+              <div className="text-[11px] uppercase tracking-[0.16em] text-[var(--text-on-dark-muted)]">
                 Dossiê · {rel.relationship_type === "loan_active" ? "Crédito ativo" : "Análise de crédito"}
               </div>
-              <h1 className="text-3xl font-semibold text-[--text-on-dark] mt-2">
+              <h1 className="text-3xl font-semibold text-[var(--text-on-dark)] mt-2">
                 {producer.name}
               </h1>
-              <p className="text-[--text-on-dark-muted] mt-3">
+              <p className="text-[var(--text-on-dark-muted)] mt-3">
                 Acesso liberado pelo produtor em{" "}
                 {rel.granted_at
                   ? new Date(rel.granted_at).toLocaleDateString("pt-BR")
@@ -218,7 +218,7 @@ export default async function DossieProdutor({ params }: Params) {
           <section className="ag-card-strong p-8 mb-8">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
               <div>
-                <div className="text-[11px] uppercase tracking-wider text-[--text-muted]">
+                <div className="text-[11px] uppercase tracking-wider text-[var(--text-muted)]">
                   Producer Score · v3 Embrapa Doc 237
                 </div>
                 <div className="flex items-end gap-3 mt-3">
@@ -229,10 +229,10 @@ export default async function DossieProdutor({ params }: Params) {
                     <div className="text-lg font-semibold" style={{ color: psCls.color }}>
                       {psCls.label}
                     </div>
-                    <div className="text-xs text-[--text-muted]">/ 100 pts</div>
+                    <div className="text-xs text-[var(--text-muted)]">/ 100 pts</div>
                   </div>
                 </div>
-                <p className="text-sm text-[--text-secondary] mt-3 max-w-xs">{psCls.description}</p>
+                <p className="text-sm text-[var(--text-secondary)] mt-3 max-w-xs">{psCls.description}</p>
               </div>
               <div className="space-y-2 col-span-2">
                 <ScoreBreakdown label="Ativos · qualidade do rebanho" value={Number(ps?.score_ativos ?? 0)} />
@@ -256,7 +256,7 @@ export default async function DossieProdutor({ params }: Params) {
                 />
               </div>
             </div>
-            <p className="text-xs text-[--text-muted] mt-6 border-t border-[var(--border)] pt-4 leading-relaxed">
+            <p className="text-xs text-[var(--text-muted)] mt-6 border-t border-[var(--border)] pt-4 leading-relaxed">
               A nota agregada é ancorada na dimensão <strong>Ativos</strong> (qualidade do rebanho),
               calculada pela metodologia Embrapa Doc 237 (Costa et al., 2018). As dimensões de crédito
               — financeiro, relacionamento e institucional — estão <strong>em calibração</strong> a
@@ -275,7 +275,7 @@ export default async function DossieProdutor({ params }: Params) {
           {/* Breakdown por fazenda */}
           <section className="ag-card mb-8">
             <div className="px-6 py-4 border-b border-white/8">
-              <h2 className="text-lg font-semibold text-[--text-primary]">Fazendas no portfólio</h2>
+              <h2 className="text-lg font-semibold text-[var(--text-primary)]">Fazendas no portfólio</h2>
             </div>
             <table className="ag-table">
               <thead>
@@ -294,7 +294,7 @@ export default async function DossieProdutor({ params }: Params) {
                   return (
                     <tr key={f.id}>
                       <td className="font-medium">{prop?.name ?? "—"}</td>
-                      <td className="text-[--text-secondary]">
+                      <td className="text-[var(--text-secondary)]">
                         {prop?.city ? (
                           <span className="inline-flex items-center gap-1">
                             <MapPin size={12} />
@@ -314,7 +314,7 @@ export default async function DossieProdutor({ params }: Params) {
                 })}
                 {(!farms || farms.length === 0) && (
                   <tr>
-                    <td colSpan={5} className="text-center py-6 text-[--text-secondary]">
+                    <td colSpan={5} className="text-center py-6 text-[var(--text-secondary)]">
                       Nenhuma fazenda registrada
                     </td>
                   </tr>
@@ -327,14 +327,14 @@ export default async function DossieProdutor({ params }: Params) {
           <section className="ag-card">
             <div className="px-6 py-4 border-b border-white/8 flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-semibold text-[--text-primary]">
+                <h2 className="text-lg font-semibold text-[var(--text-primary)]">
                   Amostra de animais
                 </h2>
-                <p className="text-xs text-[--text-muted] mt-0.5">
+                <p className="text-xs text-[var(--text-muted)] mt-0.5">
                   Top 10 por score · identificadores mascarados conforme LGPD
                 </p>
               </div>
-              <Award size={20} className="text-[--text-muted]" />
+              <Award size={20} className="text-[var(--text-muted)]" />
             </div>
             <table className="ag-table">
               <thead>
@@ -364,13 +364,13 @@ export default async function DossieProdutor({ params }: Params) {
                       <td>{a.sex ?? "—"}</td>
                       <td>{a.birth_date ? new Date(a.birth_date).toLocaleDateString("pt-BR") : "—"}</td>
                       <td className="text-right font-semibold">{Number(s.total_score).toFixed(0)}</td>
-                      <td className="text-right text-[--text-secondary]">
+                      <td className="text-right text-[var(--text-secondary)]">
                         {s.score_produtivo ? Number(s.score_produtivo).toFixed(0) : "—"}
                       </td>
-                      <td className="text-right text-[--text-secondary]">
+                      <td className="text-right text-[var(--text-secondary)]">
                         {s.score_sanidade ? Number(s.score_sanidade).toFixed(0) : "—"}
                       </td>
-                      <td className="text-right text-[--text-secondary]">
+                      <td className="text-right text-[var(--text-secondary)]">
                         {s.score_rastreabilidade ? Number(s.score_rastreabilidade).toFixed(0) : "—"}
                       </td>
                     </tr>
@@ -378,7 +378,7 @@ export default async function DossieProdutor({ params }: Params) {
                 })}
                 {(!topAnimals || topAnimals.length === 0) && (
                   <tr>
-                    <td colSpan={8} className="text-center py-6 text-[--text-secondary]">
+                    <td colSpan={8} className="text-center py-6 text-[var(--text-secondary)]">
                       Sem scores v3 calculados ainda
                     </td>
                   </tr>
@@ -392,10 +392,10 @@ export default async function DossieProdutor({ params }: Params) {
             <section className="ag-card mb-8 mt-8">
               <div className="px-6 py-4 border-b border-[var(--border)] flex items-center justify-between">
                 <div>
-                  <h2 className="text-lg font-semibold text-[--text-primary]">
+                  <h2 className="text-lg font-semibold text-[var(--text-primary)]">
                     Saúde financeira
                   </h2>
-                  <p className="text-xs text-[--text-muted] mt-0.5">
+                  <p className="text-xs text-[var(--text-muted)] mt-0.5">
                     Dados fiscais dos últimos 12 meses · mascarados conforme LGPD
                   </p>
                 </div>
@@ -428,7 +428,7 @@ export default async function DossieProdutor({ params }: Params) {
               {/* Projeção próximos 6 meses */}
               {financial.projections.length > 0 && (
                 <div className="px-6 pb-6 border-t border-[var(--border)] pt-4">
-                  <p className="text-xs uppercase tracking-[0.12em] text-[--text-muted] mb-3">
+                  <p className="text-xs uppercase tracking-[0.12em] text-[var(--text-muted)] mb-3">
                     Projeção próximos {financial.projections.length} meses
                   </p>
                   <div className="overflow-x-auto">
@@ -447,10 +447,10 @@ export default async function DossieProdutor({ params }: Params) {
                           return (
                             <tr key={i}>
                               <td>{p.month}</td>
-                              <td className="text-right tabular-nums text-[--text-secondary]">
+                              <td className="text-right tabular-nums text-[var(--text-secondary)]">
                                 {fmtBRL(p.inflow)}
                               </td>
-                              <td className="text-right tabular-nums text-[--text-secondary]">
+                              <td className="text-right tabular-nums text-[var(--text-secondary)]">
                                 {fmtBRL(p.outflow)}
                               </td>
                               <td
@@ -475,7 +475,7 @@ export default async function DossieProdutor({ params }: Params) {
               {/* Lançamentos recentes (mascarados — só categoria + valor) */}
               {financial.recentEntries.length > 0 && (
                 <div className="px-6 pb-6 border-t border-[var(--border)] pt-4">
-                  <p className="text-xs uppercase tracking-[0.12em] text-[--text-muted] mb-3">
+                  <p className="text-xs uppercase tracking-[0.12em] text-[var(--text-muted)] mb-3">
                     Últimos 30 lançamentos contábeis · categorias mascaradas
                   </p>
                   <div className="overflow-x-auto">
@@ -490,13 +490,13 @@ export default async function DossieProdutor({ params }: Params) {
                       <tbody>
                         {financial.recentEntries.map((e, i) => (
                           <tr key={i}>
-                            <td className="text-sm text-[--text-secondary]">
+                            <td className="text-sm text-[var(--text-secondary)]">
                               {e.entry_date
                                 ? new Date(e.entry_date).toLocaleDateString("pt-BR")
                                 : "—"}
                             </td>
                             <td className="text-sm">{e.description ?? "—"}</td>
-                            <td className="text-right tabular-nums text-sm text-[--text-secondary]">
+                            <td className="text-right tabular-nums text-sm text-[var(--text-secondary)]">
                               {e.amount && Number(e.amount) > 0
                                 ? fmtBRL(Number(e.amount))
                                 : "—"}
@@ -511,7 +511,7 @@ export default async function DossieProdutor({ params }: Params) {
             </section>
           )}
 
-          <p className="text-xs text-[--text-on-dark-muted] mt-8 text-center max-w-2xl mx-auto">
+          <p className="text-xs text-[var(--text-on-dark-muted)] mt-8 text-center max-w-2xl mx-auto">
             Dados liberados via consentimento expresso do produtor (LGPD Art. 7º, V).
             Identificadores individuais mascarados. Para análise complementar, solicite documentos
             ao produtor diretamente.
@@ -531,8 +531,8 @@ function fmtBRL(v: number): string {
 function FinKpi({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] p-4">
-      <p className="text-xs text-[--text-muted]">{label}</p>
-      <p className="mt-2 text-lg font-bold text-[--text-primary]">{value}</p>
+      <p className="text-xs text-[var(--text-muted)]">{label}</p>
+      <p className="mt-2 text-lg font-bold text-[var(--text-primary)]">{value}</p>
     </div>
   );
 }
@@ -553,12 +553,12 @@ function ScoreBreakdown({
       <div className="flex items-center gap-4">
         <div className="flex-1">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-[--text-secondary]">{label}</span>
-            <span className="text-[10px] uppercase tracking-wider rounded-full border border-[var(--border)] px-2 py-0.5 text-[--text-muted]">
+            <span className="text-sm text-[var(--text-secondary)]">{label}</span>
+            <span className="text-[10px] uppercase tracking-wider rounded-full border border-[var(--border)] px-2 py-0.5 text-[var(--text-muted)]">
               em calibração
             </span>
           </div>
-          {hint && <p className="text-[11px] text-[--text-muted] mt-1">{hint}</p>}
+          {hint && <p className="text-[11px] text-[var(--text-muted)] mt-1">{hint}</p>}
           <div className="h-1.5 bg-white/5 rounded-full mt-1.5" />
         </div>
       </div>
@@ -568,12 +568,12 @@ function ScoreBreakdown({
   return (
     <div>
       <div className="flex items-center justify-between mb-1.5">
-        <span className="text-sm text-[--text-secondary]">{label}</span>
-        <span className="text-sm text-[--text-primary] font-medium">{value.toFixed(0)}</span>
+        <span className="text-sm text-[var(--text-secondary)]">{label}</span>
+        <span className="text-sm text-[var(--text-primary)] font-medium">{value.toFixed(0)}</span>
       </div>
       <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
         <div
-          className="h-full bg-[--primary] rounded-full transition-all duration-500"
+          className="h-full bg-[var(--primary)] rounded-full transition-all duration-500"
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -584,9 +584,9 @@ function ScoreBreakdown({
 function Kpi({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
     <div className="ag-card p-5">
-      <div className="text-[11px] uppercase tracking-wider text-[--text-muted]">{label}</div>
-      <div className="text-2xl font-bold text-[--text-primary] mt-2">{value}</div>
-      {sub && <div className="text-xs text-[--text-muted] mt-1">{sub}</div>}
+      <div className="text-[11px] uppercase tracking-wider text-[var(--text-muted)]">{label}</div>
+      <div className="text-2xl font-bold text-[var(--text-primary)] mt-2">{value}</div>
+      {sub && <div className="text-xs text-[var(--text-muted)] mt-1">{sub}</div>}
     </div>
   );
 }

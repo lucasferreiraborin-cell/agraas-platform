@@ -66,7 +66,7 @@ export default function AdminSwitcher({
 
       {open && (
         <div className="absolute right-0 top-full mt-2 z-50 w-56 ag-card-strong p-2 shadow-2xl">
-          <div className="text-[10px] uppercase tracking-wider text-[--text-muted] px-2 py-1">
+          <div className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] px-2 py-1">
             Ver como
           </div>
           {OPTIONS.map((opt) => (
@@ -74,7 +74,7 @@ export default function AdminSwitcher({
               key={opt.value}
               onClick={() => setView(opt.value)}
               className={`w-full text-left px-3 py-2 rounded-lg text-sm hover:bg-white/8 transition ${
-                isViewingAs && currentViewing === opt.value ? "bg-white/10 text-[--text-primary]" : "text-[--text-secondary]"
+                isViewingAs && currentViewing === opt.value ? "bg-white/10 text-[var(--text-primary)]" : "text-[var(--text-secondary)]"
               }`}
             >
               {opt.label}
