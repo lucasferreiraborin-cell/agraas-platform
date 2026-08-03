@@ -26,6 +26,12 @@
   --text-secondary: #4b5a47;
   --text-muted: #788473;
 
+  /* Texto sobre superfícies ESCURAS (shells de persona: banco/contador/frigorífico).
+     Os tokens acima são do tema claro (verde escuro) e somem no fundo preto —
+     use estes nos cabeçalhos/eyebrows das telas de persona. */
+  --text-on-dark: rgba(255, 255, 255, 0.92);
+  --text-on-dark-muted: rgba(255, 255, 255, 0.58);
+
   --border: rgba(30, 42, 27, 0.08);
   --border-strong: rgba(30, 42, 27, 0.14);
 

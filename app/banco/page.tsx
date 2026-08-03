@@ -41,10 +41,10 @@ export default async function BancoPage() {
       <PersonaShell ctx={ctx}>
       <div className="max-w-7xl mx-auto px-8 py-10">
         <header className="mb-10">
-          <div className="text-[11px] uppercase tracking-[0.16em] text-[--text-muted]">
+          <div className="text-[11px] uppercase tracking-[0.16em] text-[--text-on-dark-muted]">
             Portfólio · Análise de crédito rural
           </div>
-          <h1 className="text-3xl font-semibold text-[--text-primary] mt-2">
+          <h1 className="text-3xl font-semibold text-[--text-on-dark] mt-2">
             Bem-vindo, {clientData.name}
           </h1>
         </header>
@@ -118,13 +118,13 @@ export default async function BancoPage() {
     <PersonaShell ctx={ctx}>
       <div className="max-w-7xl mx-auto px-8 py-10">
       <header className="mb-10">
-        <div className="text-[11px] uppercase tracking-[0.16em] text-[--text-muted]">
+        <div className="text-[11px] uppercase tracking-[0.16em] text-[--text-on-dark-muted]">
           Portfólio · Análise de crédito rural
         </div>
-        <h1 className="text-3xl font-semibold text-[--text-primary] mt-2">
+        <h1 className="text-3xl font-semibold text-[--text-on-dark] mt-2">
           {rows.length} produtor{rows.length > 1 ? "es" : ""} sob análise
         </h1>
-        <p className="text-[--text-secondary] mt-3 max-w-2xl">
+        <p className="text-[--text-on-dark-muted] mt-3 max-w-2xl">
           Score agregado de portfólio anchorado em Embrapa Doc 237 (Costa et al., 2018).
           Dossiês liberados pelos produtores via consentimento explícito.
         </p>

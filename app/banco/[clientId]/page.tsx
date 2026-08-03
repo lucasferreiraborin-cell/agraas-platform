@@ -189,13 +189,13 @@ export default async function DossieProdutor({ params }: Params) {
 
           <header className="mb-10 flex items-start justify-between gap-6">
             <div>
-              <div className="text-[11px] uppercase tracking-[0.16em] text-[--text-muted]">
+              <div className="text-[11px] uppercase tracking-[0.16em] text-[--text-on-dark-muted]">
                 Dossiê · {rel.relationship_type === "loan_active" ? "Crédito ativo" : "Análise de crédito"}
               </div>
-              <h1 className="text-3xl font-semibold text-[--text-primary] mt-2">
+              <h1 className="text-3xl font-semibold text-[--text-on-dark] mt-2">
                 {producer.name}
               </h1>
-              <p className="text-[--text-secondary] mt-3">
+              <p className="text-[--text-on-dark-muted] mt-3">
                 Acesso liberado pelo produtor em{" "}
                 {rel.granted_at
                   ? new Date(rel.granted_at).toLocaleDateString("pt-BR")
@@ -511,7 +511,7 @@ export default async function DossieProdutor({ params }: Params) {
             </section>
           )}
 
-          <p className="text-xs text-[--text-muted] mt-8 text-center max-w-2xl mx-auto">
+          <p className="text-xs text-[--text-on-dark-muted] mt-8 text-center max-w-2xl mx-auto">
             Dados liberados via consentimento expresso do produtor (LGPD Art. 7º, V).
             Identificadores individuais mascarados. Para análise complementar, solicite documentos
             ao produtor diretamente.
