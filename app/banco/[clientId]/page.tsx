@@ -178,6 +178,17 @@ export default async function DossieProdutor({ params }: Params) {
 
   const psCls = scoreClassification(Number(ps?.score_total ?? 0));
 
+  // Produtor liberou o dossiê mas ainda não importou NF-e: renderiza um
+  // empty-state honesto em vez de "R$ 0,00" em tudo (que numa análise de
+  // crédito lê como "sem receita" / red flag, não como "dados pendentes").
+  const hasFinancialData = !!(
+    financial &&
+    (financial.receita12m > 0 ||
+      financial.despesa12m > 0 ||
+      financial.recentEntries.length > 0 ||
+      financial.projections.length > 0)
+  );
+
   return (
     <PersonaShell ctx={ctx}>
       <div className="max-w-6xl mx-auto px-8 py-10">
@@ -401,6 +412,8 @@ export default async function DossieProdutor({ params }: Params) {
                 </div>
               </div>
 
+              {hasFinancialData ? (
+              <>
               {/* KPIs financeiros */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-6">
                 <FinKpi
@@ -506,6 +519,19 @@ export default async function DossieProdutor({ params }: Params) {
                       </tbody>
                     </table>
                   </div>
+                </div>
+              )}
+              </>
+              ) : (
+                <div className="p-10 text-center">
+                  <p className="text-sm font-medium text-[var(--text-primary)]">
+                    Sincronização fiscal pendente
+                  </p>
+                  <p className="text-xs text-[var(--text-muted)] mt-1.5 max-w-md mx-auto leading-relaxed">
+                    Este produtor liberou o dossiê, mas ainda não importou NF-e
+                    dos últimos 12 meses. Receita, despesas e FUNRURAL provisionado
+                    aparecerão aqui assim que a sincronização fiscal for concluída.
+                  </p>
                 </div>
               )}
             </section>
