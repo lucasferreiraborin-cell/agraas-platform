@@ -3,6 +3,11 @@ import { getCotacaoArroba } from "@/lib/cotacao";
 import Link from "next/link";
 import TargetArrobasEditor from "@/app/components/TargetArrobasEditor";
 import { BackLink } from "@/app/components/ui/BackLink";
+import {
+  Tractor, Beef, Tag, Scale, Syringe, Package, Repeat,
+  DollarSign, ClipboardCheck, BadgeCheck, Sprout, Circle,
+  type LucideIcon,
+} from "lucide-react";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -191,8 +196,8 @@ export default async function PropriedadeDetailPage({ params }: PageProps) {
             <div className="ag-badge ag-badge-green">Fazenda</div>
 
             <div className="mt-6 flex items-center gap-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-[var(--primary-soft)] text-3xl">
-                🏡
+              <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-[var(--primary-soft)]">
+                <Tractor size={28} className="text-[var(--primary)]" />
               </div>
 
               <div>
@@ -343,8 +348,8 @@ export default async function PropriedadeDetailPage({ params }: PageProps) {
                       <tr key={animal.id}>
                         <td>
                           <div className="flex items-center gap-4">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--primary-soft)] text-xl shadow-[var(--shadow-soft)]">
-                              {getAnimalAvatar(animal.sex)}
+                            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--primary-soft)] shadow-[var(--shadow-soft)]">
+                              {getAnimalAvatar()}
                             </div>
 
                             <div>
@@ -504,9 +509,8 @@ export default async function PropriedadeDetailPage({ params }: PageProps) {
                     className="rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5 transition hover:border-[rgba(93,156,68,0.20)]"
                   >
                     <div className="flex items-center justify-between gap-4">
-                      <span className="ag-badge ag-badge-green">
+                      <span className="ag-badge ag-badge-green inline-flex items-center gap-1.5">
                         {getEventIcon(event.event_type ?? "")}
-                        {" "}
                         {formatEventType(event.event_type ?? "")}
                       </span>
 
@@ -584,11 +588,8 @@ function StatPanel({
   );
 }
 
-function getAnimalAvatar(sex: string | null) {
-  const value = (sex ?? "").toLowerCase();
-  if (value === "male" || value === "macho") return "🐂";
-  if (value === "female" || value === "fêmea" || value === "femea") return "🐄";
-  return "🐾";
+function getAnimalAvatar() {
+  return <Beef size={20} className="text-[var(--primary)]" />;
 }
 
 function formatSex(value: string | null) {
@@ -657,28 +658,19 @@ function formatEventType(value: string) {
 }
 
 function getEventIcon(value: string) {
-  const map: Record<string, string> = {
-    BIRTH: "🐣",
-    RFID_LINKED: "🏷️",
-    WEIGHT_RECORDED: "⚖️",
-    HEALTH_APPLICATION: "💉",
-    LOT_ENTRY: "📦",
-    OWNERSHIP_TRANSFER: "🔁",
-    SALE: "💰",
-    SLAUGHTER: "📋",
-    CERTIFICATION: "✅",
-    birth: "🐣",
-    rfid_assigned: "🏷️",
-    health_application: "💉",
-    weight_recorded: "⚖️",
-    sale: "💰",
-    ownership_transfer: "🔁",
-    lot_entry: "📦",
-    slaughter: "📋",
-    weighing: "⚖️",
-    application: "💉",
+  const map: Record<string, LucideIcon> = {
+    BIRTH: Sprout, birth: Sprout,
+    RFID_LINKED: Tag, rfid_assigned: Tag,
+    WEIGHT_RECORDED: Scale, weight_recorded: Scale, weighing: Scale,
+    HEALTH_APPLICATION: Syringe, health_application: Syringe, application: Syringe,
+    LOT_ENTRY: Package, lot_entry: Package,
+    OWNERSHIP_TRANSFER: Repeat, ownership_transfer: Repeat,
+    SALE: DollarSign, sale: DollarSign,
+    SLAUGHTER: ClipboardCheck, slaughter: ClipboardCheck,
+    CERTIFICATION: BadgeCheck,
   };
-  return map[value] ?? "•";
+  const Icon = map[value] ?? Circle;
+  return <Icon size={12} className="shrink-0" />;
 }
 
 function formatDate(value: string | null | undefined) {

@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { ActionGuard } from "@/app/components/ui/ActionGuard";
 import { calculateDailyGain, getProductiveRiskLabel } from "@/lib/agraas-analytics";
+import { Package, Globe, AlertTriangle } from "lucide-react";
 
 const PAGE_SIZE = 20;
 const OBJECTIVES = ["Engorda", "Cria", "Recria", "Reprodução", "Descarte"];
@@ -208,7 +209,7 @@ export default function LotesPage() {
       <main className="space-y-8">
         <div className="ag-card-strong overflow-hidden">
           <div className="flex flex-col items-center px-8 py-16 text-center">
-            <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-[var(--primary-soft)] text-4xl">📦</div>
+            <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-[var(--primary-soft)]"><Package size={34} className="text-[var(--primary)]" strokeWidth={1.5} /></div>
             <div className="ag-badge ag-badge-green mt-8">Gestão de lotes</div>
             <h2 className="mt-5 text-3xl font-semibold tracking-[-0.06em] text-[var(--text-primary)]">Nenhum lote cadastrado</h2>
             <p className="mt-4 max-w-md text-base leading-8 text-[var(--text-secondary)]">
@@ -245,8 +246,9 @@ export default function LotesPage() {
       {/* Formulário de criação */}
       {showForm && (
         <section className={`overflow-hidden rounded-3xl border ${isExport ? "border-[rgba(26,26,46,0.20)] bg-[linear-gradient(135deg,#0f0f1a_0%,#1a1a2e_100%)]" : "ag-card"} p-8`}>
-          <h2 className={`text-xl font-semibold ${isExport ? "text-white" : "ag-section-title"}`}>
-            {isExport ? "🌍 Criar Lote de Exportação" : "Criar novo lote"}
+          <h2 className={`inline-flex items-center gap-2 text-xl font-semibold ${isExport ? "text-white" : "ag-section-title"}`}>
+            {isExport && <Globe size={18} />}
+            {isExport ? "Criar Lote de Exportação" : "Criar novo lote"}
           </h2>
           {isExport && <p className="mt-1 text-sm text-white/60">Lote com rastreabilidade completa para mercados internacionais</p>}
 
@@ -330,8 +332,9 @@ export default function LotesPage() {
 
             <div className="flex gap-3 sm:col-span-2">
               <button type="submit" disabled={saving || !nome}
-                className={`rounded-2xl px-6 py-3 text-sm font-semibold disabled:opacity-60 ${isExport ? "bg-white text-[#1a1a2e] hover:bg-white/90" : "ag-button-primary"}`}>
-                {saving ? "Criando..." : isExport ? "🌍 Criar Lote de Exportação" : "Criar lote"}
+                className={`inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-sm font-semibold disabled:opacity-60 ${isExport ? "bg-white text-[#1a1a2e] hover:bg-white/90" : "ag-button-primary"}`}>
+                {isExport && !saving && <Globe size={15} />}
+                {saving ? "Criando..." : isExport ? "Criar Lote de Exportação" : "Criar lote"}
               </button>
               <button type="button" onClick={() => setShowForm(false)}
                 className={`rounded-2xl border px-6 py-3 text-sm font-semibold ${isExport ? "border-white/20 text-white/70 hover:bg-white/8" : "ag-button-secondary"}`}>
@@ -365,8 +368,8 @@ export default function LotesPage() {
                     : "ag-card hover:border-[rgba(93,156,68,0.30)] hover:bg-[var(--primary-soft)]"
                 }`}>
                 <div className="flex items-start justify-between gap-3">
-                  <div className={`flex h-12 w-12 items-center justify-center rounded-2xl text-xl ${isExportLot ? "bg-white/10" : "bg-[var(--primary-soft)]"}`}>
-                    {isExportLot ? "🌍" : "📦"}
+                  <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${isExportLot ? "bg-white/10 text-white/80" : "bg-[var(--primary-soft)] text-[var(--primary)]"}`}>
+                    {isExportLot ? <Globe size={22} /> : <Package size={22} />}
                   </div>
                   <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
                     isExportLot ? "bg-emerald-500/20 text-emerald-300" : lot.status === "active" ? "bg-[var(--primary-soft)] text-[var(--primary-hover)]" : "bg-[rgba(31,41,55,0.08)] text-[var(--text-secondary)]"
@@ -418,7 +421,8 @@ export default function LotesPage() {
                             ? "border border-red-500/30 bg-red-500/15 text-red-300"
                             : "border border-red-200 bg-red-50 text-red-700"
                         }`}>
-                          ⚠ {ls.atRiskCount} {ls.atRiskCount === 1 ? "animal pede" : "animais pedem"} atenção
+                          <AlertTriangle size={12} className="mr-1 inline-block align-[-1px]" />
+                          {ls.atRiskCount} {ls.atRiskCount === 1 ? "animal pede" : "animais pedem"} atenção
                         </span>
                       )}
                     </>

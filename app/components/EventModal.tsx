@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
+import { Scale, Syringe, Truck, ClipboardList, type LucideIcon } from "lucide-react";
 
 type EventType = "weight" | "application" | "movement" | "observation";
 
@@ -143,11 +144,11 @@ export default function EventModal({ animalId }: { animalId: string }) {
     router.refresh();
   }
 
-  const tabs: { key: EventType; label: string }[] = [
-    { key: "weight", label: "⚖ Pesagem" },
-    { key: "application", label: "💉 Aplicação" },
-    { key: "movement", label: "🚛 Movimentação" },
-    { key: "observation", label: "📋 Observação" },
+  const tabs: { key: EventType; label: string; Icon: LucideIcon }[] = [
+    { key: "weight", label: "Pesagem", Icon: Scale },
+    { key: "application", label: "Aplicação", Icon: Syringe },
+    { key: "movement", label: "Movimentação", Icon: Truck },
+    { key: "observation", label: "Observação", Icon: ClipboardList },
   ];
 
   return (
@@ -173,13 +174,14 @@ export default function EventModal({ animalId }: { animalId: string }) {
 
             {/* Switch de tipo */}
             <div className="mt-5 flex rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] p-1">
-              {tabs.map(({ key, label }) => (
+              {tabs.map(({ key, label, Icon }) => (
                 <button key={key} type="button" onClick={() => setType(key)}
-                  className={`flex-1 rounded-xl py-2.5 text-xs font-semibold transition ${
+                  className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-semibold transition ${
                     type === key
                       ? "bg-white shadow-[var(--shadow-soft)] text-[var(--text-primary)]"
                       : "text-[var(--text-muted)]"
                   }`}>
+                  <Icon size={13} />
                   {label}
                 </button>
               ))}

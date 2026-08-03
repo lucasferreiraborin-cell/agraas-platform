@@ -1296,32 +1296,6 @@ function formatEventType(value: string) {
   return map[value] ?? value.replaceAll("_", " ");
 }
 
-function getEventIcon(value: string) {
-  const map: Record<string, string> = {
-    BIRTH: "🐣",
-    RFID_LINKED: "🏷️",
-    WEIGHT_RECORDED: "⚖️",
-    HEALTH_APPLICATION: "💉",
-    LOT_ENTRY: "📦",
-    OWNERSHIP_TRANSFER: "🔁",
-    SALE: "💰",
-    SLAUGHTER: "📋",
-    CERTIFICATION: "✅",
-    birth: "🐣",
-    rfid_assigned: "🏷️",
-    health_application: "💉",
-    weight_recorded: "⚖️",
-    sale: "💰",
-    ownership_transfer: "🔁",
-    lot_entry: "📦",
-    slaughter: "📋",
-    weighing: "⚖️",
-    application: "💉",
-  };
-
-  return map[value] ?? "•";
-}
-
 function formatMovementType(value: string) {
   const map: Record<string, string> = {
     lot_entry: "Entrada em lote",

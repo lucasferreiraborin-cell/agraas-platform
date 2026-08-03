@@ -19,7 +19,7 @@ export type MarketRow = {
 
 function formatSex(v: string | null) {
   if (!v) return "—";
-  const m: Record<string, string> = { male: "🐂 Macho", female: "🐄 Fêmea", macho: "🐂 Macho", femea: "🐄 Fêmea", "fêmea": "🐄 Fêmea" };
+  const m: Record<string, string> = { male: "Macho", female: "Fêmea", macho: "Macho", femea: "Fêmea", "fêmea": "Fêmea" };
   return m[v.toLowerCase()] ?? v;
 }
 function formatDate(v: string | null) { return v ? new Date(v).toLocaleDateString("pt-BR") : "—"; }

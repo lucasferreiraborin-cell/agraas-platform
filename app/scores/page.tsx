@@ -1,6 +1,6 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import Link from "next/link";
-import { Trophy, TrendingUp, ShieldCheck, Star } from "lucide-react";
+import { Trophy, TrendingUp, ShieldCheck, Star, Medal } from "lucide-react";
 import ScoresFilter from "@/app/components/ScoresFilter";
 import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
 import { HALAL_ENABLED } from "@/lib/feature-flags";
@@ -257,12 +257,12 @@ export default async function ScoresPage() {
           <div className="grid gap-4 sm:grid-cols-3">
             {podium.map((item, i) => {
               const score = Number(item.total_score ?? 0);
-              const medal = ["🥇","🥈","🥉"][i];
+              const medalColor = ["#c9a227", "#9ca3af", "#b06a34"][i] ?? "var(--text-muted)";
               return (
                 <Link key={item.animal_id} href={`/animais/${item.animal_id}`}
                   className="group rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] p-5 hover:border-[var(--primary)]/30 hover:bg-[var(--primary-soft)] transition">
                   <div className="flex items-center justify-between">
-                    <span className="text-2xl">{medal}</span>
+                    <Medal size={26} style={{ color: medalColor }} strokeWidth={2} />
                     <div className="flex items-center gap-2">
                       <ScoreCircleLarge score={Math.round(score)} size={60} />
                       {/* HalalBadge só aparece quando feature flag está habilitada (T1.1) */}

@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { BackLink } from "@/app/components/ui/BackLink";
 import { showToast } from "@/app/components/Toast";
+import { X } from "lucide-react";
 
 type ClientRow = { id: string; name: string };
 type PropertyRow = { id: string; name: string | null };
@@ -294,9 +295,9 @@ export default function NovoAnimalPage() {
                   <span className="flex-1 rounded-lg border border-[#4A7C3A] bg-[#f0f7ec] px-4 py-3 text-sm font-medium text-[#4A7C3A]">
                     {sireLabel}
                   </span>
-                  <button type="button" onClick={() => { setSireId(null); setSireLabel(""); setSireQuery(""); }}
-                    className="rounded-lg border border-black/10 px-3 py-3 text-sm text-[#5F6B5F] hover:bg-black/5">
-                    ✕
+                  <button type="button" aria-label="Remover pai" onClick={() => { setSireId(null); setSireLabel(""); setSireQuery(""); }}
+                    className="rounded-lg border border-black/10 px-3 py-3 text-[#5F6B5F] hover:bg-black/5">
+                    <X size={16} />
                   </button>
                 </div>
               ) : (
@@ -327,9 +328,9 @@ export default function NovoAnimalPage() {
                   <span className="flex-1 rounded-lg border border-[#4A7C3A] bg-[#f0f7ec] px-4 py-3 text-sm font-medium text-[#4A7C3A]">
                     {damLabel}
                   </span>
-                  <button type="button" onClick={() => { setDamId(null); setDamLabel(""); setDamQuery(""); }}
-                    className="rounded-lg border border-black/10 px-3 py-3 text-sm text-[#5F6B5F] hover:bg-black/5">
-                    ✕
+                  <button type="button" aria-label="Remover mãe" onClick={() => { setDamId(null); setDamLabel(""); setDamQuery(""); }}
+                    className="rounded-lg border border-black/10 px-3 py-3 text-[#5F6B5F] hover:bg-black/5">
+                    <X size={16} />
                   </button>
                 </div>
               ) : (

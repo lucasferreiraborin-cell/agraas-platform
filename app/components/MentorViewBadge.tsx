@@ -1,6 +1,7 @@
 "use client";
 
 import { useRole } from "@/app/components/RoleContext";
+import { Eye } from "lucide-react";
 
 /**
  * Badge que aparece SOMENTE pra usuários mentor_externo.
@@ -20,7 +21,7 @@ export function MentorViewBadge() {
       role="status"
       aria-label="Modo Visualização"
     >
-      <span aria-hidden="true">👁️</span>
+      <Eye size={13} aria-hidden="true" />
       <span>Modo Visualização — Mentoria</span>
     </div>
   );

@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
+import { Plane, Anchor, Calendar } from "lucide-react";
 
 type ExportLot = {
   id: string; name: string;
@@ -250,7 +251,9 @@ export default function ExportacaoPage() {
         <div className="relative p-8 lg:p-10">
           <div className="pointer-events-none absolute right-0 top-0 h-48 w-48 rounded-full bg-[radial-gradient(circle,rgba(122,168,76,0.1)_0%,rgba(122,168,76,0)_70%)]" />
           <div className="flex flex-wrap items-start gap-3">
-            <span className="ag-badge ag-badge-green">✈ Exportação</span>
+            <span className="ag-badge ag-badge-green inline-flex items-center gap-1.5">
+              <Plane size={12} /> Exportação
+            </span>
             <span className="flex items-center gap-1.5 rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-700">
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
               LIVE
@@ -372,13 +375,13 @@ export default function ExportacaoPage() {
                       )}
                       {lot.porto_embarque && (
                         <p className="flex items-center gap-2">
-                          <span className="text-[var(--text-muted)]">⚓</span>
+                          <Anchor size={14} className="text-[var(--text-muted)]" />
                           <span>{lot.porto_embarque}</span>
                         </p>
                       )}
                       {lot.data_embarque && (
                         <p className="flex items-center gap-2">
-                          <span className="text-[var(--text-muted)]">📅</span>
+                          <Calendar size={14} className="text-[var(--text-muted)]" />
                           <span>{new Date(lot.data_embarque).toLocaleDateString("pt-BR")}</span>
                         </p>
                       )}
@@ -392,7 +395,7 @@ export default function ExportacaoPage() {
                             key={cert}
                             className={`rounded-full border px-2.5 py-0.5 text-[10px] font-semibold ${certBadgeCls(cert)}`}
                           >
-                            {cert === "Halal" ? "☪ Halal" : cert}
+                            {cert}
                           </span>
                         ))}
                       </div>
@@ -486,7 +489,7 @@ export default function ExportacaoPage() {
                     <td>
                       {isHalal && (
                         <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
-                          ☪ Halal
+                          Halal
                         </span>
                       )}
                     </td>

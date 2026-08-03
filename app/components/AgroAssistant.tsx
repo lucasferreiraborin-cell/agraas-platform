@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { usePathname } from "next/navigation";
+import { X } from "lucide-react";
 
 type Message = { role: "user" | "assistant"; content: string };
 
@@ -69,7 +70,7 @@ export default function AgroAssistant() {
         title="Assistente Agraas"
       >
         {open ? (
-          <span className="text-lg font-bold text-white">✕</span>
+          <X size={22} className="text-white" />
         ) : (
           <svg width="28" height="28" viewBox="0 0 40 40" fill="none">
             <circle cx="20" cy="22" r="11" fill="#F5C47A"/>

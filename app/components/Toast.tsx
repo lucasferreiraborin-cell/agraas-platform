@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Check, X, Info } from "lucide-react";
 
 export type ToastType = "success" | "error" | "info";
 
@@ -46,7 +47,7 @@ export function ToastContainer() {
             : "bg-[#2d6a8f]"
           }`}
         >
-          <span>{item.type === "success" ? "✓" : item.type === "error" ? "✕" : "ℹ"}</span>
+          {item.type === "success" ? <Check size={16} className="shrink-0" /> : item.type === "error" ? <X size={16} className="shrink-0" /> : <Info size={16} className="shrink-0" />}
           {item.message}
         </div>
       ))}

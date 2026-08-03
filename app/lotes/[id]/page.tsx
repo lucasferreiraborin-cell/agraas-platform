@@ -9,7 +9,7 @@ import { calculateDailyGain } from "@/lib/agraas-analytics";
 import ExportConformityReport from "@/app/components/ExportConformityReport";
 import ExportRouteMap from "@/app/components/ExportRouteMap";
 import TrackingTimeline from "@/app/components/TrackingTimeline";
-import { FileText, Upload } from "lucide-react";
+import { FileText, Upload, Globe, Flag, Anchor, Calendar, Scale } from "lucide-react";
 import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
 import DownloadLotPDFButton from "@/app/components/DownloadLotPDFButton";
 import LotValueCalculator from "@/app/components/LotValueCalculator";
@@ -317,8 +317,8 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
                 <div className="flex items-center gap-3">
-                  <span className="rounded-full bg-emerald-500/15 border border-emerald-500/30 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-400">
-                    🌍 Lote de Exportação
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-400">
+                    <Globe size={13} /> Lote de Exportação
                   </span>
                   {lot.numero_contrato && (
                     <span className="rounded-full bg-white/8 border border-white/12 px-3 py-1.5 text-xs text-white/50">
@@ -328,16 +328,16 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
                 </div>
                 <h1 className="mt-4 text-4xl font-semibold tracking-[-0.05em] text-white">{lot.name}</h1>
                 <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-white/55">
-                  {lot.pais_destino && <span>🏳️ {lot.pais_destino}</span>}
-                  {lot.porto_embarque && <span>⚓ {lot.porto_embarque}</span>}
-                  {lot.data_embarque && <span>📅 Embarque: {new Date(lot.data_embarque).toLocaleDateString("pt-BR")}</span>}
-                  {lot.target_weight && <span>⚖ Meta: {lot.target_weight} kg</span>}
+                  {lot.pais_destino && <span className="inline-flex items-center gap-1.5"><Flag size={13} /> {lot.pais_destino}</span>}
+                  {lot.porto_embarque && <span className="inline-flex items-center gap-1.5"><Anchor size={13} /> {lot.porto_embarque}</span>}
+                  {lot.data_embarque && <span className="inline-flex items-center gap-1.5"><Calendar size={13} /> Embarque: {new Date(lot.data_embarque).toLocaleDateString("pt-BR")}</span>}
+                  {lot.target_weight && <span className="inline-flex items-center gap-1.5"><Scale size={13} /> Meta: {lot.target_weight} kg</span>}
                 </div>
                 {lot.certificacoes_exigidas && lot.certificacoes_exigidas.length > 0 && (
                   <div className="mt-4 flex flex-wrap gap-2">
                     {lot.certificacoes_exigidas.map(cert => (
                       <span key={cert} className={`rounded-full border px-3 py-1 text-xs font-semibold ${cert === "Halal" ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-300" : "border-white/15 bg-white/8 text-white/60"}`}>
-                        {cert === "Halal" ? "☪ Halal" : cert}
+                        {cert}
                       </span>
                     ))}
                   </div>

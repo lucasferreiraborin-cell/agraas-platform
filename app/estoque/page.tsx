@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@supabase/supabase-js";
+import { Package } from "lucide-react";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -133,7 +134,7 @@ export default function EstoquePage() {
 
       {!loading && rows.length === 0 && (
         <div className="ag-empty-state">
-          <div className="ag-empty-state-icon">📦</div>
+          <div className="ag-empty-state-icon"><Package size={28} strokeWidth={1.5} /></div>
           <p className="ag-empty-state-title">Nenhum lote encontrado</p>
           <p className="ag-empty-state-text">Cadastre o primeiro lote de estoque sanitário.</p>
           <Link href="/estoque/novo" className="ag-button-primary mt-2">+ Novo Lote</Link>

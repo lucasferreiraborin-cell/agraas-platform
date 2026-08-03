@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { BackLink } from "@/app/components/ui/BackLink";
 import { createClient } from "@supabase/supabase-js";
+import { ClipboardList } from "lucide-react";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -132,7 +133,7 @@ export default function HistoricoEstoquePage() {
 
       {!loading && rows.length === 0 && (
         <div className="ag-empty-state">
-          <div className="ag-empty-state-icon">📋</div>
+          <div className="ag-empty-state-icon"><ClipboardList size={28} strokeWidth={1.5} /></div>
           <p className="ag-empty-state-title">Nenhuma movimentação encontrada</p>
         </div>
       )}
