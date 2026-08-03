@@ -17,7 +17,9 @@ export async function POST(req: NextRequest) {
   const { data: animalCheck } = await supabase.from("animals").select("id").eq("id", animalId).single();
   if (!animalCheck) return Response.json({ ok: false, error: "Animal não encontrado" }, { status: 404 });
 
-  const { data: score, error } = await supabase.rpc("calculate_agraas_score", {
+  // Função canônica do Score Engine v3 (migration 123). O nome antigo
+  // "calculate_agraas_score" nunca existiu no schema — RPC dava erro sempre.
+  const { data: score, error } = await supabase.rpc("calculate_agraas_score_v3", {
     p_animal_id: animalId,
   });
 

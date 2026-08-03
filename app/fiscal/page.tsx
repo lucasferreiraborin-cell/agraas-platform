@@ -69,7 +69,9 @@ export default async function FiscalPage() {
     },
     {
       label: "Valor total",
-      value: `R$\u00a0${valorTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`,
+      // KPI de resumo \u2014 sem centavos pra caber no card (o truncate cortava
+      // "R$ 13.068,50" \u2192 "R$ 13.0..."). O valor exato aparece na tabela abaixo.
+      value: `R$\u00a0${valorTotal.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}`,
       sub: "soma de todas as notas",
       icon: DollarSign,
       iconColor: "text-blue-600",

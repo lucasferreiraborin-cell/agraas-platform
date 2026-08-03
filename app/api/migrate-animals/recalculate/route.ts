@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
 
   let recalculated = 0;
   for (const id of animal_ids) {
-    const { error } = await supabase.rpc("calculate_agraas_score", { p_animal_id: id });
+    const { error } = await supabase.rpc("calculate_agraas_score_v3", { p_animal_id: id });
     if (!error) recalculated++;
   }
 

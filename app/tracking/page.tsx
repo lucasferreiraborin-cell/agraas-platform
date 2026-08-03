@@ -112,8 +112,12 @@ export default async function TrackingPage() {
     const totalLost = rows.reduce((s, r) => s + (r.animals_lost ?? 0), 0);
     const lastConfirmed = lastRow?.animals_confirmed ?? null;
     const started = rows.find(r => r.stage === "fazenda")?.animals_confirmed ?? null;
-    // Survival = vivos atuais / animais iniciais (com 1 decimal)
-    const pctSurvival = started && lastConfirmed != null ? Math.round((lastConfirmed / started) * 1000) / 10 : null;
+    // Survival = vivos atuais / animais iniciais (com 1 decimal). Cap em 100%:
+    // dados de estágio inconsistentes (confirmados > iniciais) nunca devem
+    // renderizar sobrevivência absurda (>100%) na UI.
+    const pctSurvival = started && lastConfirmed != null
+      ? Math.min(100, Math.round((lastConfirmed / started) * 1000) / 10)
+      : null;
     const lot = lotMap.get(lotId);
     return {
       lotId,
