@@ -2,7 +2,23 @@
 
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { CheckCircle2, Circle, Loader2, MapPin, User, AlertTriangle, Plus, X } from "lucide-react";
+import {
+  CheckCircle2,
+  Circle,
+  Loader2,
+  MapPin,
+  User,
+  AlertTriangle,
+  Plus,
+  X,
+  Wheat,
+  Warehouse,
+  Truck,
+  Anchor,
+  Ship,
+  Flag,
+  type LucideIcon,
+} from "lucide-react";
 import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
 
 type Checkpoint = {
@@ -19,14 +35,14 @@ type Checkpoint = {
   notes: string | null;
 };
 
-const STAGES = [
-  { key: "fazenda",       label: "Fazenda",        icon: "🌾" },
-  { key: "concentracao",  label: "Concentração",   icon: "🏚" },
-  { key: "transporte",    label: "Transporte",     icon: "🚛" },
-  { key: "porto_origem",  label: "Porto Origem",   icon: "⚓" },
-  { key: "navio",         label: "Navio",          icon: "🚢" },
-  { key: "porto_destino", label: "Porto Destino",  icon: "🏳️" },
-  { key: "entregue",      label: "Entregue",       icon: "✅" },
+const STAGES: { key: string; label: string; Icon: LucideIcon }[] = [
+  { key: "fazenda",       label: "Fazenda",        Icon: Wheat },
+  { key: "concentracao",  label: "Concentração",   Icon: Warehouse },
+  { key: "transporte",    label: "Transporte",     Icon: Truck },
+  { key: "porto_origem",  label: "Porto Origem",   Icon: Anchor },
+  { key: "navio",         label: "Navio",          Icon: Ship },
+  { key: "porto_destino", label: "Porto Destino",  Icon: Flag },
+  { key: "entregue",      label: "Entregue",       Icon: CheckCircle2 },
 ];
 
 export default function TrackingTimeline({
@@ -171,7 +187,10 @@ export default function TrackingTimeline({
               {/* Content */}
               <div className={`flex-1 pb-8 ${isLast ? "pb-0" : ""}`}>
                 <div className="flex items-center gap-2 pt-2">
-                  <span className="text-base">{stage.icon}</span>
+                  <stage.Icon
+                    size={16}
+                    className={done ? "text-emerald-600" : isCurrent ? "text-blue-600" : "text-[var(--text-muted)]"}
+                  />
                   <h3 className={`font-semibold ${done ? "text-emerald-700" : isCurrent ? "text-blue-700" : "text-[var(--text-muted)]"}`}>
                     {stage.label}
                   </h3>
@@ -231,8 +250,9 @@ export default function TrackingTimeline({
 
                 {/* Lote entregue */}
                 {stage.key === "entregue" && done && (
-                  <div className="mt-3 rounded-2xl border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
-                    ✅ Lote entregue com sucesso
+                  <div className="mt-3 flex items-center gap-2 rounded-2xl border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
+                    <CheckCircle2 size={16} />
+                    Lote entregue com sucesso
                   </div>
                 )}
               </div>
@@ -246,8 +266,10 @@ export default function TrackingTimeline({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-lg rounded-3xl bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b border-[var(--border)] px-6 py-4">
-              <h3 className="font-semibold text-[var(--text-primary)]">
-                Registrar checkpoint — {currentStage.icon} {currentStage.label}
+              <h3 className="flex items-center gap-2 font-semibold text-[var(--text-primary)]">
+                Registrar checkpoint
+                <currentStage.Icon size={16} className="text-[var(--primary)]" />
+                {currentStage.label}
               </h3>
               <button onClick={() => setShowModal(false)} className="rounded-xl p-1.5 hover:bg-[var(--surface-soft)] transition">
                 <X size={18} />

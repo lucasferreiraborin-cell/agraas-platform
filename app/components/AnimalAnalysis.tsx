@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { DollarSign, Clock, Syringe, CheckCircle2, AlertTriangle, Construction, type LucideIcon } from "lucide-react";
 
 type Analise = {
   recomendacao: "Vender agora" | "Aguardar" | "Melhorar sanitário";
@@ -20,24 +21,24 @@ type Meta = {
   gmd: number | null;
 };
 
-const CORES: Record<Analise["recomendacao"], { bg: string; border: string; badge: string; icon: string }> = {
+const CORES: Record<Analise["recomendacao"], { bg: string; border: string; badge: string; Icon: LucideIcon }> = {
   "Vender agora": {
     bg: "bg-[rgba(93,156,68,0.07)]",
     border: "border-[rgba(93,156,68,0.30)]",
     badge: "bg-[var(--primary-soft)] text-[var(--primary-hover)]",
-    icon: "💰",
+    Icon: DollarSign,
   },
   "Aguardar": {
     bg: "bg-[rgba(217,163,67,0.07)]",
     border: "border-[rgba(217,163,67,0.30)]",
     badge: "bg-[rgba(217,163,67,0.14)] text-[var(--warning)]",
-    icon: "⏳",
+    Icon: Clock,
   },
   "Melhorar sanitário": {
     bg: "bg-[rgba(214,69,69,0.06)]",
     border: "border-[rgba(214,69,69,0.22)]",
     badge: "bg-[rgba(214,69,69,0.10)] text-[var(--danger)]",
-    icon: "💉",
+    Icon: Syringe,
   },
 };
 
@@ -63,11 +64,11 @@ export default function AnimalAnalysis({ animalId }: { animalId: string }) {
         body: JSON.stringify({ animalId }),
       });
       const data = await res.json();
-      if (!data.ok) { setError("🚧 Funcionalidade em construção — disponível em breve."); setLoading(false); return; }
+      if (!data.ok) { setError("Funcionalidade em construção — disponível em breve."); setLoading(false); return; }
       setAnalise(data.analise as Analise);
       setMeta(data.meta as Meta);
     } catch {
-      setError("🚧 Funcionalidade em construção — disponível em breve.");
+      setError("Funcionalidade em construção — disponível em breve.");
     }
     setLoading(false);
   }
@@ -109,14 +110,20 @@ export default function AnimalAnalysis({ animalId }: { animalId: string }) {
         </div>
       )}
 
-      {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
+      {error && (
+        <p className="mt-4 flex items-center gap-2 text-sm text-red-600">
+          <Construction size={14} />
+          {error}
+        </p>
+      )}
 
       {analise && cores && meta && (
         <div className={`mt-5 rounded-2xl border ${cores.border} ${cores.bg} p-5`}>
           {/* Cabeçalho da recomendação */}
           <div className="flex flex-wrap items-center gap-3">
             <span className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold ${cores.badge}`}>
-              {cores.icon} {analise.recomendacao}
+              <cores.Icon size={14} />
+              {analise.recomendacao}
             </span>
             {analise.prazo_dias && (
               <span className="text-sm text-[var(--text-muted)]">em ~{analise.prazo_dias} dias</span>
@@ -132,11 +139,17 @@ export default function AnimalAnalysis({ animalId }: { animalId: string }) {
           {/* Pontos */}
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <div className="rounded-xl bg-white/70 p-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--primary-hover)]">✓ Ponto forte</p>
+              <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--primary-hover)]">
+                <CheckCircle2 size={12} />
+                Ponto forte
+              </p>
               <p className="mt-1.5 text-sm text-[var(--text-secondary)]">{analise.ponto_forte}</p>
             </div>
             <div className="rounded-xl bg-white/70 p-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[var(--warning)]">⚠ Atenção</p>
+              <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--warning)]">
+                <AlertTriangle size={12} />
+                Atenção
+              </p>
               <p className="mt-1.5 text-sm text-[var(--text-secondary)]">{analise.ponto_atencao}</p>
             </div>
           </div>

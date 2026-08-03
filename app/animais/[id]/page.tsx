@@ -1,5 +1,6 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import Link from "next/link";
+import { Beef, CheckCircle2 } from "lucide-react";
 import { BackLink } from "@/app/components/ui/BackLink";
 import {
   getPassportConfidenceText,
@@ -465,8 +466,8 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
             <div className="ag-badge ag-badge-green">Passaporte Agraas</div>
 
             <div className="mt-6 flex items-center gap-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-[var(--primary-soft)] text-3xl">
-                {getAnimalAvatar(displaySex)}
+              <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-[var(--primary-soft)]">
+                <Beef size={28} className="text-[var(--primary)]" />
               </div>
 
               <div>
@@ -911,8 +912,9 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
               {certifications.map(cert => (
                 <div key={cert.id}
                   className="rounded-2xl border border-[rgba(93,156,68,0.24)] bg-[var(--primary-soft)] px-4 py-3">
-                  <p className="text-sm font-semibold text-[var(--primary-hover)]">
-                    ✓ {cert.certification_name ?? "Certificação"}
+                  <p className="flex items-center gap-1.5 text-sm font-semibold text-[var(--primary-hover)]">
+                    <CheckCircle2 size={14} />
+                    {cert.certification_name ?? "Certificação"}
                   </p>
                   {cert.issued_at && (
                     <p className="mt-1 text-xs text-[var(--text-muted)]">
@@ -1237,13 +1239,6 @@ function formatDate(value: string | null | undefined) {
 function formatDateTime(value: string | null | undefined) {
   if (!value) return "-";
   return new Date(value).toLocaleString("pt-BR");
-}
-
-function getAnimalAvatar(sex: string | null) {
-  const value = (sex ?? "").toLowerCase();
-  if (value === "male" || value === "macho") return "🐂";
-  if (value === "female" || value === "fêmea" || value === "femea") return "🐄";
-  return "🐾";
 }
 
 function formatSex(value: string | null) {

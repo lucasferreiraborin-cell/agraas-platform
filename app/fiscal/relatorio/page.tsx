@@ -22,9 +22,9 @@ function calcRisk(notes: Note[], alertsByNote: Map<string, Alert[]>) {
     if (a.some(x => x.severidade === "critico" && !x.resolvido)) { hasCritical = true; break; }
     if (a.some(x => x.severidade === "aviso"   && !x.resolvido))   hasWarning  = true;
   }
-  if (hasCritical) return { label: "Alto risco",   icon: "🔴", cls: "bg-red-50 text-red-700 border-red-200",     dot: "bg-red-500"     };
-  if (hasWarning)  return { label: "Risco médio",  icon: "🟡", cls: "bg-amber-50 text-amber-700 border-amber-200", dot: "bg-amber-500"   };
-  return               { label: "Baixo risco",  icon: "🟢", cls: "bg-emerald-50 text-emerald-700 border-emerald-200", dot: "bg-emerald-500" };
+  if (hasCritical) return { label: "Alto risco",   cls: "bg-red-50 text-red-700 border-red-200",     dot: "bg-red-500"     };
+  if (hasWarning)  return { label: "Risco médio",  cls: "bg-amber-50 text-amber-700 border-amber-200", dot: "bg-amber-500"   };
+  return               { label: "Baixo risco",  cls: "bg-emerald-50 text-emerald-700 border-emerald-200", dot: "bg-emerald-500" };
 }
 
 const MONTHS = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
@@ -183,7 +183,7 @@ export default function FiscalRelatorioPage() {
 
             {/* Indicador de risco — badge grande */}
             <div className={`mt-4 flex items-center gap-3 rounded-2xl border px-4 py-3 ${risk.cls}`}>
-              <span className="text-lg">{risk.icon}</span>
+              <span className={`h-3 w-3 shrink-0 rounded-full ${risk.dot}`} />
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-widest opacity-70">Risco fiscal</p>
                 <p className="text-base font-bold leading-tight">{risk.label}</p>
