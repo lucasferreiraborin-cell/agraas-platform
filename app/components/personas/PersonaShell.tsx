@@ -21,6 +21,7 @@ import BuyerSidebarNav from "@/app/components/BuyerSidebarNav";
 import BankSidebarNav from "@/app/components/BankSidebarNav";
 import ContadorSidebarNav from "@/app/components/ContadorSidebarNav";
 import AdminSwitcher from "@/app/components/AdminSwitcher";
+import PersonaLogoutButton from "@/app/components/personas/PersonaLogoutButton";
 
 export default function PersonaShell({
   ctx,
@@ -50,8 +51,9 @@ export default function PersonaShell({
           <div className="text-white/60 text-xs mt-0.5">{clientName}</div>
         </div>
         <SidebarNav />
-        <div className="border-t border-white/8 px-4 py-3">
-          <div className="text-[10px] uppercase tracking-wider text-white/40">
+        <div className="border-t border-white/8 px-4 py-3 space-y-2">
+          <PersonaLogoutButton />
+          <div className="px-3 text-[10px] uppercase tracking-wider text-white/40">
             {theme.topLabel}
           </div>
         </div>

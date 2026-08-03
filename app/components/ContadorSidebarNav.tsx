@@ -12,9 +12,8 @@
  */
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { createBrowserClient } from "@supabase/ssr";
-import { LayoutDashboard, Users, CalendarClock, LogOut } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { LayoutDashboard, Users, CalendarClock } from "lucide-react";
 
 const CONTADOR_NAV = [
   { href: "/contador",              label: "Portfólio",           icon: LayoutDashboard },
@@ -24,19 +23,6 @@ const CONTADOR_NAV = [
 
 export default function ContadorSidebarNav() {
   const pathname = usePathname();
-  const router = useRouter();
-
-  // Logout client-side igual ao LogoutButton global — NÃO existe rota
-  // /api/auth/logout (o <Link> anterior dava 404 no clique e no prefetch RSC).
-  async function handleLogout() {
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-    );
-    await supabase.auth.signOut();
-    router.push("/login");
-    router.refresh();
-  }
 
   return (
     <nav className="flex-1 overflow-y-auto px-4 py-5">
@@ -67,19 +53,6 @@ export default function ContadorSidebarNav() {
             </Link>
           );
         })}
-      </div>
-
-      <div className="mt-8 border-t border-white/8 pt-4">
-        <button
-          type="button"
-          onClick={handleLogout}
-          className="group flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-[15px] font-medium text-white/55 hover:bg-white/8 hover:text-white transition duration-200"
-        >
-          <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/8 bg-white/5 text-white/65 group-hover:bg-white/10 group-hover:text-white">
-            <LogOut size={16} />
-          </span>
-          <span>Sair</span>
-        </button>
       </div>
     </nav>
   );
