@@ -53,8 +53,14 @@ export default function WeightTrend({ points }: { points: Point[] }) {
   const gmd = days > 0 ? (last.weight - first.weight) / days : null;
   const totalGain = last.weight - first.weight;
 
-  const fmtDate = (d: string | null) =>
-    d ? new Date(d).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }) : "—";
+  // Formata "YYYY-MM-DD" SEM Date/toLocaleDateString: evita hydration mismatch
+  // (servidor UTC vs browser BR-3 formatariam dias diferentes p/ datas à meia-noite).
+  const MONTHS = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+  const fmtDate = (d: string | null) => {
+    if (!d) return "—";
+    const m = d.slice(0, 10).match(/^(\d{4})-(\d{2})-(\d{2})/);
+    return m ? `${m[3]} ${MONTHS[Number(m[2]) - 1]}` : d;
+  };
 
   return (
     <div className="rounded-3xl border border-[var(--border)] bg-white p-6 shadow-[var(--shadow-soft)]">

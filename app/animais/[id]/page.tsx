@@ -596,7 +596,7 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
                 Score consolidado
               </p>
-              <ScoreRing score={calculatedAgraasScore} size="md" variant="light" />
+              <ScoreRing score={Math.round(calculatedAgraasScore)} size="md" variant="light" />
               <p className="mt-1 text-center text-xs leading-relaxed text-[var(--text-secondary)] max-w-[200px]">
                 {Number(score.total_score ?? 0) > 0
                   ? "Passaporte consolidado · operação · consistência"
