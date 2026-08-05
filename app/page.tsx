@@ -4,6 +4,7 @@ import Image from "next/image";
 import { createSupabaseServiceClient } from "@/lib/supabase-service";
 import PublicShell from "@/app/components/ui/PublicShell";
 import ScoresSection from "@/app/components/landing/ScoresSection";
+import PassportPreview from "@/app/components/landing/PassportPreview";
 import PortosSection from "@/app/components/landing/PortosSection";
 import FSJBECaseSection from "@/app/components/landing/FSJBECaseSection";
 import OperationalSection from "@/app/components/landing/OperationalSection";
@@ -183,6 +184,9 @@ export default async function LandingPage() {
       <div id="score">
         <ScoresSection />
       </div>
+
+      {/* ═══ [4.5] PASSAPORTE PÚBLICO — preview tangível ══════════════════ */}
+      <PassportPreview />
 
       {/* ═══ [5] CAPABILITIES — narrativa 2x2 ═════════════════════════════ */}
       <section className="bg-white">
