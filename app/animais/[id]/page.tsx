@@ -9,6 +9,8 @@ import {
   getExportEligibility,
 } from "@/lib/agraas-analytics";
 import EventModal from "@/app/components/EventModal";
+import WeightTrend from "@/app/components/WeightTrend";
+import ScoreRing from "@/app/components/ui/ScoreRing";
 import AnimalAnalysis from "@/app/components/AnimalAnalysis";
 import AnimalQRCode from "@/app/components/AnimalQRCode";
 import ExportPassportModal from "@/app/components/ExportPassportModal";
@@ -594,12 +596,20 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">
                 Score consolidado
               </p>
-              <ScoreDonut score={calculatedAgraasScore} size={148} />
+              <ScoreRing score={calculatedAgraasScore} size="md" variant="light" />
               <p className="mt-1 text-center text-xs leading-relaxed text-[var(--text-secondary)] max-w-[200px]">
                 {Number(score.total_score ?? 0) > 0
                   ? "Passaporte consolidado · operação · consistência"
                   : "Score dinâmico: peso, histórico, integridade e operação"}
               </p>
+            </div>
+
+            <div className="mt-6">
+              <WeightTrend
+                points={[...weights]
+                  .reverse()
+                  .map((w) => ({ date: w.weighing_date, weight: Number(w.weight) }))}
+              />
             </div>
 
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
