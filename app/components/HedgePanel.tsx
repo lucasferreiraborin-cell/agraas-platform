@@ -230,9 +230,13 @@ export default function HedgePanel({
               )}
               <circle cx={xAt(i)} cy={yAt(c.preco)} r={c.i === melhor.i ? 5.5 : 3.5}
                 fill={c.i === melhor.i ? "var(--primary)" : "#fff"} stroke="var(--primary)" strokeWidth="2" />
-              <text x={xAt(i)} y={H - padBottom + 16} textAnchor="middle" fontSize="10"
+              <text
+                x={i === 0 ? padX : i === n - 1 ? W - padX : xAt(i)}
+                y={H - padBottom + 16}
+                textAnchor={i === 0 ? "start" : i === n - 1 ? "end" : "middle"}
+                fontSize="10"
                 fill={c.isVenda ? "var(--primary)" : "var(--text-muted)"} fontWeight={c.isVenda ? 700 : 400} fontFamily="inherit">
-                {c.label}{i === 0 ? " (spot)" : ""}
+                {c.label}{i === 0 ? " · spot" : ""}
               </text>
             </g>
           ))}
