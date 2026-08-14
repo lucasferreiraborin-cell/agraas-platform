@@ -18,6 +18,7 @@ import { CotacaoBadge } from "@/app/components/CotacaoBadge";
 import { getCotacaoArroba } from "@/lib/cotacao";
 import InstituicoesParceirasCard from "@/app/components/InstituicoesParceirasCard";
 import AdminSwitcher from "@/app/components/AdminSwitcher";
+import ScoreRing from "@/app/components/ui/ScoreRing";
 import { roleToPersona } from "@/lib/persona-themes";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -737,11 +738,16 @@ export default async function PainelPage() {
               Médias agregadas dos 5 pilares ancorados na metodologia Embrapa Gado de Corte (Costa et al., 2018).
             </p>
           </div>
-          <div className="text-right">
-            <p className="text-xs uppercase tracking-[0.14em] text-[var(--text-muted)]">Score médio total</p>
-            <p className="text-3xl font-semibold tracking-[-0.04em] text-[var(--primary-hover)]">
-              {totalScoreAverage}<span className="text-base font-normal text-[var(--text-muted)]">/100</span>
+          <div className="flex shrink-0 flex-col items-center">
+            <p className="mb-2 text-xs uppercase tracking-[0.14em] text-[var(--text-muted)]">
+              Score médio total
             </p>
+            <ScoreRing
+              score={Math.round(Number(totalScoreAverage))}
+              size="sm"
+              variant="light"
+              animate={false}
+            />
           </div>
         </div>
 

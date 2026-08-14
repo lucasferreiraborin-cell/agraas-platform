@@ -17,6 +17,7 @@ import { scoreClassification, maskEarTag } from "@/lib/personas";
 import { funruralValue } from "@/lib/funrural";
 import { requirePersona, BANCO_ROUTES } from "@/lib/persona-resolver";
 import { Download, MapPin, Calendar, Award } from "lucide-react";
+import ScoreRing from "@/app/components/ui/ScoreRing";
 
 export const dynamic = "force-dynamic";
 
@@ -232,18 +233,22 @@ export default async function DossieProdutor({ params }: Params) {
                 <div className="text-[11px] uppercase tracking-wider text-[var(--text-muted)]">
                   Producer Score · v3 Embrapa Doc 237
                 </div>
-                <div className="flex items-end gap-3 mt-3">
-                  <div className="text-6xl font-bold leading-none" style={{ color: psCls.color }}>
-                    {Number(ps?.score_total ?? 0).toFixed(0)}
-                  </div>
-                  <div className="pb-1">
+                <div className="mt-4 flex items-center gap-5">
+                  <ScoreRing
+                    score={Math.round(Number(ps?.score_total ?? 0))}
+                    size="md"
+                    variant="light"
+                    animate={false}
+                  />
+                  <div>
                     <div className="text-lg font-semibold" style={{ color: psCls.color }}>
                       {psCls.label}
                     </div>
-                    <div className="text-xs text-[var(--text-muted)]">/ 100 pts</div>
+                    <p className="mt-1.5 max-w-[220px] text-sm leading-relaxed text-[var(--text-secondary)]">
+                      {psCls.description}
+                    </p>
                   </div>
                 </div>
-                <p className="text-sm text-[var(--text-secondary)] mt-3 max-w-xs">{psCls.description}</p>
               </div>
               <div className="space-y-2 col-span-2">
                 <ScoreBreakdown label="Ativos · qualidade do rebanho" value={Number(ps?.score_ativos ?? 0)} />
