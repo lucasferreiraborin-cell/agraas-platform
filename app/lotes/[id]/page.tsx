@@ -13,6 +13,7 @@ import { FileText, Upload, Globe, Flag, Anchor, Calendar, Scale } from "lucide-r
 import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
 import DownloadLotPDFButton from "@/app/components/DownloadLotPDFButton";
 import LotValueCalculator from "@/app/components/LotValueCalculator";
+import HedgePanel from "@/app/components/HedgePanel";
 
 const SCORE_MINIMO_EXPORT = 60;
 
@@ -62,6 +63,7 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
   const [passportScores, setPassportScores] = useState<PassportCacheRow[]>([]);
   const [trackingCheckpoints, setTrackingCheckpoints] = useState<TrackingCheckpoint[]>([]);
   const [cotacaoArroba, setCotacaoArroba] = useState<number>(330);
+  const [custoTotalLote, setCustoTotalLote] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchAnimal[]>([]);
@@ -114,6 +116,7 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
       { data: certData },
       { data: cacheData },
       { data: tData },
+      { data: costData },
     ] = await Promise.all([
       supabase.from("animals")
         .select("id, internal_code, nickname, sex, breed, birth_date, blood_type, sire_animal_id, dam_animal_id")
@@ -133,7 +136,15 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
         .select("animal_id, score_json")
         .in("animal_id", animalIds),
       trackingPromise,
+      supabase.from("animal_cost_summary")
+        .select("total_cost")
+        .in("animal_id", animalIds),
     ]);
+
+    setCustoTotalLote(
+      ((costData ?? []) as { total_cost: number | null }[])
+        .reduce((s, r) => s + Number(r.total_cost ?? 0), 0),
+    );
 
     const assignmentIdByAnimal = new Map(assignments.map((a) => [a.animal_id, a.id]));
     const animalList = ((animalsData ?? []) as Omit<AnimalInLot, "assignment_id">[]).map((a) => ({
@@ -252,7 +263,7 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
       const d = new Date(); d.setDate(d.getDate() + dias);
       previsaoSaida = d.toLocaleDateString("pt-BR");
     }
-    return { avgGmd, avgScore, atMeta, previsaoSaida };
+    return { avgGmd, avgGmdNum, avgScore, atMeta, previsaoSaida };
   }, [animals, weightByAnimal, lot, scoreByAnimal]);
 
   const exportAptidao = useMemo(() => {
@@ -407,6 +418,19 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
           activeCarenciasByAnimal={activeCarenciasByAnimal}
           lot={{ pais_destino: lot.pais_destino, certificacoes_exigidas: lot.certificacoes_exigidas }}
           cotacaoArroba={cotacaoArroba}
+        />
+      )}
+
+      {/* ── Inteligência de Hedge (trava de preço/margem) ── */}
+      {animals.length > 0 && custoTotalLote > 0 && (
+        <HedgePanel
+          animals={animals}
+          weightByAnimal={weightByAnimal}
+          custoTotalLote={custoTotalLote}
+          cotacaoSpot={cotacaoArroba}
+          gmdMedio={stats.avgGmdNum}
+          pesoAlvoKg={lot.target_weight}
+          mesAtual={new Date().getMonth()}
         />
       )}
 
