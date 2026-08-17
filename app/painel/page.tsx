@@ -398,7 +398,8 @@ export default async function PainelPage() {
     style: "currency",
     currency: "BRL",
     maximumFractionDigits: 0,
-  }).format(totalArrobas * cotacaoSnap.value);
+    // valora com arrobas EXATAS (não arredondadas) — bate com a página /hedge
+  }).format((totalWeightKg / 30) * cotacaoSnap.value);
 
   // ── Halal & export KPIs (BUG 3 fix: from direct cert query) ──────────────────
   const halalAnimalIds = new Set(halalCerts.map((c) => c.animal_id));
