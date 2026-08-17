@@ -239,7 +239,8 @@ export default async function PainelPage() {
     supabaseServer
       .from("animals")
       .select("id, internal_code, agraas_id, birth_date, current_property_id")
-      .eq("client_id", clientId),
+      .eq("client_id", clientId)
+      .eq("status", "Ativo"),
 
     // weights não tem client_id — fetch all; alerta só usa animal_ids do passport (já filtrado)
     supabaseServer
@@ -295,10 +296,17 @@ export default async function PainelPage() {
     created_at: row.created_at,
   }));
 
-  const passports = (passportsData as PassportCacheRow[] | null) ?? [];
+  const animals = (animalsData as AnimalRow[] | null) ?? [];
+  // Rebanho = animais ATIVOS. O passport_cache está com status stale (vendidos
+  // ainda marcados 'Ativo'), então restringimos os passports aos ids dos animais
+  // ativos — assim contagem, arrobas, valor e score do painel batem com o hedge,
+  // o banco e o resto da plataforma (14 ativos, não 23 total).
+  const activeAnimalIds = new Set(animals.map((a) => a.id));
+  const passports = ((passportsData as PassportCacheRow[] | null) ?? []).filter(
+    (p) => activeAnimalIds.has(p.animal_id),
+  );
   const marketRows = (marketData as MarketRow[] | null) ?? [];
   const recentEvents = (eventsData as EventRow[] | null) ?? [];
-  const animals = (animalsData as AnimalRow[] | null) ?? [];
   const properties = (propertiesData as PropertyRow[] | null) ?? [];
   const weighings = (weighingsData as WeighingRow[] | null) ?? [];
   const activeApps = (activeAppsData as ActiveAppRow[] | null) ?? [];
