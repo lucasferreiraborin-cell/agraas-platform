@@ -263,7 +263,8 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
       const d = new Date(); d.setDate(d.getDate() + dias);
       previsaoSaida = d.toLocaleDateString("pt-BR");
     }
-    return { avgGmd, avgGmdNum, avgScore, atMeta, previsaoSaida };
+    const arrobasTotal = avgWeights.reduce((s, w) => s + w, 0) / 30;
+    return { avgGmd, avgGmdNum, avgScore, atMeta, previsaoSaida, arrobasTotal, pesoMedio: avgWeight };
   }, [animals, weightByAnimal, lot, scoreByAnimal]);
 
   const exportAptidao = useMemo(() => {
@@ -424,13 +425,14 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
       {/* ── Inteligência de Hedge (trava de preço/margem) ── */}
       {animals.length > 0 && custoTotalLote > 0 && (
         <HedgePanel
-          animals={animals}
-          weightByAnimal={weightByAnimal}
-          custoTotalLote={custoTotalLote}
+          arrobas={stats.arrobasTotal}
+          custoTotal={custoTotalLote}
           cotacaoSpot={cotacaoArroba}
+          pesoMedioKg={stats.pesoMedio}
           gmdMedio={stats.avgGmdNum}
           pesoAlvoKg={lot.target_weight}
           mesAtual={new Date().getMonth()}
+          escopo="lote"
         />
       )}
 

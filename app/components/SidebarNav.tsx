@@ -34,6 +34,7 @@ import {
   FileSpreadsheet,
   FileUp,
   ShoppingBag,
+  CandlestickChart,
   ChevronDown,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -65,6 +66,7 @@ const PINNED: NavItem[] = [
   { href: "/lotes",        label: "Lotes",        icon: Package },
   { href: "/fiscal",       label: "Fiscal",       icon: Receipt },
   { href: "/financeiro",   label: "Financeiro",   icon: DollarSign },
+  { href: "/hedge",        label: "Hedge",        icon: CandlestickChart },
   { href: "/alertas",      label: "Alertas",      icon: Bell },
 ];
 

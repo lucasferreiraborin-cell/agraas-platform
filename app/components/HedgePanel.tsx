@@ -3,14 +3,14 @@
 /**
  * HedgePanel — Inteligência de Hedge (trava de preço e margem).
  *
- * Cruza os dados reais do lote (arrobas + custo/@) com uma curva de futuros
- * do boi gordo (BGI/B3) de REFERÊNCIA e sinaliza ao pecuarista o momento de
- * travar preço e garantir margem. Decisão-suporte — NÃO é recomendação de
- * investimento (hedge exige conta em corretora/B3). Sugestão do Mourão (JBS).
+ * Cruza arrobas + custo/@ (de um lote OU do rebanho) com uma curva de futuros
+ * do boi gordo (BGI/B3) de REFERÊNCIA e sinaliza o momento de travar preço e
+ * garantir margem. Decisão-suporte — NÃO é recomendação de investimento
+ * (hedge exige conta em corretora/B3). Sugestão do Mourão (JBS).
  *
- * A curva de futuros é derivada do spot × fatores realistas por mês-à-frente
- * (padrão de contango/backwardation típico do BGI). Quando houver feed de
- * mercado ao vivo, basta substituir a curva — o resto calcula sobre o rebanho.
+ * Recebe primitivos (arrobas, custoTotal) — serve Server e Client Components.
+ * A curva é derivada do spot × fatores realistas por mês-à-frente; com feed
+ * de mercado ao vivo, basta substituir a curva.
  */
 
 import { useMemo } from "react";
@@ -23,16 +23,17 @@ const MESES = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "o
 // leve valorização até ~M+3 e acomodação depois — referência ilustrativa B3/CEPEA.
 const FUT_FATOR = [1.0, 1.013, 1.028, 1.042, 1.037, 1.03, 1.022];
 
-type WeightRow = { weight: number; weighing_date: string | null };
-
 interface Props {
-  animals: { id: string }[];
-  weightByAnimal: Map<string, WeightRow[]>;
-  custoTotalLote: number;
+  arrobas: number;
+  custoTotal: number;
   cotacaoSpot: number;
+  pesoMedioKg?: number | null;
   gmdMedio?: number | null;
   pesoAlvoKg?: number | null;
   mesAtual: number; // 0-11, passado pelo pai (evita new Date no componente)
+  escopo?: string; // "lote" | "rebanho"
+  titulo?: string;
+  subtitulo?: string;
 }
 
 const fmtBRL = (v: number) =>
@@ -41,41 +42,30 @@ const fmtBRL2 = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 export default function HedgePanel({
-  animals,
-  weightByAnimal,
-  custoTotalLote,
+  arrobas,
+  custoTotal,
   cotacaoSpot,
+  pesoMedioKg,
   gmdMedio,
   pesoAlvoKg,
   mesAtual,
+  escopo = "lote",
+  titulo = "Trava de preço e margem",
+  subtitulo = "Curva de futuros do boi gordo (BGI) sobre o custo real deste lote — quando travar para garantir a margem.",
 }: Props) {
   const calc = useMemo(() => {
-    // Peso vivo total + arrobas
-    let pesoTotal = 0;
-    let comPeso = 0;
-    for (const a of animals) {
-      const ws = weightByAnimal.get(a.id) ?? [];
-      if (ws.length === 0) continue;
-      const latest = [...ws].sort(
-        (x, y) => new Date(y.weighing_date ?? 0).getTime() - new Date(x.weighing_date ?? 0).getTime(),
-      )[0];
-      pesoTotal += Number(latest.weight) || 0;
-      comPeso++;
-    }
-    if (pesoTotal <= 0 || comPeso === 0) return null;
+    if (!arrobas || arrobas <= 0) return null;
 
-    const arrobas = pesoTotal / KG_PER_ARROBA;
-    const pesoMedio = pesoTotal / comPeso;
-    const custoPorArroba = custoTotalLote > 0 ? custoTotalLote / arrobas : 0;
+    const custoPorArroba = custoTotal > 0 ? custoTotal / arrobas : 0;
+    const pesoMedio = pesoMedioKg && pesoMedioKg > 0 ? pesoMedioKg : null;
 
     // Mês estimado de venda (a partir do GMD → peso alvo), clamp 0..6
     let mesVenda = 3;
-    if (gmdMedio && gmdMedio > 0 && pesoAlvoKg && pesoAlvoKg > pesoMedio) {
+    if (gmdMedio && gmdMedio > 0 && pesoAlvoKg && pesoMedio && pesoAlvoKg > pesoMedio) {
       const dias = (pesoAlvoKg - pesoMedio) / gmdMedio;
       mesVenda = Math.max(0, Math.min(6, Math.round(dias / 30)));
     }
 
-    // Curva de futuros
     const curva = FUT_FATOR.map((f, i) => {
       const preco = cotacaoSpot * f;
       const margemArroba = preco - custoPorArroba;
@@ -90,14 +80,12 @@ export default function HedgePanel({
     });
 
     const noVenda = curva[mesVenda];
-    // Melhor janela dentro de um horizonte razoável (até o mês de venda + 1)
     const janela = curva.slice(0, Math.min(curva.length, mesVenda + 2));
     const melhor = janela.reduce((best, c) => (c.preco > best.preco ? c : best), janela[0]);
 
     const margemSpotArroba = cotacaoSpot - custoPorArroba;
     const abrirJanela = noVenda.margemArroba > 0 && melhor.preco >= cotacaoSpot;
 
-    // Piso via put ~3% OTM (ilustrativo)
     const pisoArroba = cotacaoSpot * 0.97;
     const premioTotal = cotacaoSpot * 0.02 * arrobas;
 
@@ -105,19 +93,18 @@ export default function HedgePanel({
     const minRef = Math.min(custoPorArroba, ...curva.map((c) => c.preco));
 
     return {
-      arrobas, pesoMedio, custoPorArroba, mesVenda, curva, noVenda, melhor,
+      custoPorArroba, mesVenda, curva, noVenda, melhor,
       margemSpotArroba, abrirJanela, pisoArroba, premioTotal, maxPreco, minRef,
     };
-  }, [animals, weightByAnimal, custoTotalLote, cotacaoSpot, gmdMedio, pesoAlvoKg, mesAtual]);
+  }, [arrobas, custoTotal, cotacaoSpot, pesoMedioKg, gmdMedio, pesoAlvoKg, mesAtual]);
 
   if (!calc || calc.custoPorArroba <= 0) return null;
 
   const {
-    arrobas, custoPorArroba, curva, noVenda, melhor, margemSpotArroba,
+    custoPorArroba, curva, noVenda, melhor, margemSpotArroba,
     abrirJanela, pisoArroba, premioTotal, maxPreco, minRef,
   } = calc;
 
-  // Geometria do gráfico
   const W = 640, H = 190, padX = 12, padTop = 24, padBottom = 30;
   const n = curva.length;
   const yMin = minRef * 0.985, yMax = maxPreco * 1.015, range = yMax - yMin || 1;
@@ -134,16 +121,11 @@ export default function HedgePanel({
           <div className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--primary)]">
             <ShieldCheck size={14} /> Inteligência de Hedge
           </div>
-          <h2 className="mt-1.5 text-lg font-semibold text-[var(--text-primary)]">
-            Trava de preço e margem
-          </h2>
-          <p className="mt-1 text-sm text-[var(--text-secondary)]">
-            Curva de futuros do boi gordo (BGI) sobre o custo real deste lote —
-            quando travar para garantir a margem.
-          </p>
+          <h2 className="mt-1.5 text-lg font-semibold text-[var(--text-primary)]">{titulo}</h2>
+          <p className="mt-1 max-w-xl text-sm text-[var(--text-secondary)]">{subtitulo}</p>
         </div>
         <span className="rounded-full border border-[var(--border)] bg-[var(--surface-soft)] px-3 py-1 text-[11px] font-medium text-[var(--text-muted)]">
-          {arrobas.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} @ no lote
+          {arrobas.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} @ no {escopo}
         </span>
       </div>
 
@@ -168,9 +150,7 @@ export default function HedgePanel({
       {/* Alerta */}
       <div className="px-6 pt-5">
         <div className={`flex items-start gap-3 rounded-2xl border p-4 ${
-          abrirJanela
-            ? "border-[var(--primary)]/30 bg-[var(--primary-soft)]"
-            : "border-amber-200 bg-amber-50"
+          abrirJanela ? "border-[var(--primary)]/30 bg-[var(--primary-soft)]" : "border-amber-200 bg-amber-50"
         }`}>
           <div className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
             abrirJanela ? "bg-[var(--primary)]/15 text-[var(--primary)]" : "bg-amber-100 text-amber-700"
@@ -186,7 +166,7 @@ export default function HedgePanel({
                 <>
                   Trave o contrato de <strong>{melhor.label}</strong> a{" "}
                   <strong>{fmtBRL2(melhor.preco)}/@</strong> e garanta{" "}
-                  <strong>{fmtBRL(melhor.margemTotal)}</strong> de margem no lote
+                  <strong>{fmtBRL(melhor.margemTotal)}</strong> de margem no {escopo}
                   {" "}(<strong>{fmtBRL2(melhor.margemArroba)}/@</strong>, +{((melhor.margemArroba / custoPorArroba) * 100).toFixed(0)}% sobre o custo).
                   Venda estimada em <strong>{noVenda.label}</strong>.
                 </>
@@ -214,15 +194,12 @@ export default function HedgePanel({
               <stop offset="100%" stopColor="var(--primary)" stopOpacity="0" />
             </linearGradient>
           </defs>
-          {/* break-even */}
           <line x1={padX} y1={beY} x2={W - padX} y2={beY} stroke="var(--danger)" strokeWidth="1.5" strokeDasharray="5 4" opacity="0.7" />
           <text x={W - padX} y={beY - 5} textAnchor="end" fontSize="10" fill="var(--danger)" fontFamily="inherit">
             break-even {fmtBRL2(custoPorArroba)}/@
           </text>
-          {/* área + linha */}
           <path d={areaPath} fill="url(#hedge-area)" />
           <path d={linePath} fill="none" stroke="var(--primary)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-          {/* pontos + labels */}
           {curva.map((c, i) => (
             <g key={i}>
               {c.isVenda && (
@@ -243,7 +220,7 @@ export default function HedgePanel({
         </svg>
       </div>
 
-      {/* Piso via put + disclaimer */}
+      {/* Piso via put + como travar */}
       <div className="mt-4 grid gap-px border-t border-[var(--border)] bg-[var(--border)] md:grid-cols-2">
         <div className="flex items-start gap-3 bg-white p-5">
           <ShieldCheck size={18} className="mt-0.5 shrink-0 text-[var(--primary)]" />
@@ -251,7 +228,7 @@ export default function HedgePanel({
             <p className="text-sm font-semibold text-[var(--text-primary)]">Piso protegido (opção de venda)</p>
             <p className="mt-1 text-sm leading-relaxed text-[var(--text-secondary)]">
               Uma <em>put</em> garante um piso de <strong>{fmtBRL2(pisoArroba)}/@</strong> sem
-              abrir mão da alta, por um prêmio estimado de <strong>{fmtBRL(premioTotal)}</strong> no lote.
+              abrir mão da alta, por um prêmio estimado de <strong>{fmtBRL(premioTotal)}</strong> no {escopo}.
             </p>
           </div>
         </div>
@@ -269,8 +246,8 @@ export default function HedgePanel({
 
       <p className="border-t border-[var(--border)] bg-[var(--surface-soft)] px-6 py-3 text-[11px] leading-relaxed text-[var(--text-muted)]">
         Simulação de <strong>decisão-suporte</strong> com curva de futuros BGI de referência (B3/CEPEA) sobre o
-        custo real deste lote. <strong>Não é recomendação de investimento</strong>; operações de hedge envolvem
-        risco e exigem conta em corretora habilitada na B3.
+        custo real. <strong>Não é recomendação de investimento</strong>; operações de hedge envolvem risco e
+        exigem conta em corretora habilitada na B3.
       </p>
     </section>
   );
