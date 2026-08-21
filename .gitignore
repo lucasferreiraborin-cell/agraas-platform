@@ -54,3 +54,7 @@ supabase/.temp/
 .playwright-mcp/
 # screenshots soltos na raiz (assets legítimos ficam em public/)
 /*.png
+
+# briefs estratégicos internos — LOCAIS, nunca no repo compartilhado
+# (contêm estágio real/captação/dados sensíveis — só no disco do Lucas)
+/AGRAAS-BRIEF-*.md
