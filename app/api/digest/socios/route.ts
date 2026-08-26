@@ -38,6 +38,14 @@ function isAuthorized(req: NextRequest): boolean {
   return Boolean(expected) && token === expected;
 }
 
+/** Resolve o sócio-alvo de um preview. Cai no Lucas quando não informado ou desconhecido. */
+function resolveSocio(email: string | null): (typeof SOCIOS_AGRAAS)[number] {
+  const found = email
+    ? SOCIOS_AGRAAS.find(s => s.email.toLowerCase() === email.trim().toLowerCase())
+    : undefined;
+  return found ?? SOCIOS_AGRAAS[0];
+}
+
 async function buildSnapshot(): Promise<DigestSnapshot> {
   const supabase = await createSupabaseServerClient();
 
@@ -107,8 +115,10 @@ export async function POST(req: NextRequest) {
     const snap = await buildSnapshot();
 
     if (dryRun) {
-      // Retorna preview HTML do digest do Lucas (sem enviar)
-      const preview = renderDigestHTML(snap, "Lucas");
+      // Preview sem enviar. `?socio=<email>` permite conferir a versão de cada
+      // sócio — o bloco "Seu plano" muda por destinatário. Default: Lucas.
+      const alvo = resolveSocio(url.searchParams.get("socio"));
+      const preview = renderDigestHTML(snap, alvo.nome.split(" ")[0], alvo.email);
       return new NextResponse(preview, {
         status: 200,
         headers: { "Content-Type": "text/html; charset=utf-8" },
@@ -137,8 +147,9 @@ export async function GET(req: NextRequest) {
   if (!isAuthorized(req)) {
     return unauthorized("Token inválido.");
   }
+  const alvo = resolveSocio(new URL(req.url).searchParams.get("socio"));
   const snap = await buildSnapshot();
-  const preview = renderDigestHTML(snap, "Sócio (preview)");
+  const preview = renderDigestHTML(snap, alvo.nome.split(" ")[0], alvo.email);
   return new NextResponse(preview, {
     status: 200,
     headers: { "Content-Type": "text/html; charset=utf-8" },

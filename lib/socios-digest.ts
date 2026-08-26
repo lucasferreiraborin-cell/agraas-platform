@@ -17,6 +17,20 @@
  * sócios crescer além dos 5. Hoje hardcode é defensivo (evita query
  * mal-filtrada vazar e-mails errados).
  */
+import {
+  cenariosBloqueados,
+  decisoesPendentes,
+  faseCorrente,
+  hojeISO,
+  planosDoSocio,
+  progressoDoPlano,
+  tarefasAtrasadas,
+  tarefasVencendo,
+  type PapelNoPlano,
+  type PlanoAcao,
+  type TarefaComContexto,
+} from "@/lib/planos-acao";
+
 export const SOCIOS_AGRAAS: Array<{ nome: string; email: string; role: string }> = [
   { nome: "Lucas Ferreira Borin",   email: "lucas@agraas.com.br",     role: "CEO · Co-fundador" },
   { nome: "Eduardo de Paola",       email: "eduardo@agraas.com.br",   role: "Operações + Financeiro" },
@@ -45,9 +59,151 @@ export type DigestSnapshot = {
  * Renderiza o digest como HTML institucional para envio via Resend.
  * Tom Terminal Industries — editorial, profissional, sem emoji ostensivo.
  */
-export function renderDigestHTML(snap: DigestSnapshot, socioNome: string): string {
+/** Paleta do e-mail — espelha as CSS vars do design system, em hex literal
+ *  porque cliente de e-mail não resolve custom property. */
+const MAIL = {
+  primary: "#2E8B3E",
+  bg: "#f4f7f2",
+  border: "#eef0eb",
+  muted: "#788473",
+  text: "#1e2a1b",
+  danger: "#a3341f",
+  warning: "#8a6a12",
+} as const;
+
+const fmtDataCurta = (iso: string) => {
+  const [, mes, dia] = iso.split("-");
+  return `${dia}/${mes}`;
+};
+
+function renderTarefa(t: TarefaComContexto, tom: "atrasada" | "proxima"): string {
+  const cor = tom === "atrasada" ? MAIL.danger : MAIL.muted;
+  const prazo =
+    tom === "atrasada"
+      ? `${Math.abs(t.diasRestantes)}d em atraso`
+      : t.diasRestantes === 0
+        ? "vence hoje"
+        : `em ${t.diasRestantes}d`;
+
+  return `
+    <li style="padding:12px 0; border-bottom:1px solid ${MAIL.border}; list-style:none;">
+      <div style="display:block; font-size:14px; font-weight:600; color:${MAIL.text};">${t.titulo}</div>
+      <div style="margin-top:4px; font-size:11px; color:${cor}; font-weight:600; text-transform:uppercase; letter-spacing:.08em;">
+        ${fmtDataCurta(t.ate)} · ${prazo} · Cenário ${t.cenario} · ${t.fase}
+      </div>
+      ${t.dod ? `<div style="margin-top:6px; font-size:12px; color:${MAIL.muted}; line-height:1.5;">Pronto quando: ${t.dod}</div>` : ""}
+    </li>`;
+}
+
+function renderPlanoResumo(plano: PlanoAcao, papel: PapelNoPlano, hoje: string): string {
+  const prog = progressoDoPlano(plano);
+  const fase = faseCorrente(plano, hoje);
+  const bloqueado = cenariosBloqueados().includes(plano.cenario);
+
+  return `
+    <div style="padding:16px; background:${MAIL.bg}; border-radius:12px; margin-bottom:12px;">
+      <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.12em; color:${MAIL.muted};">
+        Cenário ${plano.cenario} · você é ${papel}
+      </div>
+      <div style="margin-top:6px; font-size:16px; font-weight:600; color:${MAIL.text};">${plano.nome}</div>
+      <div style="margin-top:10px; font-size:12px; color:${MAIL.muted};">
+        Fase corrente: <strong style="color:${MAIL.text};">${fase.nome}</strong> · até ${fmtDataCurta(fase.ate)}
+      </div>
+      <div style="margin-top:10px; height:6px; background:#e2e7de; border-radius:3px; overflow:hidden;">
+        <div style="width:${prog.pct}%; height:6px; background:${MAIL.primary};"></div>
+      </div>
+      <div style="margin-top:6px; font-size:11px; color:${MAIL.muted};">
+        ${prog.feitas} de ${prog.total} tarefas concluídas (${prog.pct}%)
+      </div>
+      ${
+        bloqueado
+          ? `<div style="margin-top:10px; padding:8px 10px; background:#fdf6e3; border-left:3px solid ${MAIL.warning}; font-size:12px; color:${MAIL.warning};">
+               Bloqueado por decisão de Semana 0 ainda pendente.
+             </div>`
+          : ""
+      }
+    </div>`;
+}
+
+/**
+ * Bloco "Seu plano" — personalizado por sócio.
+ *
+ * Só é renderizado quando o e-mail do sócio é conhecido; sem ele o digest
+ * cai no comportamento antigo (métricas da plataforma apenas).
+ */
+export function renderPlanoBlock(socioEmail: string, hoje: string = hojeISO()): string {
+  const meus = planosDoSocio(socioEmail);
+  if (meus.length === 0) return "";
+
+  const atrasadas = tarefasAtrasadas(socioEmail, hoje);
+  const proximas = tarefasVencendo(socioEmail, 14, hoje);
+  const decisoes = decisoesPendentes().filter(d => d.dono === socioEmail);
+
+  return `
+    <div style="padding:32px; border-bottom:1px solid ${MAIL.border};">
+      <p style="margin:0 0 16px; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.14em; color:${MAIL.muted};">
+        Seu plano · ciclo 90 dias
+      </p>
+
+      ${meus.map(({ plano, papel }) => renderPlanoResumo(plano, papel, hoje)).join("")}
+
+      ${
+        decisoes.length > 0
+          ? `<div style="margin-top:16px; padding:14px 16px; background:#fdf6e3; border-radius:10px; border-left:3px solid ${MAIL.warning};">
+               <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.12em; color:${MAIL.warning};">
+                 Semana 0 — trava os outros planos
+               </div>
+               <ul style="margin:10px 0 0; padding-left:18px; font-size:13px; line-height:1.6; color:${MAIL.text};">
+                 ${decisoes
+                   .map(
+                     d =>
+                       `<li style="margin-bottom:6px;"><strong>${d.id}</strong> — ${d.titulo}
+                        <span style="color:${MAIL.muted};">(até ${fmtDataCurta(d.ate)}; bloqueia ${d.bloqueia
+                          .map(c => `cenário ${c}`)
+                          .join(", ")})</span></li>`,
+                   )
+                   .join("")}
+               </ul>
+             </div>`
+          : ""
+      }
+
+      ${
+        atrasadas.length > 0
+          ? `<p style="margin:24px 0 4px; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.12em; color:${MAIL.danger};">
+               Em atraso (${atrasadas.length})
+             </p>
+             <ul style="margin:0; padding:0;">${atrasadas.map(t => renderTarefa(t, "atrasada")).join("")}</ul>`
+          : ""
+      }
+
+      ${
+        proximas.length > 0
+          ? `<p style="margin:24px 0 4px; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.12em; color:${MAIL.muted};">
+               Próximos 14 dias (${proximas.length})
+             </p>
+             <ul style="margin:0; padding:0;">${proximas.map(t => renderTarefa(t, "proxima")).join("")}</ul>`
+          : ""
+      }
+
+      ${
+        atrasadas.length === 0 && proximas.length === 0
+          ? `<p style="margin:16px 0 0; font-size:13px; color:${MAIL.muted};">
+               Nada vencendo nos próximos 14 dias. Prazos seguintes no plano completo.
+             </p>`
+          : ""
+      }
+    </div>`;
+}
+
+export function renderDigestHTML(
+  snap: DigestSnapshot,
+  socioNome: string,
+  socioEmail?: string,
+): string {
   const fmtNum = (n: number) => n.toLocaleString("pt-BR");
   const fmtScore = (n: number) => n.toFixed(1).replace(".", ",");
+  const planoBlock = socioEmail ? renderPlanoBlock(socioEmail) : "";
 
   return `
 <!DOCTYPE html>
@@ -71,6 +227,9 @@ export function renderDigestHTML(snap: DigestSnapshot, socioNome: string): strin
         Olá, ${socioNome}. Aqui está o resumo executivo da semana.
       </p>
     </div>
+
+    <!-- Seu plano · ciclo 90 dias -->
+    ${planoBlock}
 
     <!-- Métricas da plataforma -->
     <div style="padding:32px;">
@@ -204,7 +363,7 @@ export async function sendDigestToSocios(snap: DigestSnapshot): Promise<{
         from: "Agraas Digest <digest@agraas.com.br>",
         to: socio.email,
         subject: `Agraas · Digest ${snap.periodo.inicio} → ${snap.periodo.fim}`,
-        html: renderDigestHTML(snap, socio.nome.split(" ")[0]),
+        html: renderDigestHTML(snap, socio.nome.split(" ")[0], socio.email),
       });
 
       if (result.error) {
