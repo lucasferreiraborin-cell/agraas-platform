@@ -2,26 +2,12 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { NextRequest } from "next/server";
 import { checkRateLimit, tooManyRequests } from "@/lib/rate-limit";
 import { z } from "zod";
+import { parseNfeHeader, parseNfeItems } from "@/lib/fiscal/nfe-parser";
 
 // ── Zod schema (formData fields after extraction) ─────────────────────────────
 const FormDataSchema = z.object({
   farmId: z.string().uuid("farmId deve ser um UUID válido").optional(),
 });
-
-// ── Helpers XML ───────────────────────────────────────────────────────────────
-
-function extractTag(xml: string, tag: string): string {
-  const m = xml.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i"));
-  return m ? m[1].trim() : "";
-}
-
-function extractBlock(xml: string, tag: string): string[] {
-  const re = new RegExp(`<${tag}[\\s\\S]*?>([\\s\\S]*?)<\\/${tag}>`, "gi");
-  const results: string[] = [];
-  let m;
-  while ((m = re.exec(xml)) !== null) results.push(m[0]);
-  return results;
-}
 
 // ── Tipos internos ────────────────────────────────────────────────────────────
 
@@ -50,28 +36,44 @@ type ParsedItem = {
 
 // ── Parser XML ────────────────────────────────────────────────────────────────
 
+/**
+ * Adaptador sobre `lib/fiscal/nfe-parser` (B0, 05/09/2026).
+ *
+ * O parser local anterior usava `<vICMS[^>]*>`, que casa com `<vICMSST>` e
+ * `<vICMSMonoRet>` — numa nota com substituição tributária ou combustível, o
+ * ICMS gravado vinha do campo errado, silenciosamente. O módulo compartilhado
+ * exige fronteira de nome e é a mesma fonte usada pelo backfill.
+ *
+ * Nota: os campos novos do B0 (base, redução de base, desoneração, benefício e
+ * monofasia) são extraídos aqui mas NÃO são persistidos nesta rota — o destino
+ * de escrita ainda é `fiscal_note_items` (schema deprecado), que não tem essas
+ * colunas. Ver B0b no relatório: enquanto a escrita não for redirecionada para
+ * `fiscal_invoice_items`, só o backfill preenche os campos novos.
+ */
 function parseXml(xml: string): { header: ParsedHeader; items: ParsedItem[] } {
+  const h = parseNfeHeader(xml);
+
   const header: ParsedHeader = {
-    numeroNota:   extractTag(xml, "nNF"),
-    serie:        extractTag(xml, "serie"),
-    emitenteCnpj: extractTag(xml, "CNPJ"),
-    emitenteNome: extractTag(xml, "xNome") || extractTag(xml, "xFant"),
-    dataEmissao:  (extractTag(xml, "dhEmi") || extractTag(xml, "dEmi")).slice(0, 10),
-    valorTotal:   parseFloat(extractTag(xml, "vNF") || "0"),
+    numeroNota:   h.numeroNota,
+    serie:        h.serie,
+    emitenteCnpj: h.emitenteCnpj,
+    emitenteNome: h.emitenteNome,
+    dataEmissao:  h.dataEmissao,
+    valorTotal:   h.valorTotal ?? 0,
     rawContent:   xml,
   };
 
-  const items: ParsedItem[] = extractBlock(xml, "det").map((det) => ({
-    descricao:     extractTag(det, "xProd"),
-    ncm:           extractTag(det, "NCM"),
-    cfop:          extractTag(det, "CFOP"),
-    quantidade:    parseFloat(extractTag(det, "qCom")   || "0"),
-    unidade:       extractTag(det, "uCom"),
-    valorUnitario: parseFloat(extractTag(det, "vUnCom") || "0"),
-    valorTotal:    parseFloat(extractTag(det, "vProd")  || "0"),
-    icmsAliq:      parseFloat(extractTag(det, "pICMS")  || "0"),
-    icmsValor:     parseFloat(extractTag(det, "vICMS")  || "0"),
-    ipiValor:      parseFloat(extractTag(det, "vIPI")   || "0"),
+  const items: ParsedItem[] = parseNfeItems(xml).map((it) => ({
+    descricao:     it.descricao,
+    ncm:           it.ncm,
+    cfop:          it.cfop,
+    quantidade:    it.quantidade    ?? 0,
+    unidade:       it.unidade,
+    valorUnitario: it.valorUnitario ?? 0,
+    valorTotal:    it.valorTotal    ?? 0,
+    icmsAliq:      it.icmsAliquota  ?? 0,
+    icmsValor:     it.icmsValor     ?? 0,
+    ipiValor:      it.ipiValor      ?? 0,
   }));
 
   return { header, items };
