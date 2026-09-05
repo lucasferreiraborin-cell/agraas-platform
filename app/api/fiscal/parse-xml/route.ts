@@ -7,6 +7,7 @@ import {
   writeCanonicalInvoice,
   updateCanonicalStatus,
 } from "@/lib/fiscal/invoice-writer";
+import { writeCanonicalAlerts } from "@/lib/fiscal/alert-writer";
 import { FISCAL_WRITE_MODE, FISCAL_WRITES_CANONICAL, FISCAL_WRITES_LEGACY } from "@/lib/feature-flags";
 
 // ── Zod schema (formData fields after extraction) ─────────────────────────────
@@ -265,9 +266,15 @@ async function saveNote(
       if (FISCAL_WRITE_MODE === "canonical") {
         throw new Error("Erro ao salvar nota (canonica): " + res.error);
       }
-    } else if (hasCritical) {
-      const up = await updateCanonicalStatus(supabase, noteId, "erro");
-      if (!up.ok) console.error("[fiscal/parse-xml] status canonico:", up.error);
+    } else {
+      if (hasCritical) {
+        const up = await updateCanonicalStatus(supabase, noteId, "erro");
+        if (!up.ok) console.error("[fiscal/parse-xml] status canonico:", up.error);
+      }
+      // B0c: alertas no canal canonico. So depois da nota — fiscal_alerts tem
+      // FK para fiscal_invoices e o insert cairia por violacao de chave.
+      const al = await writeCanonicalAlerts(supabase, alerts, res.ok);
+      if (!al.ok) console.error("[fiscal/parse-xml] alertas canonicos:", al.error);
     }
   }
 

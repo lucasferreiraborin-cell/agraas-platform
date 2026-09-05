@@ -2,6 +2,8 @@ import Anthropic from "@anthropic-ai/sdk";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { NextRequest } from "next/server";
 import { checkRateLimit, tooManyRequests } from "@/lib/rate-limit";
+import { writeCanonicalAlerts } from "@/lib/fiscal/alert-writer";
+import { FISCAL_WRITES_CANONICAL, FISCAL_WRITES_LEGACY } from "@/lib/feature-flags";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -67,8 +69,16 @@ Responda SEMPRE em JSON com esta estrutura: {"risks": [{"item": string, "descric
       // alertas em PT (note_id/tipo/descricao/severidade) casam com fiscal_notes_alerts_legacy.
       // fiscal_alerts (novo, colunas em inglês, FK fiscal_invoice_id) rejeitava o payload
       // e os alertas de IA NUNCA eram gravados — falha silenciosa do supabase-js.
-      const { error: alertErr } = await supabase.from("fiscal_notes_alerts_legacy").insert(iaAlerts);
-      if (alertErr) console.error("[fiscal/analyze] falha ao salvar alertas IA:", alertErr.message);
+      if (FISCAL_WRITES_LEGACY) {
+        const { error: alertErr } = await supabase.from("fiscal_notes_alerts_legacy").insert(iaAlerts);
+        if (alertErr) console.error("[fiscal/analyze] falha ao salvar alertas IA:", alertErr.message);
+      }
+      // B0c: canal canonico. A nota ja existe na canonica quando o modo permite,
+      // entao a FK fiscal_invoice_id esta satisfeita.
+      if (FISCAL_WRITES_CANONICAL) {
+        const al = await writeCanonicalAlerts(supabase, iaAlerts, true);
+        if (!al.ok) console.error("[fiscal/analyze] alertas IA canonicos:", al.error);
+      }
     }
 
     return Response.json(analysis);

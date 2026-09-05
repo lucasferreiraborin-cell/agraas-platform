@@ -68,7 +68,7 @@ export const BANK_VIEW_ENABLED = isBankViewEnabled();
  *
  * Modos:
  *   'legacy'    — só fiscal_notes/fiscal_note_items (comportamento pré-B0b)
- *   'dual'      — escreve nas duas (default durante a transição)
+ *   'dual'      — escreve nas duas (modo de transição)
  *   'canonical' — só fiscal_invoices/fiscal_invoice_items (estado final)
  *
  * INVARIANTE DE SEGURANÇA: em 'dual', uma falha na escrita canônica é
@@ -76,13 +76,17 @@ export const BANK_VIEW_ENABLED = isBankViewEnabled();
  * usa — ele não pode quebrar por causa da migração de schema. Só em 'canonical'
  * a falha propaga, porque aí não existe outro destino.
  *
- * Desligar para 'legacy' reverte a transição sem deploy.
+ * DEFAULT = 'legacy' (05/09/2026). Qualquer deploy sobe seguro sem depender de
+ * variável de ambiente: enquanto a migration 159 não estiver aplicada, a
+ * canônica não tem as colunas de ICMS e toda escrita falharia — o invariante
+ * protege o upload, mas encheria o log de erro. Virar para 'dual' é ação
+ * explícita, depois da 159.
  */
 export type FiscalWriteMode = "legacy" | "dual" | "canonical";
 
 export function getFiscalWriteMode(): FiscalWriteMode {
-  const raw = (process.env.FISCAL_WRITE_MODE ?? "dual").trim().toLowerCase();
-  return raw === "legacy" || raw === "canonical" ? raw : "dual";
+  const raw = (process.env.FISCAL_WRITE_MODE ?? "legacy").trim().toLowerCase();
+  return raw === "dual" || raw === "canonical" ? raw : "legacy";
 }
 export const FISCAL_WRITE_MODE = getFiscalWriteMode();
 
