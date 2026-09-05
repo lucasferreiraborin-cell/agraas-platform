@@ -44,7 +44,9 @@ export type ErroDeRegra = { arquivo: string; problema: string };
 const CLASSES = new Set<string>([
   "FATO", "FATO-calculado", "BENCHMARK", "PREMISSA", "CONVENCAO", "DESCONHECIDO",
 ]);
-const ID_RE = /^R-[A-Z0-9]+-[A-Z0-9]+-[0-9]{2}$/;
+// Dois ou tres segmentos: R-ITR-01 e R-ICMS-CONV100-01 sao ambos validos.
+// O livro de regras do handoff usa a forma curta (R-IR-01, R-FUN-01, R-REF-01).
+const ID_RE = /^R-[A-Z0-9]+(?:-[A-Z0-9]+)?-[0-9]{2}$/;
 const DATA_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 /** Valida a estrutura mínima. Não valida o conteúdo tributário — isso é humano. */

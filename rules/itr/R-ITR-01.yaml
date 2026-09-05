@@ -1,0 +1,142 @@
+id: R-ITR-01
+titulo: ITR — alíquota por área total e grau de utilização
+classe: FATO
+vigencia:
+  inicio: 1997-01-01
+  fim: null
+fonte:
+  norma: Lei 9.393/1996
+  artigos:
+    - "Art. 10, § 1º, IV — Grau de Utilização = área efetivamente utilizada ÷ área aproveitável"
+    - "Art. 11 e Anexo — Tabela de Alíquotas"
+  url: https://www2.camara.leg.br/legin/fed/lei/1996/lei-9393-19-dezembro-1996-372239-anexo-pl.pdf
+  verificado_em: 2026-09-05
+  nota_de_verificacao: >-
+    Tabela lida diretamente do anexo publicado pela Câmara dos Deputados em
+    05/09/2026, célula a célula. Não transcrita de memória nem de fonte secundária.
+aplicabilidade:
+  uf: [BR]
+  regime: [pf, pj]
+  atividade: [pecuaria, graos]
+revisor_humano: null
+
+# ---------------------------------------------------------------------------
+# TABELA DE ALÍQUOTAS (Art. 11) — em % ao ano sobre o VTN tributável.
+#
+# Linhas: faixa de área TOTAL do imóvel, em hectares.
+# Colunas: faixa de Grau de Utilização (GU), em %.
+#
+# Leitura das faixas de GU, exatamente como no anexo:
+#   gu_maior_80        = "Maior que 80"
+#   gu_maior_65_ate_80 = "Maior que 65 até 80"
+#   gu_maior_50_ate_65 = "Maior que 50 até 65"
+#   gu_maior_30_ate_50 = "Maior que 30 até 50"
+#   gu_ate_30          = "Até 30"
+# ---------------------------------------------------------------------------
+tabela_aliquotas:
+  - area: "Até 50"
+    area_ate_ha: 50
+    gu_maior_80: 0.03
+    gu_maior_65_ate_80: 0.20
+    gu_maior_50_ate_65: 0.40
+    gu_maior_30_ate_50: 0.70
+    gu_ate_30: 1.00
+  - area: "Maior que 50 até 200"
+    area_ate_ha: 200
+    gu_maior_80: 0.07
+    gu_maior_65_ate_80: 0.40
+    gu_maior_50_ate_65: 0.80
+    gu_maior_30_ate_50: 1.40
+    gu_ate_30: 2.00
+  - area: "Maior que 200 até 500"
+    area_ate_ha: 500
+    gu_maior_80: 0.10
+    gu_maior_65_ate_80: 0.60
+    gu_maior_50_ate_65: 1.30
+    gu_maior_30_ate_50: 2.30
+    gu_ate_30: 3.30
+  - area: "Maior que 500 até 1.000"
+    area_ate_ha: 1000
+    gu_maior_80: 0.15
+    gu_maior_65_ate_80: 0.85
+    gu_maior_50_ate_65: 1.90
+    gu_maior_30_ate_50: 3.30
+    gu_ate_30: 4.70
+  - area: "Maior que 1.000 até 5.000"
+    area_ate_ha: 5000
+    gu_maior_80: 0.30
+    gu_maior_65_ate_80: 1.60
+    gu_maior_50_ate_65: 3.40
+    gu_maior_30_ate_50: 6.00
+    gu_ate_30: 8.60
+  - area: "Acima de 5.000"
+    area_ate_ha: null   # sem teto
+    gu_maior_80: 0.45
+    gu_maior_65_ate_80: 3.00
+    gu_maior_50_ate_65: 6.40
+    gu_maior_30_ate_50: 12.00
+    gu_ate_30: 20.00
+
+# ---------------------------------------------------------------------------
+# Índice de lotação mínimo por zona de pecuária.
+#
+# É o que converte rebanho em ÁREA DE PASTAGEM COMPROVADA:
+#   área comprovada (ha) = rebanho em UA ÷ índice de lotação (UA/ha)
+#
+# NÃO VERIFICADO. A faixa de 0,7 a 1,0 UA/ha circula em material secundário,
+# mas os valores oficiais são fixados por zona de pecuária em ato da RFB, e não
+# foram lidos na fonte primária. Enquanto `verificado_em` for null, o motor
+# calcula mas o relatório sai marcado como NÃO PUBLICÁVEL.
+# ---------------------------------------------------------------------------
+indice_lotacao:
+  classe: DESCONHECIDO
+  verificado_em: null
+  rota_de_obtencao: >-
+    IN RFB do ITR (anexo de zonas de pecuária) e Lei 8.629/1993 art. 11.
+    Confirmar a zona da FSJBE (Jussara/GO) e a de São José do Rio Preto/SP.
+  faixa_citada_em_fonte_secundaria: { min: 0.70, max: 1.00 }
+  por_zona: {}   # preencher só com valor lido em fonte primária
+
+# ---------------------------------------------------------------------------
+# Conversão de categoria animal para Unidade Animal (UA = 450 kg de peso vivo).
+#
+# NÃO VERIFICADO. Os fatores abaixo são os de uso corrente em zootecnia, e são
+# PREMISSA nossa até serem confirmados com a mentoria IZ-SP ou com o ato da RFB
+# aplicável ao ITR — que pode divergir do uso zootécnico.
+# ---------------------------------------------------------------------------
+conversao_ua:
+  classe: PREMISSA
+  verificado_em: null
+  rota_de_obtencao: >-
+    Confirmar com a mentoria IZ-SP (Dra. Renata Helena Branco Arnandes) e checar
+    se a RFB fixa fatores próprios para fins de ITR.
+  justificativa: >-
+    Fatores de uso corrente em zootecnia brasileira. A sensibilidade é direta:
+    um fator 20% menor reduz o rebanho em UA em 20% e, portanto, a área de
+    pastagem comprovada em 20%.
+  fatores:
+    bezerro_ate_12m: 0.25
+    novilho_12_24m: 0.50
+    novilho_acima_24m: 0.75
+    boi_adulto: 1.00
+    bezerra_ate_12m: 0.25
+    novilha_12_24m: 0.50
+    novilha_acima_24m: 0.75
+    vaca: 1.00
+    touro: 1.25
+
+# ---------------------------------------------------------------------------
+# Postura do relatório — decisão de produto, não de norma.
+# ---------------------------------------------------------------------------
+postura:
+  - >-
+    O relatório NÃO otimiza o Grau de Utilização. Ele sustenta o que a evidência
+    do rebanho mostra, e sinaliza quando a área declarada excede a comprovada.
+  - >-
+    Quem preenche GU e VTN na DITR é o contador. O sistema monta a evidência.
+  - >-
+    Nenhum número sai sem a classificação da regra que o produziu.
+
+implementado_em:
+  - lib/fiscal/itr-report.ts
+testes: __tests__/itr-report.test.ts
