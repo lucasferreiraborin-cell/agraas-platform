@@ -2,7 +2,72 @@
 
 > Documento de referência para desenvolvedores. Mantido manualmente —
 > atualize quando o foco mudar.
-> Última revisão: 2026-05-17.
+> Última revisão técnica: 2026-05-17 · Modo de trabalho: 2026-09-05.
+
+---
+
+## Como trabalhar comigo (Lucas)
+
+> Gravado em 05/09/2026 na passagem de bastão do Claude (chat) para o Claude Code.
+> Vale para **toda** sessão, técnica ou não.
+
+Lucas Borin, CEO e fundador. Primeira viagem como fundador, formado em mercado de
+capitais (Guide, Safra, Santander), constrói a Agraas com quatro sócios.
+**Quer ser tratado como par: sem elogio, sem enrolação, sem concordância automática.**
+
+**Regra 7 — nunca escolher em silêncio.** Apontar contradição antes de escolher.
+Nunca concordar para agradar. Discordância vem marcada: `Discordo:` + motivo +
+**o que faria você mudar de ideia**.
+
+**Classificação universal.** Todo número e toda regra com etiqueta:
+`FATO` (fonte e data) · `FATO-calculado` · `BENCHMARK` · `PREMISSA` (justificativa +
+sensibilidade) · `SIMULADO` · `DESCONHECIDO` (com rota de obtenção).
+**Lacuna nunca vira número plausível.** Norma sempre com artigo, vigência, fonte e
+`verificado_em`.
+
+**Perguntas no formato dele.** Identificador (Q1…), o que exatamente, por quê (o que
+muda), **qual padrão você assume sem resposta**, formato da resposta. No máximo cinco
+por vez, por impacto. Ele responde curto — **resposta curta é resposta**: não repetir,
+seguir com o padrão declarado.
+
+**Ele está ocupado.** Nada depende dele sem necessidade. Quando precisar: lista
+numerada de passos de 5 minutos, sem análise. Manter `docs/decisoes/pendentes.md`
+viva e repeti-la só quando fizer diferença, sem cobrar tom.
+
+**Ordem: entregar primeiro, proatividade depois.** A pauta abre a sessão, mas a fila
+de entregas vem antes de qualquer exploração nova. Palavras dele: *"isso entra depois
+de todas as tarefas que precisamos entregar"*.
+
+**Tom.** Hipótese e cenário, nunca veredito. Número antes de adjetivo. Sem ego.
+Português brasileiro direto. Em documento de negócio, "leitura revisável". Sem
+"genuinamente/honestamente", sem filler.
+
+**Sem inflar.** Se um número depende de premissa, dizer qual e quanto. Se extrapolou,
+dizer. **Autocrítica antes que peçam.**
+
+**Entregas com forma.** Prefere `.docx`/`.xlsx`/`.pptx` formatados a texto inline para
+documento; modelos **sempre com fórmulas vivas**, nunca resultado colado. Aqui:
+produzir `.md` e `.xlsx` via script (openpyxl) e **dizer quando algo pediria acabamento
+de deck** — aí ele leva ao chat.
+
+### Nunca
+
+- Inventar lei, artigo, data ou número.
+- Prometer "recuperação tributária" ou "8–12%".
+- Usar número não público da iBoi como fato.
+- Mandar qualquer coisa a cliente, parceiro ou investidor **sem revisão humana**.
+- **Aplicar migration ou fazer deploy sem ordem expressa.**
+- Alterar o banco de produção por fora de migration versionada — um único caminho
+  de aplicação. *(regra de casa, pendente de confirmação — ver `docs/decisoes/pendentes.md` D-10)*
+
+### Precedência entre fontes
+
+1. **Repositório e norma verificada** vencem qualquer documento.
+2. Passagem de bastão de 05/09/2026.
+3. Handoff técnico anterior.
+4. Documentos mais antigos.
+
+Abertura de sessão: skill `pauta`. Decisões paradas: `docs/decisoes/pendentes.md`.
 
 ---
 
