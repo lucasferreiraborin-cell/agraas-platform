@@ -1,6 +1,8 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { NextRequest } from "next/server";
 import { checkRateLimit, tooManyRequests } from "@/lib/rate-limit";
+import { deleteCanonicalInvoice } from "@/lib/fiscal/invoice-writer";
+import { FISCAL_WRITES_CANONICAL, FISCAL_WRITES_LEGACY } from "@/lib/feature-flags";
 
 export async function DELETE(req: NextRequest) {
   const rl = checkRateLimit(req, 100, 60_000);
@@ -34,7 +36,14 @@ export async function DELETE(req: NextRequest) {
     ]);
     if (alertsDel.error) console.error("[fiscal/delete] falha ao apagar alertas:", alertsDel.error.message);
     if (itemsDel.error) console.error("[fiscal/delete] falha ao apagar itens:", itemsDel.error.message);
-    await supabase.from("fiscal_notes").delete().eq("id", note_id);
+    // B0b: remove tambem da canonica. Os itens caem por ON DELETE CASCADE.
+    if (FISCAL_WRITES_LEGACY) {
+      await supabase.from("fiscal_notes").delete().eq("id", note_id);
+    }
+    if (FISCAL_WRITES_CANONICAL) {
+      const del = await deleteCanonicalInvoice(supabase, note_id);
+      if (!del.ok) console.error("[fiscal/delete] delete canonico:", del.error);
+    }
 
     return Response.json({ success: true });
   } catch (err) {

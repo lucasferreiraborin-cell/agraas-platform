@@ -1,6 +1,8 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { NextRequest } from "next/server";
 import { checkRateLimit, tooManyRequests } from "@/lib/rate-limit";
+import { updateCanonicalStatus } from "@/lib/fiscal/invoice-writer";
+import { FISCAL_WRITES_CANONICAL, FISCAL_WRITES_LEGACY } from "@/lib/feature-flags";
 
 function ncmToCategory(ncm: string): string {
   const prefix = (ncm ?? "").slice(0, 4);
@@ -66,7 +68,14 @@ export async function POST(req: NextRequest) {
     }
 
     // Marca nota como validada
-    await supabase.from("fiscal_notes").update({ status: "validada" }).eq("id", note_id);
+    // B0b: status espelhado nos dois destinos enquanto a transicao roda.
+    if (FISCAL_WRITES_LEGACY) {
+      await supabase.from("fiscal_notes").update({ status: "validada" }).eq("id", note_id);
+    }
+    if (FISCAL_WRITES_CANONICAL) {
+      const up = await updateCanonicalStatus(supabase, note_id, "validada");
+      if (!up.ok) console.error("[fiscal/apply-stock] status canonico:", up.error);
+    }
 
     return Response.json({ success: true, items_added: stockItems.length, period: periodLabel });
   } catch (err) {

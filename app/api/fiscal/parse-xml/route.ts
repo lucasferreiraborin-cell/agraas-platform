@@ -2,7 +2,12 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { NextRequest } from "next/server";
 import { checkRateLimit, tooManyRequests } from "@/lib/rate-limit";
 import { z } from "zod";
-import { parseNfeHeader, parseNfeItems } from "@/lib/fiscal/nfe-parser";
+import { parseNfeHeader, parseNfeItems, type NfeItemFiscal } from "@/lib/fiscal/nfe-parser";
+import {
+  writeCanonicalInvoice,
+  updateCanonicalStatus,
+} from "@/lib/fiscal/invoice-writer";
+import { FISCAL_WRITE_MODE, FISCAL_WRITES_CANONICAL, FISCAL_WRITES_LEGACY } from "@/lib/feature-flags";
 
 // ── Zod schema (formData fields after extraction) ─────────────────────────────
 const FormDataSchema = z.object({
@@ -19,6 +24,8 @@ type ParsedHeader = {
   dataEmissao:  string;
   valorTotal:   number;
   rawContent:   string;
+  /** Chave de 44 dígitos quando veio de XML; vazia em PDF. Usada na canônica. */
+  chaveAcesso:  string;
 };
 
 type ParsedItem = {
@@ -50,8 +57,9 @@ type ParsedItem = {
  * colunas. Ver B0b no relatório: enquanto a escrita não for redirecionada para
  * `fiscal_invoice_items`, só o backfill preenche os campos novos.
  */
-function parseXml(xml: string): { header: ParsedHeader; items: ParsedItem[] } {
+function parseXml(xml: string): { header: ParsedHeader; items: ParsedItem[]; richItems: NfeItemFiscal[] } {
   const h = parseNfeHeader(xml);
+  const richItems = parseNfeItems(xml);
 
   const header: ParsedHeader = {
     numeroNota:   h.numeroNota,
@@ -61,9 +69,10 @@ function parseXml(xml: string): { header: ParsedHeader; items: ParsedItem[] } {
     dataEmissao:  h.dataEmissao,
     valorTotal:   h.valorTotal ?? 0,
     rawContent:   xml,
+    chaveAcesso:  h.chaveAcesso,
   };
 
-  const items: ParsedItem[] = parseNfeItems(xml).map((it) => ({
+  const items: ParsedItem[] = richItems.map((it) => ({
     descricao:     it.descricao,
     ncm:           it.ncm,
     cfop:          it.cfop,
@@ -76,7 +85,7 @@ function parseXml(xml: string): { header: ParsedHeader; items: ParsedItem[] } {
     ipiValor:      it.ipiValor      ?? 0,
   }));
 
-  return { header, items };
+  return { header, items, richItems };
 }
 
 // ── Parser PDF — leitura como texto bruto + regex ─────────────────────────────
@@ -100,7 +109,7 @@ function extractPdfText(buffer: Buffer): string {
   return textBlocks.join("\n");
 }
 
-function parsePdfText(text: string, rawBuffer: Buffer): { header: ParsedHeader; items: ParsedItem[]; iaFailed: boolean } {
+function parsePdfText(text: string, rawBuffer: Buffer): { header: ParsedHeader; items: ParsedItem[]; richItems: NfeItemFiscal[]; iaFailed: boolean } {
   // Regex para campos comuns de NF-e em PDF
   const cnpj    = text.match(/(\d{2}[.\s]?\d{3}[.\s]?\d{3}[/\s]?\d{4}[-\s]?\d{2})/)?.[1]?.replace(/\D/g, "") ?? "";
   const numero  = text.match(/N[º°ú]\s*[:\s]?\s*(\d{6,9})/i)?.[1] ?? "";
@@ -128,8 +137,11 @@ function parsePdfText(text: string, rawBuffer: Buffer): { header: ParsedHeader; 
       dataEmissao:  data,
       valorTotal:   valor,
       rawContent:   rawBuffer.toString("base64").slice(0, 500) + "…[PDF]",
+      // PDF não carrega a chave de acesso: a canônica cai no id da nota.
+      chaveAcesso:  "",
     },
     items: [],
+    richItems: [],
     iaFailed,
   };
 }
@@ -141,11 +153,20 @@ async function saveNote(
   clientId: string,
   header: ParsedHeader,
   items: ParsedItem[],
+  richItems: NfeItemFiscal[],
+  source: "xml_upload" | "pdf_upload",
   iaFailed = false,
 ) {
-  const { data: noteData, error: noteError } = await supabase
+  // O id e gerado aqui, nao pelo banco: as duas tabelas compartilham a mesma
+  // chave (correspondencia estabelecida pelo ETL da migration 139), e em modo
+  // 'canonical' nao existe insert legado de onde ler o id devolvido.
+  const noteId = crypto.randomUUID();
+
+  if (FISCAL_WRITES_LEGACY) {
+    const { error: noteError } = await supabase
     .from("fiscal_notes")
     .insert({
+      id:            noteId,
       client_id:     clientId,
       xml_content:   header.rawContent,
       numero_nota:   header.numeroNota || "S/N",
@@ -155,13 +176,10 @@ async function saveNote(
       data_emissao:  header.dataEmissao || null,
       valor_total:   header.valorTotal  || null,
       status:        "pendente",
-    })
-    .select("id")
-    .single();
+    });
+    if (noteError) throw new Error("Erro ao salvar nota: " + noteError.message);
+  }
 
-  if (noteError || !noteData) throw new Error("Erro ao salvar nota: " + noteError?.message);
-
-  const noteId = noteData.id;
   const alerts: { note_id: string; client_id: string; tipo: string; descricao: string; severidade: string }[] = [];
 
   const dbItems = items.map((it) => {
@@ -202,20 +220,58 @@ async function saveNote(
     });
   }
 
-  // Insere itens e alertas em paralelo.
-  // Modelo legado: os alertas em PT casam com fiscal_notes_alerts_legacy (não com
-  // fiscal_alerts, que é do sistema novo fiscal_invoices e rejeitava o insert calado).
-  const [itemsRes, alertsRes] = await Promise.all([
-    dbItems.length > 0 ? supabase.from("fiscal_note_items").insert(dbItems) : Promise.resolve({ error: null }),
-    alerts.length  > 0 ? supabase.from("fiscal_notes_alerts_legacy").insert(alerts) : Promise.resolve({ error: null }),
-  ]);
-  if (itemsRes.error) console.error("[fiscal/parse-xml] falha ao salvar itens:", itemsRes.error.message);
-  if (alertsRes.error) console.error("[fiscal/parse-xml] falha ao salvar alertas:", alertsRes.error.message);
-
   const hasCritical = alerts.some(a => a.severidade === "critico");
-  if (hasCritical) await supabase.from("fiscal_notes").update({ status: "erro" }).eq("id", noteId);
+  let canonicalOk: boolean | null = null;
 
-  return { noteId, alerts, hasCritical };
+  // ── Destino legado ────────────────────────────────────────────────────────
+  // Os alertas em PT casam com fiscal_notes_alerts_legacy. A fiscal_alerts vive
+  // no schema EN da migration 133 (fiscal_invoice_id/alert_type/severity) e
+  // rejeita esse shape — colisao de nome entre 028 e 133, tratada no B0c.
+  if (FISCAL_WRITES_LEGACY) {
+    const [itemsRes, alertsRes] = await Promise.all([
+      dbItems.length > 0 ? supabase.from("fiscal_note_items").insert(dbItems) : Promise.resolve({ error: null }),
+      alerts.length  > 0 ? supabase.from("fiscal_notes_alerts_legacy").insert(alerts) : Promise.resolve({ error: null }),
+    ]);
+    if (itemsRes.error) console.error("[fiscal/parse-xml] falha ao salvar itens:", itemsRes.error.message);
+    if (alertsRes.error) console.error("[fiscal/parse-xml] falha ao salvar alertas:", alertsRes.error.message);
+    if (hasCritical) await supabase.from("fiscal_notes").update({ status: "erro" }).eq("id", noteId);
+  }
+
+  // ── Destino canonico ──────────────────────────────────────────────────────
+  // Invariante do B0b: em 'dual' a falha aqui e registrada e NAO propaga — a
+  // nota ja esta salva no legado e o upload do produtor nao pode quebrar por
+  // causa da migracao de schema. Em 'canonical' propaga, porque nao ha outro
+  // destino e uma falha silenciosa perderia a nota.
+  if (FISCAL_WRITES_CANONICAL) {
+    const res = await writeCanonicalInvoice(supabase, {
+      id:           noteId,
+      clientId,
+      chaveAcesso:  header.chaveAcesso || null,
+      numero:       header.numeroNota || null,
+      serie:        header.serie || null,
+      emitenteCnpj: header.emitenteCnpj || null,
+      emitenteNome: header.emitenteNome || null,
+      dataEmissao:  header.dataEmissao || null,
+      valorTotal:   header.valorTotal || null,
+      legacyStatus: hasCritical ? "erro" : "pendente",
+      source,
+      rawXml:       source === "xml_upload" ? header.rawContent : null,
+      items:        richItems,
+    });
+
+    canonicalOk = res.ok;
+    if (!res.ok) {
+      console.error("[fiscal/parse-xml] escrita canonica falhou:", res.error);
+      if (FISCAL_WRITE_MODE === "canonical") {
+        throw new Error("Erro ao salvar nota (canonica): " + res.error);
+      }
+    } else if (hasCritical) {
+      const up = await updateCanonicalStatus(supabase, noteId, "erro");
+      if (!up.ok) console.error("[fiscal/parse-xml] status canonico:", up.error);
+    }
+  }
+
+  return { noteId, alerts, hasCritical, canonicalOk };
 }
 
 // ── Handler principal ─────────────────────────────────────────────────────────
@@ -260,9 +316,14 @@ export async function POST(req: NextRequest) {
     const clientData = clientResult.data;
     if (!clientData) return Response.json({ error: "Cliente não encontrado" }, { status: 404 });
 
-    const { header, items, iaFailed } = parsed as { header: ParsedHeader; items: ParsedItem[]; iaFailed?: boolean };
+    const { header, items, richItems, iaFailed } = parsed as {
+      header: ParsedHeader; items: ParsedItem[]; richItems: NfeItemFiscal[]; iaFailed?: boolean;
+    };
 
-    const { noteId, alerts, hasCritical } = await saveNote(supabase, clientData.id, header, items, iaFailed ?? false);
+    const { noteId, alerts, hasCritical, canonicalOk } = await saveNote(
+      supabase, clientData.id, header, items, richItems,
+      isPdf ? "pdf_upload" : "xml_upload", iaFailed ?? false,
+    );
 
     return Response.json({
       note_id:      noteId,
@@ -270,6 +331,8 @@ export async function POST(req: NextRequest) {
       total_items:  items.length,
       alerts_count: alerts.length,
       status:       hasCritical ? "erro" : "pendente",
+      write_mode:   FISCAL_WRITE_MODE,
+      canonical_ok: canonicalOk,
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
