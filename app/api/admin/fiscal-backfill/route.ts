@@ -33,13 +33,32 @@ type ExistingItem = {
   ncm: string | null;
   cfop: string | null;
   total_price: number | null;
+  quantity: number | null;
+  unit: string | null;
+  description: string | null;
   fiscal_parsed_at: string | null;
+};
+
+type Ambiguidade = {
+  invoice_id: string;
+  chave: string;
+  existentes: number;
+  no_xml: number;
+  motivo: string;
 };
 
 function isAuthorized(req: NextRequest): boolean {
   const expected = process.env.BACKFILL_TRIGGER_TOKEN ?? "";
   const token = (req.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "").trim();
   return Boolean(expected) && token === expected;
+}
+
+/** Hash curto e estável de descrição de produto (djb2). Só para compor chave. */
+function hashDesc(s: unknown): string {
+  const norm = (s ?? "").toString().trim().toUpperCase().replace(/\s+/g, " ");
+  let h = 5381;
+  for (let i = 0; i < norm.length; i++) h = ((h << 5) + h + norm.charCodeAt(i)) | 0;
+  return (h >>> 0).toString(36);
 }
 
 /**
@@ -49,12 +68,35 @@ function isAuthorized(req: NextRequest): boolean {
  * ROW_NUMBER() OVER (ORDER BY fni.id) — ou seja, pela ordem do UUID, que é
  * aleatória e não corresponde à ordem dos <det> no XML. Casar por sequência
  * embaralharia os campos fiscais entre itens da mesma nota.
+ *
+ * Desempate por quantidade, unidade e hash da descrição além de NCM/CFOP/valor:
+ * duas linhas de adubo com NCM e CFOP iguais mas quantidades diferentes deixam
+ * de colidir.
  */
-function matchKey(ncm: unknown, cfop: unknown, total: unknown): string {
+function matchKey(
+  ncm: unknown,
+  cfop: unknown,
+  total: unknown,
+  qtd: unknown,
+  unidade: unknown,
+  descricao: unknown,
+): string {
   const n = (ncm ?? "").toString().trim();
   const c = (cfop ?? "").toString().trim();
   const t = total == null ? "" : Number(total).toFixed(2);
-  return `${n}|${c}|${t}`;
+  const q = qtd == null ? "" : Number(qtd).toFixed(4);
+  const u = (unidade ?? "").toString().trim().toUpperCase();
+  return `${n}|${c}|${t}|${q}|${u}|${hashDesc(descricao)}`;
+}
+
+/** Payload fiscal de um item, para detectar ambiguidade real entre itens iguais. */
+function fiscalFingerprint(row: ReturnType<typeof toInvoiceItemRow>): string {
+  return JSON.stringify([
+    row.cst, row.icms_base, row.icms_reducao_base_pct, row.icms_aliquota,
+    row.icms_valor, row.icms_desonerado, row.icms_mot_desoneracao,
+    row.beneficio_codigo, row.icms_mono_qtd_bc_ret, row.icms_mono_ad_rem_ret,
+    row.icms_mono_valor_ret, row.ipi_valor,
+  ]);
 }
 
 export async function POST(req: NextRequest) {
@@ -81,6 +123,7 @@ export async function POST(req: NextRequest) {
     itens_inseridos: 0,
     itens_ja_processados: 0,
     itens_existentes_sem_par: 0,
+    itens_ambiguos: [] as Ambiguidade[],
     erros: [] as Array<{ invoice_id: string; erro: string }>,
   };
 
@@ -118,36 +161,76 @@ export async function POST(req: NextRequest) {
 
         const { data: existing } = await db
           .from("fiscal_invoice_items")
-          .select("id, sequence, ncm, cfop, total_price, fiscal_parsed_at")
+          .select("id, sequence, ncm, cfop, total_price, quantity, unit, description, fiscal_parsed_at")
           .eq("fiscal_invoice_id", inv.id);
 
-        // Baldes por chave de casamento — várias linhas podem compartilhar a
-        // mesma chave (mesmo produto repetido na nota); consumimos em ordem.
+        // Agrupa os dois lados pela mesma chave e resolve balde a balde.
         const buckets = new Map<string, ExistingItem[]>();
         for (const row of (existing ?? []) as ExistingItem[]) {
-          const k = matchKey(row.ncm, row.cfop, row.total_price);
+          const k = matchKey(row.ncm, row.cfop, row.total_price, row.quantity, row.unit, row.description);
           const arr = buckets.get(k);
           if (arr) arr.push(row);
           else buckets.set(k, [row]);
         }
 
+        const parsedBuckets = new Map<string, ReturnType<typeof toInvoiceItemRow>[]>();
+        for (const item of parsed) {
+          const row = toInvoiceItemRow(item, inv.id as string, "xml_reparse");
+          const k = matchKey(item.ncm, item.cfop, item.valorTotal, item.quantidade, item.unidade, item.descricao);
+          const arr = parsedBuckets.get(k);
+          if (arr) arr.push(row);
+          else parsedBuckets.set(k, [row]);
+        }
+
         const updates: Array<{ id: string; row: ReturnType<typeof toInvoiceItemRow> }> = [];
         const inserts: ReturnType<typeof toInvoiceItemRow>[] = [];
 
-        for (const item of parsed) {
-          const row = toInvoiceItemRow(item, inv.id as string, "xml_reparse");
-          const bucket = buckets.get(matchKey(item.ncm, item.cfop, item.valorTotal));
-          const target = bucket?.shift();
+        for (const [k, rows] of parsedBuckets) {
+          const bucket = buckets.get(k) ?? [];
+          buckets.delete(k);
 
-          if (!target) {
-            inserts.push(row);
+          // Nenhuma linha existente casa: item novo, inserimos.
+          if (bucket.length === 0) {
+            inserts.push(...rows);
             continue;
           }
-          if (target.fiscal_parsed_at && !force) {
-            stats.itens_ja_processados++;
+
+          // Contagens diferentes: não sabemos qual linha recebe qual payload.
+          if (bucket.length !== rows.length) {
+            stats.itens_ambiguos.push({
+              invoice_id: inv.id as string,
+              chave: k,
+              existentes: bucket.length,
+              no_xml: rows.length,
+              motivo: "contagem divergente entre banco e XML",
+            });
             continue;
           }
-          updates.push({ id: target.id, row });
+
+          // Mesma contagem, mas payloads fiscais diferentes entre si: a ordem
+          // importaria e não temos como saber qual é qual. Reporta, não escolhe.
+          const fingerprints = new Set(rows.map(fiscalFingerprint));
+          if (rows.length > 1 && fingerprints.size > 1) {
+            stats.itens_ambiguos.push({
+              invoice_id: inv.id as string,
+              chave: k,
+              existentes: bucket.length,
+              no_xml: rows.length,
+              motivo: "itens indistinguiveis com dados fiscais diferentes",
+            });
+            continue;
+          }
+
+          // Seguro: ou é 1-para-1, ou são N itens idênticos inclusive no fiscal,
+          // caso em que a ordem do pareamento não altera o resultado.
+          for (let i = 0; i < rows.length; i++) {
+            const target = bucket[i];
+            if (target.fiscal_parsed_at && !force) {
+              stats.itens_ja_processados++;
+              continue;
+            }
+            updates.push({ id: target.id, row: rows[i] });
+          }
         }
 
         // Sobrou linha existente sem contrapartida no XML — não tocamos nela.
