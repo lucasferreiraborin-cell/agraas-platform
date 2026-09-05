@@ -1,0 +1,54 @@
+id: R-ALERTA-SEV-01
+titulo: De-para de severidade de alerta fiscal — legado PT para canônico EN
+classe: FATO
+# Não é norma tributária: é fato verificável sobre o schema do banco. A restrição
+# existe e está no repositório, então pode ser conferida sem sair daqui.
+vigencia:
+  inicio: 2026-09-05
+  fim: null
+fonte:
+  norma: 'CHECK constraint de public.fiscal_alerts.severity'
+  artigos:
+    - "supabase/migrations/133_retroactive_sprint_g_fiscal.sql — severity text NOT NULL CHECK (severity = ANY (ARRAY['info','warning','critical']))"
+  url: null
+  verificado_em: 2026-09-05
+aplicabilidade:
+  uf: [BR]
+  regime: [pf, pj, segurado_especial]
+  atividade: [pecuaria, graos]
+revisor_humano: null
+
+# ---------------------------------------------------------------------------
+# Valores aceitos pelo banco. Qualquer coisa fora desta lista derruba o INSERT —
+# foi assim que os alertas fiscais sumiram por três meses (incidente B0c).
+# ---------------------------------------------------------------------------
+valores_canonicos: [info, warning, critical]
+
+# De-para explícito. Chave = como o legado escreve; valor = como o banco aceita.
+mapeamento:
+  critico: critical
+  crítico: critical
+  critical: critical
+  alto: critical
+  aviso: warning
+  warning: warning
+  medio: warning
+  médio: warning
+  info: info
+  baixo: info
+
+# ---------------------------------------------------------------------------
+# Default para valor não mapeado.
+#
+# Decisão 05/09/2026 (ajuste 1 do handoff): `warning`, não `info`.
+# Rationale: um alerta de severidade desconhecida é, por definição, algo que o
+# de-para ainda não cobre. Rebaixar para `info` o esconde na interface; `warning`
+# mantém visível sem alarmar como `critical`. Todo desconhecido é contado e
+# registrado em log para alimentar este mapeamento.
+# ---------------------------------------------------------------------------
+default_desconhecido: warning
+
+implementado_em:
+  - lib/fiscal/alert-writer.ts
+  - supabase/migrations/160_b0c_alertas_canal_canonico.sql
+testes: __tests__/b0c-alertas.test.ts

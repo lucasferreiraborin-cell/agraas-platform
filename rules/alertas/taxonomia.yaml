@@ -1,0 +1,147 @@
+id: R-ALERTA-TAX-01
+titulo: Taxonomia de alert_type — nomes namespaced e estáveis
+classe: CONVENCAO
+# CONVENCAO e não PREMISSA: isto é decisão interna de nomenclatura, não uma
+# afirmação sobre o mundo que possa estar certa ou errada. Marcar como PREMISSA
+# sugeriria incerteza factual onde há apenas escolha.
+vigencia:
+  inicio: 2026-09-05
+  fim: null
+fonte:
+  norma: 'Decisão do handoff de 05/09/2026, ajuste 3'
+  artigos: []
+  url: null
+  verificado_em: 2026-09-05
+aplicabilidade:
+  uf: [BR]
+  regime: [pf, pj, segurado_especial]
+  atividade: [pecuaria, graos]
+revisor_humano: null
+
+# ---------------------------------------------------------------------------
+# Regras de nomenclatura
+#   <dominio>.<subdominio?>.<condicao>
+#   snake_case nos segmentos, ponto entre níveis, sem acento, sem plural.
+#   Nome é ESTÁVEL: uma vez emitido em produção, nunca renomear — só depreciar.
+# ---------------------------------------------------------------------------
+formato: '^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*){1,2}$'
+
+tipos:
+  # ── ICMS · Convênio 100/97 ────────────────────────────────────────────────
+  - id: icms.conv100.beneficio_ausente
+    severidade_padrao: warning
+    descricao: Operação com direito a benefício do Convênio 100/97, mas a nota não o aplicou.
+    regra: R-ICMS-CONV100-01
+  - id: icms.conv100.base_cheia
+    severidade_padrao: warning
+    descricao: Base de cálculo integral onde caberia redução (pRedBC ausente ou zerado).
+    regra: R-ICMS-CONV100-01
+  - id: icms.conv100.reducao_divergente
+    severidade_padrao: warning
+    descricao: Redução de base aplicada difere do percentual previsto para o item.
+    regra: R-ICMS-CONV100-01
+  - id: icms.conv100.nao_aplicavel
+    severidade_padrao: info
+    descricao: Produto ou operação fora do alcance do Convênio. Registro informativo, NÃO é imposto pago a mais.
+    regra: R-ICMS-CONV100-01
+  - id: icms.conv100.uf_nao_mapeada
+    severidade_padrao: info
+    descricao: Não há regra verificada para esta UF. Verificar com o contador. NUNCA afirmar pago a mais.
+    regra: null
+  - id: icms.cbenef_ausente
+    severidade_padrao: warning
+    descricao: UF exige cBenef na nota e o campo veio vazio.
+    regra: R-ICMS-CONV100-01
+
+  # ── ICMS · consistência de CST ────────────────────────────────────────────
+  - id: icms.cst_incoerente
+    severidade_padrao: warning
+    descricao: CST destacado incompatível com a operação e o benefício esperado.
+    regra: R-ICMS-CONV100-01
+
+  # ── ICMS · combustíveis (B2) ──────────────────────────────────────────────
+  - id: icms.diesel.credito_acumulado
+    severidade_padrao: info
+    descricao: ICMS monofásico retido em combustível, potencial crédito conforme elegibilidade da UF.
+    regra: R-ICMS-DIESEL-01
+  - id: icms.diesel.uf_sem_rota
+    severidade_padrao: info
+    descricao: Crédito identificado, mas a rota de utilização na UF ainda não foi mapeada.
+    regra: null
+
+  # ── FUNRURAL (B5) ─────────────────────────────────────────────────────────
+  - id: funrural.duplicidade
+    severidade_padrao: critical
+    descricao: Indício de recolhimento em duplicidade entre sub-rogação do comprador e GPS própria.
+    regra: R-FUN-01
+  - id: funrural.aliquota_divergente
+    severidade_padrao: warning
+    descricao: Alíquota aplicada difere da prevista para o regime do produtor.
+    regra: R-FUN-01
+
+  # ── Livro-caixa e IR (B3) ─────────────────────────────────────────────────
+  - id: livrocaixa.despesa_sem_comprovacao
+    severidade_padrao: warning
+    descricao: Lançamento de despesa sem documento idôneo vinculado.
+    regra: R-IR-01
+  - id: livrocaixa.investimento_nao_lancado
+    severidade_padrao: warning
+    descricao: Aquisição com característica de investimento ausente do livro-caixa.
+    regra: R-IR-01
+  - id: livrocaixa.arbitramento_desfavoravel
+    severidade_padrao: info
+    descricao: Resultado escriturado é menor que o arbitramento de 20% da receita bruta.
+    regra: R-IR-01
+
+  # ── ITR (B4) ──────────────────────────────────────────────────────────────
+  - id: itr.gu_sem_prova
+    severidade_padrao: warning
+    descricao: Grau de utilização declarado sem lastro de rebanho ou área que o sustente.
+    regra: R-ITR-01
+
+  # ── IBS/CBS (B6) ──────────────────────────────────────────────────────────
+  - id: ibscbs.limiar_36mi
+    severidade_padrao: info
+    descricao: Receita anual aproxima-se ou ultrapassa o limiar de R$ 3,6 mi de contribuinte regular.
+    regra: R-REF-01
+  - id: ibscbs.destinacao_nao_declarada
+    severidade_padrao: warning
+    descricao: Diferimento condicionado à destinação sem registro de declaração de destino.
+    regra: R-REF-01
+
+  # ── Herdados do parser legado — mantidos por estabilidade ─────────────────
+  # Já foram emitidos em produção. Renomear quebraria o histórico do cliente.
+  - id: nfe.ncm_incorreto
+    severidade_padrao: critical
+    descricao: NCM fora do formato de 8 dígitos.
+    regra: null
+    substitui: ncm_incorreto
+  - id: nfe.cfop_divergente
+    severidade_padrao: critical
+    descricao: CFOP inválido para a operação.
+    regra: null
+    substitui: cfop_divergente
+  - id: nfe.item_incompleto
+    severidade_padrao: info
+    descricao: Item sem descrição.
+    regra: null
+    substitui: item_incompleto
+  - id: nfe.valor_divergente
+    severidade_padrao: warning
+    descricao: Soma dos itens difere do total da nota.
+    regra: null
+    substitui: valor_divergente
+  - id: nfe.pdf_revisao_manual
+    severidade_padrao: warning
+    descricao: Extração incompleta de PDF.
+    regra: null
+    substitui: pdf_revisao_manual
+  - id: nfe.ia_fiscal
+    severidade_padrao: warning
+    descricao: Indício levantado por análise automática, sujeito a confirmação.
+    regra: null
+    substitui: ia_fiscal
+
+implementado_em:
+  - lib/fiscal/alert-writer.ts
+testes: __tests__/b0c-alertas.test.ts

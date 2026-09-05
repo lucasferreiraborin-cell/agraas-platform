@@ -14,6 +14,9 @@ import {
   acaoSugerida,
   toCanonicalAlert,
   writeCanonicalAlerts,
+  severidadesDesconhecidas,
+  resetSeveridadesDesconhecidas,
+  SEVERIDADE_DEFAULT,
   type LegacyAlert,
 } from "@/lib/fiscal/alert-writer";
 import {
@@ -91,8 +94,31 @@ describe("mapSeverity — CHECK da migration 133", () => {
     }
   });
 
-  it("desconhecido cai em info — alerta subclassificado é melhor que alerta perdido", () => {
-    expect(mapSeverity("gravissimo")).toBe("info");
+  it("desconhecido cai em WARNING, não em info (ajuste 1 de 05/09)", () => {
+    // Severidade fora do de-para é, por definição, algo que ainda não cobrimos.
+    // Rebaixar para `info` a esconderia na interface.
+    expect(mapSeverity("gravissimo")).toBe("warning");
+    expect(SEVERIDADE_DEFAULT).toBe("warning");
+  });
+
+  it("conta e registra cada severidade desconhecida, para alimentar o de-para", () => {
+    resetSeveridadesDesconhecidas();
+    const spy = jest.spyOn(console, "warn").mockImplementation(() => {});
+    mapSeverity("gravissimo");
+    mapSeverity("gravissimo");
+    mapSeverity("urgentissimo");
+    mapSeverity("");
+    expect(severidadesDesconhecidas()).toEqual({ gravissimo: 2, urgentissimo: 1, "(vazio)": 1 });
+    expect(spy).toHaveBeenCalledTimes(4);
+    expect(spy.mock.calls[0][0]).toContain("severidade-mapa.yaml");
+    spy.mockRestore();
+    resetSeveridadesDesconhecidas();
+  });
+
+  it("severidade conhecida não entra no contador", () => {
+    resetSeveridadesDesconhecidas();
+    ["critico", "aviso", "info", "alto", "medio", "baixo"].forEach(mapSeverity);
+    expect(severidadesDesconhecidas()).toEqual({});
   });
 });
 
@@ -102,7 +128,7 @@ describe("toCanonicalAlert", () => {
   it("renomeia todas as colunas do shape PT para o EN", () => {
     const c = toCanonicalAlert(alerta());
     expect(c.fiscal_invoice_id).toBe("n1");
-    expect(c.alert_type).toBe("ncm_incorreto");
+    expect(c.alert_type).toBe("nfe.ncm_incorreto");
     expect(c.message).toContain("ADUBO");
     expect(c.severity).toBe("critical");
     expect(c.resolved).toBe(false);
@@ -141,7 +167,7 @@ describe("writeCanonicalAlerts", () => {
     const res = await writeCanonicalAlerts(client, [alerta(), alerta({ tipo: "ia_fiscal" })], true);
     expect(res.ok).toBe(true);
     expect(res.written).toBe(2);
-    expect((calls[0] as Array<Record<string, unknown>>)[0].alert_type).toBe("ncm_incorreto");
+    expect((calls[0] as Array<Record<string, unknown>>)[0].alert_type).toBe("nfe.ncm_incorreto");
   });
 
   it("recusa quando a nota não está na canônica — a FK derrubaria o insert", async () => {
