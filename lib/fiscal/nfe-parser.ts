@@ -17,6 +17,38 @@
 // ---------------------------------------------------------------------------
 
 /**
+ * Prefixo de namespace opcional (`ns2:`, `nfe:`).
+ *
+ * Alguns emissores serializam a NF-e com prefixo. Sem aceitar isso, TODA regex
+ * ancorada em `<tag` falha e o parser devolve vazio — silenciosamente, sem
+ * erro, para a nota inteira. Achado de revisão de 05/09/2026.
+ */
+const NS = "(?:[A-Za-z_][\\w.-]*:)?";
+
+/** Entidades XML que aparecem em descrição de produto e razão social. */
+const ENTIDADES: Record<string, string> = {
+  "&amp;": "&", "&lt;": "<", "&gt;": ">", "&quot;": '"', "&apos;": "'",
+};
+
+/**
+ * Decodifica entidades XML.
+ *
+ * `<xProd>ADUBO A&amp;B</xProd>` precisa virar `ADUBO A&B`. Sem isso, além de
+ * o texto aparecer errado na tela, o hash da descrição diverge do que o schema
+ * legado gravou (já decodificado) e o backfill trata a mesma linha como item
+ * novo — inserindo duplicata. Achado de revisão de 05/09/2026.
+ *
+ * `&amp;` é resolvido por último para não transformar `&amp;lt;` em `<`.
+ */
+export function decodeXmlEntities(texto: string): string {
+  return texto
+    .replace(/&(?:lt|gt|quot|apos);/g, e => ENTIDADES[e] ?? e)
+    .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(Number(d)))
+    .replace(/&#[xX]([0-9a-fA-F]+);/g, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+    .replace(/&amp;/g, "&");
+}
+
+/**
  * Extrai o conteúdo de uma tag.
  *
  * O nome da tag precisa terminar em `>` ou em espaço — sem isso, `vICMS`
@@ -24,12 +56,14 @@
  * de um item viria do campo errado. Esse era um bug real do parser anterior:
  * a monofasia (`vICMSMonoRet`) e a substituição (`vICMSST`) colidiam com
  * `vICMS` na mesma nota.
+ *
+ * Aceita prefixo de namespace e decodifica entidades na saída.
  */
 export function extractTag(xml: string, tag: string): string {
   const m = xml.match(
-    new RegExp(`<${tag}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${tag}>`, "i"),
+    new RegExp(`<${NS}${tag}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${NS}${tag}>`, "i"),
   );
-  return m ? m[1].trim() : "";
+  return m ? decodeXmlEntities(m[1].trim()) : "";
 }
 
 /**
@@ -40,7 +74,7 @@ export function extractTag(xml: string, tag: string): string {
  */
 export function extractBlock(xml: string, tag: string): string[] {
   const re = new RegExp(
-    `<${tag}(?:\\s[^>]*)?>[\\s\\S]*?<\\/${tag}>`,
+    `<${NS}${tag}(?:\\s[^>]*)?>[\\s\\S]*?<\\/${NS}${tag}>`,
     "gi",
   );
   return xml.match(re) ?? [];
@@ -184,7 +218,7 @@ export function parseNfeHeader(xml: string): NfeHeader {
   const ide  = extractBlock(xml, "ide")[0]  ?? xml;
 
   // A chave vive no atributo Id de <infNFe Id="NFe3512...">.
-  const chave = xml.match(/<infNFe[^>]*\bId="(?:NFe)?(\d{44})"/i)?.[1] ?? "";
+  const chave = xml.match(/<(?:[A-Za-z_][\w.-]*:)?infNFe[^>]*\bId="(?:NFe)?(\d{44})"/i)?.[1] ?? "";
 
   return {
     chaveAcesso:    chave,

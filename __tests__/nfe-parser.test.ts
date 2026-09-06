@@ -15,6 +15,7 @@ import {
   parseNfeItems,
   parseNfeHeader,
   toInvoiceItemRow,
+  decodeXmlEntities,
 } from "@/lib/fiscal/nfe-parser";
 
 // ── Fixtures ────────────────────────────────────────────────────────────────
@@ -290,5 +291,80 @@ describe("toInvoiceItemRow", () => {
     const insumo = toInvoiceItemRow(parseDetItem(DET_DIESEL, 2), "inv-1", "live_parse");
     expect(insumo.icms_mot_desoneracao).toBeNull();
     expect(insumo.beneficio_codigo).toBeNull();
+  });
+});
+
+// ── Achados da revisão adversarial de 05/09/2026 ────────────────────────────
+
+describe("entidades XML (achado 7 da revisão)", () => {
+  it("decodifica as entidades nomeadas", () => {
+    expect(decodeXmlEntities("ADUBO A&amp;B")).toBe("ADUBO A&B");
+    expect(decodeXmlEntities("&lt;tag&gt;")).toBe("<tag>");
+    expect(decodeXmlEntities("&quot;aspas&quot;")).toBe('"aspas"');
+    expect(decodeXmlEntities("d&apos;agua")).toBe("d'agua");
+  });
+
+  it("decodifica entidades numéricas, decimal e hexadecimal", () => {
+    expect(decodeXmlEntities("&#65;&#66;")).toBe("AB");
+    expect(decodeXmlEntities("&#x41;&#X42;")).toBe("AB");
+  });
+
+  it("resolve &amp; por último — &amp;lt; não vira <", () => {
+    // Se `&amp;` fosse resolvido primeiro, `&amp;lt;` viraria `&lt;` e depois `<`,
+    // corrompendo texto que o emitente escapou duas vezes de propósito.
+    expect(decodeXmlEntities("&amp;lt;")).toBe("&lt;");
+  });
+
+  it("descrição do produto chega decodificada — é o que alimenta o hash do backfill", () => {
+    const det = `<det nItem="1"><prod><cProd>X</cProd>
+      <xProd>ADUBO A&amp;B PREMIUM</xProd><NCM>31052000</NCM><CFOP>1101</CFOP>
+      <uCom>TON</uCom><qCom>1</qCom><vUnCom>10</vUnCom><vProd>10</vProd></prod></det>`;
+    // O schema legado gravou "ADUBO A&B PREMIUM" já decodificado. Sem decodificar
+    // aqui, o hash divergiria e o backfill trataria como item novo.
+    expect(parseDetItem(det, 1).descricao).toBe("ADUBO A&B PREMIUM");
+  });
+});
+
+describe("prefixo de namespace (achado 8 da revisão)", () => {
+  const NFE_NS = `<?xml version="1.0"?>
+<nfeProc xmlns="http://www.portalfiscal.inf.br/nfe">
+  <ns2:NFe><ns2:infNFe Id="NFe52250912345678000199550010000012341000012345" versao="4.00">
+    <ns2:ide><ns2:nNF>777</ns2:nNF><ns2:serie>1</ns2:serie><ns2:dhEmi>2026-08-15T10:00:00-03:00</ns2:dhEmi></ns2:ide>
+    <ns2:emit><ns2:CNPJ>12345678000199</ns2:CNPJ><ns2:xNome>AGRO LTDA</ns2:xNome>
+      <ns2:enderEmit><ns2:UF>SP</ns2:UF></ns2:enderEmit></ns2:emit>
+    <ns2:dest><ns2:enderDest><ns2:UF>GO</ns2:UF></ns2:enderDest></ns2:dest>
+    <ns2:det nItem="1"><ns2:prod><ns2:xProd>ADUBO</ns2:xProd><ns2:NCM>31052000</ns2:NCM>
+      <ns2:CFOP>6101</ns2:CFOP><ns2:uCom>TON</ns2:uCom><ns2:qCom>5</ns2:qCom>
+      <ns2:vUnCom>100</ns2:vUnCom><ns2:vProd>500</ns2:vProd></ns2:prod>
+      <ns2:imposto><ns2:ICMS><ns2:ICMS20><ns2:CST>20</ns2:CST><ns2:pRedBC>60.00</ns2:pRedBC>
+        <ns2:vBC>200.00</ns2:vBC><ns2:pICMS>12.00</ns2:pICMS><ns2:vICMS>24.00</ns2:vICMS>
+      </ns2:ICMS20></ns2:ICMS></ns2:imposto></ns2:det>
+  </ns2:infNFe></ns2:NFe></nfeProc>`;
+
+  it("nota com prefixo de namespace NÃO devolve vazio", () => {
+    // Sem aceitar o prefixo, toda regex ancorada em `<tag` falhava e o parser
+    // devolvia zero itens — em silêncio, para a nota inteira.
+    const itens = parseNfeItems(NFE_NS);
+    expect(itens).toHaveLength(1);
+    expect(itens[0].ncm).toBe("31052000");
+  });
+
+  it("os campos de ICMS saem corretos mesmo com prefixo", () => {
+    const it = parseNfeItems(NFE_NS)[0];
+    expect(it.cst).toBe("20");
+    expect(it.icmsReducaoBasePct).toBe(60);
+    expect(it.icmsValor).toBe(24);
+  });
+
+  it("cabeçalho e chave de acesso também aceitam prefixo", () => {
+    const h = parseNfeHeader(NFE_NS);
+    expect(h.chaveAcesso).toHaveLength(44);
+    expect(h.numeroNota).toBe("777");
+    expect(h.emitenteUf).toBe("SP");
+    expect(h.destinatarioUf).toBe("GO");
+  });
+
+  it("nota SEM prefixo continua funcionando — o prefixo é opcional", () => {
+    expect(parseNfeItems(NFE_COMPLETA)).toHaveLength(2);
   });
 });

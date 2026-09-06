@@ -3,7 +3,7 @@
 > **Página viva.** Responde "onde estamos?" sem você precisar perguntar.
 > Atualizada ao fim de cada bloco de trabalho, antes do commit.
 >
-> **Última atualização:** 05/09/2026 · `3a741a8` · 201 testes verdes · tsc limpo
+> **Última atualização:** 05/09/2026 · `182a306` · 209 testes verdes · tsc limpo
 
 ---
 
@@ -11,7 +11,7 @@
 
 | | Estado |
 |---|---|
-| 🟢 **Código** | 201 testes passando, typecheck limpo, árvore limpa, tudo em `origin/main` |
+| 🟢 **Código** | 209 testes passando, typecheck limpo, árvore limpa, tudo em `origin/main` |
 | 🔴 **Banco** | **Nenhuma migration aplicada.** 159, 160 e 161 escritas e paradas |
 | 🔴 **Acesso** | Sem MCP autenticado, sem `.env.local`, sem backup. Bloqueia 6 frentes |
 | 🟡 **Pista B** | Bloqueada: os arquivos da seção 8 do handoff não estão no repositório |
@@ -47,8 +47,27 @@
 
 ### Em andamento
 
-- Revisão adversarial do parser e do backfill (agente `code-reviewer`, rodando)
 - **B1** — Convênio ICMS 100/97, motor puro. Próximo item da fila
+
+### Revisão adversarial concluída — 4 bloqueantes corrigidos
+
+O `code-reviewer` leu o parser e o backfill e deu veredito de **bloquear push**.
+O backfill nunca rodou, então nenhum dado foi corrompido — as correções vieram
+antes da primeira execução.
+
+**Descartado:** testou todos os pares de tag com prefixo comum e não achou
+colisão nova. A correção anterior cobre a classe inteira.
+
+| # | Achado | Correção |
+|---|---|---|
+| 1 | Chave que não casa era tratada como item novo → INSERT duplicado, com os vínculos numa linha e o fiscal noutra | Se sobrou linha existente na nota, é ambiguidade: **a nota inteira é pulada** |
+| 2 | Fingerprint omitia a monofasia própria, `product_code` e `sequence` → dois diesels com ad rem diferente passavam como idênticos | Assinatura cobre **tudo** que o UPDATE escreve |
+| 3 | SELECT sem `ORDER BY` → `bucket[i]` arbitrário, gravava `sequence` na linha errada de forma irreproduzível | `.order("id")` |
+| 4 | Erro no meio do lote deixava linhas gravadas e reportava zero | Contadores incrementam ao acontecer; o erro reporta `itens_ja_gravados` |
+| 5 | Paginação sem desempate podia pular notas com `remaining: 0` | `.order("created_at").order("id")` |
+| 6 | UPDATE gravava nulos → XML truncado apagaria valor bom | Campos nulos são **omitidos** do UPDATE |
+| 7 | Sem decodificar entidades XML → `&amp;` literal, e hash divergente alimentando o achado 1 | `decodeXmlEntities` |
+| 8 | Prefixo de namespace (`<ns2:det`) fazia o parser devolver **vazio em silêncio** — afetava o caminho ao vivo, não só o backfill | Todas as regex aceitam prefixo opcional |
 
 ### Na fila
 
