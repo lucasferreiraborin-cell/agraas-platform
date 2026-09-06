@@ -70,7 +70,7 @@ async function fetchLotesAbertos(): Promise<LoteOfertadoCard[]> {
     ? await db
         .from("animal_scores")
         .select("animal_id, total_score")
-        .eq("algorithm_version", "v3")
+        .in("algorithm_version", ["v3", "v3.1", "v3.2"])
         .in("animal_id", allAnimalIds)
     : { data: [] };
   const scoreMap = new Map((animalScores ?? []).map((s) => [s.animal_id, Number(s.total_score)]));

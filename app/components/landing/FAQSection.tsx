@@ -8,11 +8,11 @@ import { FadeIn } from "@/app/components/ui/Motion";
 const FAQ = [
   {
     q: "A Agraas substitui meu ERP agrícola ou complementa?",
-    a: "Substitui. A plataforma cobre toda a cadeia — rastreabilidade, operacional, financeiro (DRE, fluxo, balanço), fiscal (NF-e automática), estoque com carência MAPA, custo por animal e ROI. Quem migra reduz de 3-4 softwares para 1.",
+    a: "Substitui. A plataforma cobre toda a cadeia — rastreabilidade, operacional, financeiro (DRE, fluxo, balanço), fiscal (leitura e classificação automática de NF-e), estoque com carência MAPA, custo por animal e ROI. Quem migra reduz de 3-4 softwares para 1.",
   },
   {
     q: "A Agraas resolve a obrigatoriedade da NFP-e e as mudanças fiscais de 2026?",
-    a: "Sim. Emissão e leitura de NF-e (entrada e saída) já rodam na plataforma, com classificação contábil automática, LCDPR e parametrização de regime tributário (incluindo FUNRURAL por tipo de produtor). O motor fiscal foi construído pensando na janela regulatória que se abre em 2026.",
+    a: "Sim. A leitura e a classificação de NF-e de entrada e saída já rodam na plataforma, com classificação contábil automática, LCDPR e parametrização de regime tributário (incluindo FUNRURAL por tipo de produtor). A emissão da nota continua onde já está hoje — com o seu contador ou com o emissor que você usa; a Agraas lê o XML autorizado e transforma em custo por animal. O motor fiscal foi construído pensando na janela regulatória que se abre em 2026.",
   },
   {
     q: "Quanto tempo leva para uma fazenda começar a usar?",
@@ -36,7 +36,7 @@ const FAQ = [
   },
   {
     q: "Como funciona a cobrança do marketplace?",
-    a: "Publicar anúncios é gratuito em todos os planos. A transação acontece direto entre comprador e vendedor com NF-e gerada automaticamente. Taxa de sucesso de 2% sobre transações fechadas pelo marketplace (pago pelo vendedor, sem surpresa no checkout).",
+    a: "Publicar anúncios é gratuito em todos os planos. A transação acontece direto entre comprador e vendedor, e a nota emitida é conciliada na plataforma. Taxa de sucesso prevista de 2% sobre transações fechadas pelo marketplace, paga pelo vendedor.",
   },
   {
     q: "A Agraas vai além da pecuária bovina?",

@@ -20,14 +20,14 @@ const PROFILES: {
     Icon: Tractor,
     label: "Sou fazendeiro",
     hint: "Rebanho, talhões e passaporte digital",
-    sidebar: "Rastreie seu rebanho, certifique para Halal e venda com dados verificados.",
+    sidebar: "Suas notas viram custo por animal e FUNRURAL apurado, com o rebanho rastreado.",
   },
   {
     key: "frigorifico",
     Icon: Factory,
     label: "Frigorífico / abate",
     hint: "Animais com rastreabilidade individual",
-    sidebar: "Receba animais com rastreabilidade individual e conformidade Halal auditável.",
+    sidebar: "Receba animais com rastreabilidade individual e origem auditável.",
   },
   {
     key: "exportador",
@@ -60,7 +60,8 @@ const PROFILES: {
 ];
 
 const REBANHO = ["Até 100", "100–500", "500–2.000", "2.000+"];
-const ESPECIES = ["Bovinos", "Ovinos", "Aves", "Misto"];
+// Ovinos e Aves estao PAUSADOS (CLAUDE.md). Nao oferecer no onboarding.
+const ESPECIES = ["Bovinos"];
 
 const DEFAULT_SIDEBAR =
   "A infraestrutura do agro brasileiro. Pecuária, grãos e exportação sobre uma única camada.";
@@ -176,7 +177,7 @@ export default function CadastroPage() {
   return (
     <AuthShell
       sidebarMessage={sidebarMessage}
-      sidebarBadges={["Halal", "EUDR", "MAPA", "SIF"]}
+      sidebarBadges={["EUDR", "MAPA", "GTA", "LCDPR"]}
       step={{ current: step, total: profileType === "visitante" ? 1 : 2 }}
     >
       {step === 1 && (

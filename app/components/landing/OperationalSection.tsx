@@ -20,8 +20,8 @@ const PILLARS = [
   {
     Icon: Receipt,
     title: "Fiscal integrado",
-    text: "NF-e de entrada e saída validadas automaticamente. Upload de documentos, OCR para extração, conformidade com SEFAZ.",
-    bullets: ["Entrada + saída", "OCR automático", "Aderência SEFAZ"],
+    text: "NF-e de entrada e saída lidas e validadas automaticamente. Upload de documentos, OCR para extração, leitura do XML autorizado pela SEFAZ.",
+    bullets: ["Entrada + saída", "OCR automático", "XML da SEFAZ"],
   },
   {
     Icon: Boxes,
@@ -116,7 +116,7 @@ export default function OperationalSection() {
                 { label: "Operacional",  sub: "Manejo e sanitário" },
                 { label: "Estoque",      sub: "Insumos e carência" },
                 { label: "Financeiro",   sub: "DRE e fluxo de caixa" },
-                { label: "Fiscal",       sub: "NF-e automática" },
+                { label: "Fiscal",       sub: "NF-e conciliada" },
                 { label: "Comercial",    sub: "Vendas e marketplace" },
                 { label: "Exportação",   sub: "Lotes e rastreio" },
               ].map((col) => (

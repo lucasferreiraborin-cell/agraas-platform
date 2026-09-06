@@ -106,7 +106,7 @@ const CAPABILITIES = [
   {
     Icon: ShoppingBag,
     title: "Marketplace Integrado",
-    p1: "O mercado livre do agro. Animais, safras, insumos, máquinas e serviços anunciados com score do vendedor e NF-e automática no fechamento.",
+    p1: "O mercado livre do agro. Animais, safras, insumos, máquinas e serviços anunciados com score do vendedor e nota conciliada no fechamento.",
     p2: "O único marketplace em que o histórico operacional do vendedor acompanha o anúncio. Qualidade comprovada antes do aperto de mão.",
     href: "/marketplace",
   },
@@ -335,7 +335,7 @@ export default async function LandingPage() {
                 O marketplace do agronegócio brasileiro.
               </h2>
               <p className="mt-5 max-w-[680px] text-[1rem] leading-[1.8] text-[var(--text-secondary)]">
-                Animais, safras, insumos, máquinas e serviços — cada anúncio com score do vendedor, histórico operacional e NF-e automática no fechamento.
+                Animais, safras, insumos, máquinas e serviços — cada anúncio com score do vendedor, histórico operacional e nota conciliada no fechamento.
               </p>
             </div>
           </FadeIn>
@@ -349,7 +349,7 @@ export default async function LandingPage() {
               {[
                 "Score em todo anúncio",
                 "Histórico do vendedor no listing",
-                "NF-e automática no fechamento",
+                "NF-e conciliada no fechamento",
                 "Sem intermediário entre as partes",
               ].map((p) => (
                 <span

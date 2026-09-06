@@ -238,7 +238,7 @@ export default function MarketplacePublicView({ listings }: { listings: Listing[
             </FadeIn>
             <FadeIn delay={0.12}>
               <p className="mt-6 max-w-[640px] text-[1.0625rem] leading-[1.75] text-white/65">
-                Animais, safras, insumos e máquinas — com score verificado, vendedor rastreado e NF-e automática no fechamento.
+                Animais, safras, insumos e máquinas — com score verificado, vendedor rastreado e nota conciliada no fechamento.
               </p>
             </FadeIn>
             <FadeIn delay={0.3}>
@@ -278,7 +278,7 @@ export default function MarketplacePublicView({ listings }: { listings: Listing[
               },
               {
                 Icon: FileText,
-                title: "NF-e automática no fechamento",
+                title: "NF-e conciliada no fechamento",
                 sub: "Sem burocracia, conformidade garantida.",
               },
             ].map((d) => (
@@ -727,7 +727,7 @@ export default function MarketplacePublicView({ listings }: { listings: Listing[
               {
                 n: "03",
                 title: "Feche com NF-e e segurança",
-                text: "Proteção Agraas em todo o fluxo. Transação registrada no sistema, NF-e automática, reputação construída a cada negócio.",
+                text: "Proteção Agraas em todo o fluxo. Transação registrada no sistema, nota conciliada, reputação construída a cada negócio.",
               },
             ].map((s) => (
               <StaggerItem key={s.n}>
@@ -781,7 +781,7 @@ export default function MarketplacePublicView({ listings }: { listings: Listing[
                   text: "Row Level Security em PostgreSQL. Seus dados nunca são visíveis a outros clientes, em nenhuma hipótese.",
                 },
                 {
-                  title: "NF-e automática",
+                  title: "NF-e conciliada",
                   text: "Transação fechada no marketplace gera nota fiscal eletrônica automaticamente, pronta para contabilidade.",
                 },
                 {
