@@ -25,8 +25,8 @@ nunca no lugar do que estava combinado.
 ## Passos
 
 ### 1. Ler o estado
+- **`docs/STATUS.md`** — a página viva. É o primeiro arquivo a abrir
 - `docs/decisoes/pendentes.md` — decisões paradas e padrões assumidos
-- Estado das duas pistas (A: plataforma · B: estratégia e materiais)
 - `git log --oneline -10` e o resultado do último `npx jest`
 
 ### 2. Conferir as datas contra hoje
@@ -68,7 +68,14 @@ padrão declarado.
 Pista A (plataforma) antes da Pista B (estratégia e materiais). Dentro de cada
 uma, a ordem acordada.
 
-### 6. Fechar com relatório curto
+### 6. Atualizar `docs/STATUS.md` ANTES do commit
+Não é opcional e não é no fim do dia — é a cada bloco de trabalho que muda o
+estado. O Lucas precisa conseguir abrir essa página a qualquer momento e saber
+onde estamos sem perguntar. Atualizar: data e commit do cabeçalho, semáforo,
+contagem de dias das datas, o que entrou no ar, o que está em andamento, e os
+achados abertos.
+
+### 7. Fechar com relatório curto
 - o que foi **feito**
 - **contagens** (testes, arquivos, linhas, registros)
 - **contradições** encontradas (regra 7)
