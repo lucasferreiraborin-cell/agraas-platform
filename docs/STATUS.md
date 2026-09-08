@@ -11,8 +11,8 @@
 
 | | Estado |
 |---|---|
-| 🟢 **Código** | 223 testes passando, typecheck limpo, árvore limpa, tudo em `origin/main` |
-| 🔴 **Banco** | **Nenhuma migration aplicada.** 159, 160 e 161 escritas e paradas |
+| 🟢 **Código** | 239 testes passando, typecheck limpo, árvore limpa, tudo em `origin/main` |
+| 🔴 **Banco** | **Nenhuma migration aplicada.** 159, 160, 161 e 162 escritas e paradas |
 | 🔴 **Acesso** | Sem MCP autenticado, sem `.env.local`, sem backup. Bloqueia 6 frentes |
 | 🟡 **Pista B** | Bloqueada: os arquivos da seção 8 do handoff não estão no repositório |
 | 🟢 **Produção** | Landing com 0 erro e 0 warning de console, todas as requisições 200 |
@@ -45,7 +45,8 @@
 | **B4** | Relatório de DITR. Tabela de alíquotas lida célula a célula do anexo oficial | `4e4ce14` |
 | **Compliance** | 10 claims de emissão de NF-e removidos + Halal/SIF fora do cadastro + bug do frigorífico | `3a741a8` |
 | **Revisão** | 8 achados adversariais corrigidos antes da primeira execução do backfill | `08e37cc` |
-| **B4 PDF** | O documento que o contador confere e assina. Rota `/api/export/itr-pdf` | 08/09 |
+| **B4 PDF** | O documento que o contador confere e assina. Rota `/api/export/itr-pdf` | `7a4c444` |
+| **A-1 + A-2** | Perfil de contador no cadastro, role correta e intake persistido. Migration 162 escrita | 08/09 |
 
 ### Em andamento
 
@@ -100,12 +101,20 @@ colisão nova. A correção anterior cobre a classe inteira.
 
 ## Achados abertos que precisam de decisão
 
-Estes vieram do raio-x e **não** foram corrigidos porque exigem schema ou decisão comercial.
+✅ **A-1 e A-2 resolvidos em 08/09** — ver abaixo. Os demais seguem abertos.
+
+> **A-1 era pior do que "falta opção no cadastro".** O `clients_role_check`
+> aceitava só `admin/client/buyer/bank`: **`'accountant'` era rejeitado pelo
+> banco**. O `roleToPersona` mapeava um valor que nunca pôde existir, e o
+> comentário em `app/contador/page.tsx:9` já admitia — *"contador quando a role
+> existir no banco"*. **Nunca existiu um contador de verdade**; as telas só
+> foram vistas por admin em modo *viewing as*. Migration 162 corrige as três
+> camadas de uma vez.
+
+Estes vieram do raio-x e **não** foram corrigidos porque exigem decisão comercial.
 
 | # | Achado | Por que importa |
 |---|---|---|
-| **A-1** | **Não existe perfil "Contador" no cadastro**, e `role` é hardcoded `"client"`. Quem escolhe "Frigorífico" vira produtor | O canal comercial nº1 dos 90 dias não tem porta de entrada. Cada contador exigiria mexer no banco à mão — inviabiliza o teste de canal do d60 |
-| **A-2** | O cadastro **coleta e descarta** nome da fazenda, estado, tamanho do rebanho e espécie | Todo lead perde o contexto que o comercial precisaria para follow-up |
 | **A-3** | Primeira tela pós-cadastro é o painel de **rebanho zerado**, sem ponte para o módulo fiscal | Contradiz o wedge no primeiro minuto de uso |
 | **A-4** | Persona Contador é **read-only** — nenhuma ação sobre NF-e, convite só por `mailto`, busca desabilitada | É relatório, não ferramenta de trabalho |
 | **A-5** | Taxa de 2% do marketplace publicada, **sem implementação** | Termo comercial no ar sem produto. Suavizei para "prevista"; decidir se implementa ou sai |

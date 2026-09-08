@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, Loader2, Tractor, Factory, Globe, Package, Handshake, Eye } from "lucide-react";
+import { ArrowLeft, ArrowRight, Loader2, Tractor, Factory, Globe, Package, Handshake, Eye, Calculator } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import AuthShell from "@/app/components/ui/AuthShell";
@@ -21,6 +21,13 @@ const PROFILES: {
     label: "Sou fazendeiro",
     hint: "Rebanho, talhões e passaporte digital",
     sidebar: "Suas notas viram custo por animal e FUNRURAL apurado, com o rebanho rastreado.",
+  },
+  {
+    key: "contador",
+    Icon: Calculator,
+    label: "Contador / escritório",
+    hint: "Carteira de produtores, NF-e e obrigações",
+    sidebar: "A apuração dos seus produtores num painel só — NF-e classificada, FUNRURAL por regime e LCDPR.",
   },
   {
     key: "frigorifico",
@@ -60,6 +67,33 @@ const PROFILES: {
 ];
 
 const REBANHO = ["Até 100", "100–500", "500–2.000", "2.000+"];
+
+/**
+ * Perfil escolhido na tela -> `clients.role`.
+ *
+ * Antes do A-1 (08/09/2026) a role era HARDCODED como "client": quem escolhia
+ * "Frigorífico" virava produtor, e não havia caminho nenhum para contador — a
+ * constraint do banco nem aceitava 'accountant' (corrigido na migration 162).
+ *
+ * Exportador, fornecedor, parceiro e visitante continuam entrando como
+ * `client`: não existe persona própria para eles, e inventar uma role que o
+ * `roleToPersona` não conhece levaria a pessoa para um painel vazio.
+ */
+const PERFIL_PARA_ROLE: Record<string, string> = {
+  fazendeiro:  "client",
+  contador:    "accountant",
+  frigorifico: "buyer",
+};
+
+function roleDoPerfil(perfil: string): string {
+  return PERFIL_PARA_ROLE[perfil] ?? "client";
+}
+
+/** Para onde mandar depois do cadastro, conforme a persona. */
+const ROTA_POS_CADASTRO: Record<string, string> = {
+  accountant: "/contador",
+  buyer:      "/comprador",
+};
 // Ovinos e Aves estao PAUSADOS (CLAUDE.md). Nao oferecer no onboarding.
 const ESPECIES = ["Bovinos"];
 
@@ -149,14 +183,40 @@ export default function CadastroPage() {
     const isNewUser = data.user && Array.isArray(data.user.identities) && data.user.identities.length > 0;
 
     if (isNewUser && data.user) {
-      await supabase.from("clients").insert({
-        name: profileType === "fazendeiro" ? farmName || name : companyName || name,
-        email,
-        role: "client",
-        auth_user_id: data.user.id,
-      });
+      const role = roleDoPerfil(profileType);
+
+      const { data: novoCliente } = await supabase
+        .from("clients")
+        .insert({
+          name: profileType === "fazendeiro" ? farmName || name : companyName || name,
+          email,
+          role,
+          auth_user_id: data.user.id,
+        })
+        .select("id")
+        .single();
+
+      // A-2 (08/09/2026): até aqui, tudo que o passo 2 coletava era descartado.
+      // O intake é registro do que a pessoa DECLAROU — falha nele não pode
+      // derrubar o cadastro, que já está feito.
+      if (novoCliente?.id) {
+        const { error: intakeErr } = await supabase.from("onboarding_intake").insert({
+          client_id: novoCliente.id,
+          perfil_declarado: profileType,
+          farm_name: farmName || null,
+          uf: state || null,
+          rebanho_faixa: rebanhoSize || null,
+          especie: especie || null,
+          company_name: companyName || null,
+          notes: notes || null,
+          telefone: phone || null,
+          origem: "cadastro_web",
+        });
+        if (intakeErr) console.error("[cadastro] intake nao gravado:", intakeErr.message);
+      }
+
       setLoading(false);
-      router.push("/painel");
+      router.push(ROTA_POS_CADASTRO[role] ?? "/painel");
     } else {
       // Either a duplicate email (identities=[]) or email-confirmation flow.
       // Show a generic message — do not reveal whether the account existed.
