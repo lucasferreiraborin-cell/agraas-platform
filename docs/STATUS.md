@@ -11,7 +11,7 @@
 
 | | Estado |
 |---|---|
-| 🟢 **Código** | 209 testes passando, typecheck limpo, árvore limpa, tudo em `origin/main` |
+| 🟢 **Código** | 223 testes passando, typecheck limpo, árvore limpa, tudo em `origin/main` |
 | 🔴 **Banco** | **Nenhuma migration aplicada.** 159, 160 e 161 escritas e paradas |
 | 🔴 **Acesso** | Sem MCP autenticado, sem `.env.local`, sem backup. Bloqueia 6 frentes |
 | 🟡 **Pista B** | Bloqueada: os arquivos da seção 8 do handoff não estão no repositório |
@@ -23,11 +23,11 @@
 
 | Prazo | Faltam | O que é |
 |---|---:|---|
-| **12/09** | **7 dias** | Dados da FSJBE (Ico + contador). Sem eles, B4 sai do ciclo |
-| **25/09** | 20 dias | Gate d30 — pacote vendável · 3 contadores treinados · 20 conversas |
-| **30/09** | 25 dias | DITR 2026 — o contador assina o relatório |
-| 25/10 | 50 dias | Gate d60 — ≥3 fazendas via contadores · ≥2 pagantes. Destrava o C2 |
-| 24/11 | 80 dias | Gate d90 — 5 pagantes retidas · churn <2/5 |
+| **12/09** | **4 dias** | Dados da FSJBE (Ico + contador). Sem eles, B4 sai do ciclo |
+| **25/09** | 17 dias | Gate d30 — pacote vendável · 3 contadores treinados · 20 conversas |
+| **30/09** | 22 dias | DITR 2026 — o contador assina o relatório |
+| 25/10 | 47 dias | Gate d60 — ≥3 fazendas via contadores · ≥2 pagantes. Destrava o C2 |
+| 24/11 | 77 dias | Gate d90 — 5 pagantes retidas · churn <2/5 |
 
 ---
 
@@ -44,10 +44,18 @@
 | **rules/** | Livro de regras YAML com `verificado_em` como trava dura | `b54ac13` |
 | **B4** | Relatório de DITR. Tabela de alíquotas lida célula a célula do anexo oficial | `4e4ce14` |
 | **Compliance** | 10 claims de emissão de NF-e removidos + Halal/SIF fora do cadastro + bug do frigorífico | `3a741a8` |
+| **Revisão** | 8 achados adversariais corrigidos antes da primeira execução do backfill | `08e37cc` |
+| **B4 PDF** | O documento que o contador confere e assina. Rota `/api/export/itr-pdf` | 08/09 |
 
 ### Em andamento
 
 - **B1** — Convênio ICMS 100/97, motor puro. Próximo item da fila
+
+> **B4 fechado como entregável.** O motor tinha objeto, não documento. Agora tem PDF de
+> duas páginas com o carimbo NÃO PUBLICÁVEL enquanto índice de lotação e conversão UA
+> não forem verificados, pastagem declarada × comprovada lado a lado, e espaço de
+> assinatura do contador com CRC. Roda sobre mock — quando o dado da FSJBE chegar,
+> é troca de fonte, não construção.
 
 ### Revisão adversarial concluída — 4 bloqueantes corrigidos
 
