@@ -11,7 +11,7 @@
 
 | | Estado |
 |---|---|
-| 🟢 **Código** | 239 testes passando, typecheck limpo, árvore limpa, tudo em `origin/main` |
+| 🟢 **Código** | 288 testes passando, typecheck limpo, árvore limpa, tudo em `origin/main` |
 | 🔴 **Banco** | **Nenhuma migration aplicada.** 159, 160, 161 e 162 escritas e paradas |
 | 🔴 **Acesso** | Sem MCP autenticado, sem `.env.local`, sem backup. Bloqueia 6 frentes |
 | 🟡 **Pista B** | Bloqueada: os arquivos da seção 8 do handoff não estão no repositório |
@@ -23,11 +23,11 @@
 
 | Prazo | Faltam | O que é |
 |---|---:|---|
-| **12/09** | **4 dias** | Dados da FSJBE (Ico + contador). Sem eles, B4 sai do ciclo |
-| **25/09** | 17 dias | Gate d30 — pacote vendável · 3 contadores treinados · 20 conversas |
-| **30/09** | 22 dias | DITR 2026 — o contador assina o relatório |
-| 25/10 | 47 dias | Gate d60 — ≥3 fazendas via contadores · ≥2 pagantes. Destrava o C2 |
-| 24/11 | 77 dias | Gate d90 — 5 pagantes retidas · churn <2/5 |
+| **12/09** | **3 dias** | Dados da FSJBE (Ico + contador). Sem eles, B4 sai do ciclo |
+| **25/09** | 16 dias | Gate d30 — pacote vendável · 3 contadores treinados · 20 conversas |
+| **30/09** | 21 dias | DITR 2026 — o contador assina o relatório |
+| 25/10 | 46 dias | Gate d60 — ≥3 fazendas via contadores · ≥2 pagantes. Destrava o C2 |
+| 24/11 | 76 dias | Gate d90 — 5 pagantes retidas · churn <2/5 |
 
 ---
 
@@ -46,11 +46,22 @@
 | **Compliance** | 10 claims de emissão de NF-e removidos + Halal/SIF fora do cadastro + bug do frigorífico | `3a741a8` |
 | **Revisão** | 8 achados adversariais corrigidos antes da primeira execução do backfill | `08e37cc` |
 | **B4 PDF** | O documento que o contador confere e assina. Rota `/api/export/itr-pdf` | `7a4c444` |
-| **A-1 + A-2** | Perfil de contador no cadastro, role correta e intake persistido. Migration 162 escrita | 08/09 |
+| **A-1 + A-2** | Perfil de contador no cadastro, role correta e intake persistido. Migration 162 escrita | `846bc5e` |
+| **B1** | Verificador do Convênio 100/97 — motor puro, 49 testes. Texto lido na fonte do CONFAZ | 09/09 |
 
 ### Em andamento
 
-- **B1** — Convênio ICMS 100/97, motor puro. Próximo item da fila
+- **B2** — crédito de ICMS do diesel. Próximo item da fila
+
+> **B1 entregue.** O Convênio classifica por DESCRIÇÃO de produto, não por NCM —
+> só um item cita código. O mapa NCM → cláusula é inferência nossa, e por isso
+> vive numa seção separada da regra, marcada como PREMISSA com `verificado_em`
+> null. Enquanto não for conferido por contador, todo achado sai como
+> "verificar", nunca como "imposto pago a mais": `totalPagoAMais` fica zerado e
+> o valor vai para `totalAVerificar`.
+>
+> Os três desfechos do cuidado 5a são separados e há um teste que varre 8 casos
+> garantindo que **só** o desfecho "benefício aplicável e ausente" produz valor.
 
 > **B4 fechado como entregável.** O motor tinha objeto, não documento. Agora tem PDF de
 > duas páginas com o carimbo NÃO PUBLICÁVEL enquanto índice de lotação e conversão UA

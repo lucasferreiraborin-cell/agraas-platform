@@ -1,0 +1,207 @@
+id: R-ICMS-CONV100-01
+titulo: Convênio ICMS 100/97 — redução de base nas saídas de insumos agropecuários
+classe: FATO
+vigencia:
+  inicio: 1997-11-04
+  fim: 2027-12-31        # prorrogado pelo Convênio ICMS 79/2025
+fonte:
+  norma: Convênio ICMS 100/97 (CONFAZ)
+  artigos:
+    - "Cláusula primeira — redução de 60% da base nas saídas INTERESTADUAIS dos produtos que especifica"
+    - "Cláusula segunda — redução de 30% da base nas saídas INTERESTADUAIS dos produtos que especifica"
+    - "Cláusula terceira — Estados FICAM AUTORIZADOS a conceder redução ou isenção nas operações INTERNAS"
+    - "Cláusula quinta, II — o vendedor deve deduzir do preço o imposto dispensado e demonstrar a dedução na Nota Fiscal"
+    - "Convênio ICMS 79/2025 — prorrogação até 31/12/2027"
+  url: https://www.confaz.fazenda.gov.br/legislacao/convenios/1997/CV100_97
+  verificado_em: 2026-09-09
+  nota_de_verificacao: >-
+    Texto lido na página oficial do CONFAZ em 09/09/2026. A lista de produtos
+    abaixo reproduz a estrutura das cláusulas. Antes de qualquer alerta chegar
+    ao produtor, um contador precisa conferir a redação item a item — ver
+    revisor_humano.
+aplicabilidade:
+  uf: [BR]
+  regime: [pf, pj]
+  atividade: [pecuaria, graos]
+revisor_humano: null
+
+# ═══════════════════════════════════════════════════════════════════════════
+# A ARMADILHA CENTRAL DESTA REGRA
+#
+# O Convênio classifica os produtos por DESCRIÇÃO, não por NCM. Só um item cita
+# código (enzimas, NBM/SH 3507.90.4). Portanto:
+#
+#   • As cláusulas abaixo são FATO — estão no texto oficial.
+#   • O mapeamento NCM -> cláusula é INFERÊNCIA NOSSA, e está numa seção
+#     separada, marcada como PREMISSA com verificado_em null.
+#
+# Misturar os dois faria uma inferência nossa gerar alerta de "imposto pago a
+# mais" com cara de conclusão legal. É exatamente o falso positivo que destrói
+# a credibilidade com o contador.
+# ═══════════════════════════════════════════════════════════════════════════
+
+# ---------------------------------------------------------------------------
+# Cláusula primeira — redução de 60% da base, saídas INTERESTADUAIS
+# ---------------------------------------------------------------------------
+clausula_primeira:
+  reducao_base_pct: 60
+  operacao: interestadual
+  itens:
+    - num: I
+      descricao: Inseticidas, fungicidas, herbicidas, vacinas, soros e medicamentos de uso agropecuário e veterinário
+    - num: II
+      descricao: REVOGADO a partir de 01/01/2022
+      revogado: true
+    - num: III
+      descricao: Rações para animais, concentrados, suplementos, aditivos, premix ou núcleo, de estabelecimento com registro no órgão competente
+    - num: IV
+      descricao: Calcário e gesso para uso exclusivo na correção de solo agrícola
+    - num: V
+      descricao: Sementes genéticas e certificadas (C1, C2, S1, S2) para semeadura, sob controle de entidade certificadora
+    - num: VI
+      descricao: Alho em pó, sorgo, milheto, sal mineralizado, farinha de peixe, rações e resíduos para alimentação animal
+    - num: VII
+      descricao: Esterco animal
+    - num: VIII
+      descricao: Mudas de plantas
+    - num: IX
+      descricao: Embriões, sêmen congelado ou resfriado EXCETO O DE BOVINO, ovos férteis, aves de um dia, girinos e alevinos
+      atencao: >-
+        O sêmen BOVINO está EXPRESSAMENTE excluído deste item. Numa plataforma
+        de pecuária bovina, é o erro mais fácil de cometer.
+    - num: X
+      descricao: Enzimas para decomposição de matéria orgânica (NBM/SH 3507.90.4)
+      ncm_no_texto: "3507.90.4"
+    - num: XI
+      descricao: Gesso triturado para uso na agricultura ou fabricação de sal mineralizado
+    - num: XII
+      descricao: Casca de coco triturada para uso na agricultura
+    - num: XIII
+      descricao: Vermiculita como condicionador de solo
+    - num: XIV
+      descricao: Extrato Pirolenhoso e produtos correlatos para uso na agricultura
+    - num: XV
+      descricao: Óleo, extrato e torta de Nim
+    - num: XVI
+      descricao: Condicionadores de solo e substratos para plantas, se registrados no MAPA
+    - num: XVII
+      descricao: Torta de filtro, bagaço de cana, resíduos de pinus e eucalipto, resíduos agroindustriais orgânicos para fabricação de insumo
+
+# ---------------------------------------------------------------------------
+# Cláusula segunda — redução de 30% da base, saídas INTERESTADUAIS
+#
+# É a faixa que mais aparece na nota de uma fazenda de pecuária: farelo e milho.
+# ---------------------------------------------------------------------------
+clausula_segunda:
+  reducao_base_pct: 30
+  operacao: interestadual
+  itens:
+    - num: I
+      descricao: Farelos e tortas de soja e de canola, cascas e farelos de cascas de soja e de canola, sojas desativadas e seus farelos
+    - num: II
+      descricao: Milho destinado a produtor, cooperativa, indústria de ração ou órgão oficial de fomento agropecuário
+      atencao: >-
+        O benefício é CONDICIONADO À DESTINAÇÃO. Milho vendido a outro
+        destinatário não se enquadra — o destinatário importa tanto quanto o
+        produto.
+    - num: III
+      descricao: REVOGADO a partir de 01/01/2022
+      revogado: true
+    - num: IV
+      descricao: Aveia e farelo de aveia destinados à alimentação animal ou à fabricação de ração
+
+# ---------------------------------------------------------------------------
+# Cláusula terceira — operações INTERNAS
+#
+# "Ficam os Estados AUTORIZADOS a conceder": autorização, não obrigação. Cada
+# UF decide se isenta, se reduz, ou se não faz nada — e a redação varia.
+# Sem regra verificada para a UF, o resultado é DESCONHECIDO, nunca "isento".
+# ---------------------------------------------------------------------------
+clausula_terceira:
+  natureza: autorizacao_aos_estados
+  texto: >-
+    Ficam os Estados e o Distrito Federal autorizados a conceder às operações
+    internas com os produtos relacionados nas cláusulas anteriores redução da
+    base de cálculo ou isenção do ICMS.
+  por_uf:
+    # Nenhuma UF verificada ainda. Começar por GO (FSJBE) e SP (fazenda do IZ).
+    # Preencher SÓ com leitura do RICMS da UF, nunca de fonte secundária.
+    GO: { tratamento: DESCONHECIDO, verificado_em: null, fonte: null }
+    SP: { tratamento: DESCONHECIDO, verificado_em: null, fonte: null }
+
+# ---------------------------------------------------------------------------
+# Cláusula quinta, II — condição do benefício
+# ---------------------------------------------------------------------------
+condicao_de_fruicao:
+  texto: >-
+    Exigir que o estabelecimento vendedor deduza do preço da mercadoria o valor
+    correspondente ao imposto dispensado, demonstrando-se expressamente na Nota
+    Fiscal a respectiva dedução.
+  implicacao: >-
+    O benefício não é automático: depende de o vendedor ter deduzido e
+    demonstrado. Uma nota sem a demonstração pode indicar que o benefício não
+    foi repassado ao produtor — que é, em si, o achado.
+
+# ═══════════════════════════════════════════════════════════════════════════
+# MAPEAMENTO NCM -> CLÁUSULA — INFERÊNCIA NOSSA, NÃO É O TEXTO DA NORMA
+#
+# O Convênio não usa NCM. Este mapa é a nossa leitura de quais capítulos e
+# posições correspondem às descrições. Enquanto verificado_em for null, todo
+# achado derivado daqui sai como "verificar com o contador", NUNCA como
+# "imposto pago a mais".
+# ═══════════════════════════════════════════════════════════════════════════
+mapa_ncm:
+  classe: PREMISSA
+  verificado_em: null
+  rota_de_obtencao: >-
+    Conferência item a item com o contador dos Malulis, usando as 20 notas reais
+    da FSJBE. Cada prefixo confirmado ganha data própria.
+  justificativa: >-
+    Prefixos escolhidos pela correspondência entre a descrição do Convênio e a
+    NCM/SH. Sensibilidade: um prefixo errado gera alerta em produto que não tem
+    benefício, ou silencia produto que tem.
+  prefixos:
+    # Cláusula primeira — 60%
+    - { prefixo: "3808", clausula: primeira, item: I,   nota: "Inseticidas, fungicidas, herbicidas" }
+    - { prefixo: "3002", clausula: primeira, item: I,   nota: "Vacinas e soros de uso veterinário" }
+    - { prefixo: "2309", clausula: primeira, item: III, nota: "Preparações para alimentação animal (rações, concentrados)" }
+    - { prefixo: "2521", clausula: primeira, item: IV,  nota: "Calcário" }
+    - { prefixo: "2520", clausula: primeira, item: IV,  nota: "Gesso" }
+    - { prefixo: "1209", clausula: primeira, item: V,   nota: "Sementes para semeadura" }
+    - { prefixo: "1007", clausula: primeira, item: VI,  nota: "Sorgo" }
+    - { prefixo: "2301", clausula: primeira, item: VI,  nota: "Farinha de peixe" }
+    - { prefixo: "3101", clausula: primeira, item: VII, nota: "Esterco animal / adubos de origem animal" }
+    - { prefixo: "0602", clausula: primeira, item: VIII, nota: "Mudas de plantas" }
+    - { prefixo: "35079", clausula: primeira, item: X,  nota: "Enzimas — único item com código no texto" }
+    # Cláusula segunda — 30%
+    - { prefixo: "2304", clausula: segunda,  item: I,   nota: "Farelo e torta de soja" }
+    - { prefixo: "2306", clausula: segunda,  item: I,   nota: "Tortas e resíduos de canola e outros" }
+    - { prefixo: "1005", clausula: segunda,  item: II,  nota: "Milho — CONDICIONADO à destinação" }
+    - { prefixo: "1004", clausula: segunda,  item: IV,  nota: "Aveia" }
+
+# ---------------------------------------------------------------------------
+# NCMs explicitamente FORA — evitam falso positivo por semelhança
+# ---------------------------------------------------------------------------
+fora_do_convenio:
+  classe: PREMISSA
+  verificado_em: null
+  prefixos:
+    - { prefixo: "0511", nota: "Semen BOVINO — o item IX exclui expressamente o de bovino" }
+    - { prefixo: "2710", nota: "Combustiveis — monofasia, CST 61. Trata-se no B2, nao aqui" }
+    - { prefixo: "3102", nota: "Adubos minerais nitrogenados — verificar; nao constam da lista lida" }
+
+# ---------------------------------------------------------------------------
+# CST × benefício esperado (cuidado 5c do handoff de 05/09)
+# ---------------------------------------------------------------------------
+cst_esperado:
+  "00": { significado: "Tributada integralmente", leitura: "Em operação com direito a redução, é SUSPEITA de benefício não aplicado" }
+  "20": { significado: "Com redução de base", leitura: "Conferir se pRedBC bate com a cláusula" }
+  "40": { significado: "Isenta", leitura: "Conferir se a UF de fato isenta a operação interna (cláusula terceira)" }
+  "41": { significado: "Não tributada", leitura: "Fora do escopo do Convênio" }
+  "50": { significado: "Suspensão", leitura: "Fora do escopo do Convênio" }
+  "51": { significado: "Diferimento", leitura: "NÃO é caso de Convênio 100/97" }
+  "61": { significado: "Monofásico com ICMS retido anteriormente", leitura: "Combustível — vai para o B2" }
+
+implementado_em:
+  - lib/fiscal/conv100.ts
+testes: __tests__/conv100.test.ts
