@@ -11,7 +11,7 @@
 
 | | Estado |
 |---|---|
-| 🟢 **Código** | 311 testes passando, typecheck limpo, árvore limpa, tudo em `origin/main` |
+| 🟢 **Código** | 320 testes passando, typecheck limpo, árvore limpa, tudo em `origin/main` |
 | 🔴 **Banco** | **Nenhuma migration aplicada.** 159, 160, 161 e 162 escritas e paradas |
 | 🔴 **Acesso** | Sem MCP autenticado, sem `.env.local`, sem backup. Bloqueia 6 frentes |
 | 🟡 **Pista B** | Bloqueada: os arquivos da seção 8 do handoff não estão no repositório |
@@ -49,7 +49,8 @@
 | **A-1 + A-2** | Perfil de contador no cadastro, role correta e intake persistido. Migration 162 escrita | `846bc5e` |
 | **B1** | Verificador do Convênio 100/97 — motor puro, 49 testes. Texto lido na fonte do CONFAZ | `60871d3` |
 | **Upload** | Regressão no upload de NF-e (11/09): parser provado limpo em XML real; `randomUUID` importado; erro passa a dizer destino e modo | `b3c1348` |
-| **PDF→IA** | DANFE em PDF volta a ser extraído — Claude como documento nativo, sem `pdf-parse`. Causa: `31b3e64` removeu a IA junto com a lib | 11/09 |
+| **PDF→IA** | DANFE em PDF volta a ser extraído — Claude como documento nativo, sem `pdf-parse`. Causa: `31b3e64` removeu a IA junto com a lib | `55ca060` |
+| **PDF→IA v2** | Sem retry do SDK (orçamento de 30 s do cliente), fallback para `claude-sonnet-4-6` se a chave não tiver o Sonnet 5, e o card de upload **mostra qual extração rodou e por quê** | 11/09 |
 
 ### Em andamento
 
@@ -62,8 +63,14 @@
   **Fix:** o PDF vai ao Claude como documento nativo (`lib/fiscal/pdf-extract.ts`),
   JSON validado por zod, varredura crua só como fallback. Nunca lança; confiança
   < 0,7 mantém o aviso de revisão. Modelo `claude-sonnet-5` (Etapa 1).
-  **Pendente de confirmação em produção pelo Lucas** — o teste com o Claude real
-  não roda em CI.
+  **Segunda tentativa do Lucas ainda vazia (11/09, tarde).** Não consigo chamar o
+  Claude nem ler os logs da Vercel daqui (sem credencial, CLI sem login). O que
+  fiz: (1) `maxRetries: 0` — o retry do SDK estourava os 30 s do cliente e a
+  nota era gravada depois de o usuário desistir; (2) fallback automático para
+  `claude-sonnet-4-6` se a chave da conta devolver 404 para o Sonnet 5 — os
+  outros modelos em produção são 4.6 e comprovadamente aceitos; (3) **o card de
+  sucesso do upload agora diz "lido por IA (modelo)" ou "IA indisponível: motivo"**.
+  A próxima tentativa fecha o diagnóstico na própria tela, sem log.
 - **B2** — crédito de ICMS do diesel. Próximo item da fila
 
 > **B1 entregue.** O Convênio classifica por DESCRIÇÃO de produto, não por NCM —

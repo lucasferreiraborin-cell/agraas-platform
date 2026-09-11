@@ -34,6 +34,14 @@ import type { NfeItemFiscal } from "@/lib/fiscal/nfe-parser";
 /** Modelo das rotas fiscais — decisão de 05/09/2026. */
 export const PDF_EXTRACT_MODEL = "claude-sonnet-5";
 
+/**
+ * Se a chave da conta não tiver acesso ao modelo acima (404 "not found"),
+ * cai para o que as outras rotas fiscais já usam em produção e que a mesma
+ * chave comprovadamente aceita. Não é preferência: é resiliência a uma
+ * diferença de conta que não dá para verificar daqui.
+ */
+export const PDF_EXTRACT_MODEL_FALLBACK = "claude-sonnet-4-6";
+
 // ---------------------------------------------------------------------------
 // Schema do que pedimos ao Claude
 // ---------------------------------------------------------------------------
@@ -124,6 +132,14 @@ export function validarExtracao(texto: string): ExtracaoPdf | null {
   }
 }
 
+/** Erro de "modelo não encontrado" — status 404 do SDK, ou mensagem equivalente. */
+export function ehModeloIndisponivel(err: unknown): boolean {
+  const e = err as { status?: number; message?: string } | null;
+  if (!e) return false;
+  if (e.status === 404) return true;
+  return /not_found|not found|does not exist|model/i.test(e.message ?? "") && /model/i.test(e.message ?? "");
+}
+
 type ClienteMinimo = {
   messages: { create: (params: Record<string, unknown>, opts?: Record<string, unknown>) => Promise<unknown> };
 };
@@ -151,11 +167,18 @@ export async function extrairNfeDePdf(
   }
 
   const cliente: ClienteMinimo =
-    opts.cliente ?? (new Anthropic({ apiKey, timeout: opts.timeoutMs ?? 25_000 }) as unknown as ClienteMinimo);
+    opts.cliente ??
+    (new Anthropic({
+      apiKey,
+      timeout: opts.timeoutMs ?? 25_000,
+      // Sem retry: o FiscalUpload aborta em 30 s. Um retry do SDK estouraria
+      // esse orçamento e a nota seria gravada depois de o cliente desistir.
+      maxRetries: 0,
+    }) as unknown as ClienteMinimo);
 
-  try {
-    const res = (await cliente.messages.create({
-      model: PDF_EXTRACT_MODEL,
+  const chamar = (model: string) =>
+    cliente.messages.create({
+      model,
       max_tokens: 4000,
       system: INSTRUCOES,
       messages: [
@@ -170,11 +193,24 @@ export async function extrairNfeDePdf(
           ],
         },
       ],
-    })) as {
+    }) as Promise<{
       content: Array<{ type: string; text?: string }>;
       stop_reason?: string;
       usage?: { input_tokens?: number; output_tokens?: number };
-    };
+    }>;
+
+  let modeloUsado = PDF_EXTRACT_MODEL;
+  try {
+    let res: Awaited<ReturnType<typeof chamar>>;
+    try {
+      res = await chamar(PDF_EXTRACT_MODEL);
+    } catch (err) {
+      // 404 = a conta nao tem esse modelo. Qualquer outro erro sobe para o
+      // catch externo e vira fallback com motivo.
+      if (!ehModeloIndisponivel(err)) throw err;
+      modeloUsado = PDF_EXTRACT_MODEL_FALLBACK;
+      res = await chamar(PDF_EXTRACT_MODEL_FALLBACK);
+    }
 
     if (res.stop_reason === "refusal") {
       return { origem: "fallback", motivo: "modelo recusou o documento" };
@@ -189,7 +225,7 @@ export async function extrairNfeDePdf(
     return {
       origem: "claude",
       dados,
-      modelo: PDF_EXTRACT_MODEL,
+      modelo: modeloUsado,
       tokens: { entrada: res.usage?.input_tokens ?? 0, saida: res.usage?.output_tokens ?? 0 },
     };
   } catch (err) {

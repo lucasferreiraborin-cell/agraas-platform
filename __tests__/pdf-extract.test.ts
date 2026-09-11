@@ -12,7 +12,9 @@ import {
   validarExtracao,
   extracaoParaItens,
   extrairNfeDePdf,
+  ehModeloIndisponivel,
   PDF_EXTRACT_MODEL,
+  PDF_EXTRACT_MODEL_FALLBACK,
 } from "@/lib/fiscal/pdf-extract";
 
 const RESPOSTA_OK = JSON.stringify({
@@ -184,5 +186,77 @@ describe("extrairNfeDePdf", () => {
     expect((await extrairNfeDePdf(Buffer.alloc(0), { cliente })).origem).toBe("fallback");
     expect((await extrairNfeDePdf(Buffer.alloc(11 * 1024 * 1024), { cliente })).origem).toBe("fallback");
     expect(chamadas).toHaveLength(0);
+  });
+});
+
+// ── Fallback de modelo — a diferença de conta que não dá para testar daqui ──
+
+describe("ehModeloIndisponivel", () => {
+  it("status 404 é modelo indisponível", () => {
+    expect(ehModeloIndisponivel({ status: 404, message: "Not found" })).toBe(true);
+  });
+  it("mensagem de model not found sem status também", () => {
+    expect(ehModeloIndisponivel({ message: "model: claude-sonnet-5 not found" })).toBe(true);
+  });
+  it("timeout, 429 e 500 NÃO são", () => {
+    expect(ehModeloIndisponivel({ status: 429, message: "rate limited" })).toBe(false);
+    expect(ehModeloIndisponivel({ status: 500, message: "internal" })).toBe(false);
+    expect(ehModeloIndisponivel(new Error("timeout de 25s"))).toBe(false);
+    expect(ehModeloIndisponivel(null)).toBe(false);
+  });
+});
+
+describe("fallback de modelo em 404", () => {
+  const OK = { content: [{ type: "text", text: RESPOSTA_OK }], usage: { input_tokens: 1, output_tokens: 1 } };
+
+  it("404 no modelo principal repete UMA vez com o de fallback e reporta qual respondeu", async () => {
+    const chamadas: string[] = [];
+    const cliente = {
+      messages: {
+        create: async (params: { model: string }) => {
+          chamadas.push(params.model);
+          if (params.model === PDF_EXTRACT_MODEL) {
+            const e = Object.assign(new Error("model not found"), { status: 404 });
+            throw e;
+          }
+          return OK;
+        },
+      },
+    };
+    const r = await extrairNfeDePdf(PDF, { cliente });
+    expect(chamadas).toEqual([PDF_EXTRACT_MODEL, PDF_EXTRACT_MODEL_FALLBACK]);
+    expect(r.origem).toBe("claude");
+    if (r.origem === "claude") expect(r.modelo).toBe(PDF_EXTRACT_MODEL_FALLBACK);
+  });
+
+  it("erro que NÃO é 404 não aciona o fallback de modelo — vira fallback com motivo", async () => {
+    const chamadas: string[] = [];
+    const cliente = {
+      messages: {
+        create: async (params: { model: string }) => {
+          chamadas.push(params.model);
+          throw Object.assign(new Error("rate limited"), { status: 429 });
+        },
+      },
+    };
+    const r = await extrairNfeDePdf(PDF, { cliente });
+    expect(chamadas).toEqual([PDF_EXTRACT_MODEL]); // uma chamada só
+    expect(r).toMatchObject({ origem: "fallback", motivo: expect.stringMatching(/rate limited/) });
+  });
+
+  it("se o fallback também falhar, ainda é fallback com motivo — nunca lança", async () => {
+    const cliente = {
+      messages: {
+        create: async () => { throw Object.assign(new Error("model not found"), { status: 404 }); },
+      },
+    };
+    const r = await extrairNfeDePdf(PDF, { cliente });
+    expect(r.origem).toBe("fallback");
+  });
+
+  it("caminho feliz usa o modelo principal e o reporta", async () => {
+    const cliente = { messages: { create: async () => OK } };
+    const r = await extrairNfeDePdf(PDF, { cliente });
+    if (r.origem === "claude") expect(r.modelo).toBe(PDF_EXTRACT_MODEL);
   });
 });

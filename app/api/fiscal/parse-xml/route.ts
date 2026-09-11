@@ -163,6 +163,7 @@ function parsePdfText(text: string, rawBuffer: Buffer): { header: ParsedHeader; 
 async function parsePdf(buffer: Buffer): Promise<{
   header: ParsedHeader; items: ParsedItem[]; richItems: NfeItemFiscal[];
   iaFailed: boolean; iaMotivo?: string;
+  extracao: { origem: "claude" | "fallback"; modelo?: string; motivo?: string };
 }> {
   const ia = await extrairNfeDePdf(buffer);
 
@@ -188,14 +189,19 @@ async function parsePdf(buffer: Buffer): Promise<{
     // Confiança baixa não é falha — a nota entra com dados, mas o aviso de
     // revisão manual permanece para o produtor conferir.
     const baixaConfianca = d.confianca < 0.7;
-    return { header, items, richItems, iaFailed: baixaConfianca, iaMotivo: baixaConfianca ? `confiança ${d.confianca.toFixed(2)}${d.observacoes ? " — " + d.observacoes : ""}` : undefined };
+    return {
+      header, items, richItems,
+      iaFailed: baixaConfianca,
+      iaMotivo: baixaConfianca ? `confiança ${d.confianca.toFixed(2)}${d.observacoes ? " — " + d.observacoes : ""}` : undefined,
+      extracao: { origem: "claude", modelo: ia.modelo },
+    };
   }
 
   // Fallback: o caminho antigo, com registro do motivo para o log.
   console.warn("[fiscal/parse-xml] extração por IA indisponível, usando varredura crua:", ia.motivo);
   const text = extractPdfText(buffer);
   const cru = parsePdfText(text, buffer);
-  return { ...cru, iaMotivo: ia.motivo };
+  return { ...cru, iaMotivo: ia.motivo, extracao: { origem: "fallback", motivo: ia.motivo } };
 }
 
 // ── Save ao banco + geração de alertas ───────────────────────────────────────
@@ -380,9 +386,10 @@ export async function POST(req: NextRequest) {
     const clientData = clientResult.data;
     if (!clientData) return Response.json({ error: "Cliente não encontrado" }, { status: 404 });
 
-    const { header, items, richItems, iaFailed, iaMotivo } = parsed as {
+    const { header, items, richItems, iaFailed, iaMotivo, extracao } = parsed as {
       header: ParsedHeader; items: ParsedItem[]; richItems: NfeItemFiscal[];
       iaFailed?: boolean; iaMotivo?: string;
+      extracao?: { origem: "claude" | "fallback"; modelo?: string; motivo?: string };
     };
 
     const { noteId, alerts, hasCritical, canonicalOk } = await saveNote(
@@ -398,6 +405,11 @@ export async function POST(req: NextRequest) {
       status:       hasCritical ? "erro" : "pendente",
       write_mode:   FISCAL_WRITE_MODE,
       canonical_ok: canonicalOk,
+      // Diagnostico visivel no upload: qual extracao rodou e, se caiu no
+      // fallback, por que. E o que fecha a investigacao sem acesso a log.
+      extracao:     isPdf ? (extracao?.origem ?? "fallback") : "xml",
+      extracao_modelo: extracao?.modelo ?? null,
+      extracao_motivo: extracao?.motivo ?? null,
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

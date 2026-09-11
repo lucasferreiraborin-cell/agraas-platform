@@ -8,7 +8,10 @@ export default function FiscalUpload() {
   const [dragging, setDragging]       = useState(false);
   const [loading, setLoading]         = useState(false);
   const [currentFile, setCurrentFile] = useState<string | null>(null);
-  const [result, setResult]           = useState<{ note_id: string; numero_nota: string; total_items: number; alerts_count: number; status: string } | null>(null);
+  const [result, setResult]           = useState<{
+    note_id: string; numero_nota: string; total_items: number; alerts_count: number; status: string;
+    extracao?: "xml" | "claude" | "fallback"; extracao_modelo?: string | null; extracao_motivo?: string | null;
+  } | null>(null);
   const [error, setError]             = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const router   = useRouter();
@@ -128,6 +131,14 @@ export default function FiscalUpload() {
               NF-e nº {result.numero_nota} importada com sucesso
             </p>
             <p className="mt-0.5 text-xs text-[var(--text-muted)]">
+              {result.extracao === "claude" && (
+                <span className="text-emerald-700">lido por IA{result.extracao_modelo ? ` (${result.extracao_modelo})` : ""} • </span>
+              )}
+              {result.extracao === "fallback" && (
+                <span className="text-amber-700">
+                  IA indisponível{result.extracao_motivo ? `: ${result.extracao_motivo}` : ""} — leitura básica •{" "}
+                </span>
+              )}
               {result.total_items} {result.total_items === 1 ? "item" : "itens"} •{" "}
               {result.alerts_count > 0 ? (
                 <span className="text-amber-600">{result.alerts_count} alerta{result.alerts_count > 1 ? "s" : ""}</span>
