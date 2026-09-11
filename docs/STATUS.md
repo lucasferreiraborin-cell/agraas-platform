@@ -11,7 +11,7 @@
 
 | | Estado |
 |---|---|
-| 🟢 **Código** | 288 testes passando, typecheck limpo, árvore limpa, tudo em `origin/main` |
+| 🟢 **Código** | 294 testes passando, typecheck limpo, árvore limpa, tudo em `origin/main` |
 | 🔴 **Banco** | **Nenhuma migration aplicada.** 159, 160, 161 e 162 escritas e paradas |
 | 🔴 **Acesso** | Sem MCP autenticado, sem `.env.local`, sem backup. Bloqueia 6 frentes |
 | 🟡 **Pista B** | Bloqueada: os arquivos da seção 8 do handoff não estão no repositório |
@@ -23,11 +23,11 @@
 
 | Prazo | Faltam | O que é |
 |---|---:|---|
-| **12/09** | **3 dias** | Dados da FSJBE (Ico + contador). Sem eles, B4 sai do ciclo |
-| **25/09** | 16 dias | Gate d30 — pacote vendável · 3 contadores treinados · 20 conversas |
-| **30/09** | 21 dias | DITR 2026 — o contador assina o relatório |
-| 25/10 | 46 dias | Gate d60 — ≥3 fazendas via contadores · ≥2 pagantes. Destrava o C2 |
-| 24/11 | 76 dias | Gate d90 — 5 pagantes retidas · churn <2/5 |
+| **12/09** | **1 dia** | Dados da FSJBE (Ico + contador). Sem eles, B4 sai do ciclo |
+| **25/09** | 14 dias | Gate d30 — pacote vendável · 3 contadores treinados · 20 conversas |
+| **30/09** | 19 dias | DITR 2026 — o contador assina o relatório |
+| 25/10 | 44 dias | Gate d60 — ≥3 fazendas via contadores · ≥2 pagantes. Destrava o C2 |
+| 24/11 | 74 dias | Gate d90 — 5 pagantes retidas · churn <2/5 |
 
 ---
 
@@ -47,10 +47,19 @@
 | **Revisão** | 8 achados adversariais corrigidos antes da primeira execução do backfill | `08e37cc` |
 | **B4 PDF** | O documento que o contador confere e assina. Rota `/api/export/itr-pdf` | `7a4c444` |
 | **A-1 + A-2** | Perfil de contador no cadastro, role correta e intake persistido. Migration 162 escrita | `846bc5e` |
-| **B1** | Verificador do Convênio 100/97 — motor puro, 49 testes. Texto lido na fonte do CONFAZ | 09/09 |
+| **B1** | Verificador do Convênio 100/97 — motor puro, 49 testes. Texto lido na fonte do CONFAZ | `60871d3` |
+| **Upload** | Regressão no upload de NF-e (11/09): parser provado limpo em XML real; `randomUUID` importado; erro passa a dizer destino e modo | 11/09 |
 
 ### Em andamento
 
+- 🔴 **Upload de NF-e quebrado em produção (reportado 11/09).** O parser está
+  provado limpo num XML com a estrutura real (nfeProc, xmlns, Signature,
+  protNFe) e nenhuma migration versionada explica falha no INSERT legado.
+  Restam duas hipóteses de AMBIENTE: (a) `FISCAL_WRITE_MODE=canonical` na
+  Vercel antes da 159 — a rota pula o legado e a canônica falha por coluna
+  inexistente; (b) `crypto` global ausente no runtime — corrigido com import
+  explícito. O erro agora nomeia destino e modo; a próxima tentativa do Lucas
+  fecha o diagnóstico.
 - **B2** — crédito de ICMS do diesel. Próximo item da fila
 
 > **B1 entregue.** O Convênio classifica por DESCRIÇÃO de produto, não por NCM —

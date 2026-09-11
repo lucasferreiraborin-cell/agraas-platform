@@ -1,5 +1,6 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { NextRequest } from "next/server";
+import { randomUUID } from "node:crypto";
 import { checkRateLimit, tooManyRequests } from "@/lib/rate-limit";
 import { z } from "zod";
 import { parseNfeHeader, parseNfeItems, type NfeItemFiscal } from "@/lib/fiscal/nfe-parser";
@@ -161,7 +162,7 @@ async function saveNote(
   // O id e gerado aqui, nao pelo banco: as duas tabelas compartilham a mesma
   // chave (correspondencia estabelecida pelo ETL da migration 139), e em modo
   // 'canonical' nao existe insert legado de onde ler o id devolvido.
-  const noteId = crypto.randomUUID();
+  const noteId = randomUUID();
 
   if (FISCAL_WRITES_LEGACY) {
     const { error: noteError } = await supabase
@@ -178,7 +179,11 @@ async function saveNote(
       valor_total:   header.valorTotal  || null,
       status:        "pendente",
     });
-    if (noteError) throw new Error("Erro ao salvar nota: " + noteError.message);
+    if (noteError) {
+      throw new Error(
+        `Erro ao salvar nota [legado, modo=${FISCAL_WRITE_MODE}]: ${noteError.message}`,
+      );
+    }
   }
 
   const alerts: { note_id: string; client_id: string; tipo: string; descricao: string; severidade: string }[] = [];
@@ -264,7 +269,10 @@ async function saveNote(
     if (!res.ok) {
       console.error("[fiscal/parse-xml] escrita canonica falhou:", res.error);
       if (FISCAL_WRITE_MODE === "canonical") {
-        throw new Error("Erro ao salvar nota (canonica): " + res.error);
+        throw new Error(
+          `Erro ao salvar nota [canonica, modo=${FISCAL_WRITE_MODE}]: ${res.error}. ` +
+          "Se a migration 159 ainda nao foi aplicada, FISCAL_WRITE_MODE nao pode ser 'canonical'.",
+        );
       }
     } else {
       if (hasCritical) {
