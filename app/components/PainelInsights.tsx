@@ -16,7 +16,6 @@ type Stats = {
   expiredCertsCount: number;
   estimatedValue: string;
   topAnimal: { code: string; score: number } | null;
-  isFsjbePilot: boolean;
 };
 
 type Insights = {

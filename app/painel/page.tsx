@@ -152,8 +152,6 @@ export default async function PainelPage() {
   const clientId =
     clientData?.id ?? "00000000-0000-0000-0000-000000000000";
 
-  const isFsjbePilot = clientId === "00000000-0000-0000-0003-000000000001";
-
   // ── Greeting & date ─────────────────────────────────────────────────────────
   const now = new Date();
   const brazilHour = (now.getUTCHours() - 3 + 24) % 24;
@@ -614,15 +612,6 @@ export default async function PainelPage() {
           <CotacaoBadge compact />
           {roleToPersona(clientData?.role) === "admin" && (
             <AdminSwitcher currentViewing="produtor" isViewingAs={false} />
-          )}
-          {isFsjbePilot && (
-            <div
-              title="5 animais ilustrativos enquanto o tombamento Multbovinos → Agraas é concluído. Score, peso e eventos são representativos."
-              className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-amber-800"
-            >
-              <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-              Piloto FSJBE · dados ilustrativos
-            </div>
           )}
         </div>
 

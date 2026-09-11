@@ -18,7 +18,6 @@ type Stats = {
   expiredCertsCount: number;
   estimatedValue: string;
   topAnimal: { code: string; score: number } | null;
-  isFsjbePilot: boolean;
 };
 
 export async function POST(req: NextRequest) {
@@ -36,15 +35,12 @@ export async function POST(req: NextRequest) {
     return new Response("Payload inválido", { status: 400 });
   }
 
-  const pilotoNota = stats.isFsjbePilot
-    ? "\nContexto adicional: trata-se do piloto FSJBE com dados ilustrativos enquanto o tombamento Multbovinos → Agraas é concluído. Foque em padrões e oportunidades genéricas, evite atribuir métricas absolutas como definitivas."
-    : "";
 
   const contexto = `
 Você é o Agro Assistant da Agraas, plataforma de rastreabilidade e inteligência da pecuária bovina brasileira.
 Sua função aqui é gerar 3 frases curtas, diretas e em PT-BR sobre o estado operacional atual do rebanho monitorado.
 
-Tom: profissional, executivo, sem floreios, sem AI startup. Pense em um relatório enviado por consultor sênior.${pilotoNota}
+Tom: profissional, executivo, sem floreios, sem AI startup. Pense em um relatório enviado por consultor sênior.
 
 ESTADO ATUAL DO REBANHO:
 - Animais monitorados: ${stats.totalAnimals}

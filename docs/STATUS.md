@@ -7,11 +7,17 @@
 
 ---
 
+## Próximo passo do Lucas (11/09)
+
+1. Abrir `/admin/reset-cliente` logado como admin → escolher **Bernardo · fsjdbe@gmail.com** → Inventariar → conferir a lista → digitar o e-mail → Apagar → "Sobrou depois" tem de ser 0.
+2. Subir uma NF-e (XML ou PDF) em `/fiscal` e ler o card: `lido por IA (modelo)` ou `IA indisponível: motivo`.
+3. Cadastrar a propriedade real (a do seed cai junto) antes do DITR.
+
 ## Semáforo
 
 | | Estado |
 |---|---|
-| 🟢 **Código** | 320 testes passando, typecheck limpo, árvore limpa, tudo em `origin/main` |
+| 🟢 **Código** | 337 testes passando, typecheck limpo, árvore limpa, tudo em `origin/main` |
 | 🔴 **Banco** | **Nenhuma migration aplicada.** 159, 160, 161 e 162 escritas e paradas |
 | 🔴 **Acesso** | Sem MCP autenticado, sem `.env.local`, sem backup. Bloqueia 6 frentes |
 | 🟡 **Pista B** | Bloqueada: os arquivos da seção 8 do handoff não estão no repositório |
@@ -51,6 +57,8 @@
 | **Upload** | Regressão no upload de NF-e (11/09): parser provado limpo em XML real; `randomUUID` importado; erro passa a dizer destino e modo | `b3c1348` |
 | **PDF→IA** | DANFE em PDF volta a ser extraído — Claude como documento nativo, sem `pdf-parse`. Causa: `31b3e64` removeu a IA junto com a lib | `55ca060` |
 | **PDF→IA v2** | Sem retry do SDK (orçamento de 30 s do cliente), fallback para `claude-sonnet-4-6` se a chave não tiver o Sonnet 5, e o card de upload **mostra qual extração rodou e por quê** | 11/09 |
+| **Zerar cliente** | `/admin/reset-cliente`: inventário → confirmação por e-mail → apaga tudo do client_id em 2 passadas (FK), fotos incluídas, conta e plano de contas preservados, trilha em `platform_jobs_log`. Sem migration, sem SQL manual — roda com a service key da Vercel. Pedido do Lucas 11/09: FSJBE sai do seed e recebe NF-e e animais reais | 11/09 |
+| **Banner "dados ilustrativos"** | Removido do painel e do prompt de insights — deixa de ser verdade quando a FSJBE tiver dado real | 11/09 |
 
 ### Em andamento
 

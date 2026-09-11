@@ -98,6 +98,11 @@ export default async function AdminSaudePage() {
             <p className="text-[var(--text-secondary)] mt-3 max-w-2xl">
               Estado real-time dos jobs, fontes de mercado e geração de insights.
             </p>
+            <p className="mt-2 text-xs">
+              <a href="/admin/reset-cliente" className="underline text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
+                Zerar dados de um cliente →
+              </a>
+            </p>
           </div>
           <RefreshButton />
         </header>
