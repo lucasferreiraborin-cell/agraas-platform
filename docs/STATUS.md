@@ -11,7 +11,7 @@
 
 | | Estado |
 |---|---|
-| 🟢 **Código** | 294 testes passando, typecheck limpo, árvore limpa, tudo em `origin/main` |
+| 🟢 **Código** | 311 testes passando, typecheck limpo, árvore limpa, tudo em `origin/main` |
 | 🔴 **Banco** | **Nenhuma migration aplicada.** 159, 160, 161 e 162 escritas e paradas |
 | 🔴 **Acesso** | Sem MCP autenticado, sem `.env.local`, sem backup. Bloqueia 6 frentes |
 | 🟡 **Pista B** | Bloqueada: os arquivos da seção 8 do handoff não estão no repositório |
@@ -48,18 +48,22 @@
 | **B4 PDF** | O documento que o contador confere e assina. Rota `/api/export/itr-pdf` | `7a4c444` |
 | **A-1 + A-2** | Perfil de contador no cadastro, role correta e intake persistido. Migration 162 escrita | `846bc5e` |
 | **B1** | Verificador do Convênio 100/97 — motor puro, 49 testes. Texto lido na fonte do CONFAZ | `60871d3` |
-| **Upload** | Regressão no upload de NF-e (11/09): parser provado limpo em XML real; `randomUUID` importado; erro passa a dizer destino e modo | 11/09 |
+| **Upload** | Regressão no upload de NF-e (11/09): parser provado limpo em XML real; `randomUUID` importado; erro passa a dizer destino e modo | `b3c1348` |
+| **PDF→IA** | DANFE em PDF volta a ser extraído — Claude como documento nativo, sem `pdf-parse`. Causa: `31b3e64` removeu a IA junto com a lib | 11/09 |
 
 ### Em andamento
 
-- 🔴 **Upload de NF-e quebrado em produção (reportado 11/09).** O parser está
-  provado limpo num XML com a estrutura real (nfeProc, xmlns, Signature,
-  protNFe) e nenhuma migration versionada explica falha no INSERT legado.
-  Restam duas hipóteses de AMBIENTE: (a) `FISCAL_WRITE_MODE=canonical` na
-  Vercel antes da 159 — a rota pula o legado e a canônica falha por coluna
-  inexistente; (b) `crypto` global ausente no runtime — corrigido com import
-  explícito. O erro agora nomeia destino e modo; a próxima tentativa do Lucas
-  fecha o diagnóstico.
+- ✅ **Upload de NF-e — causa encontrada e corrigida (11/09).** Não era o B0.
+  O upload gravava a nota; o que falhava era a **extração de PDF**. O commit
+  `31b3e64` (jun/2026) removeu o `pdf-parse` por incompatibilidade com
+  serverless e levou junto a chamada ao Claude — sobrou uma varredura de texto
+  que não lê DANFE comprimido. Toda nota em PDF entrava como casca vazia
+  (CNPJ vazio, R$ 0,00, 0 itens) com o aviso "preencha manualmente".
+  **Fix:** o PDF vai ao Claude como documento nativo (`lib/fiscal/pdf-extract.ts`),
+  JSON validado por zod, varredura crua só como fallback. Nunca lança; confiança
+  < 0,7 mantém o aviso de revisão. Modelo `claude-sonnet-5` (Etapa 1).
+  **Pendente de confirmação em produção pelo Lucas** — o teste com o Claude real
+  não roda em CI.
 - **B2** — crédito de ICMS do diesel. Próximo item da fila
 
 > **B1 entregue.** O Convênio classifica por DESCRIÇÃO de produto, não por NCM —
@@ -141,6 +145,7 @@ Estes vieram do raio-x e **não** foram corrigidos porque exigem decisão comerc
 | **A-6** | `/cadastro` tem warning de *password field not contained in a form* | Quebra o gerenciador de senha do navegador |
 | **A-7** | Score **78 hardcoded** em `/planos` como "score médio FSJBE"; o valor real registrado é 53 | Divergência entre página pública e plataforma, achável em DD |
 | **A-8** | Produção roda Score **v3.2** sem migration versionada | O repositório não é fonte de verdade do banco |
+| **A-9** | `/api/parse-doc` (usado por abates, estoque, vendas, timeline) tem o **mesmo caminho cru de PDF** e o **bug antigo do `<vICMS[^>]*>`** que o B0 corrigiu no parser fiscal | Mesma classe de erro silencioso em quatro telas. Apontar para `lib/fiscal/nfe-parser` + `pdf-extract` |
 
 Decisões formais e padrões assumidos: `docs/decisoes/pendentes.md`.
 

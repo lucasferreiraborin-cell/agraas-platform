@@ -9,6 +9,7 @@ import {
   updateCanonicalStatus,
 } from "@/lib/fiscal/invoice-writer";
 import { writeCanonicalAlerts } from "@/lib/fiscal/alert-writer";
+import { extrairNfeDePdf, extracaoParaItens } from "@/lib/fiscal/pdf-extract";
 import { FISCAL_WRITE_MODE, FISCAL_WRITES_CANONICAL, FISCAL_WRITES_LEGACY } from "@/lib/feature-flags";
 
 // ── Zod schema (formData fields after extraction) ─────────────────────────────
@@ -148,6 +149,55 @@ function parsePdfText(text: string, rawBuffer: Buffer): { header: ParsedHeader; 
   };
 }
 
+/**
+ * PDF (DANFE): extração por IA primeiro; varredura crua só como fallback.
+ *
+ * Histórico: fcc173b fazia pdf-parse + Claude; 31b3e64 removeu o pdf-parse
+ * (DOMMatrix não existe no serverless) e levou o Claude junto. Desde então
+ * todo DANFE comprimido era gravado como casca vazia. Restaurado em 11/09/2026
+ * mandando o PDF ao Claude como documento nativo — sem biblioteca de parsing.
+ *
+ * `iaFailed` só é true quando NEM a IA NEM a varredura extraíram nada — é o
+ * que dispara o aviso "preencha manualmente".
+ */
+async function parsePdf(buffer: Buffer): Promise<{
+  header: ParsedHeader; items: ParsedItem[]; richItems: NfeItemFiscal[];
+  iaFailed: boolean; iaMotivo?: string;
+}> {
+  const ia = await extrairNfeDePdf(buffer);
+
+  if (ia.origem === "claude") {
+    const d = ia.dados;
+    const richItems = extracaoParaItens(d);
+    const header: ParsedHeader = {
+      numeroNota:   d.numero_nota || "PDF importado",
+      serie:        d.serie || "-",
+      emitenteCnpj: d.emitente_cnpj.replace(/\D/g, ""),
+      emitenteNome: d.emitente_nome,
+      dataEmissao:  d.data_emissao,
+      valorTotal:   d.valor_total ?? 0,
+      rawContent:   buffer.toString("base64").slice(0, 500) + "…[PDF]",
+      chaveAcesso:  d.chave_acesso.replace(/\D/g, ""),
+    };
+    const items: ParsedItem[] = richItems.map(it => ({
+      descricao: it.descricao, ncm: it.ncm, cfop: it.cfop,
+      quantidade: it.quantidade ?? 0, unidade: it.unidade,
+      valorUnitario: it.valorUnitario ?? 0, valorTotal: it.valorTotal ?? 0,
+      icmsAliq: it.icmsAliquota ?? 0, icmsValor: it.icmsValor ?? 0, ipiValor: 0,
+    }));
+    // Confiança baixa não é falha — a nota entra com dados, mas o aviso de
+    // revisão manual permanece para o produtor conferir.
+    const baixaConfianca = d.confianca < 0.7;
+    return { header, items, richItems, iaFailed: baixaConfianca, iaMotivo: baixaConfianca ? `confiança ${d.confianca.toFixed(2)}${d.observacoes ? " — " + d.observacoes : ""}` : undefined };
+  }
+
+  // Fallback: o caminho antigo, com registro do motivo para o log.
+  console.warn("[fiscal/parse-xml] extração por IA indisponível, usando varredura crua:", ia.motivo);
+  const text = extractPdfText(buffer);
+  const cru = parsePdfText(text, buffer);
+  return { ...cru, iaMotivo: ia.motivo };
+}
+
 // ── Save ao banco + geração de alertas ───────────────────────────────────────
 
 async function saveNote(
@@ -158,6 +208,7 @@ async function saveNote(
   richItems: NfeItemFiscal[],
   source: "xml_upload" | "pdf_upload",
   iaFailed = false,
+  iaMotivo?: string,
 ) {
   // O id e gerado aqui, nao pelo banco: as duas tabelas compartilham a mesma
   // chave (correspondencia estabelecida pelo ETL da migration 139), e em modo
@@ -221,7 +272,9 @@ async function saveNote(
     alerts.push({
       note_id: noteId, client_id: clientId,
       tipo: "pdf_revisao_manual",
-      descricao: "PDF importado sem extração completa dos dados. Verifique e preencha os campos manualmente.",
+      descricao: iaMotivo
+        ? `PDF importado com extração parcial (${iaMotivo}). Confira os campos antes de usar a nota.`
+        : "PDF importado sem extração completa dos dados. Verifique e preencha os campos manualmente.",
       severidade: "aviso",
     });
   }
@@ -320,24 +373,21 @@ export async function POST(req: NextRequest) {
     const [clientResult, parsed] = await Promise.all([
       supabase.from("clients").select("id").eq("auth_user_id", user.id).single(),
       isPdf
-        ? file.arrayBuffer().then(buf => {
-            const buffer = Buffer.from(buf);
-            const text   = extractPdfText(buffer);
-            return parsePdfText(text, buffer);
-          })
+        ? file.arrayBuffer().then(buf => parsePdf(Buffer.from(buf)))
         : file.text().then(xml => parseXml(xml)),
     ]);
 
     const clientData = clientResult.data;
     if (!clientData) return Response.json({ error: "Cliente não encontrado" }, { status: 404 });
 
-    const { header, items, richItems, iaFailed } = parsed as {
-      header: ParsedHeader; items: ParsedItem[]; richItems: NfeItemFiscal[]; iaFailed?: boolean;
+    const { header, items, richItems, iaFailed, iaMotivo } = parsed as {
+      header: ParsedHeader; items: ParsedItem[]; richItems: NfeItemFiscal[];
+      iaFailed?: boolean; iaMotivo?: string;
     };
 
     const { noteId, alerts, hasCritical, canonicalOk } = await saveNote(
       supabase, clientData.id, header, items, richItems,
-      isPdf ? "pdf_upload" : "xml_upload", iaFailed ?? false,
+      isPdf ? "pdf_upload" : "xml_upload", iaFailed ?? false, iaMotivo,
     );
 
     return Response.json({
