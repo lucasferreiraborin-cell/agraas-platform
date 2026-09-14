@@ -3,21 +3,23 @@
 > **Página viva.** Responde "onde estamos?" sem você precisar perguntar.
 > Atualizada ao fim de cada bloco de trabalho, antes do commit.
 >
-> **Última atualização:** 14/09/2026 · `8bcdbf0` · 377 testes verdes · tsc limpo
+> **Última atualização:** 14/09/2026 · `a3bc3c0` · 393 testes verdes · tsc limpo
 
 ---
 
-## Próximo passo do Lucas (11/09)
+## Próximo passo do Lucas (14/09, 5 minutos cada)
 
-1. Abrir `/admin/reset-cliente` logado como admin → escolher **Bernardo · fsjdbe@gmail.com** → Inventariar → conferir a lista → digitar o e-mail → Apagar → "Sobrou depois" tem de ser 0.
-2. Subir uma NF-e (XML ou PDF) em `/fiscal` e ler o card: `lido por IA (modelo)` ou `IA indisponível: motivo`.
-3. Cadastrar a propriedade real (a do seed cai junto) antes do DITR.
+1. **Vercel → `CRON_SECRET`** (≥ 16 caracteres). Sem isso os crons param com 401 — o header antigo era forjável.
+2. **`/admin/contas`** (como lucas@) → só a sua conta fica `admin`; FSJBE vira `client`. É isso que faz cada login ver só o próprio cliente.
+3. **`/admin/reset-cliente`** → Bernardo · fsjdbe@gmail.com → Inventariar → e-mail → Apagar → "Sobrou depois: 0".
+4. Subir uma NF-e (XML ou PDF) em `/fiscal` e ler o card: `lido por IA (modelo)` ou `IA indisponível: motivo`. Subir a mesma de novo → "já importada".
+5. Cadastrar a propriedade real em `/propriedades` (a do seed cai no reset) antes do DITR.
 
 ## Semáforo
 
 | | Estado |
 |---|---|
-| 🟢 **Código** | 377 testes passando, typecheck limpo, árvore limpa, tudo em `origin/main` |
+| 🟢 **Código** | 393 testes passando, typecheck limpo, next 16.3.5, tudo em `origin/main`. Raio-x completo: `docs/manutencao/2026-09-14-raio-x.md` |
 | 🔴 **Banco** | **Nenhuma migration aplicada.** 159, 160, 161 e 162 escritas e paradas |
 | 🔴 **Acesso** | Sem MCP autenticado, sem `.env.local`, sem backup. Bloqueia 6 frentes |
 | 🟡 **Pista B** | Bloqueada: os arquivos da seção 8 do handoff não estão no repositório |
