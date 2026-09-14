@@ -6,6 +6,7 @@ import Link from "next/link";
 import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
 import { Wheat, Plane } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { hojeBR } from "@/lib/date-br";
 // scores are computed server-side via calculate_agraas_score SQL function
 
 const KG_POR_ARROBA = 30; // peso vivo: 1 arroba = 30 kg
@@ -135,7 +136,7 @@ export default function DashboardPage() {
           // Calendar: próximas aplicações em 7d
           const in7d = new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0];
           const { data: calData } = await supabase.from("sanitary_calendar")
-            .select("id").eq("active", true).lte("next_due", in7d).gte("next_due", new Date().toISOString().split("T")[0]);
+            .select("id").eq("active", true).lte("next_due", in7d).gte("next_due", hojeBR());
           setAplicacoes7d((calData ?? []).length);
 
           // Finance: receita e custo do mês

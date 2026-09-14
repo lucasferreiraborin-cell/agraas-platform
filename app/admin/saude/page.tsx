@@ -15,6 +15,7 @@ import PersonaShell from "@/app/components/personas/PersonaShell";
 import { getCotacaoArroba, formatCotacaoAge } from "@/lib/cotacao";
 import { CheckCircle, AlertTriangle, XCircle, Activity, RefreshCw, Brain, TrendingUp } from "lucide-react";
 import RefreshButton from "@/app/admin/saude/RefreshButton";
+import { hojeBR } from "@/lib/date-br";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +32,7 @@ const REQUIRED_VARS = [
   { key: "NEXT_PUBLIC_SUPABASE_URL",  purpose: "Conexão Supabase",                          required: true,  cron_only: false },
   { key: "SUPABASE_SERVICE_ROLE_KEY", purpose: "Acesso server-side ao banco",               required: true,  cron_only: false },
   { key: "STRIPE_SECRET_KEY",         purpose: "Pagamentos planos",                         required: false, cron_only: false },
-  { key: "CRON_SECRET",               purpose: "Disparo manual de crons (opcional)",        required: false, cron_only: true  },
+  { key: "CRON_SECRET",               purpose: "Autenticação dos crons (obrigatória desde 14/09 — sem ela os jobs param com 401)", required: true, cron_only: true },
   { key: "DIGEST_TRIGGER_TOKEN",      purpose: "Disparo manual digest sócios (opcional)",   required: false, cron_only: true  },
 ];
 
@@ -71,7 +72,7 @@ export default async function AdminSaudePage() {
     .limit(15);
 
   // Insights de hoje
-  const today = new Date().toISOString().split("T")[0];
+  const today = hojeBR();
   const { data: insightsToday } = await db
     .from("daily_insights")
     .select("persona, client_id, bullets, generated_at")

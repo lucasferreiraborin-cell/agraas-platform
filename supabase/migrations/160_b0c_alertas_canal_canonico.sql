@@ -92,7 +92,21 @@ BEGIN
     AND EXISTS (
       SELECT 1 FROM public.fiscal_alerts fa
       WHERE fa.fiscal_invoice_id = l.note_id
-        AND fa.alert_type = coalesce(nullif(btrim(l.tipo), ''), 'legacy_sem_tipo')
+        -- DB-04 (14/09/2026): o INSERT grava o tipo NAMESPACED ('nfe.ncm_incorreto');
+        -- comparar só com o tipo cru nunca casava e a reaplicação duplicava.
+        AND fa.alert_type IN (
+          coalesce(nullif(btrim(l.tipo), ''), 'legacy_sem_tipo'),
+          CASE btrim(coalesce(l.tipo, ''))
+            WHEN 'ncm_incorreto'      THEN 'nfe.ncm_incorreto'
+            WHEN 'cfop_divergente'    THEN 'nfe.cfop_divergente'
+            WHEN 'item_incompleto'    THEN 'nfe.item_incompleto'
+            WHEN 'valor_divergente'   THEN 'nfe.valor_divergente'
+            WHEN 'pdf_revisao_manual' THEN 'nfe.pdf_revisao_manual'
+            WHEN 'ia_fiscal'          THEN 'nfe.ia_fiscal'
+            WHEN ''                   THEN 'legacy_sem_tipo'
+            ELSE btrim(l.tipo)
+          END
+        )
         AND fa.message    = coalesce(nullif(btrim(l.descricao), ''), '(alerta legado sem descricao)')
     );
 
@@ -149,7 +163,21 @@ BEGIN
       AND NOT EXISTS (
         SELECT 1 FROM public.fiscal_alerts fa
         WHERE fa.fiscal_invoice_id = l.note_id
-          AND fa.alert_type = coalesce(nullif(btrim(l.tipo), ''), 'legacy_sem_tipo')
+          -- DB-04 (14/09/2026): o INSERT grava o tipo NAMESPACED ('nfe.ncm_incorreto');
+        -- comparar só com o tipo cru nunca casava e a reaplicação duplicava.
+        AND fa.alert_type IN (
+          coalesce(nullif(btrim(l.tipo), ''), 'legacy_sem_tipo'),
+          CASE btrim(coalesce(l.tipo, ''))
+            WHEN 'ncm_incorreto'      THEN 'nfe.ncm_incorreto'
+            WHEN 'cfop_divergente'    THEN 'nfe.cfop_divergente'
+            WHEN 'item_incompleto'    THEN 'nfe.item_incompleto'
+            WHEN 'valor_divergente'   THEN 'nfe.valor_divergente'
+            WHEN 'pdf_revisao_manual' THEN 'nfe.pdf_revisao_manual'
+            WHEN 'ia_fiscal'          THEN 'nfe.ia_fiscal'
+            WHEN ''                   THEN 'legacy_sem_tipo'
+            ELSE btrim(l.tipo)
+          END
+        )
           AND fa.message    = coalesce(nullif(btrim(l.descricao), ''), '(alerta legado sem descricao)')
       )
     RETURNING 1

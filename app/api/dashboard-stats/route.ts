@@ -3,6 +3,7 @@ import { unstable_cache } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { createClient } from "@supabase/supabase-js";
 import { checkRateLimit, tooManyRequests } from "@/lib/rate-limit";
+import { hojeBR } from "@/lib/date-br";
 
 const CACHE_TTL = 300; // 5 minutos
 
@@ -20,7 +21,7 @@ const fetchHerdStats = (clientId: string) =>
     async () => {
       const db = getServiceDb();
 
-      const today = new Date().toISOString().split("T")[0];
+      const today = hojeBR();
       const cutoff30d = new Date(Date.now() - 30 * 86400000).toISOString().split("T")[0];
 
       // animal_scores / weights / animal_certifications / applications são tabelas

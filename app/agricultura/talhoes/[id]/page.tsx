@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Layers, Warehouse, Ship } from "lucide-react";
 import { BackLink } from "@/app/components/ui/BackLink";
+import { hojeBR } from "@/lib/date-br";
 
 type Field = {
   id: string; field_code: string; field_name: string | null;
@@ -83,7 +84,7 @@ const DIMENSIONS = [
 export default async function TalhaoDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createSupabaseServerClient();
-  const today = new Date().toISOString().split("T")[0];
+  const today = hojeBR();
 
   const [
     { data: fieldData },

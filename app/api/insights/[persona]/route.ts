@@ -14,6 +14,7 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { createSupabaseServiceClient } from "@/lib/supabase-service";
 import { checkRateLimit, tooManyRequests } from "@/lib/rate-limit";
 import { generateInsights, persistInsights } from "@/lib/insights/generator";
+import { hojeBR } from "@/lib/date-br";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -43,7 +44,7 @@ export async function GET(req: NextRequest, { params }: Params) {
     .single();
   if (!clientData) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = hojeBR();
   const db = createSupabaseServiceClient();
 
   const { data: cached } = await db

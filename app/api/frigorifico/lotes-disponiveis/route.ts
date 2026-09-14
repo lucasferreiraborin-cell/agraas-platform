@@ -15,6 +15,7 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { createSupabaseServiceClient } from "@/lib/supabase-service";
 import { checkRateLimit, tooManyRequests } from "@/lib/rate-limit";
 import type { LoteOfertadoCard } from "@/lib/personas";
+import { hojeBR } from "@/lib/date-br";
 
 export const runtime = "nodejs";
 
@@ -101,7 +102,7 @@ export async function GET(req: NextRequest) {
   const scoreMap = new Map((animalScores ?? []).map((s) => [s.animal_id, Number(s.total_score)]));
 
   // Certificações vigentes
-  const today = new Date().toISOString().split("T")[0];
+  const today = hojeBR();
   const { data: certs } = allAnimalIds.length
     ? await db
         .from("animal_certifications")

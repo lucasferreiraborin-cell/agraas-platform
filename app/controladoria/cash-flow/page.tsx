@@ -14,6 +14,7 @@ import { KpiCard } from "@/app/components/ui/KpiCard";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import { TrendingUp, TrendingDown, DollarSign, CalendarClock } from "lucide-react";
 import CashFlowChart from "@/app/components/controladoria/CashFlowChart";
+import { hojeBR } from "@/lib/date-br";
 
 export const dynamic = "force-dynamic";
 
@@ -103,7 +104,7 @@ export default async function CashFlowPage() {
 
   // ── Projeções ─────────────────────────────────────────────────────────────
   let projections: Projection[] = [];
-  const todayIso = new Date().toISOString().split("T")[0];
+  const todayIso = hojeBR();
   try {
     const { data } = await supabase
       .from("cash_flow_projections")

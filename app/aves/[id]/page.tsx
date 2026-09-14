@@ -4,6 +4,7 @@ import { AlertTriangle, Calendar, MapPin, ShieldCheck } from "lucide-react";
 import { BackLink } from "@/app/components/ui/BackLink";
 import PoultryEventForm from "@/app/components/PoultryEventForm";
 import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
+import { hojeBR } from "@/lib/date-br";
 
 type Batch = {
   id: string;
@@ -92,7 +93,7 @@ function ScoreCircle({ score }: { score: number }) {
 export default async function AveDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createSupabaseServerClient();
-  const today = new Date().toISOString().split("T")[0];
+  const today = hojeBR();
 
   const [{ data: batchData }, { data: eventsData }, { data: propData }] = await Promise.all([
     supabase.from("poultry_batches")

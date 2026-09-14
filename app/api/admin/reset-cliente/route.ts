@@ -73,12 +73,22 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Trilha ANTES de apagar (AUTH-10): se a execução morrer no meio, fica o
+  // registro de que começou, por quem e quando. Best-effort.
+  const trilha = createSupabaseServiceClient();
+  try {
+    await trilha.from("platform_jobs_log").insert({
+      job_name: "reset_cliente",
+      status: "started",
+      details: { client_id: clientId, cliente: cliente.email, disparado_por: quem.email ?? user.email ?? user.id },
+    });
+  } catch { /* segue */ }
+
   const resultado = await executar(db, clientId);
   const depois = await inventariar(db, clientId);
 
-  // Trilha — best-effort, nunca derruba a resposta.
   try {
-    await createSupabaseServiceClient().from("platform_jobs_log").insert({
+    await trilha.from("platform_jobs_log").insert({
       job_name: "reset_cliente",
       status: resultado.restantes.length === 0 ? "ok" : "partial",
       details: {

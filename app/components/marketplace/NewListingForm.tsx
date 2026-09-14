@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Loader2, Tag, Wheat, ShoppingBag, Truck, Package, CheckCircle2 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { HALAL_ENABLED } from "@/lib/feature-flags";
 
 const TYPES: { key: string; label: string; Icon: LucideIcon; hint: string }[] = [
   { key: "animal",      label: "Animal",      Icon: Tag,          hint: "Bovinos, ovinos, aves"  },
@@ -75,7 +76,7 @@ export default function NewListingForm() {
           quantity_available: qty,
           location_city: city.trim(),
           location_state: uf,
-          halal_certified: halal,
+          halal_certified: HALAL_ENABLED && halal, // P6: com a flag desligada nunca grava Halal
         }),
       });
       const data = await res.json();
@@ -338,22 +339,25 @@ export default function NewListingForm() {
               </div>
             </div>
 
-            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] p-4 transition hover:border-[var(--border-strong)]">
-              <input
-                type="checkbox"
-                checked={halal}
-                onChange={(e) => setHalal(e.target.checked)}
-                className="mt-0.5 h-4 w-4 rounded accent-[var(--primary)]"
-              />
-              <div>
-                <p className="text-[.875rem] font-semibold text-[var(--text-primary)]">
-                  Marcar Halal certificado
-                </p>
-                <p className="mt-0.5 text-[.75rem] leading-[1.55] text-[var(--text-muted)]">
-                  Só marque se tiver certificação vigente. A Agraas faz verificação periódica.
-                </p>
-              </div>
-            </label>
+            {/* P6 (14/09): com HALAL_ENABLED desligada o checkbox nem aparece. */}
+            {HALAL_ENABLED && (
+              <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] p-4 transition hover:border-[var(--border-strong)]">
+                <input
+                  type="checkbox"
+                  checked={halal}
+                  onChange={(e) => setHalal(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded accent-[var(--primary)]"
+                />
+                <div>
+                  <p className="text-[.875rem] font-semibold text-[var(--text-primary)]">
+                    Marcar Halal certificado
+                  </p>
+                  <p className="mt-0.5 text-[.75rem] leading-[1.55] text-[var(--text-muted)]">
+                    Só marque se tiver certificação vigente. A Agraas faz verificação periódica.
+                  </p>
+                </div>
+              </label>
+            )}
           </div>
 
           {error && (

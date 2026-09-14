@@ -31,8 +31,12 @@ jobs:
       - name: Type-check
         run: npx tsc --noEmit
 
+      - name: Lint de migrations (colisão de CREATE TABLE)
+        run: npm run lint:migrations
+
       - name: Run tests
-        run: npm test -- --no-coverage --passWithNoTests
+        # Sem --passWithNoTests: se o testMatch quebrar, o CI tem de ficar vermelho.
+        run: npm test -- --no-coverage
         env:
           # Provide minimal env vars so mocks work correctly
           NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
@@ -44,8 +48,10 @@ jobs:
     name: pgTAP · Triggers críticos (anti-regressão)
     runs-on: ubuntu-latest
     # Só roda se o secret SUPABASE_DB_URL_SERVICE estiver configurado
-    # (staging ou local CI). Caso contrário, é skip silencioso.
-    if: ${{ github.event_name == 'pull_request' }}
+    # (staging ou local CI). Caso contrário, é skip com aviso.
+    # BD-06 (14/09/2026): o fluxo é push direto em main — com `if: pull_request`
+    # a suíte nunca executou. Roda em push e em PR.
+    if: ${{ github.event_name == 'push' || github.event_name == 'pull_request' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4

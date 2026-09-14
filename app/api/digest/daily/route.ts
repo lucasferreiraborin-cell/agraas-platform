@@ -16,6 +16,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getCotacaoArroba, formatCotacaoAge } from "@/lib/cotacao";
 import { cronAutorizado } from "@/lib/cron-auth";
+import { hojeBR } from "@/lib/date-br";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -38,7 +39,7 @@ export async function GET(req: NextRequest) {
       { auth: { persistSession: false } },
     );
 
-    const today = new Date().toISOString().split("T")[0];
+    const today = hojeBR();
     const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
     const [

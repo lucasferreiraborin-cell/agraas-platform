@@ -16,6 +16,7 @@ import AnimalQRCode from "@/app/components/AnimalQRCode";
 import ExportPassportModal from "@/app/components/ExportPassportModal";
 import PredictiveAlerts from "@/app/components/PredictiveAlerts";
 import AnimalPhotoUpload from "@/app/components/AnimalPhotoUpload";
+import { hojeBR } from "@/lib/date-br";
 import AnimalTimeline, {
   type TimelineWeight,
   type TimelineApplication,
@@ -287,7 +288,7 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
   } catch { /* tabela ainda não existe */ }
 
   // GTA vigente
-  const today_str = new Date().toISOString().split("T")[0];
+  const today_str = hojeBR();
   const hasGtaVigente = (certificationsData ?? []).some(
     (c) =>
       (c.certification_name ?? "").toUpperCase().includes("GTA") &&

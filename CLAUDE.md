@@ -56,7 +56,9 @@ de deck** — aí ele leva ao chat.
 - Prometer "recuperação tributária" ou "8–12%".
 - Usar número não público da iBoi como fato.
 - Mandar qualquer coisa a cliente, parceiro ou investidor **sem revisão humana**.
-- **Aplicar migration ou fazer deploy sem ordem expressa.**
+- **Aplicar migration ou alterar variável de ambiente na Vercel sem ordem expressa.**
+  (Push em `main` **é** deploy automático — isso é aceito e esperado; o que exige
+  ordem é o banco e o ambiente.)
 - Alterar o banco de produção por fora de migration versionada — um único caminho
   de aplicação. *(regra de casa, pendente de confirmação — ver `docs/decisoes/pendentes.md` D-10)*
 
@@ -71,7 +73,24 @@ Abertura de sessão: skill `pauta`. Decisões paradas: `docs/decisoes/pendentes.
 
 ---
 
-## Foco atual: 100% pecuária bovina
+## Foco atual (09/2026): wedge fiscal para a pecuária bovina — Cenário C1
+
+**Decisão de comitê, 02/09/2026.** A porta de entrada comercial é a **gestão
+fiscal do produtor**: "toda nota vira custo por animal e FUNRURAL apurado, sem
+digitar". Rastreio individual e Score são o ato 2. Canal: contador rural.
+Cliente real nº 1: FSJBE (`fsjdbe@gmail.com`, Jussara-GO), com dados reais
+desde 11/09/2026.
+
+Gates (ver `docs/STATUS.md` para os dias restantes): **25/09** d30 (pacote
+vendável · 3 contadores · 20 conversas) · **30/09** DITR 2026 · **25/10** d60
+(≥ 3 fazendas via contadores · ≥ 2 pagantes) · **24/11** d90.
+
+Estado vivo e fila: `docs/STATUS.md`. Raio-x de manutenção: `docs/manutencao/`.
+Pastas relevantes hoje: `app/fiscal`, `app/controladoria`, `app/contador`,
+`app/admin` (saúde, contas, reset-cliente), `lib/fiscal`, `lib/planilha`,
+`lib/rules`, `rules/`.
+
+### Histórico — foco de maio/2026: 100% pecuária bovina
 
 **Decisão 2026-05-17** (pós-Agrishow, mentoria IZ-SP com Dra. Renata Helena Branco Arnandes + Prof. César Franzon):
 o caminho crítico é pecuária bovina. Tudo o mais está pausado, não removido.
@@ -82,7 +101,8 @@ o caminho crítico é pecuária bovina. Tudo o mais está pausado, não removido
 - **GPB / Furlan** — em desenvolvimento.
 
 ### Frentes pausadas (código mantido, fora do caminho crítico)
-- ⏸️ **Portal PIF (Comprador)** — rota `/comprador` redireciona para `/em-breve`. Tabelas e RLS intactas (eventual reuso frigorífico).
+- ▶️ **Portal Comprador / Frigorífico** — **ativo** desde 24/06/2026 sob `NEXT_PUBLIC_BUYER_VIEW_ENABLED` (persona Frigorífico, Sprint B 17/06). `/comprador` **não** redireciona mais; admin também entra.
+- ⏸️ **/planos** — redireciona para `/em-breve` desde 06/07/2026 (`next.config.ts`); o código da página continua no repositório com números fixos que não podem reabrir sem revisão (P7 do raio-x).
 - ⏸️ **Ovinos / Caprinos** — rotas `/ovinos`, `/caprinos` redirecionam para `/em-breve`. Tabelas, score engine e seeds intactos.
 - ⏸️ **Aves** — rota `/aves` redireciona. Tabelas, score engine e seeds intactos.
 - ⏸️ **Agricultura / Grãos** — rota `/agricultura` redireciona. Tabelas, score engine e seeds intactos.
@@ -108,7 +128,7 @@ em outro cliente. O tombamento Multbovinos → Agraas segue em segundo plano.
 
 | Camada | Tecnologia |
 |---|---|
-| Framework | Next.js 16.1.6 (App Router, webpack) |
+| Framework | Next.js 16.3.5 (App Router; `next dev --webpack`, build com Turbopack) |
 | Backend/DB | Supabase (PostgreSQL 17 + Auth + RLS + Storage) |
 | Linguagem | TypeScript 5 (strict) |
 | Estilo | Tailwind CSS 4 (PostCSS) |
@@ -153,9 +173,9 @@ agraas/
 │   ├── supabase.ts                 # Client browser
 │   ├── agraas-analytics.ts         # Score engine puro
 │   └── rate-limit.ts               # Rate limit em memória
-├── middleware.ts                   # Redirects e proteção de rotas
+├── proxy.ts                        # Redirects e proteção de rotas (Next 16: proxy, não middleware)
 ├── supabase/
-│   ├── migrations/                 # SQL numeradas 001-106
+│   ├── migrations/                 # SQL 001-165 (160 arquivos; 041/127/128/142 vagos)
 │   ├── rollbacks/                  # Down migrations (separadas)
 │   └── functions/score-engine/     # Edge Function (recalcula scores)
 └── .claude/                        # settings, hooks, skills, commands
@@ -186,8 +206,8 @@ const db = createSupabaseServiceClient();
 # Único caminho de aplicação — e SÓ com ordem expressa do Lucas
 npx supabase db push
 ```
-- Up migrations em `supabase/migrations/` (numeradas 001-162 em 09/2026);
-  down migrations em `supabase/rollbacks/`
+- Up migrations em `supabase/migrations/` (numeradas 001-165 em 09/2026);
+  down migrations em `supabase/rollbacks/`. **159–165 escritas e NÃO aplicadas.**
 - **Ledger local × remoto está dessincronizado** (108-162 sem registro remoto).
   Enquanto isso não for reconciliado, `db push` está proibido — ver
   `docs/decisoes/pendentes.md` D-10 e `npm run lint:migrations`
@@ -242,22 +262,20 @@ if (!rl.allowed) return tooManyRequests(rl.retryAfter);
 
 ## Clientes ativos
 
-| Nome | E-mail | Role |
-|---|---|---|
-| Lucas Ferreira | lucas@agraas.com.br | admin |
-| Pedro Borin | pedro@agraas.com.br | admin |
-| Paulo Borin | paulo@agraas.com.br | admin |
-| Bernardo | bernardo@agraas.com.br | admin |
-| Ico | ico@agraas.com.br | admin |
-| PIF Buyer | pif@agraas.com.br | buyer ⏸️ |
+**Decisão 14/09/2026: só `lucas@agraas.com.br` é `admin`.** Sócios que testam
+usam conta `client`. A lista viva (papéis, e-mail duplicado, `client_id`) está
+em `/admin/contas` — o banco é a fonte, não esta tabela. Pelas migrations:
+FSJBE = `fsjdbe@gmail.com` (`client_id 00000000-0000-0000-0003-000000000001`),
+Paulo = `pauloborin@agraas.com.br`, Pedro/Ico = `@multbovinos.com.br`.
 
 ---
 
 ## Regras permanentes
 
 - **Antes de implementar:** apresente plano resumido e aguarde aprovação
-- **Após cada etapa:** `git add`, `git commit`, `git push origin main`
-- **Migrations:** `npx supabase db push` — nunca SQL manual no dashboard
+- **Após cada etapa:** `git add`, `git commit`, `git push origin main` — **push em `main` é deploy**
+- **`docs/STATUS.md` atualizado antes de cada commit** que mude o estado
+- **Migrations:** `npx supabase db push` — nunca SQL manual no dashboard, e só com ordem expressa
 - **Dados fictícios:** nunca criar sem aprovação explícita do Lucas
 - **Frentes pausadas:** não criar copy nova sobre PIF / ovinos / caprinos / aves / agricultura
 - **Design system:** manter consistência em todas as páginas

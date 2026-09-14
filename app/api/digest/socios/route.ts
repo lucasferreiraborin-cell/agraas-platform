@@ -14,6 +14,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { createSupabaseServiceClient } from "@/lib/supabase-service";
+import { cronAutorizado } from "@/lib/cron-auth";
 import { checkRateLimit, tooManyRequests } from "@/lib/rate-limit";
 import {
   sendDigestToSocios,
@@ -28,14 +30,10 @@ function unauthorized(reason: string) {
   return NextResponse.json({ error: reason }, { status: 401 });
 }
 
+// AUTH-06 (14/09): o cron da Vercel manda Bearer CRON_SECRET, não o
+// DIGEST_TRIGGER_TOKEN — o job agendado nunca autenticava.
 function isAuthorized(req: NextRequest): boolean {
-  const auth = req.headers.get("authorization") ?? "";
-  const token = auth.replace(/^Bearer\s+/i, "").trim();
-  const expected = process.env.DIGEST_TRIGGER_TOKEN ?? "";
-
-  // Em desenvolvimento (sem token configurado), permitir via session cookie autenticada.
-  // Em produção, exigir Bearer.
-  return Boolean(expected) && token === expected;
+  return cronAutorizado(req, [process.env.DIGEST_TRIGGER_TOKEN]);
 }
 
 /** Resolve o sócio-alvo de um preview. Cai no Lucas quando não informado ou desconhecido. */
@@ -47,9 +45,11 @@ function resolveSocio(email: string | null): (typeof SOCIOS_AGRAAS)[number] {
 }
 
 async function buildSnapshot(): Promise<DigestSnapshot> {
-  const supabase = await createSupabaseServerClient();
+  // AUTH-06 (14/09): com o client de cookies o cron não tem sessão e a RLS
+  // devolvia zero em tudo — o digest saía com métricas zeradas. Service key.
+  const supabase = createSupabaseServiceClient();
 
-  // Métricas da plataforma (server-side, RLS bypass via service role só onde necessário)
+  // Métricas da plataforma (visão global — é um digest interno para sócios)
   const [
     { count: totalAnimais },
     { data: scoresData },

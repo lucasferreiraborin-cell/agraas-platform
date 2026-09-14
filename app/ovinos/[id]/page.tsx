@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Calendar, Weight, ShieldCheck, Clock, Syringe, Activity } from "lucide-react";
 import { BackLink } from "@/app/components/ui/BackLink";
 import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
+import { hojeBR } from "@/lib/date-br";
 
 type Animal = {
   id: string;
@@ -135,7 +136,7 @@ export default async function OvinoDetailPage({ params }: { params: Promise<{ id
   const certs       = (certsData ?? []) as CertRow[];
   const quarantines = (quarantineData ?? []) as QuarantineRow[];
   const hasHalal    = animal.certifications?.includes("Halal") ?? false;
-  const today       = new Date().toISOString().split("T")[0];
+  const today       = hojeBR();
 
   const cfg = ((scoreConfigData ?? [])[0] as ScoreConfig | undefined) ?? {
     weight_sanidade: 35, weight_operacional: 20, weight_rastreabilidade: 15,

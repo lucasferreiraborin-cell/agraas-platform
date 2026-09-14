@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { checkRateLimit, tooManyRequests } from "@/lib/rate-limit";
 import { renderToStream, Document, Page, View, Text, StyleSheet } from "@react-pdf/renderer";
+import { hojeBR } from "@/lib/date-br";
 
 const s = StyleSheet.create({
   page: { padding: 40, fontFamily: "Helvetica", fontSize: 10 },
@@ -112,7 +113,7 @@ export async function POST(req: NextRequest) {
   return new Response(stream as unknown as ReadableStream, {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="relatorio-rebanho-${new Date().toISOString().split("T")[0]}.pdf"`,
+      "Content-Disposition": `attachment; filename="relatorio-rebanho-${hojeBR()}.pdf"`,
     },
   });
 }

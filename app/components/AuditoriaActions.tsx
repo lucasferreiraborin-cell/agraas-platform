@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { RefreshCw, FileDown } from "lucide-react";
 import { showToast } from "@/app/components/Toast";
+import { hojeBR } from "@/lib/date-br";
 
 export default function AuditoriaActions() {
   const router = useRouter();
@@ -29,7 +30,7 @@ export default function AuditoriaActions() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `auditoria-rebanho-${new Date().toISOString().split("T")[0]}.pdf`;
+      a.download = `auditoria-rebanho-${hojeBR()}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
       showToast("PDF gerado com sucesso.");

@@ -2,6 +2,7 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import Link from "next/link";
 import { Bird, Plus, AlertTriangle, ShieldCheck } from "lucide-react";
 import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
+import { hojeBR } from "@/lib/date-br";
 
 type BatchRow = {
   id: string;
@@ -54,7 +55,7 @@ function ScoreRing({ score }: { score: number }) {
 
 export default async function AvesDashboardPage() {
   const supabase = await createSupabaseServerClient();
-  const today = new Date().toISOString().split("T")[0];
+  const today = hojeBR();
 
   const [{ data: batchData }, { data: carenciaData }] = await Promise.all([
     supabase.from("poultry_batches")

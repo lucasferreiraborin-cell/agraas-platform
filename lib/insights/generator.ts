@@ -11,6 +11,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
 import { getRecentSignalsForPersona } from "@/lib/market-intelligence";
+import { hojeBR } from "@/lib/date-br";
 
 const MODEL = "claude-sonnet-4-6";
 
@@ -45,7 +46,7 @@ async function fetchProdutorMetrics(clientId: string) {
     db.from("animals").select("*", { count: "exact", head: true }).eq("client_id", clientId).eq("status", "Ativo"),
     db.from("producer_scores").select("score_total").eq("client_id", clientId).maybeSingle(),
     db.from("properties").select("*", { count: "exact", head: true }).eq("client_id", clientId),
-    db.from("applications").select("animal_id, withdrawal_date").eq("client_id", clientId).gt("withdrawal_date", new Date().toISOString().split("T")[0]),
+    db.from("applications").select("animal_id, withdrawal_date").eq("client_id", clientId).gt("withdrawal_date", hojeBR()),
   ]);
   return {
     animais_ativos: animais ?? 0,
@@ -213,7 +214,7 @@ export async function persistInsights(insights: GeneratedInsights, signalsUsedId
     {
       persona: insights.persona,
       client_id: insights.client_id,
-      insight_date: new Date().toISOString().split("T")[0],
+      insight_date: hojeBR(),
       bullets: insights.bullets,
       signals_used: signalsUsedIds,
       model: insights.model,

@@ -18,6 +18,7 @@ import {
   StaggerItem,
 } from "@/app/components/ui/Motion";
 import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
+import { HALAL_ENABLED } from "@/lib/feature-flags";
 import {
   Fingerprint,
   BarChart2,
@@ -382,7 +383,7 @@ export default async function LandingPage() {
                           {TYPE_LABEL[l.listing_type] ?? l.listing_type}
                         </span>
                         <div className="flex items-center gap-2">
-                          {l.halal_certified && <HalalBadgeSVG size={22} />}
+                          {HALAL_ENABLED && l.halal_certified && <HalalBadgeSVG size={22} />}
                           {l.score_agraas != null && (
                             <span className="rounded-md bg-[var(--primary-soft)] px-2 py-0.5 text-[.6875rem] font-bold text-[var(--primary)]">
                               Score {l.score_agraas}

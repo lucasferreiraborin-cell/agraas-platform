@@ -23,6 +23,7 @@ import { refreshAllSignals } from "@/lib/market-intelligence";
 import { generateInsights, persistInsights } from "@/lib/insights/generator";
 import { getCotacaoArroba } from "@/lib/cotacao";
 import { cronAutorizado } from "@/lib/cron-auth";
+import { hojeBR } from "@/lib/date-br";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -119,7 +120,7 @@ export async function GET(req: NextRequest) {
 
   // ── STEP 3 · Insights diários para todos clientes ativos
   try {
-    const today = new Date().toISOString().split("T")[0];
+    const today = hojeBR();
     const { data: clients } = await db
       .from("clients")
       .select("id, role")
@@ -190,7 +191,7 @@ export async function GET(req: NextRequest) {
         detail: `ainda não passou ${BRT_BUSINESS_HOUR_START}h BRT (UTC=${utcHour}h)`,
       });
     } else {
-      const today = new Date().toISOString().split("T")[0];
+      const today = hojeBR();
       const { data: lastBriefingJob } = await db
         .from("platform_jobs_log")
         .select("ran_at")
@@ -256,7 +257,7 @@ async function internalGenerateBriefing() {
     { auth: { persistSession: false } },
   );
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = hojeBR();
   const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
   const [
     { count: totalAnimais },

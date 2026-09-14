@@ -14,12 +14,13 @@ import type { LoteOfertadoCard } from "@/lib/personas";
 import { scoreClassification } from "@/lib/personas";
 import { requirePersona, FRIGORIFICO_ROUTES } from "@/lib/persona-resolver";
 import { ArrowRight, ShieldCheck, AlertCircle, MapPin, Calendar, Beef } from "lucide-react";
+import { hojeBR } from "@/lib/date-br";
 
 export const dynamic = "force-dynamic";
 
 async function fetchLotesAbertos(): Promise<LoteOfertadoCard[]> {
   const db = createSupabaseServiceClient();
-  const today = new Date().toISOString().split("T")[0];
+  const today = hojeBR();
 
   const { data: lots } = await db
     .from("lots")

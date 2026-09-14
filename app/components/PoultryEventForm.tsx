@@ -4,6 +4,7 @@ import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Plus, X, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { hojeBR } from "@/lib/date-br";
 
 const inputCls = "w-full rounded-xl border border-[var(--border)] bg-white px-3 py-2.5 text-sm outline-none focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/10";
 const labelCls = "mb-1.5 block text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]";
@@ -27,7 +28,7 @@ export default function PoultryEventForm({ batchId }: { batchId: string }) {
   const [error,    setError]    = useState("");
 
   const [eventType, setEventType] = useState<string>("pesagem");
-  const [date,      setDate]      = useState(() => new Date().toISOString().split("T")[0]);
+  const [date,      setDate]      = useState(() => hojeBR());
   const [value,     setValue]     = useState("");
   const [notes,     setNotes]     = useState("");
   const [operator,  setOperator]  = useState("");

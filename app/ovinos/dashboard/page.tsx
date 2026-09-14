@@ -2,6 +2,7 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import Link from "next/link";
 import { Rabbit } from "lucide-react";
 import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
+import { hojeBR } from "@/lib/date-br";
 
 type LivestockRow = {
   id: string;
@@ -33,7 +34,7 @@ function ScoreRing({ score }: { score: number }) {
 
 export default async function OvinosDashboardPage() {
   const supabase = await createSupabaseServerClient();
-  const today = new Date().toISOString().split("T")[0];
+  const today = hojeBR();
 
   const [
     { data: animalsData },

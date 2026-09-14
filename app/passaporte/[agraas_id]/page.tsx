@@ -20,8 +20,13 @@ function stageFromContaContabil(conta: string | null | undefined): string | null
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { agraas_id } = await params;
+  // P10 (14/09): generateMetadata roda antes do stream — é aqui que um id
+  // inexistente vira 404 de verdade (antes: HTTP 200 com corpo "404").
+  const { data: existe } = await createSupabaseServiceClient()
+    .from("animals").select("id").eq("agraas_id", agraas_id).maybeSingle();
+  if (!existe) notFound();
   return {
-    title: `Passaporte Animal ${agraas_id} — Agraas`,
+    title: `Passaporte Animal ${agraas_id}`,
     description: "Passaporte pecuário com rastreabilidade completa e certificações verificadas.",
     robots: "noindex",
   };

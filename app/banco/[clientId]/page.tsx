@@ -18,6 +18,7 @@ import { funruralValue } from "@/lib/funrural";
 import { requirePersona, BANCO_ROUTES } from "@/lib/persona-resolver";
 import { Download, MapPin, Calendar, Award } from "lucide-react";
 import ScoreRing from "@/app/components/ui/ScoreRing";
+import { hojeBR } from "@/lib/date-br";
 
 export const dynamic = "force-dynamic";
 
@@ -79,7 +80,7 @@ export default async function DossieProdutor({ params }: Params) {
     cutoff12.setMonth(cutoff12.getMonth() - 11);
     cutoff12.setDate(1);
     const iso12 = cutoff12.toISOString().split("T")[0];
-    const todayIso2 = new Date().toISOString().split("T")[0];
+    const todayIso2 = hojeBR();
 
     const [invRes, projRes, entryRes] = await Promise.allSettled([
       db

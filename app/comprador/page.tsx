@@ -2,6 +2,7 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { createSupabaseServiceClient } from "@/lib/supabase-service";
 import CompradorView from "@/app/components/CompradorView";
 import { requirePersona, FRIGORIFICO_ROUTES } from "@/lib/persona-resolver";
+import { hojeBR } from "@/lib/date-br";
 
 export default async function CompradorPage() {
   // ── Persona guard (admin pode acessar, buyer pode acessar) ────────────────
@@ -51,7 +52,7 @@ export default async function CompradorPage() {
     : { data: [] };
 
   // ── Certificações ─────────────────────────────────────────────────────────
-  const today = new Date().toISOString().split("T")[0];
+  const today = hojeBR();
   const { data: certsData } = animalIds.length
     ? await db
         .from("animal_certifications")

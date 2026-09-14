@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { FileText, Loader2 } from "lucide-react";
+import { hojeBR } from "@/lib/date-br";
 
 export default function HerdPdfButton() {
   const [loading, setLoading] = useState(false);
@@ -15,7 +16,7 @@ export default function HerdPdfButton() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `relatorio-rebanho-${new Date().toISOString().split("T")[0]}.pdf`;
+      a.download = `relatorio-rebanho-${hojeBR()}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
     } catch {

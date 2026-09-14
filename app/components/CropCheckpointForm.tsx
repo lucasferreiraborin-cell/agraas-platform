@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Plus, X, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { hojeBR } from "@/lib/date-br";
 
 const STAGES = [
   { key: "fazenda",        label: "Fazenda" },
@@ -34,7 +35,7 @@ export default function CropCheckpointForm({
     : STAGES[0].key;
 
   const [stage,       setStage]       = useState(defaultStage);
-  const [stageDate,   setStageDate]   = useState(() => new Date().toISOString().split("T")[0]);
+  const [stageDate,   setStageDate]   = useState(() => hojeBR());
   const [qtyConf,     setQtyConf]     = useState("");
   const [qtyLost,     setQtyLost]     = useState("0");
   const [lossCause,   setLossCause]   = useState("");

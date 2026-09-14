@@ -1,6 +1,7 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { NextRequest } from "next/server";
 import { checkRateLimit, tooManyRequests } from "@/lib/rate-limit";
+import { hojeBR } from "@/lib/date-br";
 
 type Row = Record<string, string>;
 
@@ -68,7 +69,7 @@ export async function POST(req: NextRequest) {
     errors: [], animal_ids: [],
   };
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = hojeBR();
 
   const get = (row: Row, field: string) => {
     const h = mapping[field];

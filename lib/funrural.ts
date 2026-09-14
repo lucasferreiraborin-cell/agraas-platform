@@ -94,10 +94,13 @@ function rateFromTaxRegime(taxRegime: string): number | null {
 export function funruralRate(client: FunruralClient | null | undefined): number {
   if (client) {
     // funrural_rate explícito manda (override do contador).
+    // Zero é override válido (produtor isento, decisão do contador); negativo
+    // não é alíquota e cai para o regime.
     if (
       client.funrural_rate !== null &&
       client.funrural_rate !== undefined &&
-      Number.isFinite(Number(client.funrural_rate))
+      Number.isFinite(Number(client.funrural_rate)) &&
+      Number(client.funrural_rate) >= 0
     ) {
       return Number(client.funrural_rate);
     }

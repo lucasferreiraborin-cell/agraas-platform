@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { ActionGuard } from "@/app/components/ui/ActionGuard";
 import { HALAL_ENABLED } from "@/lib/feature-flags";
+import { hojeBR } from "@/lib/date-br";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -99,7 +100,7 @@ export default function AnimaisPage() {
       setLoading(true);
       setError(false);
 
-      const todayStr = new Date().toISOString().split("T")[0];
+      const todayStr = hojeBR();
       const from = page * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
 

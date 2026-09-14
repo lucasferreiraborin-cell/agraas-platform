@@ -1,16 +1,16 @@
 export function calculateAgeInMonths(birthDate: string | null | undefined) {
   if (!birthDate) return null;
 
-  const birth = new Date(birthDate);
+  // DT-05 (14/09/2026): `new Date("YYYY-MM-DD")` é meia-noite UTC — em BRT o
+  // dia vira o anterior e a idade oscilava em 1 mês na virada do dia. Lê as
+  // partes da data sem fuso.
+  const m = String(birthDate).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return null;
+  const bAno = Number(m[1]), bMes = Number(m[2]) - 1, bDia = Number(m[3]);
   const now = new Date();
 
-  let months =
-    (now.getFullYear() - birth.getFullYear()) * 12 +
-    (now.getMonth() - birth.getMonth());
-
-  if (now.getDate() < birth.getDate()) {
-    months -= 1;
-  }
+  let months = (now.getFullYear() - bAno) * 12 + (now.getMonth() - bMes);
+  if (now.getDate() < bDia) months -= 1;
 
   return Math.max(0, months);
 }
