@@ -6,6 +6,7 @@ import Link from "next/link";
 import { FileText, DollarSign, AlertTriangle, ShieldCheck, Download, TrendingUp } from "lucide-react";
 import { KpiCard } from "@/app/components/ui/KpiCard";
 import { BackLink } from "@/app/components/ui/BackLink";
+import { formatarDataIso, partesDataIso } from "@/lib/date-br";
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -76,9 +77,12 @@ export default function FiscalRelatorioPage() {
 
   const filtered = notes.filter(n => {
     if (!n.data_emissao) return !mes;
-    const d = new Date(n.data_emissao);
-    if (ano && d.getFullYear().toString() !== ano) return false;
-    if (mes && String(d.getMonth() + 1).padStart(2, "0") !== mes) return false;
+    // Sem `new Date(iso)`: em BRT a meia-noite UTC vira o dia anterior e a
+    // nota do dia 1 caía no mês anterior (raio-x 14/09, F10).
+    const p = partesDataIso(n.data_emissao);
+    if (!p) return !mes;
+    if (ano && String(p.ano) !== ano) return false;
+    if (mes && String(p.mes).padStart(2, "0") !== mes) return false;
     return true;
   });
 
@@ -260,7 +264,7 @@ export default function FiscalRelatorioPage() {
                       <td className="font-medium tabular-nums">{n.numero_nota}</td>
                       <td className="max-w-[180px] truncate">{n.emitente_nome ?? "—"}</td>
                       <td className="tabular-nums text-[var(--text-secondary)]">
-                        {n.data_emissao ? new Date(n.data_emissao).toLocaleDateString("pt-BR") : "—"}
+                        {formatarDataIso(n.data_emissao)}
                       </td>
                       <td className="text-right tabular-nums font-medium">
                         R${Number(n.valor_total ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}

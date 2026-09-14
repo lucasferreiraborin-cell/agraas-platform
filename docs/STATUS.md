@@ -63,6 +63,7 @@
 | **Controladoria: 4 endpoints que não existiam** | `upload-xml`, `upload-pdf` (mesmo handler), `upload-csv` (CSV/XLSX em lote + modelo para baixar), `upload-audio` (501 honesto). O modal mostrava "Sprint G2" e descartava o arquivo | 14/09 |
 | **Planilha sem dependência** | `lib/planilha/csv.ts` (`;`, Latin-1, BOM, aspas) e `lib/planilha/xlsx.ts` (ZIP+XML, shared strings, serial de data). `notas-planilha.ts` agrupa linhas em notas, aceita apelidos de coluna, rejeita linha de exemplo, limite 200 notas | 14/09 |
 | **parse-doc reescrito** | Abates, vendas, estoque e timeline passam a ler XML pelo `nfe-parser` (fim do `<detPag>` virando item) e PDF pelo Claude; destinatário agora vem no XML e no PDF | 14/09 |
+| **Raio-x 14/09 — lote 1 (fiscal)** | F1: CFOP `/^[1-37]/` rejeitava 5xxx/6xxx — **toda nota de compra real nascia "erro"**; agora `[123567]\d{3}`. F4: `chave_acesso` gravada → 2º upload da mesma NF-e vira 409 "já importada". F9: auth antes do corpo (401, não 500); itens que não gravam desfazem a nota e devolvem erro. F2: abates/vendas/estoque não marcam "verificado" sobre PDF que a IA não leu. F3: exclusão com posse verificada + service key + `count` real (antes podia ser no-op com "sucesso"). F6: prompt da análise sem "Lei Kandir garante isenção" e sem 3808 como medicamento. F10/DT-05: `lib/date-br.ts` — fim do dia deslocado em lista e relatório. Botões "Abrir/Excluir" da lista sempre visíveis | 14/09 |
 
 ### Em andamento
 

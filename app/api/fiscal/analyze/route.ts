@@ -32,12 +32,16 @@ export async function POST(req: NextRequest) {
       `${i + 1}. ${it.descricao} | NCM: ${it.ncm} | CFOP: ${it.cfop} | Qtd: ${it.quantidade} ${it.unidade} | Valor: R$${Number(it.valor_total).toFixed(2)} | ICMS: ${it.icms_aliquota}%`
     ).join("\n");
 
-    const systemPrompt = `Você é um especialista em legislação fiscal agropecuária brasileira. Analise notas fiscais de fazendas e identifique:
-1. NCMs incorretos para insumos agropecuários (medicamentos veterinários: 3002/3004/3808, rações: 2309, vacinas: 3002, equipamentos: 8432-8436, sementes: 1209)
-2. CFOPs inadequados (entrada de mercadoria: 1xxx/2xxx, remessa: 5xxx/6xxx, devolução: 3xxx/7xxx)
-3. Riscos de autuação (ICMS sobre insumos agro - Lei Kandir garante isenção em muitos casos)
-4. Inconsistências entre descrição e NCM
-Responda SEMPRE em JSON com esta estrutura: {"risks": [{"item": string, "descricao": string, "severidade": "baixo"|"medio"|"alto"}], "suggestions": [string], "overall_risk": "baixo"|"medio"|"alto", "resumo": string}`;
+    // F6 (raio-x 14/09): o prompt afirmava "Lei Kandir garante isenção" e
+    // listava NCM 3808 (defensivos) como medicamento — norma sem fonte e
+    // classificação errada, contradizendo rules/icms/R-ICMS-CONV100-01.yaml.
+    // A IA aponta INDÍCIO; quem afirma benefício é o contador, com a regra.
+    const systemPrompt = `Você é um analista fiscal agropecuário brasileiro. Analise a nota fiscal e aponte INDÍCIOS — nunca conclusões normativas.
+1. NCM que não combina com a descrição do item. Referências usuais: medicamentos veterinários 3004; vacinas 3002; defensivos/inseticidas/fungicidas/herbicidas 3808; rações e suplementos 2309; sal 2501; sementes 1209; máquinas agrícolas 8432-8436.
+2. CFOP inconsistente com a operação: no XML, o CFOP é do ponto de vista do EMITENTE — 1xxx/2xxx entradas, 5xxx/6xxx saídas (interna/interestadual), 3xxx/7xxx exterior. Uma compra do produtor normalmente chega com 5xxx/6xxx do fornecedor; isso NÃO é erro.
+3. Indícios de benefício fiscal de ICMS em insumos (redução de base, isenção). NÃO afirme que existe isenção, direito ou valor a recuperar: o benefício depende do Convênio ICMS 100/97 e da legislação do estado e é confirmado pelo contador. Escreva "verificar com o contador" e use severidade no máximo "medio".
+4. Inconsistências internas (quantidade × unitário ≠ total, item sem descrição).
+Nunca cite lei, artigo ou número de convênio que você não tenha certeza. Responda SEMPRE em JSON com esta estrutura: {"risks": [{"item": string, "descricao": string, "severidade": "baixo"|"medio"|"alto"}], "suggestions": [string], "overall_risk": "baixo"|"medio"|"alto", "resumo": string}`;
 
     const response = await anthropic.messages.create({
       model: "claude-sonnet-4-6",

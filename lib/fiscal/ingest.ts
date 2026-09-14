@@ -18,15 +18,19 @@ import { writeCanonicalInvoice, updateCanonicalStatus } from "@/lib/fiscal/invoi
 import { writeCanonicalAlerts } from "@/lib/fiscal/alert-writer";
 import { FISCAL_WRITE_MODE, FISCAL_WRITES_CANONICAL, FISCAL_WRITES_LEGACY } from "@/lib/feature-flags";
 import {
-  parseXml, parsePdf, tipoDoArquivo, mensagemUpload,
-  type NotaParseada, type FonteNota,
+  parseXml, parsePdf, tipoDoArquivo, mensagemUpload, derivarAlertas,
+  type NotaParseada, type FonteNota, type AlertaNota,
 } from "@/lib/fiscal/nota-parse";
 
 type Db = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 
-export type AlertaNota = { note_id: string; client_id: string; tipo: string; descricao: string; severidade: string };
+export type { AlertaNota };
 
-export type ResultadoSave = { noteId: string; alerts: AlertaNota[]; hasCritical: boolean; canonicalOk: boolean | null };
+export type ResultadoSave = {
+  noteId: string; alerts: AlertaNota[]; hasCritical: boolean; canonicalOk: boolean | null;
+  /** false quando a nota e os itens entraram mas os alertas não — visível na resposta. */
+  alertasGravados: boolean;
+};
 
 /** Grava a nota (legado e/ou canônico) e gera os alertas estruturais. */
 export async function saveNote(
@@ -43,7 +47,7 @@ export async function saveNote(
   const noteId = randomUUID();
 
   if (FISCAL_WRITES_LEGACY) {
-    const { error: noteError } = await supabase.from("fiscal_notes").insert({
+    const linha = {
       id:            noteId,
       client_id:     clientId,
       xml_content:   header.rawContent,
@@ -54,56 +58,44 @@ export async function saveNote(
       data_emissao:  header.dataEmissao || null,
       valor_total:   header.valorTotal  || null,
       status:        "pendente",
-    });
+    };
+
+    // F4 (raio-x 14/09): a coluna chave_acesso e o índice único
+    // uq_fiscal_notes_chave (client_id, chave_acesso) existem desde a
+    // migration 134, mas nunca eram alimentados — subir a mesma NF-e duas
+    // vezes duplicava a nota. Gravamos a chave quando há (XML), e a violação
+    // de unicidade vira 409 "já importada". Se a coluna não existir neste
+    // banco (ledger dessincronizado), repetimos sem ela em vez de derrubar o
+    // upload.
+    let { error: noteError } = await supabase
+      .from("fiscal_notes")
+      .insert(header.chaveAcesso ? { ...linha, chave_acesso: header.chaveAcesso } : linha);
+
+    if (noteError && header.chaveAcesso && /chave_acesso/.test(noteError.message) && /column|coluna/i.test(noteError.message)) {
+      console.warn("[fiscal/ingest] fiscal_notes.chave_acesso não existe neste banco — gravando sem dedup");
+      ({ error: noteError } = await supabase.from("fiscal_notes").insert(linha));
+    }
     if (noteError) {
+      if (noteError.code === "23505" || /duplicate key|uq_fiscal_notes_chave/i.test(noteError.message)) {
+        throw new NotaDuplicadaError(header.chaveAcesso);
+      }
       throw new Error(`Erro ao salvar nota [legado, modo=${FISCAL_WRITE_MODE}]: ${noteError.message}`);
     }
   }
 
-  const alerts: AlertaNota[] = [];
+  const alerts = derivarAlertas({ header, items, iaFailed, iaMotivo }, noteId, clientId);
 
-  const dbItems = items.map((it) => {
-    if (!/^\d{8}$/.test(it.ncm)) {
-      alerts.push({ note_id: noteId, client_id: clientId, tipo: "ncm_incorreto",
-        descricao: `Item "${it.descricao}": NCM "${it.ncm}" deve ter 8 dígitos numéricos.`, severidade: "critico" });
-    }
-    if (it.cfop && !/^[1-37]/.test(it.cfop)) {
-      alerts.push({ note_id: noteId, client_id: clientId, tipo: "cfop_divergente",
-        descricao: `Item "${it.descricao}": CFOP "${it.cfop}" não é válido para operação fiscal.`, severidade: "critico" });
-    }
-    if (!it.descricao) {
-      alerts.push({ note_id: noteId, client_id: clientId, tipo: "item_incompleto",
-        descricao: "Item sem descrição encontrado na nota.", severidade: "info" });
-    }
-    return {
-      note_id: noteId, client_id: clientId,
-      descricao: it.descricao, ncm: it.ncm, cfop: it.cfop,
-      quantidade: it.quantidade, unidade: it.unidade,
-      valor_unitario: it.valorUnitario, valor_total: it.valorTotal,
-      icms_aliquota: it.icmsAliq, icms_valor: it.icmsValor, ipi_valor: it.ipiValor,
-    };
-  });
-
-  const somaItens = items.reduce((s, i) => s + i.valorTotal, 0);
-  if (header.valorTotal > 0 && items.length > 0 && Math.abs(header.valorTotal - somaItens) > 0.02) {
-    alerts.push({ note_id: noteId, client_id: clientId, tipo: "valor_divergente",
-      descricao: `Valor da nota (R$${header.valorTotal.toFixed(2)}) difere da soma dos itens (R$${somaItens.toFixed(2)}).`,
-      severidade: "aviso" });
-  }
-
-  if (iaFailed) {
-    alerts.push({
-      note_id: noteId, client_id: clientId,
-      tipo: "pdf_revisao_manual",
-      descricao: iaMotivo
-        ? `PDF importado com extração parcial (${iaMotivo}). Confira os campos antes de usar a nota.`
-        : "PDF importado sem extração completa dos dados. Verifique e preencha os campos manualmente.",
-      severidade: "aviso",
-    });
-  }
+  const dbItems = items.map((it) => ({
+    note_id: noteId, client_id: clientId,
+    descricao: it.descricao, ncm: it.ncm, cfop: it.cfop,
+    quantidade: it.quantidade, unidade: it.unidade,
+    valor_unitario: it.valorUnitario, valor_total: it.valorTotal,
+    icms_aliquota: it.icmsAliq, icms_valor: it.icmsValor, ipi_valor: it.ipiValor,
+  }));
 
   const hasCritical = alerts.some(a => a.severidade === "critico");
   let canonicalOk: boolean | null = null;
+  let alertasGravados = true;
 
   // ── Destino legado ────────────────────────────────────────────────────────
   // Os alertas em PT casam com fiscal_notes_alerts_legacy. A fiscal_alerts vive
@@ -113,8 +105,18 @@ export async function saveNote(
       dbItems.length > 0 ? supabase.from("fiscal_note_items").insert(dbItems) : Promise.resolve({ error: null }),
       alerts.length  > 0 ? supabase.from("fiscal_notes_alerts_legacy").insert(alerts) : Promise.resolve({ error: null }),
     ]);
-    if (itemsRes.error) console.error("[fiscal/ingest] falha ao salvar itens:", itemsRes.error.message);
-    if (alertsRes.error) console.error("[fiscal/ingest] falha ao salvar alertas:", alertsRes.error.message);
+    // F9 (raio-x 14/09): itens que não gravam eram só console.error e o
+    // upload respondia sucesso com contagem de memória — a nota ficava sem
+    // itens e ninguém sabia. Agora a nota é desfeita e o erro chega à tela.
+    if (itemsRes.error) {
+      await supabase.from("fiscal_notes_alerts_legacy").delete().eq("note_id", noteId);
+      await supabase.from("fiscal_notes").delete().eq("id", noteId);
+      throw new Error(`Erro ao salvar os ${dbItems.length} itens da nota [legado]: ${itemsRes.error.message}`);
+    }
+    if (alertsRes.error) {
+      console.error("[fiscal/ingest] falha ao salvar alertas:", alertsRes.error.message);
+      alertasGravados = false;
+    }
     if (hasCritical) await supabase.from("fiscal_notes").update({ status: "erro" }).eq("id", noteId);
   }
 
@@ -155,7 +157,15 @@ export async function saveNote(
     }
   }
 
-  return { noteId, alerts, hasCritical, canonicalOk };
+  return { noteId, alerts, hasCritical, canonicalOk, alertasGravados };
+}
+
+/** A mesma NF-e (chave de acesso) já está gravada para este cliente. */
+export class NotaDuplicadaError extends Error {
+  constructor(public readonly chaveAcesso: string) {
+    super(`Esta NF-e já foi importada (chave ${chaveAcesso}). Nada foi gravado de novo.`);
+    this.name = "NotaDuplicadaError";
+  }
 }
 
 // ── Handler HTTP compartilhado (XML e PDF) ────────────────────────────────────
@@ -185,8 +195,17 @@ export async function handleNfeUpload(req: NextRequest): Promise<Response> {
 
   try {
     const supabase = await createSupabaseServerClient();
-    const [quem, formData] = await Promise.all([clienteDoUsuario(supabase), req.formData()]);
+    // Auth ANTES de ler o corpo: sem sessão, a resposta é 401 — e não o 500
+    // que um multipart malformado produzia (F9).
+    const quem = await clienteDoUsuario(supabase);
     if (quem instanceof Response) return quem;
+
+    let formData: FormData;
+    try {
+      formData = await req.formData();
+    } catch {
+      return Response.json({ error: "Corpo da requisição não é multipart/form-data válido." }, { status: 400 });
+    }
 
     const file = arquivoDoForm(formData);
     if (!file) return Response.json({ error: "Arquivo não enviado. Envie o campo 'file' (ou 'xml') como File." }, { status: 400 });
@@ -203,7 +222,17 @@ export async function handleNfeUpload(req: NextRequest): Promise<Response> {
 
     const nota = tipo === "pdf" ? await parsePdf(buffer) : parseXml(buffer.toString("utf8"));
     const source: FonteNota = tipo === "pdf" ? "pdf_upload" : "xml_upload";
-    const { noteId, alerts, hasCritical, canonicalOk } = await saveNote(supabase, quem.clientId, nota, source);
+
+    let salvo: ResultadoSave;
+    try {
+      salvo = await saveNote(supabase, quem.clientId, nota, source);
+    } catch (e) {
+      if (e instanceof NotaDuplicadaError) {
+        return Response.json({ error: e.message, duplicada: true, chave_acesso: e.chaveAcesso }, { status: 409 });
+      }
+      throw e;
+    }
+    const { noteId, alerts, hasCritical, canonicalOk, alertasGravados } = salvo;
 
     const resumo = {
       numero_nota:  nota.header.numeroNota,
@@ -220,7 +249,8 @@ export async function handleNfeUpload(req: NextRequest): Promise<Response> {
       status:       hasCritical ? "erro" : "pendente",
       write_mode:   FISCAL_WRITE_MODE,
       canonical_ok: canonicalOk,
-      message:      mensagemUpload(resumo),
+      alertas_gravados: alertasGravados,
+      message:      mensagemUpload(resumo) + (alertasGravados ? "" : " · atenção: alertas não gravados"),
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

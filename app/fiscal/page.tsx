@@ -3,6 +3,7 @@ import Link from "next/link";
 import { FileText, AlertTriangle, CheckCircle, DollarSign } from "lucide-react";
 import FiscalUpload from "@/app/components/FiscalUpload";
 import FiscalDeleteButton from "@/app/components/FiscalDeleteButton";
+import { formatarDataIso } from "@/lib/date-br";
 import { KpiCard } from "@/app/components/ui/KpiCard";
 
 export default async function FiscalPage() {
@@ -173,11 +174,7 @@ export default async function FiscalPage() {
                         {note.serie ? <span className="text-[var(--text-muted)]">-{note.serie}</span> : ""}
                       </td>
                       <td className="max-w-[200px] truncate">{note.emitente_nome ?? "—"}</td>
-                      <td className="tabular-nums">
-                        {note.data_emissao
-                          ? new Date(note.data_emissao).toLocaleDateString("pt-BR")
-                          : "—"}
-                      </td>
+                      <td className="tabular-nums">{formatarDataIso(note.data_emissao)}</td>
                       <td className="text-right tabular-nums font-medium">
                         R${Number(note.valor_total ?? 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                       </td>
@@ -194,14 +191,16 @@ export default async function FiscalPage() {
                         <span className={statusCls(note.status)}>{statusLabel(note.status)}</span>
                       </td>
                       <td>
-                        <div className="flex items-center justify-end gap-1">
+                        {/* Sempre visíveis: em 14/09 o Lucas não achava os botões
+                            porque só apareciam no hover — e no toque não há hover. */}
+                        <div className="flex items-center justify-end gap-2">
                           <Link
                             href={`/fiscal/${note.id}`}
-                            className="text-xs font-medium text-[var(--primary)] opacity-0 group-hover:opacity-100 transition hover:underline"
+                            className="ag-button-secondary !px-3 !py-1 text-xs font-medium whitespace-nowrap"
                           >
-                            Ver →
+                            Abrir
                           </Link>
-                          <FiscalDeleteButton noteId={note.id} />
+                          <FiscalDeleteButton noteId={note.id} numero={note.numero_nota} />
                         </div>
                       </td>
                     </tr>

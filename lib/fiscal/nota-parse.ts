@@ -211,6 +211,63 @@ export async function parsePdf(buffer: Buffer): Promise<NotaParseada> {
   return { ...cru, iaMotivo: ia.motivo, extracao: { origem: "fallback", motivo: ia.motivo } };
 }
 
+// ── Alertas estruturais (puros — testados com XML de produção) ───────────────
+
+export type AlertaNota = { note_id: string; client_id: string; tipo: string; descricao: string; severidade: string };
+
+/**
+ * CFOP tem 4 dígitos e começa em 1, 2 ou 3 (entradas) ou 5, 6 ou 7 (saídas).
+ * A regra antiga `/^[1-37]/` aceitava só {1,2,3,7}: toda nota de COMPRA real —
+ * o fornecedor emite com 5xxx/6xxx — ganhava um alerta crítico por item e
+ * nascia com status "erro". Achado do raio-x de 14/09/2026 (F1).
+ */
+export const CFOP_RE = /^[123567]\d{3}$/;
+
+export function derivarAlertas(
+  nota: Pick<NotaParseada, "header" | "items" | "iaFailed" | "iaMotivo">,
+  noteId: string,
+  clientId: string,
+): AlertaNota[] {
+  const { header, items, iaFailed = false, iaMotivo } = nota;
+  const alerts: AlertaNota[] = [];
+
+  for (const it of items) {
+    if (!/^\d{8}$/.test(it.ncm)) {
+      alerts.push({ note_id: noteId, client_id: clientId, tipo: "ncm_incorreto",
+        descricao: `Item "${it.descricao}": NCM "${it.ncm}" deve ter 8 dígitos numéricos.`, severidade: "critico" });
+    }
+    if (it.cfop && !CFOP_RE.test(it.cfop)) {
+      alerts.push({ note_id: noteId, client_id: clientId, tipo: "cfop_divergente",
+        descricao: `Item "${it.descricao}": CFOP "${it.cfop}" não é válido (4 dígitos, iniciando em 1, 2, 3, 5, 6 ou 7).`, severidade: "critico" });
+    }
+    if (!it.descricao) {
+      alerts.push({ note_id: noteId, client_id: clientId, tipo: "item_incompleto",
+        descricao: "Item sem descrição encontrado na nota.", severidade: "info" });
+    }
+  }
+
+  // vNF = soma de vProd − descontos + frete + seguro + outras + IPI + ICMS-ST.
+  // Sem esses campos no shape, a comparação é só um aviso, nunca crítico.
+  const somaItens = items.reduce((s, i) => s + i.valorTotal, 0);
+  if (header.valorTotal > 0 && items.length > 0 && Math.abs(header.valorTotal - somaItens) > 0.02) {
+    alerts.push({ note_id: noteId, client_id: clientId, tipo: "valor_divergente",
+      descricao: `Valor da nota (R$${header.valorTotal.toFixed(2)}) difere da soma dos itens (R$${somaItens.toFixed(2)}) — pode ser frete, desconto, IPI ou ST.`,
+      severidade: "aviso" });
+  }
+
+  if (iaFailed) {
+    alerts.push({
+      note_id: noteId, client_id: clientId,
+      tipo: "pdf_revisao_manual",
+      descricao: iaMotivo
+        ? `PDF importado com extração parcial (${iaMotivo}). Confira os campos antes de usar a nota.`
+        : "PDF importado sem extração completa dos dados. Verifique e preencha os campos manualmente.",
+      severidade: "aviso",
+    });
+  }
+  return alerts;
+}
+
 // ── Mensagem do card ─────────────────────────────────────────────────────────
 
 export type ResumoUpload = {

@@ -93,7 +93,8 @@ function VendasContent() {
 
   function handleParsed(data: ParsedDoc) {
     setParsedDoc(data);
-    setGateMode("verified");
+    // PDF que a IA não leu (ia_failed) NÃO é documento verificado (F2, 14/09).
+    setGateMode(data.ia_failed ? "manual" : "verified");
     // Pre-preenche comprador (destinatário da nota) e preço
     setComprador(data.header.destinatario_nome || "");
     setPreco(data.header.valor_total > 0 ? String(data.header.valor_total) : "");

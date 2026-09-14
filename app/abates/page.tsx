@@ -114,7 +114,9 @@ export default function AbatesPage() {
 
   function handleParsed(data: ParsedDoc) {
     setParsedDoc(data);
-    setGateMode("verified");
+    // PDF que a IA não leu (ia_failed) NÃO é documento verificado — entra
+    // como manual, sem gravar document_source (raio-x 14/09, F2).
+    setGateMode(data.ia_failed ? "manual" : "verified");
     // Sugere frigorífico pelo nome do emitente
     // (o usuário confirma pelo select — só hint, não lock automático)
     const emitenteNome = data.header.emitente_nome.toLowerCase();
