@@ -6,9 +6,9 @@ import { FadeIn, StaggerContainer, StaggerItem } from "@/app/components/ui/Motio
 
 const STATS = [
   { value: "Nelore", label: "Rebanho passaportado individual" },
-  { value: "2.300",  label: "cabeças sob rastreio digital" },
+  { value: "2.300",  label: "cabeças em onboarding digital" },
   { value: "Cria",   label: "fazenda com foco em terminação reprodutiva" },
-  { value: "Goiás",  label: "Jussara — região central do cinturão pecuário" },
+  { value: "Goiás",  label: "Jussara — oeste goiano" },
 ];
 
 const DELIVERABLES = [
@@ -51,10 +51,10 @@ export default function FSJBECaseSection() {
           <FadeIn delay={0.25}>
             <div className="mt-8 max-w-[720px] space-y-5 text-[1.0625rem] leading-[1.85] text-[var(--text-secondary)]">
               <p>
-                A Fazenda São João da Boa Esperança é o piloto operacional da Agraas. Com 2.300 cabeças de Nelore em Jussara (GO), a FSJBE tem passaporte digital individual por animal e rastreio do manejo diário rodando em campo aberto.
+                A Fazenda São João da Boa Esperança é o piloto operacional da Agraas. Com 2.300 cabeças de Nelore em Jussara (GO), a FSJBE está colocando seu rebanho, suas notas fiscais e seu manejo dentro da plataforma — passaporte digital individual por animal, um a um.
               </p>
               <p className="font-medium text-[var(--text-primary)]">
-                A prova de que a Agraas roda no campo real — não só em demo.
+                Piloto em campo, com dados reais entrando — não uma demonstração.
               </p>
             </div>
           </FadeIn>

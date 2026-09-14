@@ -11,6 +11,7 @@
 
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { cronAutorizado } from "@/lib/cron-auth";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -54,12 +55,9 @@ async function fetchCepeaPrice(indicatorId: number): Promise<number | null> {
   }
 }
 
+// AUTH-01 (14/09): `x-vercel-cron` é forjável; só Bearer CRON_SECRET vale.
 function isAuthorized(req: Request): boolean {
-  // Vercel Cron sempre injeta esse header em produção
-  if (req.headers.get("x-vercel-cron") === "1") return true;
-  // Fallback Bearer (teste local / manual)
-  const auth = req.headers.get("authorization") ?? "";
-  return Boolean(process.env.CRON_SECRET) && auth === `Bearer ${process.env.CRON_SECRET}`;
+  return cronAutorizado(req);
 }
 
 export async function GET(req: Request) {

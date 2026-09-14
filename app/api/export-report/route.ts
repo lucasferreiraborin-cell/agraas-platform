@@ -146,7 +146,7 @@ ${animalReport.filter(a => a.status !== "apto").map(a =>
   let response: Awaited<ReturnType<typeof anthropic.messages.create>>;
   try {
     response = await anthropic.messages.create({
-    model: "claude-sonnet-4-20250514",
+    model: "claude-sonnet-4-6", // BD-02 (14/09): claude-sonnet-4-20250514 está descontinuado
     max_tokens: 1024,
     system: contexto,
     messages: [{ role: "user", content: "Gere o relatório de conformidade completo em português e inglês." }],

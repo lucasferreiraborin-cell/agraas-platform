@@ -64,7 +64,11 @@ export async function proxy(request: NextRequest) {
                    || pathname.startsWith("/planos")
                    || pathname.startsWith("/sobre")
                    || pathname.startsWith("/cadastro")
-                   || pathname.startsWith("/marketplace");
+                   || pathname.startsWith("/marketplace")
+                   // P3 (14/09): links do rodapé e rotas pausadas caíam no /login
+                   || pathname.startsWith("/privacidade")
+                   || pathname.startsWith("/termos")
+                   || pathname.startsWith("/em-breve");
   // "/" é landing pública — qualquer um acessa
   const isLanding = pathname === "/";
 
@@ -101,7 +105,8 @@ export async function proxy(request: NextRequest) {
       .eq("auth_user_id", user.id)
       .single();
 
-    if (clientData?.role !== "buyer") {
+    // AUTH-09 (14/09): admin também entra — as páginas já guardam via requirePersona.
+    if (!["buyer", "admin"].includes(clientData?.role ?? "")) {
       const url = request.nextUrl.clone();
       url.pathname = "/painel";
       return NextResponse.redirect(url);
@@ -113,6 +118,7 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    // P5 (14/09): og-image, ícones, robots e sitemap não podem cair no /login.
+    "/((?!_next/static|_next/image|favicon.ico|icon|apple-icon|opengraph-image|twitter-image|robots.txt|sitemap.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };

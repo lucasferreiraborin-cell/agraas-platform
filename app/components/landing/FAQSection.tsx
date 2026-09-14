@@ -20,7 +20,7 @@ const FAQ = [
   },
   {
     q: "Meus dados ficam seguros e são realmente meus?",
-    a: "Sim. Arquitetura em Supabase com Row Level Security — cada cliente só enxerga os próprios dados, isolamento forçado pelo banco. Backups diários. Conformidade LGPD. Exportação completa dos seus dados disponível a qualquer momento, sem amarra.",
+    a: "Sim. Arquitetura em Supabase com Row Level Security — cada cliente só enxerga os próprios dados, isolamento forçado pelo banco. Conformidade LGPD. Seus relatórios (rebanho, fiscal, LCDPR) saem em PDF e CSV a qualquer momento, sem amarra.",
   },
   {
     q: "Funciona offline no campo?",
@@ -32,7 +32,7 @@ const FAQ = [
   },
   {
     q: "Posso integrar com sistemas que já uso?",
-    a: "CSV via template em todos os planos. Integrações diretas (TOTVS, SAP, ERPs regionais, APIs proprietárias) disponíveis no Enterprise sob demanda. Webhooks nativos para receber eventos da plataforma em tempo real.",
+    a: "CSV e XLSX via modelo em todos os planos, além de XML e PDF de NF-e. Integrações diretas (TOTVS, SAP, ERPs regionais, APIs proprietárias) disponíveis no Enterprise sob demanda.",
   },
   {
     q: "Como funciona a cobrança do marketplace?",

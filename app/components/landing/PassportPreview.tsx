@@ -93,7 +93,7 @@ export default function PassportPreview() {
                     Nelore · Recria
                   </p>
                   <p className="mt-1 text-[.8125rem] text-[var(--text-muted)]">
-                    Fazenda Santa Cruz · Jandaia-GO
+                    Fazenda Santa Cruz · Jussara-GO
                   </p>
                   <div className="mt-3 flex flex-wrap gap-1.5">
                     <span className="inline-flex items-center gap-1 rounded-md border border-[var(--primary)]/25 bg-[var(--primary-soft)] px-2 py-0.5 text-[.625rem] font-semibold text-[var(--primary)]">

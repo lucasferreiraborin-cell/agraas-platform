@@ -279,7 +279,7 @@ export default function MarketplacePublicView({ listings }: { listings: Listing[
               {
                 Icon: FileText,
                 title: "NF-e conciliada no fechamento",
-                sub: "Sem burocracia, conformidade garantida.",
+                sub: "Sem burocracia, documentação conferida no fechamento.",
               },
             ].map((d) => (
               <StaggerItem key={d.title}>

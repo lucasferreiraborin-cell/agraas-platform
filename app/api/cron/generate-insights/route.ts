@@ -8,15 +8,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { generateInsights, persistInsights } from "@/lib/insights/generator";
+import { cronAutorizado } from "@/lib/cron-auth";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
+// AUTH-01 (14/09): `x-vercel-cron` é forjável; só Bearer CRON_SECRET vale.
 function isAuthorized(req: NextRequest): boolean {
-  if (req.headers.get("x-vercel-cron") === "1") return true;
-  const auth = req.headers.get("authorization") ?? "";
-  return Boolean(process.env.CRON_SECRET) && auth === `Bearer ${process.env.CRON_SECRET}`;
+  return cronAutorizado(req);
 }
 
 const PERSONA_BY_ROLE: Record<string, "produtor" | "frigorifico" | "banco"> = {

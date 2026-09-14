@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { checkRateLimit, tooManyRequests } from "@/lib/rate-limit";
 import { isEmailTemplate, sendTemplateEmail } from "@/lib/email";
+import { roleToPersona } from "@/lib/persona-themes";
 
 export async function POST(req: NextRequest) {
   const rl = checkRateLimit(req, 10, 60_000);
@@ -22,7 +23,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Template não encontrado" }, { status: 400 });
   }
 
-  const result = await sendTemplateEmail(template, to, name);
+  // AUTH-07 (14/09): a rota era um relay — qualquer usuário logado mandava
+  // template para destinatário arbitrário com `name` cru no HTML. Agora só
+  // admin envia a terceiros; usuário comum só para o próprio e-mail; e o
+  // nome vai sem markup, limitado a 80 caracteres.
+  const { data: quem } = await supabase.from("clients").select("role, name").eq("auth_user_id", user.id).single();
+  const ehAdmin = roleToPersona(quem?.role) === "admin";
+  const destino = to.trim().toLowerCase();
+  if (!ehAdmin && destino !== (user.email ?? "").toLowerCase()) {
+    return NextResponse.json({ error: "Você só pode enviar para o seu próprio e-mail." }, { status: 403 });
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(destino) || destino.length > 254) {
+    return NextResponse.json({ error: "Destinatário inválido" }, { status: 400 });
+  }
+  const nomeSeguro = name.replace(/[<>&"'`]/g, "").replace(/\s+/g, " ").trim().slice(0, 80) || quem?.name || "produtor";
+
+  const result = await sendTemplateEmail(template, destino, nomeSeguro);
 
   if (!result.ok) {
     if (result.reason === "not_configured") {

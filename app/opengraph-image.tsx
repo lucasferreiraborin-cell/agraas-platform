@@ -110,7 +110,7 @@ export default function OpengraphImage() {
               marginBottom: 20,
             }}
           >
-            Plataforma em operação · Jussara-GO
+            Piloto em campo · Jussara-GO
           </span>
           <span
             style={{

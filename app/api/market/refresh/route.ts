@@ -7,15 +7,15 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { refreshAllSignals } from "@/lib/market-intelligence";
+import { cronAutorizado } from "@/lib/cron-auth";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
+// AUTH-01 (14/09): `x-vercel-cron` é forjável; só Bearer CRON_SECRET vale.
 function isAuthorized(req: NextRequest): boolean {
-  if (req.headers.get("x-vercel-cron") === "1") return true;
-  const auth = req.headers.get("authorization") ?? "";
-  return Boolean(process.env.CRON_SECRET) && auth === `Bearer ${process.env.CRON_SECRET}`;
+  return cronAutorizado(req);
 }
 
 export async function GET(req: NextRequest) {

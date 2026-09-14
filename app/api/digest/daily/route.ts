@@ -15,15 +15,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getCotacaoArroba, formatCotacaoAge } from "@/lib/cotacao";
+import { cronAutorizado } from "@/lib/cron-auth";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
+// AUTH-01 (14/09): `x-vercel-cron` é forjável; Bearer CRON_SECRET (cron da
+// Vercel) ou DIGEST_TRIGGER_TOKEN (disparo manual).
 function isAuthorized(req: NextRequest): boolean {
-  if (req.headers.get("x-vercel-cron") === "1") return true;
-  const auth = req.headers.get("authorization") ?? "";
-  return Boolean(process.env.DIGEST_TRIGGER_TOKEN) &&
-    auth === `Bearer ${process.env.DIGEST_TRIGGER_TOKEN}`;
+  return cronAutorizado(req, [process.env.DIGEST_TRIGGER_TOKEN]);
 }
 
 export async function GET(req: NextRequest) {

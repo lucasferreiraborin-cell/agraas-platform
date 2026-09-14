@@ -99,7 +99,7 @@ DADOS DO ANIMAL (${hoje}):
   let response: Awaited<ReturnType<typeof anthropic.messages.create>>;
   try {
     response = await anthropic.messages.create({
-    model: "claude-sonnet-4-20250514",
+    model: "claude-sonnet-4-6", // BD-02 (14/09): claude-sonnet-4-20250514 está descontinuado
     max_tokens: 512,
     system: contexto,
     messages: [{ role: "user", content: "Analise este animal e retorne sua recomendação de manejo." }],

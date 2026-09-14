@@ -22,6 +22,7 @@ import { createClient } from "@supabase/supabase-js";
 import { refreshAllSignals } from "@/lib/market-intelligence";
 import { generateInsights, persistInsights } from "@/lib/insights/generator";
 import { getCotacaoArroba } from "@/lib/cotacao";
+import { cronAutorizado } from "@/lib/cron-auth";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -31,15 +32,10 @@ const STALE_HOURS_COTACAO = 12;
 const STALE_HOURS_MARKET = 6;
 const BRT_BUSINESS_HOUR_START = 8; // 8h BRT = 11h UTC
 
+// AUTH-01 (14/09): `x-vercel-cron` é forjável e o fail-open "sem secret
+// permite" abria a rota para qualquer um. Só Bearer CRON_SECRET vale.
 function isAuthorized(req: NextRequest): boolean {
-  // Vercel Cron header (sempre passa)
-  if (req.headers.get("x-vercel-cron") === "1") return true;
-  // Bearer fallback
-  const auth = req.headers.get("authorization") ?? "";
-  if (process.env.CRON_SECRET && auth === `Bearer ${process.env.CRON_SECRET}`) return true;
-  // Sem secret configurado → permite (idempotente, sem PII, sem efeito destrutivo)
-  if (!process.env.CRON_SECRET) return true;
-  return false;
+  return cronAutorizado(req);
 }
 
 export async function GET(req: NextRequest) {
