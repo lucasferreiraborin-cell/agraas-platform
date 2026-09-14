@@ -3,7 +3,7 @@
 > **Página viva.** Responde "onde estamos?" sem você precisar perguntar.
 > Atualizada ao fim de cada bloco de trabalho, antes do commit.
 >
-> **Última atualização:** 11/09/2026 · `d03204e` · 337 testes verdes · tsc limpo
+> **Última atualização:** 14/09/2026 · `pendente` · 377 testes verdes · tsc limpo
 
 ---
 
@@ -17,7 +17,7 @@
 
 | | Estado |
 |---|---|
-| 🟢 **Código** | 337 testes passando, typecheck limpo, árvore limpa, tudo em `origin/main` |
+| 🟢 **Código** | 377 testes passando, typecheck limpo, árvore limpa, tudo em `origin/main` |
 | 🔴 **Banco** | **Nenhuma migration aplicada.** 159, 160, 161 e 162 escritas e paradas |
 | 🔴 **Acesso** | Sem MCP autenticado, sem `.env.local`, sem backup. Bloqueia 6 frentes |
 | 🟡 **Pista B** | Bloqueada: os arquivos da seção 8 do handoff não estão no repositório |
@@ -29,11 +29,11 @@
 
 | Prazo | Faltam | O que é |
 |---|---:|---|
-| **12/09** | **1 dia** | Dados da FSJBE (Ico + contador). Sem eles, B4 sai do ciclo |
-| **25/09** | 14 dias | Gate d30 — pacote vendável · 3 contadores treinados · 20 conversas |
-| **30/09** | 19 dias | DITR 2026 — o contador assina o relatório |
-| 25/10 | 44 dias | Gate d60 — ≥3 fazendas via contadores · ≥2 pagantes. Destrava o C2 |
-| 24/11 | 74 dias | Gate d90 — 5 pagantes retidas · churn <2/5 |
+| **12/09** | **passou (−2 dias)** | Dados da FSJBE (Ico + contador). Substituído em 11/09 pela decisão de subir dado real direto na plataforma |
+| **25/09** | **11 dias** 🟡 | Gate d30 — pacote vendável · 3 contadores treinados · 20 conversas |
+| **30/09** | **16 dias** 🟡 | DITR 2026 — o contador assina o relatório |
+| 25/10 | 41 dias | Gate d60 — ≥3 fazendas via contadores · ≥2 pagantes. Destrava o C2 |
+| 24/11 | 71 dias | Gate d90 — 5 pagantes retidas · churn <2/5 |
 
 ---
 
@@ -59,6 +59,10 @@
 | **PDF→IA v2** | Sem retry do SDK (orçamento de 30 s do cliente), fallback para `claude-sonnet-4-6` se a chave não tiver o Sonnet 5, e o card de upload **mostra qual extração rodou e por quê** | 11/09 |
 | **Zerar cliente** | `/admin/reset-cliente`: inventário → confirmação por e-mail → apaga tudo do client_id em 2 passadas (FK), fotos incluídas, conta e plano de contas preservados, trilha em `platform_jobs_log`. Sem migration, sem SQL manual — roda com a service key da Vercel. Pedido do Lucas 11/09: FSJBE sai do seed e recebe NF-e e animais reais | 11/09 |
 | **Banner "dados ilustrativos"** | Removido do painel e do prompt de insights — deixa de ser verdade quando a FSJBE tiver dado real | 11/09 |
+| **Ingestão unificada** | Um único `saveNote` + um único handler (`lib/fiscal/ingest.ts`) para XML e PDF; `/api/fiscal/parse-xml` virou casca. Resposta traz `message` pronta para o card | 14/09 |
+| **Controladoria: 4 endpoints que não existiam** | `upload-xml`, `upload-pdf` (mesmo handler), `upload-csv` (CSV/XLSX em lote + modelo para baixar), `upload-audio` (501 honesto). O modal mostrava "Sprint G2" e descartava o arquivo | 14/09 |
+| **Planilha sem dependência** | `lib/planilha/csv.ts` (`;`, Latin-1, BOM, aspas) e `lib/planilha/xlsx.ts` (ZIP+XML, shared strings, serial de data). `notas-planilha.ts` agrupa linhas em notas, aceita apelidos de coluna, rejeita linha de exemplo, limite 200 notas | 14/09 |
+| **parse-doc reescrito** | Abates, vendas, estoque e timeline passam a ler XML pelo `nfe-parser` (fim do `<detPag>` virando item) e PDF pelo Claude; destinatário agora vem no XML e no PDF | 14/09 |
 
 ### Em andamento
 

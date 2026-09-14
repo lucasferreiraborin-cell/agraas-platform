@@ -201,6 +201,9 @@ export type NfeHeader = {
   emitenteNome: string;
   emitenteUf:   string;
   destinatarioUf: string;
+  /** Nome e documento do destinatário — usados por abates/vendas/estoque. */
+  destinatarioNome: string;
+  destinatarioCnpj: string;
   dataEmissao:  string;
   valorTotal:   number | null;
 };
@@ -228,6 +231,8 @@ export function parseNfeHeader(xml: string): NfeHeader {
     emitenteNome:   firstTag(emit, ["xNome", "xFant"]),
     emitenteUf:     extractTag(emit, "UF"),
     destinatarioUf: extractTag(dest, "UF"),
+    destinatarioNome: firstTag(dest, ["xNome", "xFant"]),
+    destinatarioCnpj: firstTag(dest, ["CNPJ", "CPF"]),
     dataEmissao:    firstTag(ide, ["dhEmi", "dEmi"]).slice(0, 10),
     valorTotal:     num(firstTag(xml, ["vNF"])),
   };

@@ -71,6 +71,8 @@ const ExtracaoSchema = z.object({
   emitente_nome:  strOuVazia,
   emitente_uf:    strOuVazia,
   destinatario_uf: strOuVazia,
+  destinatario_nome: strOuVazia,
+  destinatario_cnpj: strOuVazia,
   data_emissao:   strOuVazia,          // YYYY-MM-DD
   valor_total:    numOuNull,
   itens:          z.array(ItemSchema).catch([]),
@@ -103,7 +105,7 @@ Regras:
 - observacoes: uma frase curta sobre qualquer limitação da leitura, ou "".
 
 Formato exato:
-{"chave_acesso":"","numero_nota":"","serie":"","emitente_cnpj":"","emitente_nome":"","emitente_uf":"","destinatario_uf":"","data_emissao":"","valor_total":null,"itens":[{"descricao":"","ncm":"","cfop":"","unidade":"","quantidade":null,"valor_unitario":null,"valor_total":null,"cst":"","icms_base":null,"icms_aliquota":null,"icms_valor":null}],"confianca":0.0,"observacoes":""}`;
+{"chave_acesso":"","numero_nota":"","serie":"","emitente_cnpj":"","emitente_nome":"","emitente_uf":"","destinatario_uf":"","destinatario_nome":"","destinatario_cnpj":"","data_emissao":"","valor_total":null,"itens":[{"descricao":"","ncm":"","cfop":"","unidade":"","quantidade":null,"valor_unitario":null,"valor_total":null,"cst":"","icms_base":null,"icms_aliquota":null,"icms_valor":null}],"confianca":0.0,"observacoes":""}`;
 
 // ---------------------------------------------------------------------------
 // Extração

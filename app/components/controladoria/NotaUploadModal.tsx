@@ -13,8 +13,9 @@
  * dica contextual abaixo. Default = XML porque é o caminho mais
  * confiável (sem IA, sem ambiguidade) e mais rápido.
  *
- * Sprint G1 entrega a casca; integrações reais (POST /api/controladoria/
- * notas/upload-xml etc.) entram no Sprint G2.
+ * Integrações (14/09/2026): upload-xml e upload-pdf usam o mesmo handler do
+ * /api/fiscal/parse-xml (lib/fiscal/ingest.ts); upload-csv lê .csv/.xlsx e
+ * grava em lote; upload-audio responde 501 até existir transcrição.
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -144,19 +145,17 @@ export default function NotaUploadModal({
       const res = await fetch(current.endpoint, { method: "POST", body: form });
 
       if (!res.ok) {
-        // Backend ainda não existe — degrade gracioso com mensagem clara.
-        if (res.status === 404) {
-          setStatus({
-            kind: "error",
-            message:
-              "Endpoint ainda em construção (Sprint G2). Arquivo recebido localmente.",
-          });
-          return;
-        }
-        let msg = "Falha ao processar.";
+        let msg = res.status === 404
+          ? "Esta versão da plataforma não tem o endpoint — atualize a página e tente de novo."
+          : "Falha ao processar.";
         try {
           const j = await res.json();
-          msg = j.error ?? msg;
+          if (j.error) msg = j.error;
+          // Planilha: mostra linha a linha o que foi rejeitado.
+          if (Array.isArray(j.erros) && j.erros.length > 0) {
+            const primeiras = j.erros.slice(0, 5).map((e: { linha: number; campo: string; mensagem: string }) => `linha ${e.linha} (${e.campo}): ${e.mensagem}`);
+            msg += ` — ${primeiras.join("; ")}${j.erros.length > 5 ? ` … e mais ${j.erros.length - 5}` : ""}`;
+          }
         } catch {
           /* plain */
         }
@@ -320,6 +319,18 @@ export default function NotaUploadModal({
 
           <p className="mt-4 text-xs leading-5 text-[var(--text-muted)]">
             {current.hint}
+            {mode === "csv" && (
+              <>
+                {" "}
+                <a
+                  href="/api/controladoria/notas/upload-csv?modelo=1"
+                  className="font-medium text-[var(--primary)] underline underline-offset-2"
+                >
+                  Baixar o modelo (.csv)
+                </a>
+                {" "}— uma linha por item; .xlsx também é aceito (primeira planilha).
+              </>
+            )}
           </p>
 
           {/* ── Feedback ─────────────────────────────────────────────── */}
@@ -348,7 +359,7 @@ export default function NotaUploadModal({
         {/* ── Footer ─────────────────────────────────────────────────── */}
         <footer className="flex items-center justify-between border-t border-[var(--border)] bg-[var(--surface-soft)] px-7 py-4">
           <p className="text-xs text-[var(--text-muted)]">
-            Modos disponíveis: XML · PDF · Áudio · CSV
+            Modos disponíveis: XML · PDF · CSV/XLSX · Áudio (em breve)
           </p>
           <button
             type="button"

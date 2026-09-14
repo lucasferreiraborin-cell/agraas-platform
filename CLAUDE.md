@@ -87,10 +87,11 @@ o caminho crítico é pecuária bovina. Tudo o mais está pausado, não removido
 - ⏸️ **Aves** — rota `/aves` redireciona. Tabelas, score engine e seeds intactos.
 - ⏸️ **Agricultura / Grãos** — rota `/agricultura` redireciona. Tabelas, score engine e seeds intactos.
 
-### Tombamento Multbovinos → Agraas
-Tratado em **segundo plano**, fora do caminho crítico atual. Enquanto o
-tombamento real não acontece, **FSJBE no sistema continua com 5 animais
-fictícios** (`BER-001` a `BER-005`) — sem alterar até decisão do Lucas.
+### FSJBE = dados reais (decisão de 11/09/2026)
+O seed da FSJBE (`BER-001` a `BER-005`, notas, lotes, propriedade fictícia) é
+**apagado via `/admin/reset-cliente`** e a conta passa a receber NF-e e animais
+reais para teste. **Nunca recriar seed na FSJBE**; dado fictício para demo vai
+em outro cliente. O tombamento Multbovinos → Agraas segue em segundo plano.
 
 ### Regras do tom público
 - Nunca afirmar Halal / Jeddah / Q2 2026 / SIF certificado / "apto exportação" para FSJBE no site público.
@@ -112,7 +113,7 @@ fictícios** (`BER-001` a `BER-005`) — sem alterar até decisão do Lucas.
 | Linguagem | TypeScript 5 (strict) |
 | Estilo | Tailwind CSS 4 (PostCSS) |
 | Deploy | Vercel (CI automático via push para `main`) |
-| AI | Anthropic Claude Sonnet 4.6 (`@anthropic-ai/sdk`) |
+| AI | Anthropic (`@anthropic-ai/sdk`): `claude-sonnet-4-6` nas rotas existentes; `claude-sonnet-5` na extração de DANFE em PDF (`lib/fiscal/pdf-extract.ts`, com fallback para 4.6) |
 | Email | Resend |
 | Pagamentos | Stripe |
 | PDF | `@react-pdf/renderer` v4 |
@@ -182,11 +183,14 @@ const db = createSupabaseServiceClient();
 
 ### Migrations
 ```bash
-# SEMPRE via CLI
+# Único caminho de aplicação — e SÓ com ordem expressa do Lucas
 npx supabase db push
 ```
-- Up migrations em `supabase/migrations/`, numeradas 001-106
-- Down migrations em `supabase/rollbacks/`
+- Up migrations em `supabase/migrations/` (numeradas 001-162 em 09/2026);
+  down migrations em `supabase/rollbacks/`
+- **Ledger local × remoto está dessincronizado** (108-162 sem registro remoto).
+  Enquanto isso não for reconciliado, `db push` está proibido — ver
+  `docs/decisoes/pendentes.md` D-10 e `npm run lint:migrations`
 - Toda tabela operacional precisa de `client_id` + política RLS
 
 ### Tipos e casts Supabase
