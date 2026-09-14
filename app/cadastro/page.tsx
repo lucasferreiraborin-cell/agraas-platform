@@ -79,21 +79,9 @@ const REBANHO = ["Até 100", "100–500", "500–2.000", "2.000+"];
  * `client`: não existe persona própria para eles, e inventar uma role que o
  * `roleToPersona` não conhece levaria a pessoa para um painel vazio.
  */
-const PERFIL_PARA_ROLE: Record<string, string> = {
-  fazendeiro:  "client",
-  contador:    "accountant",
-  frigorifico: "buyer",
-};
-
-function roleDoPerfil(perfil: string): string {
-  return PERFIL_PARA_ROLE[perfil] ?? "client";
-}
-
-/** Para onde mandar depois do cadastro, conforme a persona. */
-const ROTA_POS_CADASTRO: Record<string, string> = {
-  accountant: "/contador",
-  buyer:      "/comprador",
-};
+// PERFIL_PARA_ROLE / roleDoPerfil / ROTA_POS_CADASTRO vivem em
+// lib/cadastro-roles.ts (14/09/2026) — a rota /api/cadastro/finalizar é quem
+// decide o papel; esta página só envia o perfil declarado.
 // Ovinos e Aves estao PAUSADOS (CLAUDE.md). Nao oferecer no onboarding.
 const ESPECIES = ["Bovinos"];
 
@@ -183,40 +171,32 @@ export default function CadastroPage() {
     const isNewUser = data.user && Array.isArray(data.user.identities) && data.user.identities.length > 0;
 
     if (isNewUser && data.user) {
-      const role = roleDoPerfil(profileType);
-
-      const { data: novoCliente } = await supabase
-        .from("clients")
-        .insert({
-          name: profileType === "fazendeiro" ? farmName || name : companyName || name,
-          email,
-          role,
-          auth_user_id: data.user.id,
-        })
-        .select("id")
-        .single();
-
-      // A-2 (08/09/2026): até aqui, tudo que o passo 2 coletava era descartado.
-      // O intake é registro do que a pessoa DECLAROU — falha nele não pode
-      // derrubar o cadastro, que já está feito.
-      if (novoCliente?.id) {
-        const { error: intakeErr } = await supabase.from("onboarding_intake").insert({
-          client_id: novoCliente.id,
-          perfil_declarado: profileType,
-          farm_name: farmName || null,
-          uf: state || null,
-          rebanho_faixa: rebanhoSize || null,
-          especie: especie || null,
-          company_name: companyName || null,
-          notes: notes || null,
-          telefone: phone || null,
-          origem: "cadastro_web",
+      // AUTH-03 / DB-01 (14/09/2026): a linha em `clients` é criada no servidor
+      // (service key, role de lista fechada, erro visível). Antes o insert
+      // vinha do navegador, com role forjável e sem ler o erro — a pessoa
+      // ficava com login e sem cliente.
+      try {
+        const res = await fetch("/api/cadastro/finalizar", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            auth_user_id: data.user.id, email, profileType,
+            name, farmName, companyName, state, rebanhoSize, especie, notes, phone,
+          }),
         });
-        if (intakeErr) console.error("[cadastro] intake nao gravado:", intakeErr.message);
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok || !json.ok) {
+          setError(json.error ?? "Sua conta foi criada, mas o perfil não pôde ser concluído. Entre em contato com o suporte.");
+          setLoading(false);
+          return;
+        }
+        if (json.aviso) console.warn("[cadastro]", json.aviso);
+        setLoading(false);
+        router.push(json.rota ?? "/painel");
+      } catch {
+        setError("Sua conta foi criada, mas o perfil não pôde ser concluído (falha de conexão). Tente entrar novamente.");
+        setLoading(false);
       }
-
-      setLoading(false);
-      router.push(ROTA_POS_CADASTRO[role] ?? "/painel");
     } else {
       // Either a duplicate email (identities=[]) or email-confirmation flow.
       // Show a generic message — do not reveal whether the account existed.

@@ -18,20 +18,10 @@
 import fs from "node:fs";
 import { roleToPersona } from "@/lib/persona-themes";
 
-// ── Espelho do que o cadastro faz (app/cadastro/page.tsx) ──────────────────
-// Mantido aqui porque a página é "use client" e importa React/lucide; o objetivo
-// é travar o CONTRATO de mapeamento, não renderizar a tela.
-const PERFIL_PARA_ROLE: Record<string, string> = {
-  fazendeiro:  "client",
-  contador:    "accountant",
-  frigorifico: "buyer",
-};
-const roleDoPerfil = (perfil: string) => PERFIL_PARA_ROLE[perfil] ?? "client";
-
-const ROTA_POS_CADASTRO: Record<string, string> = {
-  accountant: "/contador",
-  buyer:      "/comprador",
-};
+// Desde 14/09/2026 o mapeamento vive em lib/cadastro-roles.ts e é usado pela
+// página E pela rota /api/cadastro/finalizar — o teste importa a fonte real
+// em vez de um espelho (T-01 do raio-x).
+import { PERFIL_PARA_ROLE, roleDoPerfil, ROTA_POS_CADASTRO, ROLES_DE_CADASTRO } from "@/lib/cadastro-roles";
 
 /** Roles aceitas pelo CHECK, lidas da migration mais recente que o define. */
 function rolesDoCheck(): string[] {
@@ -101,6 +91,15 @@ describe("roleDoPerfil × roleToPersona", () => {
 });
 
 // ── Destino pós-cadastro ───────────────────────────────────────────────────
+
+describe("cadastro público nunca produz admin", () => {
+  it("todo perfil (inclusive desconhecido) cai num papel da lista fechada", () => {
+    for (const perfil of [...Object.keys(PERFIL_PARA_ROLE), "admin", "ADMIN", "root", "", "qualquer"]) {
+      expect(ROLES_DE_CADASTRO).toContain(roleDoPerfil(perfil));
+    }
+    expect(ROLES_DE_CADASTRO).not.toContain("admin");
+  });
+});
 
 describe("rota pós-cadastro", () => {
   it("contador cai em /contador, não no painel de rebanho vazio", () => {

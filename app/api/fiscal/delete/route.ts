@@ -18,6 +18,7 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { createSupabaseServiceClient } from "@/lib/supabase-service";
 import { checkRateLimit, tooManyRequests } from "@/lib/rate-limit";
 import { FISCAL_WRITES_CANONICAL, FISCAL_WRITES_LEGACY } from "@/lib/feature-flags";
+import { roleToPersona } from "@/lib/persona-themes";
 
 export const runtime = "nodejs";
 
@@ -42,11 +43,13 @@ export async function DELETE(req: NextRequest) {
     if (!UUID_RE.test(noteId)) return Response.json({ error: "note_id inválido" }, { status: 400 });
 
     const { data: clientData } = await supabase
-      .from("clients").select("id").eq("auth_user_id", user.id).single();
+      .from("clients").select("id, role, email").eq("auth_user_id", user.id).single();
     if (!clientData) return Response.json({ error: "Cliente não encontrado" }, { status: 404 });
+    const ehAdmin = roleToPersona(clientData.role) === "admin";
 
-    // Posse: a nota tem de ser deste cliente. Procuramos nos dois destinos,
-    // porque em modo 'canonical' não há linha legada.
+    // Posse: a nota tem de ser deste cliente (admin pode excluir qualquer
+    // uma). Procuramos nos dois destinos, porque em modo 'canonical' não há
+    // linha legada.
     const db = createSupabaseServiceClient();
     const [legado, canonico] = await Promise.all([
       db.from("fiscal_notes").select("id, client_id").eq("id", noteId).maybeSingle(),
@@ -54,7 +57,16 @@ export async function DELETE(req: NextRequest) {
     ]);
     const dona = legado.data?.client_id ?? canonico.data?.client_id ?? null;
     if (!dona) return Response.json({ error: "Nota não encontrada" }, { status: 404 });
-    if (dona !== clientData.id) return Response.json({ error: "Nota não pertence a este cliente" }, { status: 403 });
+    if (dona !== clientData.id && !ehAdmin) {
+      // Se você está vendo uma nota que não é sua, a lista está vazando entre
+      // clientes (RLS liberando por role admin ou conta duplicada) — o
+      // detalhe abaixo é o que permite diagnosticar sem acesso ao banco.
+      return Response.json({
+        error: `Nota de outro cliente (dona: ${dona.slice(0, 8)}…; você: ${clientData.id.slice(0, 8)}…, papel ${clientData.role}). Confira em /admin/contas.`,
+        dona_client_id: dona, seu_client_id: clientData.id, seu_role: clientData.role,
+      }, { status: 403 });
+    }
+    const donoParaFiltro = dona;
 
     const apagados = { alertas: 0, itens: 0, nota: 0, canonica: 0 };
     const falhas: string[] = [];
@@ -68,7 +80,7 @@ export async function DELETE(req: NextRequest) {
       if (i.error) falhas.push(`itens: ${i.error.message}`);   else apagados.itens   = i.count ?? 0;
 
       if (legado.data) {
-        const n = await db.from("fiscal_notes").delete({ count: "exact" }).eq("id", noteId).eq("client_id", clientData.id);
+        const n = await db.from("fiscal_notes").delete({ count: "exact" }).eq("id", noteId).eq("client_id", donoParaFiltro);
         if (n.error) falhas.push(`nota: ${n.error.message}`); else apagados.nota = n.count ?? 0;
       }
     }
@@ -77,7 +89,7 @@ export async function DELETE(req: NextRequest) {
       // fiscal_alerts referencia fiscal_invoices; apagamos antes por segurança
       // caso a FK não seja ON DELETE CASCADE neste banco.
       await db.from("fiscal_alerts").delete().eq("fiscal_invoice_id", noteId);
-      const c = await db.from("fiscal_invoices").delete({ count: "exact" }).eq("id", noteId).eq("client_id", clientData.id);
+      const c = await db.from("fiscal_invoices").delete({ count: "exact" }).eq("id", noteId).eq("client_id", donoParaFiltro);
       if (c.error) falhas.push(`canônica: ${c.error.message}`); else apagados.canonica = c.count ?? 0;
     }
 
