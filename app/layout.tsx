@@ -22,34 +22,38 @@ export const metadata: Metadata = {
     default: "Agraas — O agro do Brasil, auditável em tempo real.",
     template: "%s · Agraas",
   },
+  // P9 (14/09/2026): metadados herdados falavam em grãos/talhão/Grain ID —
+  // frente pausada desde maio. O que vale hoje: pecuária bovina, fiscal e
+  // contábil, rastreio individual.
   description:
-    "Infraestrutura digital do agronegócio brasileiro. Pecuária, grãos e exportação sobre uma única camada de dados verificáveis — do pasto ao porto.",
+    "Gestão fiscal, contábil e rastreio individual para a pecuária bovina brasileira — da nota fiscal ao destino do animal, numa camada só de dados verificáveis.",
   applicationName: "Agraas",
   authors: [{ name: "Agraas Agritech" }],
   keywords: [
-    "rastreabilidade agro",
-    "passaporte digital animal",
+    "gestão fiscal pecuária",
+    "NF-e produtor rural",
+    "FUNRURAL",
+    "LCDPR",
+    "custo por animal",
     "rastreabilidade bovinos",
-    "Grain ID",
-    "soja rastreabilidade",
+    "passaporte digital animal",
     "Nelore rastreável",
     "marketplace agro",
-    "score agronegócio",
   ],
   openGraph: {
     type: "website",
     locale: "pt_BR",
     url: SITE_URL,
     siteName: "Agraas",
-    title: "Agraas — O agro do Brasil, auditável em tempo real.",
+    title: "Agraas — Gestão fiscal, contábil e rastreio da pecuária, numa camada só.",
     description:
-      "Pecuária, grãos e exportação sobre uma única camada de dados verificáveis. Do pasto ao porto, do talhão ao comprador institucional.",
+      "Toda nota fiscal vira custo por animal e FUNRURAL apurado, sem digitar. Rastreio individual e score sobre a mesma base de dados.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Agraas — O agro do Brasil, auditável em tempo real.",
+    title: "Agraas — Gestão fiscal, contábil e rastreio da pecuária, numa camada só.",
     description:
-      "Infraestrutura digital do agronegócio brasileiro. Pecuária, grãos e exportação em uma só camada.",
+      "Toda nota fiscal vira custo por animal e FUNRURAL apurado, sem digitar.",
   },
   robots: {
     index: true,

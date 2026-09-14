@@ -34,6 +34,10 @@ jobs:
       - name: Lint de migrations (colisão de CREATE TABLE)
         run: npm run lint:migrations
 
+      - name: "ESLint (não bloqueia — backlog medido em 14/09/2026, `any` como aviso)"
+        run: npm run lint
+        continue-on-error: true
+
       - name: Run tests
         # Sem --passWithNoTests: se o testMatch quebrar, o CI tem de ficar vermelho.
         run: npm test -- --no-coverage

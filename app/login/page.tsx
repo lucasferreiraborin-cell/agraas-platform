@@ -81,7 +81,7 @@ export default function LoginPage() {
   return (
     <AuthShell
       sidebarMessage={messages[messageIdx]}
-      sidebarBadges={["EUDR", "MAPA", "GTA", "SIF"]}
+      sidebarBadges={["NF-e", "MAPA", "GTA", "LCDPR"]} // P9: "SIF" sugeria certificação que a FSJBE não tem
     >
       {!showReset ? (
         <>

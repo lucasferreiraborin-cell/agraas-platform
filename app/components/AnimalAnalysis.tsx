@@ -98,7 +98,7 @@ export default function AnimalAnalysis({ animalId }: { animalId: string }) {
 
       {!analise && !loading && !error && (
         <p className="mt-4 text-sm text-[var(--text-secondary)]">
-          Clique em "Analisar agora" para receber uma recomendação baseada no score, peso, GMD, carências ativas e cotação atual do boi gordo.
+          Clique em &ldquo;Analisar agora&rdquo; para receber uma recomendação baseada no score, peso, GMD, carências ativas e cotação atual do boi gordo.
         </p>
       )}
 

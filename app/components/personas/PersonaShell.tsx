@@ -31,6 +31,9 @@ export default function PersonaShell({
   children: React.ReactNode;
 }) {
   const { theme, clientName, isAdmin, isViewingAs, effectivePersona } = ctx;
+  // getSidebar devolve componentes declarados no nível do módulo (referência
+  // estável por persona) — não cria componente novo por render.
+  // eslint-disable-next-line react-hooks/static-components
   const SidebarNav = getSidebar(effectivePersona);
 
   return (

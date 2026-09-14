@@ -59,7 +59,7 @@ export default async function BancoPage() {
               : "Quando um produtor incluir esta instituição como parceira e liberar o dossiê, ele aparecerá aqui."}
           </p>
           <p className="text-[var(--text-muted)] text-sm mt-6">
-            Procedimento: o produtor acessa <code>/painel</code> e ativa o compartilhamento no card "Instituições parceiras".
+            Procedimento: o produtor acessa <code>/painel</code> e ativa o compartilhamento no card &ldquo;Instituições parceiras&rdquo;.
           </p>
         </div>
         </div>
