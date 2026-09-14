@@ -3,7 +3,7 @@
 > **Página viva.** Responde "onde estamos?" sem você precisar perguntar.
 > Atualizada ao fim de cada bloco de trabalho, antes do commit.
 >
-> **Última atualização:** 14/09/2026 · `a3bc3c0` · 393 testes verdes · tsc limpo
+> **Última atualização:** 14/09/2026 · `71290d5` · 393 testes verdes · tsc limpo · lint 31 erros / 155 avisos (baseline)
 
 ---
 
