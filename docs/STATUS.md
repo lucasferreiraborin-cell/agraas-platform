@@ -3,27 +3,42 @@
 > **Página viva.** Responde "onde estamos?" sem você precisar perguntar.
 > Atualizada ao fim de cada bloco de trabalho, antes do commit.
 >
-> **Última atualização:** 14/09/2026 · `71290d5` · 393 testes verdes · tsc limpo · lint 31 erros / 155 avisos (baseline)
+> **Última atualização:** 04/11/2026 · retomada após hiato de 2 meses · reunião iBoi em **10/11** (6 dias)
 
 ---
 
-## Próximo passo do Lucas (14/09, 5 minutos cada)
+## Os 5 passos de 14/09 — fechados em 04/11 (verificado direto no banco via MCP)
 
-1. **Vercel → `CRON_SECRET`** (≥ 16 caracteres). Sem isso os crons param com 401 — o header antigo era forjável.
-2. **`/admin/contas`** (como lucas@) → só a sua conta fica `admin`; FSJBE vira `client`. É isso que faz cada login ver só o próprio cliente.
-3. **`/admin/reset-cliente`** → Bernardo · fsjdbe@gmail.com → Inventariar → e-mail → Apagar → "Sobrou depois: 0".
-4. Subir uma NF-e (XML ou PDF) em `/fiscal` e ler o card: `lido por IA (modelo)` ou `IA indisponível: motivo`. Subir a mesma de novo → "já importada".
-5. Cadastrar a propriedade real em `/propriedades` (a do seed cai no reset) antes do DITR.
+1. ✅ **`CRON_SECRET`** na Vercel — ativo, confirmado por teste real (200/401/401 corretos)
+2. ✅ **`/admin/contas`** — só `lucas@agraas.com.br` é `admin`. FSJBE + 2 contas Mentoria IZ-SP
+   (que também estavam `admin` por engano) viraram `client`
+3. ✅ **`/admin/reset-cliente`** — FSJBE zerada (0 animais, 0 notas) desde 11/09
+4. ✅ **Upload de NF-e** — testado em produção com nota real (ALVORADA COM. PRODUTOS
+   AGROPECUÁRIOS, R$ 2.061,36, 12 itens extraídos pela IA). Reupload do mesmo arquivo
+   recusado com "já foi importada" — dedup por chave de acesso confirmado
+5. ✅ **Propriedade real** — FSJBE corrigida para Jussara-GO (estava "Jandaia", valor de seed)
+
+**Pendente, ainda não resolvido:** o que travava a edição de propriedade pela UI em
+`/propriedades` (Lucas reportou não conseguir editar; a correção de passo 5 foi feita
+por `UPDATE` direto via MCP, com ordem expressa do Lucas — não testamos a tela).
+
+## Próximo passo do Lucas
+
+1. **Migrations 159–165** — escritas, não aplicadas (último migration remoto: **158**,
+   03/08/2026). Preciso de ordem expressa + confirmação de que existe backup
+   (painel Supabase → Database → Backups) antes de aplicar.
+2. Dizer o que trava em `/propriedades` na hora de editar (sem botão? erro ao salvar?) —
+   vale investigar antes da reunião iBoi se sobrar tempo.
 
 ## Semáforo
 
 | | Estado |
 |---|---|
 | 🟢 **Código** | 393 testes passando, typecheck limpo, next 16.3.5, tudo em `origin/main`. Raio-x completo: `docs/manutencao/2026-09-14-raio-x.md` |
-| 🔴 **Banco** | **Nenhuma migration aplicada.** 159, 160, 161 e 162 escritas e paradas |
-| 🔴 **Acesso** | Sem MCP autenticado, sem `.env.local`, sem backup. Bloqueia 6 frentes |
+| 🔴 **Banco** | 159–165 escritas, não aplicadas. Último remoto: 158 |
+| 🟢 **Acesso** | MCP do Supabase autenticado (04/11) — leitura liberada, escrita sob ordem expressa |
 | 🟡 **Pista B** | Bloqueada: os arquivos da seção 8 do handoff não estão no repositório |
-| 🟢 **Produção** | Landing com 0 erro e 0 warning de console, todas as requisições 200 |
+| 🟢 **Produção** | Fiscal (upload + IA + dedup) provado ponta a ponta com dado real da FSJBE |
 
 ---
 
