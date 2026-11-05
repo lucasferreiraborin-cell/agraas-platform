@@ -119,6 +119,8 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     // P5 (14/09): og-image, ícones, robots e sitemap não podem cair no /login.
-    "/((?!_next/static|_next/image|favicon.ico|icon|apple-icon|opengraph-image|twitter-image|robots.txt|sitemap.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    // 05/11: llms.txt também — senão crawler de IA recebe redirect pro login
+    // em vez do conteúdo (achado ao verificar o deploy de SEO/AI discovery).
+    "/((?!_next/static|_next/image|favicon.ico|icon|apple-icon|opengraph-image|twitter-image|robots.txt|sitemap.xml|llms.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };
