@@ -187,7 +187,15 @@ export default async function PropriedadeDetailPage({ params }: PageProps) {
 
   return (
     <main className="space-y-8">
-      <BackLink href="/propriedades" label="Voltar para Propriedades" />
+      <div className="flex items-center justify-between gap-4">
+        <BackLink href="/propriedades" label="Voltar para Propriedades" />
+        <Link
+          href={`/propriedades/${id}/editar`}
+          className="inline-flex items-center rounded-2xl border border-[rgba(93,156,68,0.24)] px-4 py-2 text-sm font-medium text-[var(--primary-hover)] transition hover:bg-[var(--primary-soft)]"
+        >
+          Editar propriedade
+        </Link>
+      </div>
 
       {/* Hero */}
       <section className="ag-card-strong overflow-hidden">
