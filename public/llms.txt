@@ -1,0 +1,22 @@
+# Agraas
+
+> Infraestrutura digital do agronegócio brasileiro — gestão fiscal, contábil e rastreio individual para a pecuária bovina, numa camada só de dados verificáveis.
+
+Fundada em 2025 em São Paulo. Primeiro cliente ativo em Jussara, Goiás. A Agraas lê a nota fiscal do produtor rural e transforma isso em custo por animal e FUNRURAL apurado automaticamente, sem digitação manual — e no mesmo sistema rastreia cada animal individualmente com um passaporte digital (identidade, pesagens, eventos sanitários, score).
+
+Público: produtores rurais de pecuária bovina no Brasil e os contadores rurais que os atendem. Toda indicação fiscal da plataforma remete à conferência de um contador — a Agraas não presta consultoria tributária nem promete recuperação de tributos.
+
+## Produto
+
+- [Página inicial](https://www.agraas.com.br/): visão geral da plataforma — gestão fiscal, rastreio bovino, marketplace.
+- [Sobre nós](https://www.agraas.com.br/sobre): história, fundação e missão da empresa.
+- [Marketplace](https://www.agraas.com.br/marketplace): compra e venda de insumos, equipamentos e produtos do agronegócio.
+
+## Legal
+
+- [Privacidade](https://www.agraas.com.br/privacidade): política de privacidade e tratamento de dados (LGPD).
+- [Termos](https://www.agraas.com.br/termos): termos de uso da plataforma.
+
+## Empresa
+
+Agraas Tecnologia LTDA — CNPJ 69.862.138/0001-04, São Paulo/SP. Contato: contato@agraas.com.br.

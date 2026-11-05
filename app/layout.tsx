@@ -125,6 +125,33 @@ export default async function RootLayout({
               <link rel="dns-prefetch" href={`https://${supabaseHost}`} />
             </>
           )}
+          {/* Organization schema — ajuda Google e motores de resposta de IA
+              (ChatGPT, Perplexity, Gemini) a citar os fatos certos sobre a
+              empresa em vez de inferir. Só nas páginas públicas. */}
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify({
+                "@context": "https://schema.org",
+                "@type": "Organization",
+                name: "Agraas",
+                legalName: "Agraas Tecnologia LTDA",
+                url: SITE_URL,
+                logo: `${SITE_URL}/icon`,
+                description:
+                  "Infraestrutura digital do agronegócio brasileiro — gestão fiscal, contábil e rastreio individual para a pecuária bovina, numa camada só de dados verificáveis.",
+                foundingDate: "2025",
+                address: {
+                  "@type": "PostalAddress",
+                  addressLocality: "São Paulo",
+                  addressRegion: "SP",
+                  addressCountry: "BR",
+                },
+                taxID: "69.862.138/0001-04",
+                email: "contato@agraas.com.br",
+              }),
+            }}
+          />
         </head>
         <body className="min-h-screen bg-[var(--bg)] text-[var(--text-primary)]">
           {children}
