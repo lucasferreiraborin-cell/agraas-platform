@@ -1,6 +1,7 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import Link from "next/link";
 import { Beef, CheckCircle2 } from "lucide-react";
+import { HALAL_ENABLED } from "@/lib/feature-flags";
 import { BackLink } from "@/app/components/ui/BackLink";
 import {
   getPassportConfidenceText,
@@ -333,7 +334,11 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
   const events = (eventsData ?? []) as EventRow[];
   const weights = (weightsData ?? []) as WeightRow[];
   const movements = (movementsData ?? []) as MovementRow[];
-  const certifications = (certificationsData ?? []) as CertificationRow[];
+  // T1.1 (17/06/2026): Halal fora do pitch institucional — mesma trava usada
+  // no resto do app (05/11: esta tela não tinha, achado ao preparar a demo).
+  const certifications = ((certificationsData ?? []) as CertificationRow[]).filter(
+    (c) => HALAL_ENABLED || !(c.certification_name ?? "").toLowerCase().includes("halal")
+  );
   const sales = (salesData ?? []) as TimelineSale[];
 
   // Photos with signed URLs

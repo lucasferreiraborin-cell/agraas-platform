@@ -41,10 +41,18 @@ export default async function PublicPassportPage({ params }: PageProps) {
   const rl = checkRateLimitByIp(ip, `/passaporte/${agraas_id}`, 30, 60_000);
   if (!rl.allowed) {
     return (
-      <main style={{ padding: "2rem", textAlign: "center", fontFamily: "sans-serif" }}>
-        <h1 style={{ fontSize: "2rem" }}>429 — Too Many Requests</h1>
-        <p>Muitas requisições. Tente novamente em {rl.retryAfter} segundos.</p>
-      </main>
+      <div className="flex min-h-screen flex-col items-center justify-center bg-[#f7f8fa] px-6 font-sans">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--primary)] text-sm font-bold text-white">
+          A
+        </div>
+        <h1 className="mt-6 text-lg font-semibold text-[#1a1a2e]">
+          Muitas consultas em pouco tempo
+        </h1>
+        <p className="mt-2 max-w-sm text-center text-sm text-[#6b7280]">
+          Tente novamente em {rl.retryAfter} segundos. O limite existe pra
+          proteger o passaporte de abuso, não a consulta normal.
+        </p>
+      </div>
     );
   }
 
