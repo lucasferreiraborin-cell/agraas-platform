@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
 import LanguageToggle from "@/app/components/LanguageToggle";
+import { HALAL_ENABLED } from "@/lib/feature-flags";
 import {
   type Lang,
   type RfidDeviceType,
@@ -110,7 +111,9 @@ export default function PublicPassportView({
   const scoreColor  = sm.color;
   const scoreLabel  = t(lang, sm.key);
   const scorePercent = Math.max(6, Math.min(100, score));
-  const hasHalal    = certifications.some(
+  // T1.1 (17/06/2026): Halal fora do pitch institucional atual — mesma trava
+  // usada no resto do app, única tela que ainda não tinha.
+  const hasHalal    = HALAL_ENABLED && certifications.some(
     c => c.certification_name?.toLowerCase().includes("halal") && c.status === "active"
   );
   const activeCerts = certifications.filter(c => c.status === "active");

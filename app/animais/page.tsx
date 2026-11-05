@@ -402,15 +402,18 @@ export default function AnimaisPage() {
             {(
               [
                 { key: "all" as const, label: "Todos", count: cards.length },
-                // Filtro Halal exibido apenas com feature flag (T1.1, 17/06/2026)
+                // Halal e "Aptos exportação" (que depende de certificação Halal)
+                // só aparecem com a feature flag (T1.1, 17/06/2026).
                 ...(HALAL_ENABLED
-                  ? [{ key: "halal" as const, label: "Halal", count: halalCount }]
+                  ? [
+                      { key: "halal" as const, label: "Halal", count: halalCount },
+                      {
+                        key: "export" as const,
+                        label: "Aptos exportação",
+                        count: exportReadyCount,
+                      },
+                    ]
                   : []),
-                {
-                  key: "export" as const,
-                  label: "Aptos exportação",
-                  count: exportReadyCount,
-                },
                 { key: "alert" as const, label: "Em alerta", count: alertCount },
               ] as { key: FilterKey; label: string; count: number }[]
             ).map(({ key, label, count }) => (
