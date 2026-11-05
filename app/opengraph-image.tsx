@@ -58,13 +58,14 @@ export default function OpengraphImage() {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              color: "#2E8B3E",
-              fontSize: 38,
-              fontWeight: 700,
-              letterSpacing: "-0.08em",
             }}
           >
-            A
+            <svg width="26" height="32" viewBox="0 0 64 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path
+                d="M52 14C48 8 40 4 32 6c-12 3-22 14-22 28 0 14 8 26 22 38 1-14 5-26 14-36 6-7 10-14 6-22z"
+                fill="#2E8B3E"
+              />
+            </svg>
           </div>
           <div style={{ display: "flex", flexDirection: "column" }}>
             <span

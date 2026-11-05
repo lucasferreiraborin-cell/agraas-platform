@@ -65,7 +65,7 @@ export default function PublicFooter() {
 
       <div className="mx-auto max-w-[1200px] border-t border-white/[.12] px-6 py-6">
         <p style={WHITE} className="text-[.75rem] opacity-70">
-          © 2026 Agraas Agritech. Todos os direitos reservados.
+          © 2026 Agraas Tecnologia LTDA — CNPJ 69.862.138/0001-04. Todos os direitos reservados.
         </p>
       </div>
     </footer>

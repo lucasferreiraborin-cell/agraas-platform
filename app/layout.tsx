@@ -14,10 +14,16 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getCurrentRole } from "@/lib/auth/getCurrentRole";
 import { RoleProvider } from "@/app/components/RoleContext";
 
-const SITE_URL = "https://agraas-platform.vercel.app";
+// Domínio canônico. agraas-platform.vercel.app (default da Vercel) fazia o
+// Google mostrar "Vercel" como identidade do site nos resultados de busca —
+// metadataBase e openGraph.url apontavam pra lá em vez do domínio real.
+const SITE_URL = "https://www.agraas.com.br";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
+  alternates: {
+    canonical: SITE_URL,
+  },
   title: {
     default: "Agraas — O agro do Brasil, auditável em tempo real.",
     template: "%s · Agraas",

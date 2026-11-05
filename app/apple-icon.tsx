@@ -14,19 +14,14 @@ export default function AppleIcon() {
           alignItems: "center",
           justifyContent: "center",
           background: "linear-gradient(135deg, #2E8B3E 0%, #1E5E26 100%)",
-          fontFamily: "system-ui, -apple-system, sans-serif",
         }}
       >
-        <span
-          style={{
-            color: "white",
-            fontSize: 110,
-            fontWeight: 700,
-            letterSpacing: "-0.08em",
-          }}
-        >
-          A
-        </span>
+        <svg width="104" height="130" viewBox="0 0 64 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path
+            d="M52 14C48 8 40 4 32 6c-12 3-22 14-22 28 0 14 8 26 22 38 1-14 5-26 14-36 6-7 10-14 6-22z"
+            fill="#ffffff"
+          />
+        </svg>
       </div>
     ),
     { ...size },
