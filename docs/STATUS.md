@@ -3,7 +3,7 @@
 > **Página viva.** Responde "onde estamos?" sem você precisar perguntar.
 > Atualizada ao fim de cada bloco de trabalho, antes do commit.
 >
-> **Última atualização:** 05/11/2026 · migration 167 aplicada · reunião iBoi em **10/11** (5 dias)
+> **Última atualização:** 05/11/2026 · conta de demo validada (lucas@agraas.com.br) · reunião iBoi em **10/11** (5 dias)
 
 ---
 
@@ -33,6 +33,20 @@ verificada por reexploit.
 **05/11 (noite):** Fase 1 da segurança fechada ponta a ponta — 167 (sintoma,
 4 RPCs) + 168 (causa raiz, conta órfã deixa de poder existir). Ordem expressa
 do Lucas ("pode sair mexendo, você tem autonomia").
+
+**05/11 (madrugada) — conta de demo validada direto no banco.** A FSJBE tem
+**0 animais** — o roteiro de demo (`/painel` → animal → passaporte) não tem
+o que mostrar nela. A conta certa já existe: **`lucas@agraas.com.br`**, 23
+animais, 14 com score calibrado (médio 53 — bate com os números de agosto já
+registrados: 14 animais, R$72.281, score 53). Achado no caminho: 5 dos
+animais (prefixo `SAU-*`: Abdullah, Khalid, Omar, Yusuf, Ibrahim) e 10
+certificações "Halal" ativas eram resíduo da adaptação da plataforma pra um
+fundo árabe — descartada pelo Lucas ("desconsideremos isso"). Renomeados pra
+nomes neutros (Touro Cerrado, Boi Pantanal, Touro Araguaia, Boi Nascente,
+Touro Pampa) e as 10 certificações Halal deletadas. Achado um 3º ponto sem a
+trava `HALAL_ENABLED` — `/animais/[id]` listava certificações sem filtrar —
+corrigido (`fb30bd2`), junto com a tela de rate-limit (429) do passaporte
+público que usava HTML cru fora do design system.
 
 ## Decisões pendentes (perguntadas ao Lucas, sem resposta ainda)
 
