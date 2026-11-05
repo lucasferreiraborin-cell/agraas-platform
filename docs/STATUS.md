@@ -24,18 +24,19 @@ por `UPDATE` direto via MCP, com ordem expressa do Lucas — não testamos a tel
 
 ## Próximo passo do Lucas
 
-1. **Migrations 159–165** — escritas, não aplicadas (último migration remoto: **158**,
-   03/08/2026). Preciso de ordem expressa + confirmação de que existe backup
-   (painel Supabase → Database → Backups) antes de aplicar.
-2. Dizer o que trava em `/propriedades` na hora de editar (sem botão? erro ao salvar?) —
-   vale investigar antes da reunião iBoi se sobrar tempo.
+1. Dizer o que trava em `/propriedades` na hora de editar (sem botão? erro ao salvar?) —
+   vale investigar antes da reunião iBoi se sobrar tempo. (A propriedade da FSJBE foi
+   corrigida por `UPDATE` direto via MCP, com ordem expressa, não pela tela.)
+2. **Free Plan da Supabase não inclui backup** (nem automático, nem PITR). Não é
+   bloqueante hoje (as migrations aplicadas eram aditivas, com rollback pronto), mas
+   vale decidir se o Pro Plan entra na conta conforme o uso cresce.
 
 ## Semáforo
 
 | | Estado |
 |---|---|
 | 🟢 **Código** | 393 testes passando, typecheck limpo, next 16.3.5, tudo em `origin/main`. Raio-x completo: `docs/manutencao/2026-09-14-raio-x.md` |
-| 🔴 **Banco** | 159–165 escritas, não aplicadas. Último remoto: 158 |
+| 🟢 **Banco** | **159–165 aplicadas em 05/11/2026** (via MCP, uma a uma, com snapshot de segurança prévio). Trava de escalação de role ativa, `get_my_client_id()` corrigida para todos os papéis, role `accountant` liberada, ICMS completo em `fiscal_invoice_items`, alertas unificados no canal canônico |
 | 🟢 **Acesso** | MCP do Supabase autenticado (04/11) — leitura liberada, escrita sob ordem expressa |
 | 🟡 **Pista B** | Bloqueada: os arquivos da seção 8 do handoff não estão no repositório |
 | 🟢 **Produção** | Fiscal (upload + IA + dedup) provado ponta a ponta com dado real da FSJBE |
