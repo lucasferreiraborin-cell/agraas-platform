@@ -30,6 +30,10 @@ claim Halal/"apto exportação" sem a mesma trava (`HALAL_ENABLED`) usada em
 7+ outros pontos do app — corrigido (`fea42bc`). Migration 167 aplicada e
 verificada por reexploit.
 
+**05/11 (noite):** Fase 1 da segurança fechada ponta a ponta — 167 (sintoma,
+4 RPCs) + 168 (causa raiz, conta órfã deixa de poder existir). Ordem expressa
+do Lucas ("pode sair mexendo, você tem autonomia").
+
 ## Decisões pendentes (perguntadas ao Lucas, sem resposta ainda)
 
 1. Ativar "leaked password protection" no Supabase Auth (ação dele, no dashboard).
@@ -39,13 +43,17 @@ verificada por reexploit.
    decide se cresce.
 4. Pedido de puxar integrações de API da iBoi agora — contradiz a decisão C3
    registrada ("não construir antes do onboarding testado"). Supersede ou mantém?
+5. Timing do pedido de "outro nível" na plataforma: focando só no roteiro de
+   demo (landing → painel → animal → passaporte) pelos próximos dias, por
+   risco de regressão — marketplace/pricing/pagamentos/API iBoi ficam de fora
+   dos 5 dias (ver combinado em 05/11).
 
 ## Semáforo
 
 | | Estado |
 |---|---|
 | 🟢 **Código** | 393 testes passando, typecheck limpo, next 16.3.5, tudo em `origin/main`. Raio-x completo: `docs/manutencao/2026-09-14-raio-x.md` |
-| 🟢 **Banco** | **159–167 aplicadas em 05/11/2026** (via MCP, uma a uma, com snapshot de segurança prévio). Trava de escalação de role ativa, `get_my_client_id()` corrigida para todos os papéis, role `accountant` liberada, ICMS completo em `fiscal_invoice_items`, alertas unificados no canal canônico. **167 fecha vazamento cross-tenant** (achado do `security-rls-auditor`: `get_my_client_id()` retornava NULL para usuário autenticado sem linha em `clients`, e `x <> NULL` nunca é true — travava passava batido em 4 funções RPC, inclusive exportação de LCDPR de outro cliente). Reexploit testado após o fix, com `ROLLBACK`: agora bloqueia corretamente |
+| 🟢 **Banco** | **159–168 aplicadas em 05/11/2026** (via MCP, uma a uma, com snapshot de segurança prévio). Trava de escalação de role ativa, `get_my_client_id()` corrigida para todos os papéis, role `accountant` liberada, ICMS completo em `fiscal_invoice_items`, alertas unificados no canal canônico. **167 fecha vazamento cross-tenant** (achado do `security-rls-auditor`: `get_my_client_id()` retornava NULL para usuário autenticado sem linha em `clients`, e `x <> NULL` nunca é true — travava passava batido em 4 funções RPC, inclusive exportação de LCDPR de outro cliente). Reexploit testado após o fix, com `ROLLBACK`: agora bloqueia corretamente. **168 fecha a causa raiz** — trigger em `auth.users` cria o `client` stub no mesmo instante do signUp; `/api/cadastro/finalizar` agora faz UPDATE desse stub (`onboarded_at`) em vez de INSERT. Nunca mais existe usuário autenticado sem `client_id`. Testado com INSERT+ROLLBACK em `auth.users` |
 | 🟢 **Acesso** | MCP do Supabase autenticado (04/11) — leitura liberada, escrita sob ordem expressa |
 | 🟡 **Pista B** | Bloqueada: os arquivos da seção 8 do handoff não estão no repositório |
 | 🟢 **Produção** | Fiscal (upload + IA + dedup) provado ponta a ponta com dado real da FSJBE |

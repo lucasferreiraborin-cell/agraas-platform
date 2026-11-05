@@ -13,6 +13,11 @@
  * não ter sessão (confirmação de e-mail). Validamos com a Admin API que o
  * usuário existe, que o e-mail confere e que foi criado há menos de 15 min;
  * e recusamos se já houver linha para ele.
+ *
+ * Migration 168 (05/11/2026): o signUp() já cria um `client` stub via trigger
+ * em auth.users (fecha a "conta órfã" que a 167 corrigiu nas RPCs). Esta rota
+ * passa a UPDATE esse stub em vez de INSERT, e marca `onboarded_at` — só então
+ * o cliente conta como "já existia" numa chamada repetida.
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -62,9 +67,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Janela de finalização expirada. Entre e complete o perfil pelo painel." }, { status: 403 });
   }
 
-  // 2. Já tem cliente? Então só devolve para onde ir.
-  const { data: existente } = await db.from("clients").select("id, role").eq("auth_user_id", b.auth_user_id).maybeSingle();
-  if (existente) {
+  // 2. Já tem cliente? Pode ser o stub do trigger de signUp (168) — só conta
+  //    como "já existia" se já passou por aqui antes (onboarded_at setado).
+  const { data: existente } = await db.from("clients").select("id, role, onboarded_at").eq("auth_user_id", b.auth_user_id).maybeSingle();
+  if (existente?.onboarded_at) {
     return NextResponse.json({ ok: true, ja_existia: true, client_id: existente.id, role: existente.role, rota: rotaPosCadastro(existente.role) });
   }
 
@@ -77,7 +83,15 @@ export async function POST(req: NextRequest) {
 
   let role = roleDesejado;
   let aviso: string | null = null;
-  let ins = await db.from("clients").insert({ name: nome, email: b.email, role, auth_user_id: b.auth_user_id }).select("id").single();
+
+  const salvar = (role: string) => {
+    const payload = { name: nome, email: b.email, role, onboarded_at: new Date().toISOString() };
+    return existente
+      ? db.from("clients").update(payload).eq("id", existente.id).select("id").single()
+      : db.from("clients").insert({ ...payload, auth_user_id: b.auth_user_id }).select("id").single();
+  };
+
+  let ins = await salvar(role);
 
   // CHECK de role sem 'accountant' (migration 162 não aplicada): a pessoa
   // não pode ficar sem cliente. Entra como 'client' com o perfil declarado
@@ -85,7 +99,7 @@ export async function POST(req: NextRequest) {
   if (ins.error && role === "accountant" && /check|role/i.test(ins.error.message)) {
     role = "client";
     aviso = "Perfil de contador ainda não habilitado neste ambiente — conta criada como produtor; o administrador ajusta.";
-    ins = await db.from("clients").insert({ name: nome, email: b.email, role, auth_user_id: b.auth_user_id }).select("id").single();
+    ins = await salvar(role);
   }
   if (ins.error || !ins.data) {
     return NextResponse.json({ error: `Não foi possível criar o cliente: ${ins.error?.message ?? "erro desconhecido"}` }, { status: 500 });
