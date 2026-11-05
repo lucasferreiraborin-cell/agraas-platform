@@ -3,7 +3,7 @@
 > **Página viva.** Responde "onde estamos?" sem você precisar perguntar.
 > Atualizada ao fim de cada bloco de trabalho, antes do commit.
 >
-> **Última atualização:** 04/11/2026 · retomada após hiato de 2 meses · reunião iBoi em **10/11** (6 dias)
+> **Última atualização:** 05/11/2026 · migration 167 aplicada · reunião iBoi em **10/11** (5 dias)
 
 ---
 
@@ -22,21 +22,30 @@
 `/propriedades` (Lucas reportou não conseguir editar; a correção de passo 5 foi feita
 por `UPDATE` direto via MCP, com ordem expressa do Lucas — não testamos a tela).
 
-## Próximo passo do Lucas
+**05/11 (tarde):** tela de edição de `/propriedades` construída (não existia —
+`app/propriedades/[id]/editar/page.tsx`). Branding/SEO corrigidos (domínio
+canônico, favicon real, `llms.txt`, JSON-LD). CNPJ no rodapé. Audit de
+UX/compliance pré-iBoi (`agraas-produto-ux`) achou 2 telas com risco de mostrar
+claim Halal/"apto exportação" sem a mesma trava (`HALAL_ENABLED`) usada em
+7+ outros pontos do app — corrigido (`fea42bc`). Migration 167 aplicada e
+verificada por reexploit.
 
-1. Dizer o que trava em `/propriedades` na hora de editar (sem botão? erro ao salvar?) —
-   vale investigar antes da reunião iBoi se sobrar tempo. (A propriedade da FSJBE foi
-   corrigida por `UPDATE` direto via MCP, com ordem expressa, não pela tela.)
-2. **Free Plan da Supabase não inclui backup** (nem automático, nem PITR). Não é
-   bloqueante hoje (as migrations aplicadas eram aditivas, com rollback pronto), mas
-   vale decidir se o Pro Plan entra na conta conforme o uso cresce.
+## Decisões pendentes (perguntadas ao Lucas, sem resposta ainda)
+
+1. Ativar "leaked password protection" no Supabase Auth (ação dele, no dashboard).
+2. Trocar `FISCAL_WRITE_MODE` de `legacy` pra `dual` na Vercel (env var — ordem expressa).
+3. Upgrade pro Supabase Pro Plan — **Free Plan não inclui backup** (nem automático,
+   nem PITR). Não é bloqueante hoje (migrations aditivas, rollback pronto), mas
+   decide se cresce.
+4. Pedido de puxar integrações de API da iBoi agora — contradiz a decisão C3
+   registrada ("não construir antes do onboarding testado"). Supersede ou mantém?
 
 ## Semáforo
 
 | | Estado |
 |---|---|
 | 🟢 **Código** | 393 testes passando, typecheck limpo, next 16.3.5, tudo em `origin/main`. Raio-x completo: `docs/manutencao/2026-09-14-raio-x.md` |
-| 🟢 **Banco** | **159–165 aplicadas em 05/11/2026** (via MCP, uma a uma, com snapshot de segurança prévio). Trava de escalação de role ativa, `get_my_client_id()` corrigida para todos os papéis, role `accountant` liberada, ICMS completo em `fiscal_invoice_items`, alertas unificados no canal canônico |
+| 🟢 **Banco** | **159–167 aplicadas em 05/11/2026** (via MCP, uma a uma, com snapshot de segurança prévio). Trava de escalação de role ativa, `get_my_client_id()` corrigida para todos os papéis, role `accountant` liberada, ICMS completo em `fiscal_invoice_items`, alertas unificados no canal canônico. **167 fecha vazamento cross-tenant** (achado do `security-rls-auditor`: `get_my_client_id()` retornava NULL para usuário autenticado sem linha em `clients`, e `x <> NULL` nunca é true — travava passava batido em 4 funções RPC, inclusive exportação de LCDPR de outro cliente). Reexploit testado após o fix, com `ROLLBACK`: agora bloqueia corretamente |
 | 🟢 **Acesso** | MCP do Supabase autenticado (04/11) — leitura liberada, escrita sob ordem expressa |
 | 🟡 **Pista B** | Bloqueada: os arquivos da seção 8 do handoff não estão no repositório |
 | 🟢 **Produção** | Fiscal (upload + IA + dedup) provado ponta a ponta com dado real da FSJBE |
