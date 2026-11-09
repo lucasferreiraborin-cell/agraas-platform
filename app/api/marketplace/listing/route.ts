@@ -25,6 +25,7 @@ const ListingSchema = z.object({
   location_state: z.string().length(2),
   halal_certified: z.boolean().optional().default(false),
   animal_id: z.string().uuid().optional(),
+  lot_id: z.string().uuid().optional(),
 });
 
 export async function POST(req: Request) {
@@ -86,6 +87,40 @@ export async function POST(req: Request) {
     }
   }
 
+  // Mesma regra do animal: lot_id só vale se o lote for do próprio cliente,
+  // e o score é a média real dos animais ainda ativos no lote (lido aqui,
+  // não aceito do corpo da requisição).
+  let lotId: string | null = null;
+  if (parsed.data.lot_id) {
+    const { data: lot } = await supabase
+      .from("lots")
+      .select("id, client_id")
+      .eq("id", parsed.data.lot_id)
+      .maybeSingle();
+    if (lot && lot.client_id === clientRow.id) {
+      lotId = lot.id;
+      const { data: assignments } = await supabase
+        .from("animal_lot_assignments")
+        .select("animal_id")
+        .eq("lot_id", lotId)
+        .is("exit_date", null);
+      const animalIds = (assignments ?? []).map((a) => a.animal_id).filter(Boolean);
+      if (animalIds.length > 0) {
+        const { data: scoreRows } = await supabase
+          .from("animal_scores")
+          .select("total_score")
+          .in("animal_id", animalIds)
+          .in("algorithm_version", ["v3", "v3.1", "v3.2"]);
+        const scores = (scoreRows ?? [])
+          .map((s) => Number(s.total_score))
+          .filter((v) => !Number.isNaN(v));
+        if (scores.length > 0) {
+          scoreAgraas = Math.round(scores.reduce((sum, v) => sum + v, 0) / scores.length);
+        }
+      }
+    }
+  }
+
   const { data: inserted, error } = await supabase
     .from("marketplace_listings")
     .insert({
@@ -101,6 +136,7 @@ export async function POST(req: Request) {
       location_state: parsed.data.location_state,
       halal_certified: parsed.data.halal_certified ?? false,
       animal_id: animalId,
+      lot_id: lotId,
       score_agraas: scoreAgraas,
       status: "ativo",
     })

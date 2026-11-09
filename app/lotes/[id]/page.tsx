@@ -321,7 +321,14 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
 
   return (
     <main className="space-y-8">
-      <BackLink href="/lotes" label="Voltar para Lotes" />
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <BackLink href="/lotes" label="Voltar para Lotes" />
+        {animals.length > 0 && (
+          <Link href={`/marketplace/novo?lot_id=${id}`} className="ag-button-secondary">
+            Anunciar lote no marketplace
+          </Link>
+        )}
+      </div>
 
       {/* ── Hero — visual diferenciado para exportação ── */}
       {isExportLot ? (

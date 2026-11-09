@@ -7,13 +7,19 @@ import { ArrowLeft, ArrowRight, Loader2, Tag, Wheat, ShoppingBag, Truck, Package
 import type { LucideIcon } from "lucide-react";
 import { HALAL_ENABLED } from "@/lib/feature-flags";
 
-export type AnimalPrefill = {
-  animalId: string;
+// Pré-preenchimento em 1 clique a partir de dado real já cadastrado —
+// animal individual ou lote inteiro (lógica de mercado: pecuária negocia
+// lote, não só cabeça avulsa). "kind" decide qual campo a API valida/usa
+// (animal_id x lot_id) — nunca os dois.
+export type QuickPrefill = {
+  kind: "animal" | "lot";
+  id: string;
   title: string;
   category: string;
   city: string;
   uf: string;
   score: number | null;
+  quantity: number;
 };
 
 const TYPES: { key: string; label: string; Icon: LucideIcon; hint: string }[] = [
@@ -41,23 +47,23 @@ const UFS = [
 ];
 
 export default function NewListingForm({
-  animalPrefill = null,
+  prefill = null,
 }: {
-  animalPrefill?: AnimalPrefill | null;
+  prefill?: QuickPrefill | null;
 }) {
   const router = useRouter();
-  // Com animal pré-preenchido, tipo já está decidido — pula pra "Detalhes".
-  const [step, setStep] = useState<1 | 2 | 3>(animalPrefill ? 2 : 1);
+  // Com animal/lote pré-preenchido, tipo já está decidido — pula pra "Detalhes".
+  const [step, setStep] = useState<1 | 2 | 3>(prefill ? 2 : 1);
 
-  const [listingType, setListingType] = useState<string>(animalPrefill ? "animal" : "");
-  const [title, setTitle]             = useState(animalPrefill?.title ?? "");
+  const [listingType, setListingType] = useState<string>(prefill ? "animal" : "");
+  const [title, setTitle]             = useState(prefill?.title ?? "");
   const [description, setDescription] = useState("");
-  const [category, setCategory]       = useState(animalPrefill?.category ?? "");
+  const [category, setCategory]       = useState(prefill?.category ?? "");
   const [price, setPrice]             = useState<number>(0);
-  const [unit, setUnit]               = useState<string>(animalPrefill ? "cabeça" : "");
-  const [qty, setQty]                 = useState<number>(1);
-  const [city, setCity]               = useState(animalPrefill?.city ?? "");
-  const [uf, setUf]                   = useState(animalPrefill?.uf ?? "");
+  const [unit, setUnit]               = useState<string>(prefill ? "cabeça" : "");
+  const [qty, setQty]                 = useState<number>(prefill?.quantity ?? 1);
+  const [city, setCity]               = useState(prefill?.city ?? "");
+  const [uf, setUf]                   = useState(prefill?.uf ?? "");
   const [halal, setHalal]             = useState(false);
 
   const [loading, setLoading] = useState(false);
@@ -91,7 +97,8 @@ export default function NewListingForm({
           location_city: city.trim(),
           location_state: uf,
           halal_certified: HALAL_ENABLED && halal, // P6: com a flag desligada nunca grava Halal
-          animal_id: animalPrefill?.animalId ?? undefined,
+          animal_id: prefill?.kind === "animal" ? prefill.id : undefined,
+          lot_id: prefill?.kind === "lot" ? prefill.id : undefined,
         }),
       });
       const data = await res.json();
@@ -193,7 +200,7 @@ export default function NewListingForm({
       {/* ─── STEP 2 — DADOS ─────────────────────────────────────── */}
       {step === 2 && (
         <div>
-          {!animalPrefill && (
+          {!prefill && (
             <button
               type="button"
               onClick={() => setStep(1)}
@@ -205,15 +212,17 @@ export default function NewListingForm({
           <h2 className="text-[1.25rem] font-semibold tracking-[-.01em] text-[var(--text-primary)]">
             Detalhes do anúncio
           </h2>
-          {animalPrefill && (
+          {prefill && (
             <div className="mt-3 flex items-start gap-2.5 rounded-xl border border-[var(--primary)]/20 bg-[var(--primary-soft)] p-4">
               <Sparkles size={16} className="mt-0.5 shrink-0 text-[var(--primary)]" />
               <p className="text-[.8125rem] leading-[1.6] text-[var(--text-secondary)]">
-                Título, raça e localização vieram do passaporte deste animal.
-                {animalPrefill.score != null && (
-                  <> Score Agraas atual: <strong className="text-[var(--primary)]">{animalPrefill.score}</strong>.</>
+                {prefill.kind === "lot"
+                  ? `Título, ${prefill.quantity} cabeças e localização vieram do lote.`
+                  : "Título, raça e localização vieram do passaporte deste animal."}
+                {prefill.score != null && (
+                  <> Score Agraas {prefill.kind === "lot" ? "médio" : "atual"}: <strong className="text-[var(--primary)]">{prefill.score}</strong>.</>
                 )}
-                {" "}Só falta o preço.
+                {" "}Só falta o preço{prefill.kind === "lot" ? " por cabeça" : ""}.
               </p>
             </div>
           )}
