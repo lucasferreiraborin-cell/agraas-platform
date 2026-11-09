@@ -262,7 +262,7 @@ Estes vieram do raio-x e **não** foram corrigidos porque exigem decisão comerc
 | **A-6** | `/cadastro` tem warning de *password field not contained in a form* | Quebra o gerenciador de senha do navegador |
 | **A-7** | Score **78 hardcoded** em `/planos` como "score médio FSJBE"; o valor real registrado é 53 | Divergência entre página pública e plataforma, achável em DD |
 | **A-8** | Produção roda Score **v3.2** sem migration versionada | O repositório não é fonte de verdade do banco |
-| **A-9** | `/api/parse-doc` (usado por abates, estoque, vendas, timeline) tem o **mesmo caminho cru de PDF** e o **bug antigo do `<vICMS[^>]*>`** que o B0 corrigiu no parser fiscal | Mesma classe de erro silencioso em quatro telas. Apontar para `lib/fiscal/nfe-parser` + `pdf-extract` |
+| **A-9** | ✅ **Já resolvido, achado estava desatualizado (confirmado 09/11).** `/api/parse-doc` foi reescrito em 14/09 sobre `lib/fiscal/documento.ts`, que importa `parseNfeHeader`/`parseNfeItems` direto de `lib/fiscal/nfe-parser` e `extrairNfeDePdf` de `pdf-extract` — os mesmos módulos com o fix do B0. Sem parser duplicado, sem o bug do `<vICMS[^>]*>`. |
 
 Decisões formais e padrões assumidos: `docs/decisoes/pendentes.md`.
 
