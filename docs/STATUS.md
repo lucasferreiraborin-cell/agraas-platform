@@ -3,7 +3,7 @@
 > **Página viva.** Responde "onde estamos?" sem você precisar perguntar.
 > Atualizada ao fim de cada bloco de trabalho, antes do commit.
 >
-> **Última atualização:** 05/11/2026 · conta de demo validada (lucas@agraas.com.br) · reunião iBoi em **10/11** (5 dias)
+> **Última atualização:** 09/11/2026 · varredura completa do roteiro de demo · reunião iBoi **amanhã (10/11)**
 
 ---
 
@@ -48,6 +48,45 @@ trava `HALAL_ENABLED` — `/animais/[id]` listava certificações sem filtrar �
 corrigido (`fb30bd2`), junto com a tela de rate-limit (429) do passaporte
 público que usava HTML cru fora do design system.
 
+**09/11 — varredura completa do roteiro investidor-facing, dia antes da reunião.**
+Navegador real (Playwright) em `/`, `/sobre`, `/marketplace`, `/cadastro`; código +
+dado direto no banco em `/painel` e `/animais/[id]` (sem senha do Lucas pra logar
+via browser). Achados:
+
+- **A-6 fechado.** `/cadastro` não tinha `<form>` — navegador avisava "password
+  field not contained in a form" e o gerenciador de senha não oferecia
+  salvar/preencher. Wizard de 2 passos agora dentro de um `<form onSubmit>`,
+  botões viram `type="submit"` (Enter volta a funcionar). 393 testes + tsc
+  limpos. Verificado em produção via curl (`<form noValidate="">` no HTML).
+  Commit `0e6d03a`.
+- **Halal em `/painel`: confirmado limpo.** A query que busca certificação Halal
+  pro KPI de exportação existe (`halalCount`/`exportReadyCount`/`hasHalal`), mas
+  o resultado nunca é renderizado na tela — dado morto, não vazamento. Sem ação.
+- **`CredibilityStrip.tsx`** (componente com "5 cadeias produtivas integradas —
+  pecuária, grãos, aves, ovinos e fiscal") existe no repo mas **não é importado
+  em lugar nenhum** — não está no ar, não é risco de compliance ativo. Candidato
+  a exclusão por limpeza, não urgente.
+- **Achado aberto, aguardando seu ok (regra 5 da skill `agraas-fsjbe-guard` —
+  "status do cliente piloto FSJBE" é categoria de pausa-e-pergunta, não decido
+  sozinho):** a seção da FSJBE na landing (`FSJBECaseSection.tsx`) e o parágrafo
+  "Fundada em 2025. Em operação no campo." em `/sobre` afirmam passaporte
+  individual, pesagens e "operação registrada do dia a dia" como já
+  acontecendo. Confirmado no banco: **FSJBE tem 0 animais, 0 notas fiscais, 0
+  pesagens.** Proposta: trocar o tempo verbal pra onboarding-a-começar, sem
+  check verde em nada que não aconteceu ainda. Não publiquei a correção sem
+  seu sinal.
+- **Produção saudável.** `/`, `/sobre`, `/marketplace`, `/cadastro`, `/login`,
+  `/em-breve`, `/privacidade`, `/termos`, `robots.txt`, `sitemap.xml`,
+  `llms.txt` — todos HTTP 200. Sem erro de console em `/`, `/sobre`,
+  `/marketplace`, `/cadastro`. O passaporte público mantém o erro React #418
+  de hidratação (já conhecido, invisível, deferido desde agosto) — não
+  reaberto.
+- **`.claude/settings.json`** ganhou os nomes corretos das tools MCP do
+  Supabase (`mcp__supabase__*`, sem o prefixo `plugin_`, que não cobria nada)
+  + 5 tools de leitura do Playwright + WebFetch/WebSearch no allowlist —
+  reduz prompt de permissão hoje. `apply_migration` deixado de fora de
+  propósito, continua pedindo ordem expressa.
+
 ## Decisões pendentes (perguntadas ao Lucas, sem resposta ainda)
 
 1. Ativar "leaked password protection" no Supabase Auth (ação dele, no dashboard).
@@ -61,6 +100,11 @@ público que usava HTML cru fora do design system.
    demo (landing → painel → animal → passaporte) pelos próximos dias, por
    risco de regressão — marketplace/pricing/pagamentos/API iBoi ficam de fora
    dos 5 dias (ver combinado em 05/11).
+6. **09/11** — copy da FSJBE na landing e em `/sobre` afirma passaporte/pesagem/
+   operação diária já acontecendo; banco mostra 0 animais/0 notas/0 pesagens.
+   Proposta pronta pra trocar o tempo verbal pra "onboarding começando" — só
+   não publiquei porque é "status do cliente piloto", categoria de pausa-e-
+   pergunta da skill `agraas-fsjbe-guard`.
 
 ## Semáforo
 
