@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { createSupabaseServiceClient } from "@/lib/supabase-service";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 import PublicShell from "@/app/components/ui/PublicShell";
 import ScoresSection from "@/app/components/landing/ScoresSection";
 import FSJBECaseSection from "@/app/components/landing/FSJBECaseSection";
@@ -113,8 +114,14 @@ const CAPABILITIES = [
 export default async function LandingPage() {
   const { mkItems } = await fetchLandingData();
 
-  return (
-    <PublicShell>
+  // Usuário logado já tem o chrome autenticado (sidebar) do layout raiz —
+  // PublicShell por cima duplicava cabeçalho/rodapé público (mesmo bug
+  // achado e corrigido em /marketplace nesta sessão, 09/11/2026).
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const content = (
+    <>
       {/* ═══ [2] HERO — headline + CTAs + Nelore close ═══════════════════ */}
       <section className="relative isolate overflow-hidden">
         <Image
@@ -409,6 +416,8 @@ export default async function LandingPage() {
           </div>
         </div>
       </section>
-    </PublicShell>
+    </>
   );
+
+  return user ? <main>{content}</main> : <PublicShell>{content}</PublicShell>;
 }

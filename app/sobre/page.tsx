@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import PublicShell from "@/app/components/ui/PublicShell";
 import HeroParallaxImage from "@/app/components/ui/HeroParallaxImage";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/app/components/ui/Motion";
 import { Shield, Zap, Globe, ArrowRight } from "lucide-react";
 
@@ -35,9 +36,15 @@ const BELIEFS = [
   },
 ];
 
-export default function SobrePage() {
-  return (
-    <PublicShell>
+export default async function SobrePage() {
+  // Usuário logado já tem o chrome autenticado (sidebar) do layout raiz —
+  // mesmo bug de cabeçalho duplicado achado e corrigido em /marketplace e
+  // na landing nesta sessão (09/11/2026).
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const content = (
+    <>
       {/* ═══ HERO ═══════════════════════════════════════════════════════════ */}
       <section className="relative isolate overflow-hidden">
         <HeroParallaxImage src={IMG.hero} alt="" intensity={0.2} />
@@ -252,6 +259,8 @@ export default function SobrePage() {
           </FadeIn>
         </div>
       </section>
-    </PublicShell>
+    </>
   );
+
+  return user ? <main>{content}</main> : <PublicShell>{content}</PublicShell>;
 }
