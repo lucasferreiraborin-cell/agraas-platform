@@ -24,6 +24,7 @@ const ListingSchema = z.object({
   location_city: z.string().min(1).max(80),
   location_state: z.string().length(2),
   halal_certified: z.boolean().optional().default(false),
+  animal_id: z.string().uuid().optional(),
 });
 
 export async function POST(req: Request) {
@@ -59,6 +60,32 @@ export async function POST(req: Request) {
     );
   }
 
+  // animal_id/score nunca vêm do cliente como valor de confiança: o vínculo
+  // só vale se o animal for do próprio cliente, e o score é relido aqui
+  // (mesmo padrão .in(["v3","v3.1","v3.2"]) usado no resto do app) — não dá
+  // pra forjar score num anúncio público.
+  let animalId: string | null = null;
+  let scoreAgraas: number | null = null;
+  if (parsed.data.animal_id) {
+    const { data: animal } = await supabase
+      .from("animals")
+      .select("id, client_id")
+      .eq("id", parsed.data.animal_id)
+      .maybeSingle();
+    if (animal && animal.client_id === clientRow.id) {
+      animalId = animal.id;
+      const { data: scoreRow } = await supabase
+        .from("animal_scores")
+        .select("total_score")
+        .eq("animal_id", animalId)
+        .in("algorithm_version", ["v3", "v3.1", "v3.2"])
+        .maybeSingle();
+      if (scoreRow?.total_score != null) {
+        scoreAgraas = Math.round(Number(scoreRow.total_score));
+      }
+    }
+  }
+
   const { data: inserted, error } = await supabase
     .from("marketplace_listings")
     .insert({
@@ -73,6 +100,8 @@ export async function POST(req: Request) {
       location_city: parsed.data.location_city,
       location_state: parsed.data.location_state,
       halal_certified: parsed.data.halal_certified ?? false,
+      animal_id: animalId,
+      score_agraas: scoreAgraas,
       status: "ativo",
     })
     .select("id")

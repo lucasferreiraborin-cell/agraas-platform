@@ -466,7 +466,12 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
 
   return (
     <main className="space-y-8">
-      <BackLink href="/animais" label="Voltar para Animais" />
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <BackLink href="/animais" label="Voltar para Animais" />
+        <Link href={`/marketplace/novo?animal_id=${animal.id}`} className="ag-button-secondary">
+          Anunciar no marketplace
+        </Link>
+      </div>
 
       <section className="ag-card-strong overflow-hidden">
         <div className="grid xl:grid-cols-[1.08fr_0.92fr]">

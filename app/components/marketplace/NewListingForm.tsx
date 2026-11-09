@@ -3,9 +3,18 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, Loader2, Tag, Wheat, ShoppingBag, Truck, Package, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Loader2, Tag, Wheat, ShoppingBag, Truck, Package, CheckCircle2, Sparkles } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { HALAL_ENABLED } from "@/lib/feature-flags";
+
+export type AnimalPrefill = {
+  animalId: string;
+  title: string;
+  category: string;
+  city: string;
+  uf: string;
+  score: number | null;
+};
 
 const TYPES: { key: string; label: string; Icon: LucideIcon; hint: string }[] = [
   { key: "animal",      label: "Animal",      Icon: Tag,          hint: "Bovinos, ovinos, aves"  },
@@ -31,19 +40,24 @@ const UFS = [
   "AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO",
 ];
 
-export default function NewListingForm() {
+export default function NewListingForm({
+  animalPrefill = null,
+}: {
+  animalPrefill?: AnimalPrefill | null;
+}) {
   const router = useRouter();
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  // Com animal pré-preenchido, tipo já está decidido — pula pra "Detalhes".
+  const [step, setStep] = useState<1 | 2 | 3>(animalPrefill ? 2 : 1);
 
-  const [listingType, setListingType] = useState<string>("");
-  const [title, setTitle]             = useState("");
+  const [listingType, setListingType] = useState<string>(animalPrefill ? "animal" : "");
+  const [title, setTitle]             = useState(animalPrefill?.title ?? "");
   const [description, setDescription] = useState("");
-  const [category, setCategory]       = useState("");
+  const [category, setCategory]       = useState(animalPrefill?.category ?? "");
   const [price, setPrice]             = useState<number>(0);
-  const [unit, setUnit]               = useState<string>("");
+  const [unit, setUnit]               = useState<string>(animalPrefill ? "cabeça" : "");
   const [qty, setQty]                 = useState<number>(1);
-  const [city, setCity]               = useState("");
-  const [uf, setUf]                   = useState("");
+  const [city, setCity]               = useState(animalPrefill?.city ?? "");
+  const [uf, setUf]                   = useState(animalPrefill?.uf ?? "");
   const [halal, setHalal]             = useState(false);
 
   const [loading, setLoading] = useState(false);
@@ -77,6 +91,7 @@ export default function NewListingForm() {
           location_city: city.trim(),
           location_state: uf,
           halal_certified: HALAL_ENABLED && halal, // P6: com a flag desligada nunca grava Halal
+          animal_id: animalPrefill?.animalId ?? undefined,
         }),
       });
       const data = await res.json();
@@ -178,16 +193,30 @@ export default function NewListingForm() {
       {/* ─── STEP 2 — DADOS ─────────────────────────────────────── */}
       {step === 2 && (
         <div>
-          <button
-            type="button"
-            onClick={() => setStep(1)}
-            className="mb-4 inline-flex items-center gap-1.5 text-[.75rem] font-medium text-[var(--text-muted)] transition hover:text-[var(--text-secondary)]"
-          >
-            <ArrowLeft size={12} /> Voltar
-          </button>
+          {!animalPrefill && (
+            <button
+              type="button"
+              onClick={() => setStep(1)}
+              className="mb-4 inline-flex items-center gap-1.5 text-[.75rem] font-medium text-[var(--text-muted)] transition hover:text-[var(--text-secondary)]"
+            >
+              <ArrowLeft size={12} /> Voltar
+            </button>
+          )}
           <h2 className="text-[1.25rem] font-semibold tracking-[-.01em] text-[var(--text-primary)]">
             Detalhes do anúncio
           </h2>
+          {animalPrefill && (
+            <div className="mt-3 flex items-start gap-2.5 rounded-xl border border-[var(--primary)]/20 bg-[var(--primary-soft)] p-4">
+              <Sparkles size={16} className="mt-0.5 shrink-0 text-[var(--primary)]" />
+              <p className="text-[.8125rem] leading-[1.6] text-[var(--text-secondary)]">
+                Título, raça e localização vieram do passaporte deste animal.
+                {animalPrefill.score != null && (
+                  <> Score Agraas atual: <strong className="text-[var(--primary)]">{animalPrefill.score}</strong>.</>
+                )}
+                {" "}Só falta o preço.
+              </p>
+            </div>
+          )}
           <div className="mt-6 space-y-4">
             <div>
               <label className="mb-1.5 block text-[.8125rem] font-semibold text-[var(--text-primary)]">
