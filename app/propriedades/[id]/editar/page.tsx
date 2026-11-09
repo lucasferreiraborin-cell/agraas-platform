@@ -32,7 +32,7 @@ export default function EditarPropriedadePage() {
     async function carregar() {
       const { data, error } = await supabase
         .from("properties")
-        .select("id, name, code, state, region, area_hectares")
+        .select("id, name, code, state, region, city, area_hectares")
         .eq("id", id)
         .maybeSingle();
 
@@ -45,7 +45,7 @@ export default function EditarPropriedadePage() {
       setNome(data.name ?? "");
       setCodigo(data.code ?? "");
       setEstado(data.state ?? "");
-      setMunicipio(data.region ?? "");
+      setMunicipio(data.region ?? data.city ?? "");
       setAreaHectares(data.area_hectares != null ? String(data.area_hectares) : "");
       setLoadingInicial(false);
     }
@@ -62,7 +62,11 @@ export default function EditarPropriedadePage() {
         name: nome,
         code: codigo || null,
         state: estado || null,
+        // region e city são colunas separadas lidas em telas diferentes
+        // (/propriedades lê os dois, /propriedades/[id] só region) — mantidas
+        // em sincronia aqui pra edição não parecer "não salvou".
         region: municipio || null,
+        city: municipio || null,
         area_hectares: areaHectares ? Number(areaHectares) : null,
       })
       .eq("id", id);

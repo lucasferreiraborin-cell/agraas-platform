@@ -70,6 +70,7 @@ export default function NovaPropriedadePage() {
       code: codigo || null,
       state: estado || null,
       region: municipio || null,
+      city: municipio || null,
       area_hectares: areaHectares ? Number(areaHectares) : null,
       client_id: effectiveClientId,
       status: "Ativa",
