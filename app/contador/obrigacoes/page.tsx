@@ -71,10 +71,10 @@ function buildObligations(now: Date): ObligationType[] {
     {
       id: "lcdpr",
       label: "LCDPR — Livro-Caixa Digital do Produtor Rural",
-      frequency: "Mensal",
-      due: `Entrega até o último dia útil de cada mês`,
+      frequency: "Anual",
+      due: `Junto com a declaração de IRPF do ano seguinte`,
       description:
-        "Obrigatório para produtores com receita bruta > R$ 3,6M/ano. Transmissão via e-CAC.",
+        "Obrigatório conforme receita bruta da atividade rural (limiar sujeito a confirmação). Transmissão via e-CAC.",
     },
     {
       id: "itr",
