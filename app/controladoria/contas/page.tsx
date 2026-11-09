@@ -212,7 +212,7 @@ export default async function ContasPage({
               <EmptyState
                 icon={ArrowDownToLine}
                 title="Sem lançamentos nos últimos 30 dias"
-                text="Lançamentos são gerados automaticamente quando uma NF-e é aprovada na revisão."
+                text="Lançamentos contábeis aparecem aqui conforme o fluxo de conciliação avança."
               />
             </div>
           ) : (

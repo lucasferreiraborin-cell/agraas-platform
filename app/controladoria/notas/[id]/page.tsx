@@ -278,7 +278,7 @@ export default async function NotaDetailPage({
               <div>
                 <h2 className="ag-section-title">Lançamentos contábeis</h2>
                 <p className="text-xs text-[var(--text-muted)]">
-                  Gerados automaticamente pela IA fiscal
+                  Conciliados a partir da nota revisada
                 </p>
               </div>
             </div>
