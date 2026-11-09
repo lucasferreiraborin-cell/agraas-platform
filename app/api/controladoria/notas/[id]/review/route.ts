@@ -16,8 +16,10 @@
  *   (essas já são contabilizadas por trigger de banco, lançar de novo
  *   duplicaria receita). Nota de saída avulsa (upload direto) gera Receita /
  *   CMV (só com custo confiável) / FUNRURAL (da nota ou calculado).
- * - CFOP ausente, fora do mapeamento, ou item de animal vivo (classificação
- *   custo x ativo biológico ainda em aberto) => não lança, gera fiscal_alert.
+ * - Compra de animal vivo (NCM 0102.x): usa animals.conta_contabil do animal
+ *   vinculado (migration 150, CPC 29 já resolvido por trigger). Sem animal
+ *   cadastrado e vinculado ao item, não lança — não tem como saber a conta.
+ * - CFOP ausente ou fora do mapeamento => não lança, gera fiscal_alert.
  *   Não lançar errado é melhor que lançar errado.
  * - Idempotente via checagem de accounting_entries ativos para a nota.
  */
@@ -254,17 +256,48 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
           continue;
         }
 
-        // Compra de animal vivo (NCM 0102.x): ambíguo entre custo (5.6.xx) e
-        // ativo biológico (1.1.06.xx, CPC 29) — decisão pendente, não chutar.
+        // Compra de animal vivo (NCM 0102.x): a classificação CPC 29 (ativo
+        // biológico circulante x matriz/reprodutor) já é resolvida pela
+        // migration 150 — todo animal cadastrado tem animals.conta_contabil
+        // setado por trigger. Só dá pra lançar se o item já estiver vinculado
+        // a um animal cadastrado (linked_animal_id); sem isso, não tem como
+        // saber a conta sem chutar categoria/destinação do animal.
         if ((item.ncm ?? "").startsWith("0102")) {
-          accountingFailures.push(`item ${item.id}: compra de animal vivo — classificação pendente, lançamento não gerado`);
-          await supabase.from("fiscal_alerts").insert({
-            client_id: invoice.client_id,
-            fiscal_invoice_id: invoice.id,
-            severity: "info",
-            alert_type: "accounting_not_posted_live_animal_purchase",
-            message: `Item "${item.description ?? item.id}" é compra de animal vivo (NCM ${item.ncm}) — classificação contábil (custo x ativo biológico) pendente de decisão, lançamento não gerado automaticamente.`,
-          });
+          let animalAccountId: string | null = null;
+          if (item.linked_animal_id) {
+            const { data: animalRow } = await supabase
+              .from("animals")
+              .select("conta_contabil")
+              .eq("id", item.linked_animal_id)
+              .maybeSingle();
+            if (animalRow?.conta_contabil) {
+              animalAccountId = await resolveAccountId(supabase, invoice.client_id, animalRow.conta_contabil);
+            }
+          }
+
+          if (animalAccountId && fornecedoresId) {
+            const { error: animalEntryError } = await supabase.from("accounting_entries").insert({
+              client_id: invoice.client_id,
+              entry_date: invoice.issued_at ? invoice.issued_at.slice(0, 10) : null,
+              debit_account_id: animalAccountId,
+              credit_account_id: fornecedoresId,
+              amount,
+              description: `Compra de animal — NF-e ${invoice.number ?? id}`,
+              source_type: "fiscal_invoice",
+              source_id: invoice.id,
+            });
+            if (animalEntryError) accountingFailures.push(`item ${item.id}: lançamento animal — ${animalEntryError.message}`);
+            else accountingApplied++;
+          } else {
+            accountingFailures.push(`item ${item.id}: compra de animal vivo sem animal cadastrado vinculado — lançamento não gerado`);
+            await supabase.from("fiscal_alerts").insert({
+              client_id: invoice.client_id,
+              fiscal_invoice_id: invoice.id,
+              severity: "info",
+              alert_type: "accounting_not_posted_unlinked_animal_purchase",
+              message: `Item "${item.description ?? item.id}" é compra de animal vivo (NCM ${item.ncm}) — cadastre o animal e vincule à nota (linked_animal_id) para a conta CPC 29 (ativo biológico) ser resolvida automaticamente.`,
+            });
+          }
           continue;
         }
 
