@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import PublicShell from "@/app/components/ui/PublicShell";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export const metadata: Metadata = {
   title: "Termos de Uso",
@@ -8,9 +9,13 @@ export const metadata: Metadata = {
     "Termos de Uso da plataforma Agraas Agritech — gestão pecuária, score auditável e rastreabilidade.",
 };
 
-export default function TermosPage() {
-  return (
-    <PublicShell>
+export default async function TermosPage() {
+  // Mesmo bug de cabeçalho duplicado corrigido em /sobre, landing e
+  // /marketplace nesta sessão (09/11/2026) — confirmado ao vivo aqui também.
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const content = (
       <main className="mx-auto max-w-3xl space-y-8 px-6 py-16 lg:py-24">
         <header>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">
@@ -188,6 +193,7 @@ export default function TermosPage() {
           </div>
         </section>
       </main>
-    </PublicShell>
   );
+
+  return user ? content : <PublicShell>{content}</PublicShell>;
 }

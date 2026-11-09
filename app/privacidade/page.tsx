@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import PublicShell from "@/app/components/ui/PublicShell";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export const metadata: Metadata = {
   title: "Política de Privacidade",
@@ -7,9 +8,13 @@ export const metadata: Metadata = {
     "Política de Privacidade da Agraas Agritech — tratamento de dados conforme a Lei Geral de Proteção de Dados (LGPD, Lei nº 13.709/2018).",
 };
 
-export default function PrivacidadePage() {
-  return (
-    <PublicShell>
+export default async function PrivacidadePage() {
+  // Mesmo bug de cabeçalho duplicado corrigido em /termos, /sobre, landing e
+  // /marketplace nesta sessão (09/11/2026).
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const content = (
       <main className="mx-auto max-w-3xl space-y-8 px-6 py-16 lg:py-24">
         <header>
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--text-muted)]">
@@ -223,6 +228,7 @@ export default function PrivacidadePage() {
           </div>
         </section>
       </main>
-    </PublicShell>
   );
+
+  return user ? content : <PublicShell>{content}</PublicShell>;
 }
