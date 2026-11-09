@@ -121,11 +121,11 @@ próximo reset de qualquer cliente — ver `lib/admin/reset-cliente.ts`.
    demo (landing → painel → animal → passaporte) pelos próximos dias, por
    risco de regressão — marketplace/pricing/pagamentos/API iBoi ficam de fora
    dos 5 dias (ver combinado em 05/11).
-6. **09/11** — copy da FSJBE na landing e em `/sobre` afirma passaporte/pesagem/
-   operação diária já acontecendo; banco mostra 0 animais/0 notas/0 pesagens.
-   Proposta pronta pra trocar o tempo verbal pra "onboarding começando" — só
-   não publiquei porque é "status do cliente piloto", categoria de pausa-e-
-   pergunta da skill `agraas-fsjbe-guard`.
+6. ✅ **09/11 (noite) — resolvido, com autorização do Lucas.** Copy da FSJBE
+   na landing (`FSJBECaseSection.tsx`) e em `/sobre` reescrita pra status real:
+   "cliente real" + "infraestrutura preparada" = feito (check verde);
+   "passaporte digital" + "operação no campo" = próximo passo (ícone neutro).
+   Verificado em produção.
 
 ## Semáforo
 
