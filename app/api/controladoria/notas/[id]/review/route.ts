@@ -97,7 +97,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
 
   const { data: invoice, error: invoiceError } = await supabase
     .from("fiscal_invoices")
-    .select("id, client_id, direction, issued_at, number, issuer_name, gross_value, funrural_value")
+    .select("id, client_id, direction, issued_at, number, issuer_name, gross_value, funrural_value, icms_value, pis_value, cofins_value")
     .eq("id", id)
     .maybeSingle();
   if (invoiceError || !invoice) {
@@ -336,6 +336,27 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
         });
         if (entryError) accountingFailures.push(`item ${item.id}: lançamento — ${entryError.message}`);
         else accountingApplied++;
+      }
+
+      // Aviso informativo (não altera o lançamento): a regra acima lança o
+      // item pelo valor bruto, assumindo ICMS/PIS/Cofins recuperável zerado
+      // — verdade na prática pra insumo agropecuário vendido a produtor rural
+      // (isenção Convênio ICMS 100/97; alíquota zero Lei 10.925/2004, e
+      // mesmo quando não é zero o crédito normalmente só vale pra PJ no
+      // lucro real). Se a nota vier com imposto destacado, sinaliza que a
+      // simplificação está sendo usada fora do caso que ela cobre bem —
+      // segregar o crédito exigiria confirmação do regime tributário do
+      // cliente com o contador antes de automatizar.
+      const recoverableTax =
+        Number(invoice.icms_value ?? 0) + Number(invoice.pis_value ?? 0) + Number(invoice.cofins_value ?? 0);
+      if (recoverableTax > 0) {
+        await supabase.from("fiscal_alerts").insert({
+          client_id: invoice.client_id,
+          fiscal_invoice_id: invoice.id,
+          severity: "info",
+          alert_type: "accounting_entrada_tax_not_segregated",
+          message: `NF-e ${invoice.number ?? id} tem R$ ${recoverableTax.toFixed(2)} de ICMS/PIS/Cofins destacado — o lançamento de estoque foi feito pelo valor bruto (sem segregar crédito fiscal). Confirme com o contador se este cliente tem direito a crédito antes de corrigir manualmente.`,
+        });
       }
     } else if (invoice.direction === "saida") {
       // Venda já contabilizada pelo fluxo interno de /vendas (trigger de
