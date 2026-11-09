@@ -8,19 +8,19 @@ const STEPS = [
   {
     Icon: Fingerprint,
     title: "Identidade desde o primeiro dia",
-    text: "Cada animal nasce com um ID Agraas único. Cada talhão ganha um polígono georreferenciado com CAR verificado. A rastreabilidade começa antes da primeira pesagem — e nunca para. O produtor sabe exatamente o que tem, onde está e o que vale.",
+    text: "Cada animal recebe um ID Agraas único; cada talhão, um polígono georreferenciado com CAR verificado. A rastreabilidade começa antes da primeira pesagem e nunca para.",
     tags: ["RFID bolus", "GPS talhão", "CAR verificado", "ID único vitalício"],
   },
   {
     Icon: ActivitySquare,
     title: "Operação que vira dado automático",
-    text: "Pesagens, vacinações, movimentações, colheitas, notas fiscais de insumos — tudo registrado em segundos pelo produtor ou pelo peão no campo, via app mobile. O Score recalcula sozinho. O estoque debita sozinho. O custo acumula sozinho. O contador tem o DRE pronto sem precisar pedir.",
+    text: "Pesagens, vacinações, movimentações e notas fiscais registradas em segundos, no campo, via app mobile. Score, estoque e custo por animal se atualizam sozinhos — o contador recebe o DRE pronto.",
     tags: ["Score automático", "Estoque ligado", "Custo por animal", "DRE em tempo real"],
   },
   {
     Icon: Globe,
     title: "Venda com rastreio, chegue ao mundo",
-    text: "Animais anunciados no marketplace com score e documentos atrelados. Venda fechada com a documentação conciliada. Embarque preparado para rastreio em checkpoints auditáveis. O comprador institucional verifica a origem pelo QR público — sem precisar de intermediário, sem precisar confiar na palavra de ninguém.",
+    text: "Animais anunciados no marketplace com score e documentos atrelados, venda fechada com nota conciliada. O comprador verifica a origem pelo QR público, sem intermediário.",
     tags: ["Marketplace integrado", "NF-e conciliada", "QR público", "Checkpoints auditáveis"],
   },
 ];
@@ -37,7 +37,7 @@ export default function HowItWorksSection() {
           </FadeIn>
           <FadeIn delay={0.1}>
             <p className="mt-6 max-w-[680px] text-[1rem] leading-[1.8] text-[var(--text-secondary)]">
-              Do nascimento do animal ao comprador no outro lado do mundo — cada etapa da cadeia produtiva brasileira conectada, verificada e auditável.
+              Do nascimento do animal à venda — cada etapa conectada, verificada e auditável.
             </p>
           </FadeIn>
         </div>

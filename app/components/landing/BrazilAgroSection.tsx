@@ -25,34 +25,14 @@ const MACRO_STATS = [
     sub: "2023 · quase metade da pauta exportadora do país",
   },
   {
-    value: "~20 milhões",
-    label: "de empregos",
-    sub: "direta ou indiretamente gerados pelo agronegócio brasileiro",
-  },
-  {
     value: "30%+",
     label: "da carne bovina global",
     sub: "do mercado mundial de exportação tem origem brasileira",
   },
   {
-    value: "108 Mi t",
-    label: "de soja exportadas",
-    sub: "em 2025 — cerca de 40% da produção global",
-  },
-  {
-    value: "R$ 1,2 tri",
-    label: "de PIB agro",
-    sub: "o maior do mundo em termos relativos para uma economia emergente",
-  },
-  {
     value: "230 Mi",
     label: "cabeças bovinas",
     sub: "maior rebanho comercial do planeta",
-  },
-  {
-    value: "2027",
-    label: "PNIB obrigatória",
-    sub: "rastreabilidade vira exigência legal — janela estratégica aberta agora",
   },
 ];
 

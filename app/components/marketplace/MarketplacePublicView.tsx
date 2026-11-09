@@ -25,7 +25,6 @@ import {
   MoreHorizontal,
   ShieldCheck,
   BadgeCheck,
-  FileText,
 } from "lucide-react";
 import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
 import { HALAL_ENABLED } from "@/lib/feature-flags";
@@ -35,7 +34,6 @@ import {
   StaggerItem,
 } from "@/app/components/ui/Motion";
 import type { Listing } from "./MarketplaceTabs";
-import ActivityTicker from "./ActivityTicker";
 
 const TYPE_META: Record<
   string,
@@ -259,49 +257,8 @@ export default function MarketplacePublicView({ listings }: { listings: Listing[
               </div>
             </FadeIn>
           </div>
-
-          {/* 3 diferenciais em cards horizontais */}
-          <StaggerContainer
-            className="mt-14 grid gap-4 md:grid-cols-3"
-            staggerChildren={0.08}
-          >
-            {[
-              {
-                Icon: ShieldCheck,
-                title: "Score Agraas em todo anúncio",
-                sub: "Qualidade verificada antes de comprar.",
-              },
-              {
-                Icon: BadgeCheck,
-                title: "Vendedor com passaporte ativo",
-                sub: "Fazenda rastreada, origem comprovada.",
-              },
-              {
-                Icon: FileText,
-                title: "NF-e conciliada no fechamento",
-                sub: "Sem burocracia, documentação conferida no fechamento.",
-              },
-            ].map((d) => (
-              <StaggerItem key={d.title}>
-                <div className="h-full rounded-2xl border border-white/[.08] bg-white/[.03] p-6 backdrop-blur-sm transition-colors hover:border-[var(--primary)]/30 hover:bg-[var(--primary)]/[.06]">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--primary)]/15">
-                    <d.Icon size={20} className="text-[var(--primary)]" />
-                  </div>
-                  <p className="mt-5 text-[.9375rem] font-semibold text-white">
-                    {d.title}
-                  </p>
-                  <p className="mt-1.5 text-[.8125rem] leading-[1.6] text-white/55">
-                    {d.sub}
-                  </p>
-                </div>
-              </StaggerItem>
-            ))}
-          </StaggerContainer>
         </div>
       </section>
-
-      {/* ═══ ACTIVITY TICKER (live feed) ════════════════════════════════ */}
-      <ActivityTicker listings={listings} />
 
       {/* ═══ CATEGORIAS (3 linhas × 4 colunas, clicáveis → filtram catálogo) ══ */}
       <section className="bg-white">
@@ -777,20 +734,12 @@ export default function MarketplacePublicView({ listings }: { listings: Listing[
                   text: "Propriedade georreferenciada com CAR, GTA e certificações ativas exibidas em todo anúncio.",
                 },
                 {
-                  title: "RLS + dados soberanos",
-                  text: "Row Level Security em PostgreSQL. Seus dados nunca são visíveis a outros clientes, em nenhuma hipótese.",
-                },
-                {
                   title: "NF-e conciliada",
                   text: "Transação fechada no marketplace gera nota fiscal eletrônica automaticamente, pronta para contabilidade.",
                 },
                 {
                   title: "Reputação do vendedor",
                   text: "Histórico de anúncios e vendas visível ao comprador. Quem cumpre ganha destaque orgânico.",
-                },
-                {
-                  title: "100% dedicado ao agro",
-                  text: "Sem dispersão com nichos fora do setor. Cada recurso, feature, suporte — pensado para o agronegócio.",
                 },
               ].map((v) => (
                 <StaggerItem key={v.title}>
@@ -866,8 +815,6 @@ export default function MarketplacePublicView({ listings }: { listings: Listing[
 function PublicListingCard({ listing: l }: { listing: Listing }) {
   const t = TYPE_META[l.listing_type] ?? TYPE_META.outro;
   const Icon = t.icon;
-  // Parcelamento estilo Mercado Livre — calcula em 10x sem juros
-  const installmentValue = l.price_per_unit / 10;
   const isPremium = (l.score_agraas ?? 0) >= 75;
 
   return (
@@ -918,7 +865,7 @@ function PublicListingCard({ listing: l }: { listing: Listing }) {
           {l.title}
         </h4>
 
-        {/* Price block — Mercado Livre style */}
+        {/* Price block */}
         <div className="mt-3">
           <div className="flex items-baseline gap-1.5">
             <span className="text-[1.375rem] font-semibold leading-none text-[var(--text-primary)]">
@@ -926,16 +873,10 @@ function PublicListingCard({ listing: l }: { listing: Listing }) {
             </span>
             <span className="text-[.75rem] text-[var(--text-muted)]">/{l.unit}</span>
           </div>
-          <p className="mt-1 text-[.6875rem] text-[var(--text-secondary)]">
-            em <span className="font-semibold text-[var(--primary)]">10x {fmt(installmentValue)}</span> sem juros
-          </p>
         </div>
 
-        {/* Freight / meta */}
+        {/* Location / meta */}
         <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-[.6875rem]">
-          <span className="inline-flex items-center gap-1 font-semibold text-[var(--primary)]">
-            <Truck size={11} /> Frete a combinar
-          </span>
           {l.location_city && l.location_state && (
             <span className="inline-flex items-center gap-1 text-[var(--text-muted)]">
               <MapPin size={10} />
@@ -956,7 +897,6 @@ function PublicListingCard({ listing: l }: { listing: Listing }) {
 function FeaturedListingCard({ listing: l }: { listing: Listing }) {
   const t = TYPE_META[l.listing_type] ?? TYPE_META.outro;
   const Icon = t.icon;
-  const installmentValue = l.price_per_unit / 10;
   const isPremium = (l.score_agraas ?? 0) >= 75;
 
   return (
@@ -1015,15 +955,9 @@ function FeaturedListingCard({ listing: l }: { listing: Listing }) {
             </span>
             <span className="text-[.8125rem] text-[var(--text-muted)]">/{l.unit}</span>
           </div>
-          <p className="mt-1.5 text-[.75rem] text-[var(--text-secondary)]">
-            em <span className="font-semibold text-[var(--primary)]">10x {fmt(installmentValue)}</span> sem juros
-          </p>
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-[.75rem]">
-          <span className="inline-flex items-center gap-1 font-semibold text-[var(--primary)]">
-            <Truck size={12} /> Frete a combinar
-          </span>
           {l.location_city && l.location_state && (
             <span className="inline-flex items-center gap-1 text-[var(--text-muted)]">
               <MapPin size={11} />

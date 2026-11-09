@@ -8,7 +8,7 @@ const APPARITIONS = [
   {
     Icon: QrCode,
     title: "Passaporte público do animal",
-    text: "QR code aberto que comprador institucional acessa sem cadastro. Mesmo número que você vê no painel.",
+    text: "QR aberto que o comprador acessa sem cadastro — mesmo número do painel.",
   },
   {
     Icon: ShoppingBag,
@@ -49,7 +49,7 @@ export default function ScoresSection() {
           </FadeIn>
           <FadeIn delay={0.12}>
             <p className="mt-6 max-w-[680px] text-[1.0625rem] leading-[1.8] text-white/65">
-              Calculado automaticamente a cada evento. O mesmo número no passaporte público, no dashboard, no marketplace e nos relatórios de exportação. Uma linguagem única para toda a cadeia.
+              Recalculado a cada evento. O mesmo número no passaporte público, no dashboard e no marketplace — uma linguagem única para toda a cadeia.
             </p>
           </FadeIn>
         </div>
@@ -68,7 +68,7 @@ export default function ScoresSection() {
               Onde o score aparece
             </h3>
             <p className="mt-3 max-w-[680px] text-[.9375rem] leading-[1.7] text-white/55">
-              Consistência total entre quem produz e quem compra. O mesmo número acompanha o animal ou o talhão em toda interação externa.
+              O mesmo número acompanha o animal ou o talhão em toda interação externa.
             </p>
           </FadeIn>
 

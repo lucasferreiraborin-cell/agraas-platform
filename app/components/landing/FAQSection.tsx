@@ -8,39 +8,39 @@ import { FadeIn } from "@/app/components/ui/Motion";
 const FAQ = [
   {
     q: "A Agraas substitui meu ERP agrícola ou complementa?",
-    a: "Substitui. A plataforma cobre toda a cadeia — rastreabilidade, operacional, financeiro (DRE, fluxo, balanço), fiscal (leitura e classificação automática de NF-e), estoque com carência MAPA, custo por animal e ROI. Quem migra reduz de 3-4 softwares para 1.",
+    a: "Substitui. Cobre rastreabilidade, operacional, financeiro, fiscal e estoque numa camada só. Quem migra reduz de 3-4 softwares para 1.",
   },
   {
     q: "A Agraas resolve a obrigatoriedade da NFP-e e as mudanças fiscais de 2026?",
-    a: "Sim. A leitura e a classificação de NF-e de entrada e saída já rodam na plataforma, com classificação contábil automática, LCDPR e parametrização de regime tributário (incluindo FUNRURAL por tipo de produtor). A emissão da nota continua onde já está hoje — com o seu contador ou com o emissor que você usa; a Agraas lê o XML autorizado e transforma em custo por animal. O motor fiscal foi construído pensando na janela regulatória que se abre em 2026.",
+    a: "Sim. A leitura e classificação de NF-e já rodam na plataforma, com classificação contábil automática, LCDPR e regime tributário parametrizado (incluindo FUNRURAL por tipo de produtor). A emissão continua onde está hoje — a Agraas lê o XML autorizado e transforma em custo por animal.",
   },
   {
     q: "Quanto tempo leva para uma fazenda começar a usar?",
-    a: "Onboarding em até 72 horas para operações médias. Importação via CSV com template padronizado, cadastro de rebanho e talhões, primeiros scores calculados no mesmo dia. No Enterprise, o time Agraas faz a importação assistida.",
+    a: "Onboarding em até 72 horas para operações médias: importação via CSV, cadastro de rebanho e talhões, primeiros scores no mesmo dia. No Enterprise, o time Agraas faz a importação assistida.",
   },
   {
     q: "Meus dados ficam seguros e são realmente meus?",
-    a: "Sim. Arquitetura em Supabase com Row Level Security — cada cliente só enxerga os próprios dados, isolamento forçado pelo banco. Conformidade LGPD. Seus relatórios (rebanho, fiscal, LCDPR) saem em PDF e CSV a qualquer momento, sem amarra.",
+    a: "Sim. Supabase com Row Level Security — cada cliente só enxerga os próprios dados. Conformidade LGPD. Relatórios saem em PDF e CSV a qualquer momento, sem amarra.",
   },
   {
     q: "Funciona offline no campo?",
-    a: "Sim, via app Agraas Campo (React Native). Registros ficam localmente até a conexão voltar, quando sincronizam automaticamente. Integra com leitura RFID bolus, brincos e dispositivos de campo.",
+    a: "Sim, via app Agraas Campo. Registros ficam localmente até a conexão voltar e sincronizam automaticamente. Integra com RFID bolus, brincos e dispositivos de campo.",
   },
   {
     q: "O Score Agraas é auditável?",
-    a: "Sim. O algoritmo avalia 5 dimensões (produtiva, sanitária, operacional, continuidade, rastreabilidade) com pesos fixos e fórmula transparente. Cada evento registrado recalcula o score em tempo real. O comprador enxerga o mesmo número que você vê.",
+    a: "Sim. O algoritmo avalia 5 dimensões com pesos fixos e fórmula transparente, recalculada a cada evento. O comprador enxerga o mesmo número que você vê.",
   },
   {
     q: "Posso integrar com sistemas que já uso?",
-    a: "CSV e XLSX via modelo em todos os planos, além de XML e PDF de NF-e. Integrações diretas (TOTVS, SAP, ERPs regionais, APIs proprietárias) disponíveis no Enterprise sob demanda.",
+    a: "CSV e XLSX via modelo em todos os planos, além de XML e PDF de NF-e. Integrações diretas (TOTVS, SAP, ERPs regionais) disponíveis no Enterprise sob demanda.",
   },
   {
     q: "Como funciona a cobrança do marketplace?",
-    a: "Publicar anúncios é gratuito em todos os planos. A transação acontece direto entre comprador e vendedor, e a nota emitida é conciliada na plataforma. Taxa de sucesso prevista de 2% sobre transações fechadas pelo marketplace, paga pelo vendedor.",
+    a: "Publicar anúncios é gratuito em todos os planos. A transação acontece direto entre comprador e vendedor, com a nota conciliada na plataforma. Taxa de sucesso prevista de 2% sobre transações fechadas, paga pelo vendedor.",
   },
   {
     q: "A Agraas vai além da pecuária bovina?",
-    a: "O foco operacional atual é 100% bovino — onde está o piloto, o aprendizado e o time. O motor de dados foi desenhado para escalar para soja, milho, cana e demais cadeias quando o sinal de mercado pedir. Talhões georreferenciados e estrutura para documentação de embarque já estão na fundação da plataforma.",
+    a: "O foco operacional atual é 100% bovino — onde está o piloto e o aprendizado. O motor de dados foi desenhado para escalar para soja, milho, cana e demais cadeias quando o sinal de mercado pedir.",
   },
 ];
 

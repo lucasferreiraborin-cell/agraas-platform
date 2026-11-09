@@ -4,8 +4,6 @@ import Image from "next/image";
 import { createSupabaseServiceClient } from "@/lib/supabase-service";
 import PublicShell from "@/app/components/ui/PublicShell";
 import ScoresSection from "@/app/components/landing/ScoresSection";
-import PassportPreview from "@/app/components/landing/PassportPreview";
-import PortosSection from "@/app/components/landing/PortosSection";
 import FSJBECaseSection from "@/app/components/landing/FSJBECaseSection";
 import OperationalSection from "@/app/components/landing/OperationalSection";
 import RegulatoryWindowSection from "@/app/components/landing/RegulatoryWindowSection";
@@ -26,7 +24,6 @@ import {
   ShoppingBag,
   MapPin,
   ArrowRight,
-  CheckCircle2,
 } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -77,7 +74,7 @@ async function fetchLandingData() {
     .select("id, title, listing_type, price_per_unit, unit, location_city, location_state, halal_certified, score_agraas")
     .eq("status", "ativo")
     .order("created_at", { ascending: false })
-    .limit(6);
+    .limit(3);
 
   return {
     mkItems: (listings ?? []) as ListingRow[],
@@ -186,9 +183,6 @@ export default async function LandingPage() {
         <ScoresSection />
       </div>
 
-      {/* ═══ [4.5] PASSAPORTE PÚBLICO — preview tangível ══════════════════ */}
-      <PassportPreview />
-
       {/* ═══ [5] CAPABILITIES — narrativa 2x2 ═════════════════════════════ */}
       <section className="bg-white">
         <div className="mx-auto max-w-[1200px] px-6 py-24 lg:px-10 lg:py-28">
@@ -244,80 +238,6 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* ═══ [5.5] TRÊS PERSONAS, UM MESMO CORE ═══════════════════════════ */}
-      <section className="bg-[var(--bg)]">
-        <div className="mx-auto max-w-[1200px] px-6 py-24 lg:px-10 lg:py-28">
-          <div className="max-w-[820px]">
-            <FadeIn>
-              <p className="text-[.75rem] font-semibold uppercase tracking-[.22em] text-[var(--primary)]">
-                Tese
-              </p>
-            </FadeIn>
-            <FadeIn delay={0.08}>
-              <h2 className="mt-5 text-[clamp(1.8rem,4vw,2.8rem)] font-medium leading-[1.08] tracking-[-.02em] text-[var(--text-primary)] [text-wrap:balance]">
-                O mesmo dado serve quatro interlocutores do agro.
-              </h2>
-            </FadeIn>
-            <FadeIn delay={0.16}>
-              <p className="mt-6 max-w-[720px] text-[1rem] leading-[1.8] text-[var(--text-secondary)]">
-                A operação de campo gera um único registro auditável. Esse registro vira gestão para quem produz, apuração pronta para quem contabiliza, prova para quem compra e leitura de risco para quem financia. Sem retrabalho, sem versão diferente do mesmo número em sistemas diferentes.
-              </p>
-            </FadeIn>
-          </div>
-
-          <StaggerContainer
-            className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4"
-            staggerChildren={0.08}
-          >
-            {[
-              {
-                tag: "Produtor",
-                title: "Gestão completa do dia a dia",
-                text: "Manejo, sanitário, financeiro, fiscal e estoque em um só lugar. O rastreio é consequência da operação — não custo adicional.",
-              },
-              {
-                tag: "Contador",
-                title: "Apuração pronta, não retrabalho",
-                text: "NF-e classificada automaticamente, DRE mensal, LCDPR e obrigações fiscais geradas pela operação do cliente — sem pedir planilha, sem digitar duas vezes.",
-              },
-              {
-                tag: "Comprador institucional",
-                title: "Prova auditável de origem",
-                text: "Acesso ao histórico do animal ou do lote sem precisar confiar na palavra do vendedor. Score, eventos e documentos no mesmo QR.",
-              },
-              {
-                tag: "Instituição financeira",
-                title: "Risco lido na fonte",
-                text: "Carteira de crédito agro avaliada com base no que está acontecendo no campo e na contabilidade agora — não em demonstrativo de seis meses atrás.",
-              },
-            ].map((p) => (
-              <StaggerItem key={p.tag}>
-                <div className="flex h-full flex-col rounded-2xl border border-[var(--border)] bg-white p-8 shadow-[var(--shadow-soft)] transition-colors hover:border-[var(--primary)]/25">
-                  <p className="text-[.6875rem] font-semibold uppercase tracking-[.18em] text-[var(--primary)]">
-                    {p.tag}
-                  </p>
-                  <h3 className="mt-4 text-[1.125rem] font-semibold leading-[1.3] tracking-[-.01em] text-[var(--text-primary)]">
-                    {p.title}
-                  </h3>
-                  <p className="mt-3 text-[.9375rem] leading-[1.75] text-[var(--text-muted)]">
-                    {p.text}
-                  </p>
-                </div>
-              </StaggerItem>
-            ))}
-          </StaggerContainer>
-
-          <FadeIn delay={0.35}>
-            <p className="mt-12 max-w-[760px] border-l-4 border-[var(--primary)] pl-6 text-[1rem] leading-[1.8] text-[var(--text-secondary)]">
-              Hoje o foco operacional é bovino — onde está o cliente piloto, a tração e o ciclo de aprendizado mais curto. O motor de dados foi desenhado para escalar para as demais cadeias quando o sinal pedir.
-            </p>
-          </FadeIn>
-        </div>
-      </section>
-
-      {/* ═══ [6] PORTOS BR → MUNDO ═════════════════════════════════════════ */}
-      <PortosSection />
-
       {/* ═══ [7] BRASIL LÍDER MUNDIAL DO AGRO ══════════════════════════════ */}
       <BrazilAgroSection />
 
@@ -341,35 +261,12 @@ export default async function LandingPage() {
             </div>
           </FadeIn>
 
-          {/* 4 pills — propostas únicas */}
-          <FadeIn delay={0.12}>
-            <div className="mt-10 flex flex-wrap items-center gap-3 border-y border-[var(--border)] py-6">
-              <span className="text-[.75rem] font-semibold uppercase tracking-[.12em] text-[var(--text-muted)]">
-                O que muda aqui:
-              </span>
-              {[
-                "Score em todo anúncio",
-                "Histórico do vendedor no listing",
-                "NF-e conciliada no fechamento",
-                "Sem intermediário entre as partes",
-              ].map((p) => (
-                <span
-                  key={p}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-[var(--primary)]/25 bg-[var(--primary-soft)] px-3.5 py-1.5 text-[.8125rem] font-semibold text-[var(--primary)]"
-                >
-                  <CheckCircle2 size={13} />
-                  {p}
-                </span>
-              ))}
-            </div>
-          </FadeIn>
-
-          {/* Grid 3×2 (6 cards fixos) */}
+          {/* Grid 1×3 (3 cards fixos) */}
           <StaggerContainer
-            className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3"
+            className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3"
             staggerChildren={0.05}
           >
-            {Array.from({ length: 6 }).map((_, i) => {
+            {Array.from({ length: 3 }).map((_, i) => {
               const l = mkItems[i];
               if (l) {
                 return (
