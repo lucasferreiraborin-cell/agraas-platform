@@ -3,7 +3,7 @@
 > **Página viva.** Responde "onde estamos?" sem você precisar perguntar.
 > Atualizada ao fim de cada bloco de trabalho, antes do commit.
 >
-> **Última atualização:** 09/11/2026 · varredura completa do roteiro de demo · reunião iBoi **amanhã (10/11)**
+> **Última atualização:** 09/11/2026 (noite) · FSJBE auditada e limpa de ponta a ponta · reunião iBoi **amanhã (10/11)**
 
 ---
 
@@ -86,6 +86,27 @@ via browser). Achados:
   + 5 tools de leitura do Playwright + WebFetch/WebSearch no allowlist —
   reduz prompt de permissão hoje. `apply_migration` deixado de fora de
   propósito, continua pedindo ordem expressa.
+
+**09/11 (noite) — FSJBE auditada tabela por tabela, resíduo de seed eliminado.**
+Lucas afirmou que o único dado real da plataforma era a nota fiscal subida em
+04/11 (Alvorada Com. Agropecuários, R$ 2.061,36 — confirmada intacta na tabela
+legada `fiscal_notes`, status `pendente`, sem `auto_stock_entry`). Pra
+verificar, rodei uma contagem de linhas da FSJBE nas ~80 tabelas com
+`client_id` do schema. Achado: **13 tabelas** com resíduo do seed de
+17/04/2026 que o `/admin/reset-cliente` de 11/09 não cobre —
+`animal_cost_summary` (5), `production_sales_history` (5),
+`production_calf_entries` (4), `animal_goals` (4), `reproductive_ia_services`
+(3), `sanitary_calendar` (3), `suppliers` (3, contatos fictícios com telefone
+sequencial fake), `buyers` (2), `daily_insights` (15), além de
+`supply_inventory_items`, `products`, `mentor_assignments`,
+`supply_financials`, `reproductive_seasons`, `audit_snapshot` — mais os **7
+anúncios de marketplace** e os **3 lotes de estoque** já achados antes nesta
+sessão. Tudo deletado (transação única, ordem resolvendo FK
+`products→suppliers`). Hoje a FSJBE tem só: a nota real, a propriedade real
+(Jussara-GO) e o `chart_of_accounts` (infra preservada de propósito pelo
+reset). **Ação de acompanhamento, não feita agora:** `/admin/reset-cliente`
+precisa ganhar essas tabelas na cobertura dele, senão o problema volta no
+próximo reset de qualquer cliente — ver `lib/admin/reset-cliente.ts`.
 
 ## Decisões pendentes (perguntadas ao Lucas, sem resposta ainda)
 
