@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Loader2, Tractor, Factory, Globe, Package, Handshake, Eye, Calculator } from "lucide-react";
@@ -205,6 +205,20 @@ export default function CadastroPage() {
     }
   }
 
+  // A-6 (raio-x 14/09): sem <form>, o navegador avisa "password field not
+  // contained in a form" e o gerenciador de senha não oferece salvar/preencher.
+  async function onFormSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (loading) return;
+    if (step === 1) {
+      if (!canAdvanceStep1) return;
+      if (profileType === "visitante") await handleSubmit();
+      else setStep(2);
+    } else {
+      await handleSubmit();
+    }
+  }
+
   // Focus first input on step change
   useEffect(() => {
     const el = document.querySelector<HTMLInputElement>("input[data-autofocus]");
@@ -220,6 +234,7 @@ export default function CadastroPage() {
       sidebarBadges={["EUDR", "MAPA", "GTA", "LCDPR"]}
       step={{ current: step, total: profileType === "visitante" ? 1 : 2 }}
     >
+      <form onSubmit={onFormSubmit} noValidate>
       {step === 1 && (
         <div className="space-y-7">
           <div>
@@ -366,11 +381,8 @@ export default function CadastroPage() {
           </div>
 
           <button
-            type="button"
+            type="submit"
             disabled={!canAdvanceStep1 || loading}
-            onClick={() =>
-              profileType === "visitante" ? handleSubmit() : setStep(2)
-            }
             className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--primary)] py-3.5 text-[.9375rem] font-semibold text-white shadow-[var(--shadow-green)] transition-all hover:bg-[var(--primary-hover)] disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading ? (
@@ -528,9 +540,8 @@ export default function CadastroPage() {
           )}
 
           <button
-            type="button"
+            type="submit"
             disabled={loading}
-            onClick={handleSubmit}
             className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--primary)] py-3.5 text-[.9375rem] font-semibold text-white shadow-[var(--shadow-green)] transition-all hover:bg-[var(--primary-hover)] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loading ? (
@@ -547,6 +558,7 @@ export default function CadastroPage() {
           </button>
         </div>
       )}
+      </form>
     </AuthShell>
   );
 }
