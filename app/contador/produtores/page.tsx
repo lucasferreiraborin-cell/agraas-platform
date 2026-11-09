@@ -12,7 +12,7 @@ import { createSupabaseServiceClient } from "@/lib/supabase-service";
 import { funruralValue, type FunruralClient } from "@/lib/funrural";
 import { requirePersona, CONTADOR_ROUTES } from "@/lib/persona-resolver";
 import PersonaShell from "@/app/components/personas/PersonaShell";
-import { Search, Users, ChevronRight } from "lucide-react";
+import { Users, ChevronRight } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -138,15 +138,6 @@ export default async function ContadorProdutoresPage() {
             Cada dossiê traz NF-e classificadas, FUNRURAL projetado e exportação LCDPR.
           </p>
         </header>
-
-        <div className="mb-6 flex items-center gap-3 rounded-2xl border border-white/8 bg-white/4 px-4 py-2.5 max-w-md backdrop-blur">
-          <Search size={14} className="text-white/45" />
-          <input
-            placeholder="Buscar produtor (em breve)"
-            disabled
-            className="flex-1 bg-transparent text-sm text-white/75 outline-none placeholder-white/35"
-          />
-        </div>
 
         {rows.length === 0 ? (
           <div className="rounded-3xl border border-white/8 bg-white/5 p-12 text-center backdrop-blur">

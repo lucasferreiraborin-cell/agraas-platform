@@ -51,8 +51,8 @@ export default async function CashFlowPage() {
   const isoCutoff = cutoff12.toISOString().split("T")[0];
 
   type InvoiceRow = {
-    emission_date: string | null;
-    total_amount: number | null;
+    issued_at: string | null;
+    gross_value: number | null;
     direction: string | null;
   };
 
@@ -60,24 +60,25 @@ export default async function CashFlowPage() {
   try {
     const { data } = await supabase
       .from("fiscal_invoices")
-      .select("emission_date, total_amount, direction")
-      .gte("emission_date", isoCutoff)
-      .not("total_amount", "is", null);
+      .select("issued_at, gross_value, direction")
+      .gte("issued_at", isoCutoff)
+      .not("gross_value", "is", null);
     invoices = (data ?? []) as InvoiceRow[];
-  } catch {
+  } catch (e) {
+    console.error("[cash-flow] falha ao carregar fiscal_invoices:", e);
     invoices = [];
   }
 
   // Agrupa por mês
   const buckets = new Map<string, { entradas: number; saidas: number }>();
   for (const inv of invoices) {
-    if (!inv.emission_date) continue;
-    const ym = inv.emission_date.slice(0, 7); // "YYYY-MM"
+    if (!inv.issued_at) continue;
+    const ym = inv.issued_at.slice(0, 7); // "YYYY-MM"
     if (!buckets.has(ym)) buckets.set(ym, { entradas: 0, saidas: 0 });
     const bucket = buckets.get(ym)!;
-    const amount = Number(inv.total_amount ?? 0);
-    if (inv.direction === "inbound") bucket.entradas += amount;
-    else if (inv.direction === "outbound") bucket.saidas += amount;
+    const amount = Number(inv.gross_value ?? 0);
+    if (inv.direction === "entrada") bucket.entradas += amount;
+    else if (inv.direction === "saida") bucket.saidas += amount;
   }
 
   // Preenche todos os 12 meses (mesmo sem dados)

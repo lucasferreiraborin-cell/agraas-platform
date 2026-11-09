@@ -367,11 +367,11 @@ function formatDate(iso: string | null | undefined): string {
 
 function sourceLabel(source: string | null | undefined): string {
   const map: Record<string, string> = {
-    xml: "Importado via XML",
-    pdf: "Importado via PDF",
-    audio: "Ditado por voz",
-    csv: "Importado via planilha",
-    sefaz: "Sincronizado SEFAZ",
+    xml_upload: "Importado via XML",
+    pdf_upload: "Importado via PDF",
+    audio_dictation: "Ditado por voz",
+    csv_import: "Importado via planilha",
+    sefaz_api: "Sincronizado SEFAZ",
     manual: "Entrada manual",
   };
   if (!source) return "Origem não informada";

@@ -35,7 +35,7 @@ const ALERT_LABEL_MAP: Record<string, string> = {
   "cfop divergente":      "CFOP Divergente",
   "pdf_revisao_manual":   "PDF — Revisão Manual",
   "pdf revisao manual":   "PDF — Revisão Manual",
-  "ncm_invalido":         "NCM Inválido",
+  "ncm_incorreto":        "NCM Incorreto",
   "valor_divergente":     "Valor Divergente",
 };
 
@@ -284,7 +284,7 @@ export default function FiscalRelatorioPage() {
                         )}
                       </td>
                       <td>
-                        <Link href={`/fiscal/${n.id}`} className="text-xs font-medium text-[var(--primary)] opacity-0 group-hover:opacity-100 transition hover:underline">
+                        <Link href={`/fiscal/${n.id}`} className="text-xs font-medium text-[var(--primary)] hover:underline">
                           Ver →
                         </Link>
                       </td>
