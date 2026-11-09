@@ -19,7 +19,7 @@ export default function AgroAssistant() {
     if (open && messages.length === 0) {
       setMessages([{
         role: "assistant",
-        content: "Olá! Sou o assistente da Agraas. Tenho acesso completo aos dados da sua fazenda: rebanho, reprodutivo, produção, insumos e auditoria. Pode perguntar qualquer coisa — taxa de prenhez, animais aptos para exportação, saldo de insumos, GPD do desmame..."
+        content: "Olá! Sou o Tropeiro, assistente da Agraas. Tenho acesso completo aos dados da sua fazenda: rebanho, reprodutivo, produção, insumos e auditoria. Pode perguntar qualquer coisa — taxa de prenhez, animais aptos para exportação, saldo de insumos, GPD do desmame..."
       }]);
     }
   }, [open]);
@@ -67,7 +67,7 @@ export default function AgroAssistant() {
         type="button"
         onClick={() => setOpen(v => !v)}
         className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--primary-hover)] shadow-2xl transition hover:bg-[#3B6B2E] active:scale-95"
-        title="Assistente Agraas"
+        title="Tropeiro — assistente Agraas"
       >
         {open ? (
           <X size={22} className="text-white" />
@@ -99,8 +99,8 @@ export default function AgroAssistant() {
               <path d="M16 26 Q20 29 24 26" stroke="#3B2800" strokeWidth="1.5" strokeLinecap="round" fill="none"/>
             </svg>
             <div>
-              <p className="text-sm font-semibold text-white">Assistente Agraas</p>
-              <p className="text-xs text-white/70">Dados reais da sua fazenda</p>
+              <p className="text-sm font-semibold text-white">Tropeiro</p>
+              <p className="text-xs text-white/70">Assistente Agraas · dados reais da fazenda</p>
             </div>
           </div>
 

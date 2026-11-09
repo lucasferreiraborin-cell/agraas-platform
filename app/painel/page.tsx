@@ -189,6 +189,7 @@ export default async function PainelPage() {
     { data: activeAppsData },
     { data: upcomingLotsData },
     { data: staleTrackingData },
+    { data: salesRoiData },
   ] = await Promise.all([
     // Explicit client_id filter on all tables — some have no RLS
     supabaseServer
@@ -265,6 +266,12 @@ export default async function PainelPage() {
       .eq("client_id", clientId)
       .neq("stage", "entregue")
       .lt("created_at", new Date(now.getTime() - 5 * 86400000).toISOString()),
+
+    supabaseServer
+      .from("sales")
+      .select("roi")
+      .eq("client_id", clientId)
+      .not("roi", "is", null),
   ]);
 
   // ── Sprint B · Instituições parceiras (banco/cooperativa) ───────────────────
@@ -388,6 +395,16 @@ export default async function PainelPage() {
     0
   );
   const totalArrobas = Math.round(totalWeightKg / 30); // peso vivo: 1 arroba = 30 kg
+
+  // ROI médio das vendas com custo apurado — mesmo padrão de KPI de margem
+  // que a referência de mercado (AgriWebb) expõe direto no dashboard principal.
+  const roiValues = (salesRoiData ?? [])
+    .map((s) => Number(s.roi))
+    .filter((v) => !Number.isNaN(v));
+  const avgRoi =
+    roiValues.length > 0
+      ? Math.round(roiValues.reduce((sum, v) => sum + v, 0) / roiValues.length)
+      : null;
 
   // T1.7 (17/06/2026): cotação dinâmica do banco com fallback seguro.
   // Em vez de hardcode R$ 330, agora valoriza pelo último snapshot CEPEA.
@@ -654,10 +671,13 @@ export default async function PainelPage() {
               {cotacaoSnap.isStale ? " (snapshot desatualizado)" : ""}
             </p>
 
-            <div className="mt-5 grid grid-cols-3 gap-3 border-t border-[var(--border)] pt-5">
+            <div className={`mt-5 grid gap-3 border-t border-[var(--border)] pt-5 ${avgRoi !== null ? "grid-cols-4" : "grid-cols-3"}`}>
               <HeroSatellite label="Animais" value={totalAnimals} />
               <HeroSatellite label="Score médio" value={`${totalScoreAverage}`} sub="/100" />
               <HeroSatellite label="Arrobas" value={`${totalArrobas}`} sub="@" />
+              {avgRoi !== null && (
+                <HeroSatellite label="ROI médio" value={`${avgRoi}`} sub="%" />
+              )}
             </div>
           </div>
         </div>
