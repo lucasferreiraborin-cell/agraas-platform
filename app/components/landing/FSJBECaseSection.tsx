@@ -1,21 +1,23 @@
 "use client";
 
 import Link from "next/link";
-import { MapPin, ArrowRight, CheckCircle2 } from "lucide-react";
+import { MapPin, ArrowRight, CheckCircle2, Circle } from "lucide-react";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/app/components/ui/Motion";
 
 const STATS = [
-  { value: "Nelore", label: "Rebanho passaportado individual" },
-  { value: "2.300",  label: "cabeças em onboarding digital" },
+  { value: "Nelore", label: "Raça do rebanho real" },
+  { value: "2.300",  label: "cabeças — onboarding começando" },
   { value: "Cria",   label: "fazenda com foco em terminação reprodutiva" },
   { value: "Goiás",  label: "Jussara — oeste goiano" },
 ];
 
+// 09/11 (noite): status real, não checklist de aspiração — auditoria linha a
+// linha confirmou que só os dois primeiros itens já aconteceram de fato.
 const DELIVERABLES = [
-  { label: "Passaporte digital",        sub: "ID único por animal, acessível via QR público" },
-  { label: "Operação no campo",         sub: "Pesagens, manejo e sanitário registrados pelo time" },
-  { label: "Conformidade sanitária",    sub: "Calendário MAPA e carências respeitadas" },
-  { label: "Infraestrutura preparada",  sub: "Base de dados pronta para os próximos passos comerciais" },
+  { label: "Cliente real",              sub: "Primeira nota fiscal recebida pela plataforma",        done: true },
+  { label: "Infraestrutura preparada",  sub: "Plano de contas e propriedade cadastrados",             done: true },
+  { label: "Passaporte digital",        sub: "Ativa conforme o rebanho entra na plataforma",          done: false },
+  { label: "Operação no campo",         sub: "Pesagens e manejo começam com o onboarding do rebanho", done: false },
 ];
 
 export default function FSJBECaseSection() {
@@ -51,10 +53,10 @@ export default function FSJBECaseSection() {
           <FadeIn delay={0.25}>
             <div className="mt-8 max-w-[720px] space-y-5 text-[1.0625rem] leading-[1.85] text-[var(--text-secondary)]">
               <p>
-                A Fazenda São João da Boa Esperança é o piloto operacional da Agraas. Com 2.300 cabeças de Nelore em Jussara (GO), a FSJBE está colocando seu rebanho, suas notas fiscais e seu manejo dentro da plataforma — passaporte digital individual por animal, um a um.
+                A Fazenda São João da Boa Esperança é o piloto operacional da Agraas — o primeiro cliente real da plataforma. Com 2.300 cabeças de Nelore em Jussara (GO), a conta já recebeu a primeira nota fiscal real; o onboarding do rebanho, animal por animal, é o próximo passo.
               </p>
               <p className="font-medium text-[var(--text-primary)]">
-                Piloto em campo, com dados reais entrando — não uma demonstração.
+                Cliente real, não demonstração: a infraestrutura está pronta e o primeiro documento fiscal já está na plataforma.
               </p>
             </div>
           </FadeIn>
@@ -97,7 +99,11 @@ export default function FSJBECaseSection() {
                 <ul className="mt-4 space-y-3">
                   {DELIVERABLES.map((d) => (
                     <li key={d.label} className="flex items-start gap-3">
-                      <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-[var(--primary)]" />
+                      {d.done ? (
+                        <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-[var(--primary)]" />
+                      ) : (
+                        <Circle size={16} className="mt-0.5 shrink-0 text-[var(--text-muted)]" />
+                      )}
                       <div>
                         <p className="text-[.875rem] font-semibold text-[var(--text-primary)]">
                           {d.label}

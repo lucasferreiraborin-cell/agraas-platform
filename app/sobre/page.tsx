@@ -159,7 +159,7 @@ export default function SobrePage() {
           <FadeIn delay={0.15}>
             <div className="mt-8 space-y-5 text-[1.0625rem] leading-[1.85] text-[var(--text-secondary)]">
               <p>
-                A Agraas foi fundada em 2025 em São Paulo por um time com raízes profundas no agronegócio brasileiro. A plataforma foi construída do zero e está em operação como piloto em Goiás — uma fazenda de cria com rebanho Nelore sendo digitalmente rastreada com passaporte individual e operação registrada do dia a dia.
+                A Agraas foi fundada em 2025 em São Paulo por um time com raízes profundas no agronegócio brasileiro. A plataforma foi construída do zero e tem seu primeiro cliente real em Goiás — uma fazenda de cria com rebanho Nelore, com a primeira nota fiscal já recebida pela plataforma e o onboarding do rebanho como próximo passo.
               </p>
               <p>Estamos em processo de captação para escalar a operação em todo o Brasil.</p>
             </div>
