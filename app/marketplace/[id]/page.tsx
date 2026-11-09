@@ -171,9 +171,12 @@ export default async function ListingDetailPage({
 
   const totalValue = l.price_per_unit * l.quantity_available;
 
-  return (
-    <PublicShell>
-      <div className="mx-auto max-w-[1200px] px-6 py-8 lg:px-10 lg:py-12">
+  // Usuário logado já tem o chrome autenticado (sidebar) do layout raiz —
+  // envolver em PublicShell também desenhava a barra/rodapé públicos por
+  // cima, duplicando cabeçalho (achado em verificação ao vivo, 09/11/2026).
+  // Mesmo padrão de branching que app/marketplace/page.tsx já usa.
+  const content = (
+    <div className="mx-auto max-w-[1200px] px-6 py-8 lg:px-10 lg:py-12">
         <BackLink href="/marketplace" label="Voltar ao marketplace" />
 
         <div className="mt-6 grid gap-10 lg:grid-cols-[1.6fr_1fr] lg:gap-14">
@@ -417,8 +420,9 @@ export default async function ListingDetailPage({
           </aside>
         </div>
       </div>
-    </PublicShell>
   );
+
+  return user ? <main>{content}</main> : <PublicShell>{content}</PublicShell>;
 }
 
 function DetailRow({
