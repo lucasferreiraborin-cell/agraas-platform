@@ -162,8 +162,6 @@ export default async function PropriedadeDetailPage({ params }: PageProps) {
       ? Math.round(scores.reduce((acc, s) => acc + s, 0) / scores.length)
       : null;
 
-  const topScore = scores.length > 0 ? Math.max(...scores) : null;
-
   // Eventos recentes dos animais desta propriedade
   const events: EventRow[] =
     animalIds.length > 0
@@ -199,88 +197,56 @@ export default async function PropriedadeDetailPage({ params }: PageProps) {
 
       {/* Hero */}
       <section className="ag-card-strong overflow-hidden">
-        <div className="grid xl:grid-cols-[1.08fr_0.92fr]">
-          <div className="p-8 lg:p-10">
-            <div className="ag-badge ag-badge-green">Fazenda</div>
+        <div className="p-8 lg:p-10">
+          <div className="ag-badge ag-badge-green">Fazenda</div>
 
-            <div className="mt-6 flex items-center gap-4">
-              <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-[var(--primary-soft)]">
-                <Tractor size={28} className="text-[var(--primary)]" />
-              </div>
-
-              <div>
-                <h1 className="text-4xl font-semibold text-[var(--text-primary)]">
-                  {property.name ?? "—"}
-                </h1>
-
-                <p className="mt-2 text-[var(--text-secondary)]">
-                  {property.region ?? "—"} • {property.state ?? "—"}
-                </p>
-
-                {property.code && (
-                  <div className="mt-4 inline-flex items-center gap-2 rounded-2xl border border-[rgba(93,156,68,0.18)] bg-[var(--primary-soft)] px-4 py-2">
-                    <span className="text-xs uppercase tracking-[0.14em] text-[var(--text-muted)]">
-                      Código
-                    </span>
-                    <span className="text-sm font-semibold text-[var(--text-primary)]">
-                      {property.code}
-                    </span>
-                  </div>
-                )}
-              </div>
+          <div className="mt-6 flex items-center gap-4">
+            <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-[var(--primary-soft)]">
+              <Tractor size={28} className="text-[var(--primary)]" />
             </div>
 
-            <div className="mt-8 grid gap-4 md:grid-cols-3">
-              <HighlightCard
-                label="Perfil"
-                value={property.profile ?? "—"}
-                subtitle="classificação operacional"
-              />
-              <HighlightCard
-                label="Área"
-                value={
-                  property.area_hectares
-                    ? `${property.area_hectares} ha`
-                    : "—"
-                }
-                subtitle="hectares registrados"
-              />
-              <HighlightCard
-                label="Status"
-                value={property.status ?? "—"}
-                subtitle="condição atual da unidade"
-              />
+            <div>
+              <h1 className="text-4xl font-semibold text-[var(--text-primary)]">
+                {property.name ?? "—"}
+              </h1>
+
+              <p className="mt-2 text-[var(--text-secondary)]">
+                {property.region ?? "—"} • {property.state ?? "—"}
+              </p>
+
+              {property.code && (
+                <div className="mt-4 inline-flex items-center gap-2 rounded-2xl border border-[rgba(93,156,68,0.18)] bg-[var(--primary-soft)] px-4 py-2">
+                  <span className="text-xs uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                    Código
+                  </span>
+                  <span className="text-sm font-semibold text-[var(--text-primary)]">
+                    {property.code}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
-          <div className="border-l border-[var(--border)] bg-[var(--surface-soft)] p-8 lg:p-10">
-            <p className="text-xs uppercase tracking-[0.18em] text-[var(--text-muted)]">
-              Resumo operacional
-            </p>
-
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              <SnapshotCard
-                label="Animais vinculados"
-                value={String(animals.length)}
-              />
-              <SnapshotCard label="Ativos" value={String(activeCount)} />
-              <SnapshotCard
-                label="Score médio"
-                value={averageScore !== null ? String(averageScore) : "—"}
-              />
-              <SnapshotCard
-                label="Top score"
-                value={topScore !== null ? String(topScore) : "—"}
-              />
-              <SnapshotCard
-                label="Lotes"
-                value={String(lotsCount)}
-              />
-              <SnapshotCard
-                label="Raças"
-                value={String(breedsCount)}
-              />
-            </div>
+          <div className="mt-8 grid gap-4 md:grid-cols-3">
+            <HighlightCard
+              label="Perfil"
+              value={property.profile ?? "—"}
+              subtitle="classificação operacional"
+            />
+            <HighlightCard
+              label="Área"
+              value={
+                property.area_hectares
+                  ? `${property.area_hectares} ha`
+                  : "—"
+              }
+              subtitle="hectares registrados"
+            />
+            <HighlightCard
+              label="Status"
+              value={property.status ?? "—"}
+              subtitle="condição atual da unidade"
+            />
           </div>
         </div>
       </section>
@@ -559,17 +525,6 @@ function HighlightCard({
         {value}
       </p>
       <p className="mt-2 text-sm text-[var(--text-secondary)]">{subtitle}</p>
-    </div>
-  );
-}
-
-function SnapshotCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-3xl border bg-white p-5 shadow">
-      <p className="text-sm text-[var(--text-muted)]">{label}</p>
-      <p className="mt-3 text-lg font-semibold text-[var(--text-primary)]">
-        {value}
-      </p>
     </div>
   );
 }

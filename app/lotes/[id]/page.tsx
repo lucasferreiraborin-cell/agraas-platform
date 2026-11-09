@@ -11,6 +11,7 @@ import ExportRouteMap from "@/app/components/ExportRouteMap";
 import TrackingTimeline from "@/app/components/TrackingTimeline";
 import { FileText, Upload, Globe, Flag, Anchor, Calendar, Scale } from "lucide-react";
 import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
+import { HALAL_ENABLED } from "@/lib/feature-flags";
 import DownloadLotPDFButton from "@/app/components/DownloadLotPDFButton";
 import LotValueCalculator from "@/app/components/LotValueCalculator";
 import HedgePanel from "@/app/components/HedgePanel";
@@ -463,7 +464,7 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
         {/* ── Tab: Visão Geral ── */}
         {activeTab === "overview" && (
           <div className="mt-8 space-y-8">
-            {halalConformidade && (
+            {HALAL_ENABLED && halalConformidade && (
               <section className="ag-card flex items-center gap-6 p-6">
                 <HalalBadgeSVG size={56} />
                 <div className="flex gap-8">
@@ -541,11 +542,12 @@ export default function LoteDetailPage({ params }: { params: Promise<{ id: strin
                             <span className="text-xs text-[var(--text-muted)]">{animal.breed ?? "—"} · {sexLabel(animal.sex)}</span>
                             <span className="text-xs font-medium text-[var(--text-secondary)]">Score {score}</span>
                             {last && <span className="text-xs text-[var(--text-muted)]">{last} kg</span>}
-                            {certs.length > 0 && certs.map(c =>
-                              c === "Halal"
-                                ? <HalalBadgeSVG key={c} size={24} />
-                                : <span key={c} className="rounded-full px-2 py-0.5 text-[10px] font-semibold bg-gray-100 text-gray-600">{c}</span>
-                            )}
+                            {certs.length > 0 && certs.map(c => {
+                              if (c === "Halal") {
+                                return HALAL_ENABLED ? <HalalBadgeSVG key={c} size={24} /> : null;
+                              }
+                              return <span key={c} className="rounded-full px-2 py-0.5 text-[10px] font-semibold bg-gray-100 text-gray-600">{c}</span>;
+                            })}
                           </div>
                           {pendencias.length > 0 && (
                             <p className="mt-1.5 text-xs text-amber-700">{pendencias.join(" · ")}</p>

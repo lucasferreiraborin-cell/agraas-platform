@@ -622,11 +622,7 @@ export default async function PainelPage() {
               {greeting}, {firstName}.
             </h1>
             <p className="mt-5 max-w-xl text-lg leading-7 text-[var(--text-primary)]/80 lg:text-xl">
-              Cada animal, um{" "}
-              <strong className="font-semibold text-[var(--primary)]">
-                ativo digital
-              </strong>{" "}
-              — rastreável, auditável, mensurável e negociável. O resumo abaixo é a leitura do seu rebanho hoje.
+              A leitura do seu rebanho hoje.
             </p>
 
             <div className="mt-7 flex flex-wrap gap-3">
@@ -727,13 +723,10 @@ export default async function PainelPage() {
               <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-700">
                 v3 · Embrapa Doc 237
               </span>
-              <span className="text-xs text-[var(--text-muted)]">
-                Implementação Agraas da Plataforma +Precoce
-              </span>
             </div>
             <h2 className="mt-2 ag-section-title">Score Agraas · pilares do rebanho</h2>
             <p className="ag-section-subtitle">
-              Médias agregadas dos 5 pilares ancorados na metodologia Embrapa Gado de Corte (Costa et al., 2018).
+              Médias agregadas dos 5 pilares, metodologia Embrapa Gado de Corte (Costa et al., 2018).
             </p>
           </div>
           <div className="flex shrink-0 flex-col items-center">

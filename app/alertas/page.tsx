@@ -327,15 +327,15 @@ export default async function AlertasPage() {
                       </span>
                     </div>
                     {pred.predicted_score_30d !== null && (
-                      <span className="text-xs text-white/40">
-                        Score 30d: <strong className="text-white/70">{pred.predicted_score_30d}</strong>
+                      <span className="text-xs text-[var(--text-muted)]">
+                        Score 30d: <strong className="text-[var(--text-secondary)]">{pred.predicted_score_30d}</strong>
                       </span>
                     )}
                   </div>
                   {pred.alerts.length > 0 && (
                     <ul className="mt-2 space-y-1">
                       {pred.alerts.map((a, i) => (
-                        <li key={i} className="text-xs text-white/60">• {a}</li>
+                        <li key={i} className="text-xs text-[var(--text-secondary)]">• {a}</li>
                       ))}
                     </ul>
                   )}

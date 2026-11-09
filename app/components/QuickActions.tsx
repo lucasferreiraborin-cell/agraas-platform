@@ -3,10 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { Package, Beef, Syringe, Scale, type LucideIcon } from "lucide-react";
+import { Beef, Syringe, Scale, type LucideIcon } from "lucide-react";
 
 const actions: { href: string; label: string; icon: LucideIcon; color: string }[] = [
-  { href: "/lotes/novo",     label: "Criar lote exportação", icon: Package, color: "emerald" },
   { href: "/animais/novo",   label: "Adicionar animal",      icon: Beef,    color: "sky"     },
   { href: "/aplicacoes",     label: "Registrar aplicação",   icon: Syringe, color: "amber"  },
   { href: "/pesagens",       label: "Registrar pesagem",     icon: Scale,   color: "violet" },

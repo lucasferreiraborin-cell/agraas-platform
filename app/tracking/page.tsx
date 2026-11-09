@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Truck, MapPin, AlertTriangle } from "lucide-react";
 import { HalalBadgeSVG } from "@/app/components/HalalBadgeSVG";
 import ShipTrackingMapWrapper from "@/app/components/ShipTrackingMapWrapper";
+import { HALAL_ENABLED } from "@/lib/feature-flags";
 
 type TrackingRow = {
   id: string;
@@ -89,7 +90,7 @@ export default async function TrackingPage() {
   const lots: LotRow[] = lotsData;
   const lotMap = new Map(lots.map(l => [l.id, l]));
   const lotName = (id: string) => lotMap.get(id)?.name ?? id;
-  const lotHasHalal = (id: string) => lotMap.get(id)?.certificacoes_exigidas?.includes("Halal") ?? false;
+  const lotHasHalal = (id: string) => HALAL_ENABLED && (lotMap.get(id)?.certificacoes_exigidas?.includes("Halal") ?? false);
 
   // Agrupa checkpoints por lote e determina etapa atual
   const byLot = new Map<string, TrackingRow[]>();
@@ -143,7 +144,7 @@ export default async function TrackingPage() {
       <section className="ag-card-strong overflow-hidden">
         <div className="relative p-8 lg:p-10">
           <div className="pointer-events-none absolute right-0 top-0 h-48 w-48 rounded-full bg-[radial-gradient(circle,rgba(122,168,76,0.12)_0%,rgba(122,168,76,0)_70%)]" />
-          <span className="ag-badge ag-badge-green">PIF · Exportação</span>
+          <span className="ag-badge ag-badge-green">Rastreio</span>
           <h1 className="ag-page-title">Rastreio de Embarques</h1>
           <p className="mt-4 max-w-lg text-[1rem] leading-7 text-[var(--text-secondary)]">
             Acompanhe em tempo real cada lote de exportação — da fazenda à entrega no destino.

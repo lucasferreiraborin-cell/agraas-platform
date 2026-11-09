@@ -234,9 +234,7 @@ export default function PropriedadesPage() {
             </h1>
 
             <p className="mt-5 max-w-3xl text-[1.02rem] leading-8 text-[var(--text-secondary)]">
-              Visualize as propriedades que sustentam a cadeia produtiva da
-              Agraas com leitura territorial, concentração de ativos, lotes,
-              capacidade operacional e presença geográfica em mapa.
+              Leitura territorial das propriedades que sustentam a operação.
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
@@ -246,24 +244,6 @@ export default function PropriedadesPage() {
               <Link href="/lotes" className="ag-button-secondary">
                 Abrir lotes
               </Link>
-            </div>
-
-            <div className="mt-10 grid gap-4 md:grid-cols-3">
-              <HeroMetric
-                label="Propriedades"
-                value={loading ? "—" : filteredProperties.length}
-                subtitle="unidades no mapa operacional"
-              />
-              <HeroMetric
-                label="Animais"
-                value={loading ? "—" : totalAnimals}
-                subtitle="volume consolidado na base"
-              />
-              <HeroMetric
-                label="Lotes"
-                value={loading ? "—" : totalLots}
-                subtitle="estruturas produtivas vigentes"
-              />
             </div>
           </div>
 
@@ -293,18 +273,6 @@ export default function PropriedadesPage() {
                 value={String(expansionProperties)}
               />
               <SnapshotCard label="Regiões" value={String(regionsCount)} />
-            </div>
-
-            <div className="mt-6 ag-kpi-card">
-              <p className="text-sm text-[var(--text-muted)]">
-                O papel das propriedades
-              </p>
-
-              <p className="mt-3 text-base leading-7 text-[var(--text-secondary)]">
-                A propriedade é a origem da rastreabilidade. É nela que a Agraas
-                conecta território, produção, lotes, animais e eventos em uma
-                leitura operacional consistente e apresentável.
-              </p>
             </div>
           </div>
         </div>
@@ -512,10 +480,6 @@ export default function PropriedadesPage() {
                               : "—"}
                           </dd>
                         </div>
-                        <div className="flex items-center justify-between gap-3">
-                          <dt className="text-[var(--text-muted)]">CAR / Matrícula</dt>
-                          <dd className="text-xs text-[var(--text-muted)]">a integrar</dd>
-                        </div>
                       </dl>
                     </div>
 
@@ -601,80 +565,6 @@ export default function PropriedadesPage() {
                   ))}
                 </div>
               </div>
-            </div>
-          </section>
-
-          <section className="ag-card p-8">
-            <div className="ag-section-header">
-              <div>
-                <h2 className="ag-section-title">Mapa de propriedades</h2>
-                <p className="ag-section-subtitle">
-                  Leitura premium da base territorial com visão por unidade,
-                  capacidade produtiva e perfil operacional.
-                </p>
-              </div>
-
-              <div className="ag-badge ag-badge-dark">
-                {filteredProperties.length} propriedades
-              </div>
-            </div>
-
-            <div className="mt-8 grid gap-4 xl:grid-cols-2">
-              {filteredProperties.map((property) => (
-                <button
-                  key={property.id}
-                  type="button"
-                  onClick={() => setSelectedPropertyId(property.id)}
-                  className={`rounded-3xl border p-6 text-left transition ${
-                    validSelectedId === property.id
-                      ? "border-[rgba(93,156,68,0.30)] bg-[var(--primary-soft)]"
-                      : "border-[var(--border)] bg-[var(--surface-soft)] hover:border-[rgba(93,156,68,0.24)] hover:bg-[var(--primary-soft)]"
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-2xl shadow-[var(--shadow-soft)]">
-                      <Tractor size={28} className="text-[var(--primary)]" />
-                    </div>
-
-                    <span className={getStatusBadgeClass(property.status)}>
-                      {property.status}
-                    </span>
-                  </div>
-
-                  <h3 className="mt-5 text-xl font-semibold tracking-[-0.03em] text-[var(--text-primary)]">
-                    {property.name}
-                  </h3>
-
-                  <p className="mt-2 text-sm text-[var(--text-muted)]">
-                    {property.code ?? "—"} • {property.region ?? "—"} •{" "}
-                    {property.state ?? "—"}
-                  </p>
-
-                  <div className="mt-5 grid grid-cols-2 gap-3">
-                    <MiniData label="Animais" value={property.animals_count ?? 0} />
-                    <MiniData label="Lotes" value={property.lots_count ?? 0} />
-                  </div>
-
-                  <div className="mt-4 rounded-2xl bg-white px-4 py-3 shadow-[var(--shadow-soft)]">
-                    <p className="text-xs uppercase tracking-[0.12em] text-[var(--text-muted)]">
-                      Perfil
-                    </p>
-                    <p className="mt-2 text-sm font-medium text-[var(--text-primary)]">
-                      {property.profile ?? "—"}
-                    </p>
-                  </div>
-
-                  <div className="mt-4">
-                    <Link
-                      href={`/propriedades/${property.id}`}
-                      onClick={(e) => e.stopPropagation()}
-                      className="text-sm font-medium text-[var(--primary-hover)] hover:underline"
-                    >
-                      Ver fazenda →
-                    </Link>
-                  </div>
-                </button>
-              ))}
             </div>
           </section>
 
@@ -770,31 +660,6 @@ function WelcomeEmpty() {
           </Link>
         </div>
       </div>
-    </div>
-  );
-}
-
-function HeroMetric({
-  label,
-  value,
-  subtitle,
-}: {
-  label: string;
-  value: string | number;
-  subtitle: string;
-}) {
-  return (
-    <div className="min-w-0 rounded-3xl border border-[var(--border)] bg-[var(--surface-soft)] p-5">
-      <p className="truncate text-sm text-[var(--text-muted)]">{label}</p>
-      <p
-        title={String(value)}
-        className="mt-3 truncate text-3xl font-semibold tracking-[-0.05em] text-[var(--text-primary)]"
-      >
-        {value}
-      </p>
-      <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
-        {subtitle}
-      </p>
     </div>
   );
 }

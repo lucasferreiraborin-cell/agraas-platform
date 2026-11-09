@@ -484,7 +484,7 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
                 </h1>
 
                 <p className="mt-2 text-[var(--text-secondary)]">
-                  Ativo pecuário rastreado com identidade digital, score e histórico auditável.
+                  Identidade, score e histórico deste animal.
                 </p>
 
                 <div className="mt-4 inline-flex items-center gap-2 rounded-2xl border border-[rgba(93,156,68,0.18)] bg-[var(--primary-soft)] px-4 py-2">
@@ -603,11 +603,6 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
                 Score consolidado
               </p>
               <ScoreRing score={Math.round(calculatedAgraasScore)} size="md" variant="light" />
-              <p className="mt-1 text-center text-xs leading-relaxed text-[var(--text-secondary)] max-w-[200px]">
-                {Number(score.total_score ?? 0) > 0
-                  ? "Passaporte consolidado · operação · consistência"
-                  : "Score dinâmico: peso, histórico, integridade e operação"}
-              </p>
             </div>
 
             <div className="mt-6">
@@ -630,31 +625,11 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
                 value={formatDate(sanitary.withdrawal_end_date)}
               />
             </div>
-            <div className="mt-6 rounded-3xl border border-[rgba(93,156,68,0.15)] bg-[linear-gradient(135deg,#ffffff,#f8fbf6)] p-6 shadow-[var(--shadow-soft)]">
-              <p className="text-xs uppercase tracking-[0.2em] text-[var(--text-muted)]">
-                Inteligência Agraas
-              </p>
-
-              <p className="mt-3 text-base text-[var(--text-primary)]">
-                {calculatedAgraasScore >= 80
-                  ? "Este animal apresenta consistência operacional, histórico sanitário estruturado e evolução de peso estável."
-                  : calculatedAgraasScore >= 60
-                  ? "Este animal está consolidando histórico operacional e sanitário — score em evolução constante."
-                  : "Histórico ainda em formação. Registros de peso e sanidade adicionais elevam a leitura do ativo."}
-              </p>
-
-              <p className="mt-2 text-sm text-[var(--text-secondary)]">
-                {calculatedAgraasScore >= 60
-                  ? "Recomendado para comercialização em mercados com maior exigência de rastreabilidade e conformidade."
-                  : "Enriqueça pesagens e eventos sanitários para elevar a leitura comercial deste ativo."}
-              </p>
+            <div className="mt-6 grid gap-4 sm:grid-cols-3">
+              <SnapshotCard label="Classificação" value={getPassportClassification(calculatedAgraasScore)} />
+              <SnapshotCard label="Potencial de mercado" value={getMarketPotential(calculatedAgraasScore)} />
+              <SnapshotCard label="Aptidão exportação" value={getExportEligibility(calculatedAgraasScore)} />
             </div>
-
-          <div className="mt-6 grid gap-4 sm:grid-cols-3">
-  <SnapshotCard label="Classificação" value={getPassportClassification(calculatedAgraasScore)} />
-  <SnapshotCard label="Potencial de mercado" value={getMarketPotential(calculatedAgraasScore)} />
-  <SnapshotCard label="Aptidão exportação" value={getExportEligibility(calculatedAgraasScore)} />
-          </div>
           </div>
         </div>
       </section>
@@ -1087,31 +1062,33 @@ export default async function AnimalPassaportePage({ params }: PageProps) {
 
       <PredictiveAlerts animalId={id} />
 
-      <section className="ag-card p-8">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h2 className="ag-section-title">Cadeia produtiva</h2>
-            <p className="ag-section-subtitle">
-              Leitura institucional do destino e dos desdobramentos produtivos do ativo.
-            </p>
+      {(chain.slaughterhouse_name || chain.slaughter_date || chain.carcass_weight || chain.carcass_classification) && (
+        <section className="ag-card p-8">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="ag-section-title">Cadeia produtiva</h2>
+              <p className="ag-section-subtitle">
+                Leitura institucional do destino e dos desdobramentos produtivos do ativo.
+              </p>
+            </div>
+
+            <span className="ag-badge ag-badge-green">Traceability layer</span>
           </div>
 
-          <span className="ag-badge ag-badge-green">Traceability layer</span>
-        </div>
-
-        <div className="mt-6 grid gap-4 md:grid-cols-2">
-          <InfoItem label="Frigorífico" value={chain.slaughterhouse_name ?? "-"} />
-          <InfoItem label="Data de abate" value={formatDate(chain.slaughter_date)} />
-          <InfoItem
-            label="Peso de carcaça"
-            value={chain.carcass_weight ? `${chain.carcass_weight} kg` : "-"}
-          />
-          <InfoItem
-            label="Classificação"
-            value={chain.carcass_classification ?? "-"}
-          />
-        </div>
-      </section>
+          <div className="mt-6 grid gap-4 md:grid-cols-2">
+            <InfoItem label="Frigorífico" value={chain.slaughterhouse_name ?? "-"} />
+            <InfoItem label="Data de abate" value={formatDate(chain.slaughter_date)} />
+            <InfoItem
+              label="Peso de carcaça"
+              value={chain.carcass_weight ? `${chain.carcass_weight} kg` : "-"}
+            />
+            <InfoItem
+              label="Classificação"
+              value={chain.carcass_classification ?? "-"}
+            />
+          </div>
+        </section>
+      )}
     </main>
   );
 }
