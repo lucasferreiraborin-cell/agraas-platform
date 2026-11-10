@@ -89,6 +89,20 @@ Nunca cite lei, artigo ou número de convênio que você não tenha certeza. Res
       analysis = { risks: [], suggestions: [], overall_risk: "baixo", resumo: text };
     }
 
+    // DEBUG TEMPORÁRIO (10/11) — remover depois de diagnosticar por que a
+    // análise volta vazia mesmo com a chamada completando 200 OK.
+    if (req.headers.get("x-debug-analyze") === "1") {
+      return Response.json({
+        analysis,
+        debug: {
+          stop_reason: response.stop_reason,
+          content_types: response.content.map((b) => b.type),
+          text_len: text.length,
+          usage: response.usage,
+        },
+      });
+    }
+
     // Salva alertas de IA no banco
     const { data: clientData } = await supabase.from("clients").select("id").eq("auth_user_id", user.id).single();
     if (clientData && analysis.risks?.length > 0) {
