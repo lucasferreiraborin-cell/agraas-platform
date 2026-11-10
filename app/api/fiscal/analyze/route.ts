@@ -4,8 +4,23 @@ import { NextRequest } from "next/server";
 import { checkRateLimit, tooManyRequests } from "@/lib/rate-limit";
 import { writeCanonicalAlerts } from "@/lib/fiscal/alert-writer";
 import { FISCAL_WRITES_CANONICAL, FISCAL_WRITES_LEGACY } from "@/lib/feature-flags";
+import { PDF_EXTRACT_MODEL, PDF_EXTRACT_MODEL_FALLBACK, ehModeloIndisponivel } from "@/lib/fiscal/pdf-extract";
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+// 10/11/2026: "Analisar com IA" falhava sempre com "Request was aborted" na
+// NF-e real da FSJBE — causa era o AbortSignal.timeout(10_000) abaixo, curto
+// demais pra uma chamada de ~1024 tokens de saída (achado testando a rota
+// direto via fetch autenticado, não só lendo o código). O resto do pipeline
+// fiscal (pdf-extract.ts) já resolveu esse mesmo problema em 05/09/2026: SDK
+// com timeout de 25s + maxRetries:0, sem AbortSignal competindo por cima.
+// Reaproveita os mesmos modelos decididos (claude-sonnet-5, fallback
+// claude-sonnet-4-6) em vez de duplicar a escolha.
+export const maxDuration = 60;
+
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+  timeout: 25_000,
+  maxRetries: 0,
+});
 
 export async function POST(req: NextRequest) {
   const rl = checkRateLimit(req, 100, 60_000);
@@ -43,12 +58,21 @@ export async function POST(req: NextRequest) {
 4. Inconsistências internas (quantidade × unitário ≠ total, item sem descrição).
 Nunca cite lei, artigo ou número de convênio que você não tenha certeza. Responda SEMPRE em JSON com esta estrutura: {"risks": [{"item": string, "descricao": string, "severidade": "baixo"|"medio"|"alto"}], "suggestions": [string], "overall_risk": "baixo"|"medio"|"alto", "resumo": string}`;
 
-    const response = await anthropic.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 1024,
-      system: systemPrompt,
-      messages: [{ role: "user", content: `NF-e nº ${note?.numero_nota} | Emitente: ${note?.emitente_nome} | Valor total: R$${Number(note?.valor_total ?? 0).toFixed(2)}\n\nItens:\n${itemsText}\n\nAnalise esta nota fiscal agropecuária.` }],
-    }, { signal: AbortSignal.timeout(10_000) });
+    const chamar = (model: string) =>
+      anthropic.messages.create({
+        model,
+        max_tokens: 1024,
+        system: systemPrompt,
+        messages: [{ role: "user", content: `NF-e nº ${note?.numero_nota} | Emitente: ${note?.emitente_nome} | Valor total: R$${Number(note?.valor_total ?? 0).toFixed(2)}\n\nItens:\n${itemsText}\n\nAnalise esta nota fiscal agropecuária.` }],
+      });
+
+    let response;
+    try {
+      response = await chamar(PDF_EXTRACT_MODEL);
+    } catch (err) {
+      if (!ehModeloIndisponivel(err)) throw err;
+      response = await chamar(PDF_EXTRACT_MODEL_FALLBACK);
+    }
 
     const text = response.content[0].type === "text" ? response.content[0].text : "{}";
     let analysis: any = {};
