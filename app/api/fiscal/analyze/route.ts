@@ -74,7 +74,13 @@ Nunca cite lei, artigo ou número de convênio que você não tenha certeza. Res
       response = await chamar(PDF_EXTRACT_MODEL_FALLBACK);
     }
 
-    const text = response.content[0].type === "text" ? response.content[0].text : "{}";
+    // content[0] não é sempre o bloco de texto (pode vir thinking/outro bloco
+    // antes) — mesmo padrão já corrigido em pdf-extract.ts: filtra e junta
+    // todos os blocos de texto em vez de assumir a posição.
+    const text = response.content
+      .filter((b): b is Anthropic.TextBlock => b.type === "text")
+      .map((b) => b.text)
+      .join("\n") || "{}";
     let analysis: any = {};
     try {
       const jsonMatch = text.match(/\{[\s\S]*\}/);
