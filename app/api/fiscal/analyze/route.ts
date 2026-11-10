@@ -61,7 +61,11 @@ Nunca cite lei, artigo ou número de convênio que você não tenha certeza. Res
     const chamar = (model: string) =>
       anthropic.messages.create({
         model,
-        max_tokens: 1024,
+        // 1024 não bastava: o modelo gasta extended thinking por conta própria
+        // e o budget inteiro ia pra isso (stop_reason "max_tokens", 0 de texto
+        // — achado via header de debug contra produção). 4000 é o mesmo valor
+        // já comprovado em lib/fiscal/pdf-extract.ts pro mesmo modelo.
+        max_tokens: 4000,
         system: systemPrompt,
         messages: [{ role: "user", content: `NF-e nº ${note?.numero_nota} | Emitente: ${note?.emitente_nome} | Valor total: R$${Number(note?.valor_total ?? 0).toFixed(2)}\n\nItens:\n${itemsText}\n\nAnalise esta nota fiscal agropecuária.` }],
       });
@@ -87,20 +91,6 @@ Nunca cite lei, artigo ou número de convênio que você não tenha certeza. Res
       analysis = jsonMatch ? JSON.parse(jsonMatch[0]) : { risks: [], suggestions: [], overall_risk: "baixo", resumo: text };
     } catch {
       analysis = { risks: [], suggestions: [], overall_risk: "baixo", resumo: text };
-    }
-
-    // DEBUG TEMPORÁRIO (10/11) — remover depois de diagnosticar por que a
-    // análise volta vazia mesmo com a chamada completando 200 OK.
-    if (req.headers.get("x-debug-analyze") === "1") {
-      return Response.json({
-        analysis,
-        debug: {
-          stop_reason: response.stop_reason,
-          content_types: response.content.map((b) => b.type),
-          text_len: text.length,
-          usage: response.usage,
-        },
-      });
     }
 
     // Salva alertas de IA no banco
