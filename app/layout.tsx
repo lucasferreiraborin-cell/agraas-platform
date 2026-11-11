@@ -191,25 +191,6 @@ export default async function RootLayout({
                 </div>
               </div>
 
-              <div className="px-5 pt-5">
-                <div className="rounded-3xl border border-white/10 bg-white/8 p-4 backdrop-blur-xl">
-                  <p className="text-[11px] uppercase tracking-[0.16em] text-white/45">
-                    Status
-                  </p>
-                  <div className="mt-3 flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-medium text-white">
-                        Ambiente ativo
-                      </p>
-                      <p className="mt-1 text-xs text-white/55">
-                        {phaseLabel}
-                      </p>
-                    </div>
-                    <span className="inline-flex h-3 w-3 rounded-full bg-emerald-300 shadow-[0_0_18px_rgba(110,231,183,0.85)]" />
-                  </div>
-                </div>
-              </div>
-
               {isBuyer ? <BuyerSidebarNav /> : <SidebarNav />}
             </aside>
 
