@@ -211,41 +211,6 @@ export default async function RootLayout({
               </div>
 
               {isBuyer ? <BuyerSidebarNav /> : <SidebarNav />}
-
-              <div className="border-t border-white/10 p-5">
-                <div className="rounded-[28px] border border-white/10 bg-white/8 p-5 ring-1 ring-white/8 backdrop-blur-xl">
-                  <p className="text-[11px] uppercase tracking-[0.18em] text-white/42">
-                    {isBuyer ? "Vision" : "Visão"}
-                  </p>
-                  <p className="mt-3 text-sm leading-6 text-white/82">
-                    {isBuyer
-                      ? "Traceability, productive performance, animal digital identity and operational intelligence for the food supply chain."
-                      : "Rastreabilidade, performance produtiva, identidade digital animal e inteligência operacional para a cadeia pecuária."}
-                  </p>
-
-                  {isBuyer ? (
-                    <div className="mt-5 rounded-2xl border border-white/8 bg-white/8 p-3">
-                      <p className="text-[11px] uppercase tracking-[0.12em] text-white/42">
-                        Infrastructure
-                      </p>
-                      <p className="mt-2 text-sm font-medium text-white">
-                        Enterprise · ISO 27001
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="mt-5 grid grid-cols-2 gap-3">
-                      <div className="rounded-2xl border border-white/8 bg-white/8 p-3">
-                        <p className="text-[11px] uppercase tracking-[0.12em] text-white/42">Stack</p>
-                        <p className="mt-2 text-sm font-medium text-white">Next + Supabase</p>
-                      </div>
-                      <div className="rounded-2xl border border-white/8 bg-white/8 p-3">
-                        <p className="text-[11px] uppercase tracking-[0.12em] text-white/42">Fase</p>
-                        <p className="mt-2 text-sm font-medium text-white">Fase 1 entregue</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
             </aside>
 
             <div className="flex min-w-0 flex-1 flex-col">
@@ -267,16 +232,6 @@ export default async function RootLayout({
 
                   <div className="hidden items-center gap-3 md:flex">
                     <MentorViewBadge />
-                    <div
-                      title={environmentTooltip}
-                      className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-sm font-medium text-emerald-800 shadow-[var(--shadow-soft)]"
-                    >
-                      <span className="relative flex h-2 w-2">
-                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                        <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-                      </span>
-                      {environmentLabel}
-                    </div>
                     {user && (
                       <div className="rounded-full border border-[var(--border)] bg-white px-4 py-2 text-sm text-[var(--text-secondary)] shadow-[var(--shadow-soft)]">
                         {user.email}
