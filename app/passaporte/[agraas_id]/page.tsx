@@ -35,10 +35,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function PublicPassportPage({ params }: PageProps) {
   const { agraas_id } = await params;
 
-  // Rate limit: 30 req/min por IP
+  // Rate limit: 30 req/min por IP, contando todos os passaportes juntos —
+  // chave por animal deixava varrer a base inteira trocando o id.
   const hdrs = await headers();
   const ip = hdrs.get("x-forwarded-for")?.split(",")[0].trim() ?? hdrs.get("x-real-ip") ?? "unknown";
-  const rl = checkRateLimitByIp(ip, `/passaporte/${agraas_id}`, 30, 60_000);
+  const rl = checkRateLimitByIp(ip, "/passaporte", 30, 60_000);
   if (!rl.allowed) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-[#f7f8fa] px-6 font-sans">

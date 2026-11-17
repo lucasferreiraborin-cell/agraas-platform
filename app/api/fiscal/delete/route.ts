@@ -58,13 +58,13 @@ export async function DELETE(req: NextRequest) {
     const dona = legado.data?.client_id ?? canonico.data?.client_id ?? null;
     if (!dona) return Response.json({ error: "Nota não encontrada" }, { status: 404 });
     if (dona !== clientData.id && !ehAdmin) {
-      // Se você está vendo uma nota que não é sua, a lista está vazando entre
-      // clientes (RLS liberando por role admin ou conta duplicada) — o
-      // detalhe abaixo é o que permite diagnosticar sem acesso ao banco.
-      return Response.json({
-        error: `Nota de outro cliente (dona: ${dona.slice(0, 8)}…; você: ${clientData.id.slice(0, 8)}…, papel ${clientData.role}). Confira em /admin/contas.`,
-        dona_client_id: dona, seu_client_id: clientData.id, seu_role: clientData.role,
-      }, { status: 403 });
+      // Não devolver o client_id da dona: quem tem o UUID de uma nota não deve
+      // descobrir de qual cliente ela é. Diagnóstico de vazamento vai pelo log.
+      console.warn("[fiscal/delete] nota de outro cliente", { note_id: noteId, dona, quem: clientData.id, role: clientData.role });
+      return Response.json(
+        { error: "Nota de outro cliente. Se ela aparece na sua lista, confira as contas em /admin/contas." },
+        { status: 403 },
+      );
     }
     const donoParaFiltro = dona;
 

@@ -86,6 +86,7 @@ export async function generateMetadata({
     .from("marketplace_listings")
     .select("title, description, listing_type, location_city, location_state")
     .eq("id", id)
+    .eq("status", "ativo")
     .single();
 
   if (!data) return { title: "Anúncio" };
@@ -122,6 +123,19 @@ export default async function ListingDetailPage({
   if (!listing) notFound();
   const l = listing as ListingDetail;
 
+  // Rascunho, pausado e vendido só abrem pro dono — a rota usa service role,
+  // então sem este filtro qualquer UUID abria o anúncio com nome do vendedor.
+  let isOwnListing = false;
+  if (user) {
+    const { data: me } = await supa
+      .from("clients")
+      .select("id")
+      .eq("auth_user_id", user.id)
+      .single();
+    if (me?.id === l.client_id) isOwnListing = true;
+  }
+  if (l.status !== "ativo" && !isOwnListing) notFound();
+
   // Seller info + agraas_id do animal (se linkado) para gerar URL do passaporte público
   const [{ data: seller }, { data: animalInfo }] = await Promise.all([
     db.from("clients").select("name, created_at").eq("id", l.client_id).single(),
@@ -157,17 +171,6 @@ export default async function ListingDetailPage({
 
   const typeMeta = TYPE_META[l.listing_type] ?? TYPE_META.outro;
   const TypeIcon = typeMeta.icon;
-
-  // Is current user the seller? Then don't show offer panel
-  let isOwnListing = false;
-  if (user) {
-    const { data: me } = await supa
-      .from("clients")
-      .select("id")
-      .eq("auth_user_id", user.id)
-      .single();
-    if (me?.id === l.client_id) isOwnListing = true;
-  }
 
   const totalValue = l.price_per_unit * l.quantity_available;
 

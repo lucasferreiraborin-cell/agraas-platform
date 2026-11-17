@@ -269,7 +269,7 @@ export default async function PainelPage() {
 
     supabaseServer
       .from("sales")
-      .select("roi")
+      .select("roi, cost_estimated")
       .eq("client_id", clientId)
       .not("roi", "is", null),
   ]);
@@ -396,9 +396,10 @@ export default async function PainelPage() {
   );
   const totalArrobas = Math.round(totalWeightKg / 30); // peso vivo: 1 arroba = 30 kg
 
-  // ROI médio das vendas com custo apurado — mesmo padrão de KPI de margem
-  // que a referência de mercado (AgriWebb) expõe direto no dashboard principal.
+  // Só vendas com custo apurado: a venda com custo de referência
+  // (cost_estimated) tem ROI de simulação, não de operação.
   const roiValues = (salesRoiData ?? [])
+    .filter((s) => !s.cost_estimated)
     .map((s) => Number(s.roi))
     .filter((v) => !Number.isNaN(v));
   const avgRoi =
@@ -676,7 +677,7 @@ export default async function PainelPage() {
               <HeroSatellite label="Score médio" value={`${totalScoreAverage}`} sub="/100" />
               <HeroSatellite label="Arrobas" value={`${totalArrobas}`} sub="@" />
               {avgRoi !== null && (
-                <HeroSatellite label="ROI médio" value={`${avgRoi}`} sub="%" />
+                <HeroSatellite label="ROI apurado" value={`${avgRoi}`} sub="%" />
               )}
             </div>
           </div>

@@ -5,7 +5,14 @@ import FinanceiroTabs from "@/app/components/financeiro/FinanceiroTabs";
 import type { FinanceiroData } from "@/app/components/financeiro/FinanceiroTabs";
 import type { MonthRow, CashRow } from "@/app/components/financeiro/FinanceiroCharts";
 
-type SaleRow = { sale_date: string | null; total_value: number | null; weight_kg: number | null; roi: number | null };
+type SaleRow = {
+  sale_date: string | null;
+  total_value: number | null;
+  weight_kg: number | null;
+  roi: number | null;
+  cost_at_sale: number | null;
+  cost_estimated: boolean | null;
+};
 type CostRow = { animal_id: string; total_input_cost: number; labor_cost: number; other_costs: number; total_cost: number };
 type AppRow = { application_date: string | null; total_cost: number | null; product_name: string | null };
 type FiscalRow = { data_emissao: string | null; valor_total: number | null };
@@ -27,7 +34,7 @@ export default async function FinanceiroPage() {
     { data: scoresData },
     { data: slaughterData },
   ] = await Promise.all([
-    supabase.from("sales").select("sale_date, total_value, weight_kg, roi").order("sale_date"),
+    supabase.from("sales").select("sale_date, total_value, weight_kg, roi, cost_at_sale, cost_estimated").order("sale_date"),
     supabase.from("animal_cost_summary").select("animal_id, total_input_cost, labor_cost, other_costs, total_cost"),
     supabase.from("applications").select("application_date, total_cost, product_name"),
     supabase.from("fiscal_notes").select("data_emissao, valor_total").eq("status", "validada"),
@@ -52,14 +59,19 @@ export default async function FinanceiroPage() {
   const receitaAbates = slaughterRecs.reduce((s, r) => s + Number(r.total_value ?? 0), 0);
   const receitaTotal = receitaVendas + receitaAbates;
 
-  const custoTotal = costs.reduce((s, r) => s + Number(r.total_cost ?? 0), 0);
-  const resultado = receitaTotal - custoTotal;
-  const margem = receitaTotal > 0 ? (resultado / receitaTotal) * 100 : 0;
+  // Margem, ROI e custo/@ só sobre o que foi vendido. Custo do rebanho inteiro
+  // (ativos incluídos) contra receita dos vendidos dava ROI 66% e margem 5%
+  // na mesma tela.
+  const custoTotal = sales.reduce((s, r) => s + Number(r.cost_at_sale ?? 0), 0);
+  const resultado = receitaVendas - custoTotal;
+  const margem = receitaVendas > 0 ? (resultado / receitaVendas) * 100 : 0;
 
-  const salesWithRoi = sales.filter(s => s.roi != null && Number(s.roi) !== 0);
-  const roiMedio = salesWithRoi.length > 0
-    ? salesWithRoi.reduce((s, r) => s + Number(r.roi), 0) / salesWithRoi.length
-    : resultado > 0 && custoTotal > 0 ? (resultado / custoTotal) * 100 : 0;
+  const salesComRoi = sales.filter(s => s.roi != null && Number(s.roi) !== 0);
+  const salesApuradas = salesComRoi.filter(s => !s.cost_estimated);
+  const baseRoi = salesApuradas.length > 0 ? salesApuradas : salesComRoi;
+  const roiMedio = baseRoi.length > 0
+    ? baseRoi.reduce((s, r) => s + Number(r.roi), 0) / baseRoi.length
+    : 0;
 
   const totalArrobas = sales.reduce((s, r) => s + (Number(r.weight_kg ?? 0) / 30), 0);
   const custoPorArroba = totalArrobas > 0 ? custoTotal / totalArrobas : 0;

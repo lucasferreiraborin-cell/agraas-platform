@@ -3,9 +3,59 @@
 > **Página viva.** Responde "onde estamos?" sem você precisar perguntar.
 > Atualizada ao fim de cada bloco de trabalho, antes do commit.
 >
-> **Última atualização:** 09/11/2026 (noite) · FSJBE auditada e limpa de ponta a ponta · reunião iBoi **amanhã (10/11)**
+> **Última atualização:** 17/11/2026 · reunião de alinhamento com a iBoi **aconteceu hoje** — Lucas anunciou **pivô da Agraas**, detalhes a registrar · correções de 16/11 publicadas · RFA Agropecuária **19/11 16h**
 
 ---
+
+## 16/11/2026 — o que mudou desde 09/11
+
+**Contexto.** A reunião com a iBoi de 11/11 foi bem e virou **alinhamento de
+parceria** (brincos GPS+RFID + API deles) marcado pra 17/11. Lucas trouxe as
+notas reais da 1ª reunião: a dor que a própria iBoi nomeou é **falta de
+conector** entre sistemas do pecuarista (Multibovinos + Totvs + outros não
+conversam) e pediu que a Agraas estude o papel de middleware; modelo deles =
+brincos + IoT + crédito (4ª/5ª operação com Safra, Itaú BBA e Stone); brinco
+SISBOV-compliant, 60 meses, ping configurável por fase — **toparam ajustar
+por fase e querem estudo de caso conjunto** pro "1º lote 100% rastreado".
+Brincos novos chegam em dezembro (lote da Agraas, coleta sem data); visita
+05/12 Fazenda dos Meninos mantida. Viagem de 14-15/11: **RFA Agropecuária
+(família Tambelli)**, investidor-anjo influente, usa brinco iBoi — reunião
+19/11 16h. **Lucas suspendeu os gates d30/d60/d90** até readequar prazos.
+
+**3 auditorias no banco vivo (16/11) — achados que mandam:**
+- **Rastreio:** `agraas_id` **não é ISO 076** (id interno `AGR-…`); RFID em
+  dois lugares, nenhum ISO 11784; **não existe tabela de ping/geolocalização
+  por animal nem rota autenticada pra parceiro** — a ponta que recebe o brinco
+  é build novo. Passaporte público listava SIF/GTA/MAPA como "certificação do
+  animal" (resíduo de seed) — **removidos da conta demo hoje** (24 linhas) —
+  e expõe lat/lng exato da fazenda sem login. `iboi-mapa-passaporte.md` cita
+  `animals.ear_tag`, que não existe.
+- **Cadeia fiscal:** correções de 09/11 em pé. Mas `/painel` "ROI médio real"
+  vinha de custo de referência (8/9 vendas) → **hoje só custo apurado, rótulo
+  "ROI apurado"**; `/financeiro` se contradizia (ROI 66% × margem 5%) → **hoje
+  margem/ROI/custo-@ só sobre vendidos**; custo de insumo por animal é zero
+  na base inteira (60 aplicações sem lote, 0 lotes de estoque); **registrar
+  aplicação sem lote falha** (trigger) em 3 caminhos — nenhuma criada desde
+  10/04 → **migration 170 escrita**; **os dois fluxos de NF-e não se
+  encontram** (`fiscal_notes` legado × `fiscal_invoices` da aprovação ×
+  `apply-stock` em `supply_inventory_items`) — NF-e real nunca chega a
+  estoque/contabilidade; nota de saída com CFOP 5102 e NCM 01029000 fixos
+  (6/9 vendas interestaduais) — pro contador; custos da conta demo não se
+  reconstroem das origens (R$ 51,3k × R$ 14,6k) — **primeiro custo lançado ao
+  vivo derruba valores**.
+- **Segurança:** **leak confirmado por policy** — 15 policies `*_same_property`
+  via `users_profile.property_id` deixam conta nova ler **e alterar** score e
+  abate de outro cliente → **migration 169 escrita (não aplicada)**. Cadastro
+  como "frigorífico" sem aprovação vê todos os lotes ativos. `/marketplace/[id]`
+  abria rascunho/pausado/vendido por UUID → **fechado hoje**. `/api/fiscal/delete`
+  devolvia UUID do dono no 403 → **fechado**. Rate limit do passaporte era por
+  animal (enumerável) → **por IP**. OK: RLS em 105/105 tabelas, 337 policies.
+
+**Roteiro de 17/11 — não abrir ao vivo:** entrada de NF-e → estoque; lançar
+custo/aplicação nova na conta demo; GTA real (0 linhas); estoque/FEFO (0
+lotes); cadastro como frigorífico. **Pode abrir:** painel, animal/passaporte,
+lotes, `/fiscal` com a NF-e real da FSJBE + análise por IA, controladoria em
+leitura, `/financeiro`.
 
 ## Os 5 passos de 14/09 — fechados em 04/11 (verificado direto no banco via MCP)
 
@@ -126,6 +176,22 @@ próximo reset de qualquer cliente — ver `lib/admin/reset-cliente.ts`.
    "cliente real" + "infraestrutura preparada" = feito (check verde);
    "passaporte digital" + "operação no campo" = próximo passo (ícone neutro).
    Verificado em produção.
+7. **(16/11) Q1 — C3 e D-03 ainda valem?** O estudo de caso com lote próprio
+   em dezembro é o kit da iBoi saindo e a integração sendo construída.
+   *Padrão assumido:* estudo de caso supera a C3; lote entra como piloto
+   comercial sem equity; ninguém toca em equity em 17/11.
+8. **(16/11) Q2 — aplicar a migration 169** (fecha o leak de score/abate via
+   `users_profile`) via MCP, como as 167/168? *Padrão:* não aplico sem ordem.
+9. **(16/11) Q3 — aplicar a 170** (aplicação sem lote deixa de falhar)?
+   *Padrão:* não aplico sem ordem.
+10. **(16/11) Q4 — papel "frigorífico" passa a exigir aprovação do admin?**
+    Hoje qualquer cadastro vê todos os lotes ativos. *Padrão:* fica como está
+    até depois de 19/11; não demonstrar cadastro como frigorífico.
+11. **(16/11) Q5 — coordenada exata da fazenda no passaporte público:
+    arredondar pra ~1 km?** *Padrão:* exata até 17/11, arredondar depois;
+    nunca trilha de ping ao vivo em página pública.
+12. **Pro contador (não é decisão do Lucas):** CFOP/NCM da nota de saída
+    (5102 → 5101/6101 por UF), ICMS 19% GO, retenção de FUNRURAL por PJ.
 
 ## Semáforo
 
@@ -133,6 +199,8 @@ próximo reset de qualquer cliente — ver `lib/admin/reset-cliente.ts`.
 |---|---|
 | 🟢 **Código** | 393 testes passando, typecheck limpo, next 16.3.5, tudo em `origin/main`. Raio-x completo: `docs/manutencao/2026-09-14-raio-x.md` |
 | 🟢 **Banco** | **159–168 aplicadas em 05/11/2026** (via MCP, uma a uma, com snapshot de segurança prévio). Trava de escalação de role ativa, `get_my_client_id()` corrigida para todos os papéis, role `accountant` liberada, ICMS completo em `fiscal_invoice_items`, alertas unificados no canal canônico. **167 fecha vazamento cross-tenant** (achado do `security-rls-auditor`: `get_my_client_id()` retornava NULL para usuário autenticado sem linha em `clients`, e `x <> NULL` nunca é true — travava passava batido em 4 funções RPC, inclusive exportação de LCDPR de outro cliente). Reexploit testado após o fix, com `ROLLBACK`: agora bloqueia corretamente. **168 fecha a causa raiz** — trigger em `auth.users` cria o `client` stub no mesmo instante do signUp; `/api/cadastro/finalizar` agora faz UPDATE desse stub (`onboarded_at`) em vez de INSERT. Nunca mais existe usuário autenticado sem `client_id`. Testado com INSERT+ROLLBACK em `auth.users` |
+| 🔴 **Isolamento** | **(16/11)** 15 policies legadas via `users_profile` deixam conta nova ler e alterar score/abate de outro cliente. Migration **169** escrita, aguardando ordem (Q2). Até lá: risco ativo, exige saber o UUID da propriedade |
+| 🟡 **Cadeia fiscal** | **(16/11)** `fiscal_notes` (upload, modo `legacy`) e `fiscal_invoices` (aprovação → estoque/contábil) não se encontram; aplicação sem lote falha (migration **170** escrita, Q3). Não demonstrar NF-e → estoque ao vivo |
 | 🟢 **Acesso** | MCP do Supabase autenticado (04/11) — leitura liberada, escrita sob ordem expressa |
 | 🟡 **Pista B** | Bloqueada: os arquivos da seção 8 do handoff não estão no repositório |
 | 🟢 **Produção** | Fiscal (upload + IA + dedup) provado ponta a ponta com dado real da FSJBE |
@@ -141,13 +209,18 @@ próximo reset de qualquer cliente — ver `lib/admin/reset-cliente.ts`.
 
 ## Datas que mandam
 
-| Prazo | Faltam | O que é |
+> **16/11/2026 — gates d30/d60/d90 suspensos pelo Lucas** ("vamos relevar as
+> metas pré-estabelecidas... iremos readequar"). d60 (25/10) venceu sem bater
+> (0 contadores, 0 pagantes, verificado no banco); d90 (24/11) não vale como
+> gate até a readequação. A tabela antiga fica como histórico em
+> `docs/snapshots/`.
+
+| Data | Faltam | O que é |
 |---|---:|---|
-| **12/09** | **passou (−2 dias)** | Dados da FSJBE (Ico + contador). Substituído em 11/09 pela decisão de subir dado real direto na plataforma |
-| **25/09** | **11 dias** 🟡 | Gate d30 — pacote vendável · 3 contadores treinados · 20 conversas |
-| **30/09** | **16 dias** 🟡 | DITR 2026 — o contador assina o relatório |
-| 25/10 | 41 dias | Gate d60 — ≥3 fazendas via contadores · ≥2 pagantes. Destrava o C2 |
-| 24/11 | 71 dias | Gate d90 — 5 pagantes retidas · churn <2/5 |
+| **17/11** | **amanhã** | Reunião de alinhamento iBoi — parceria brincos + API, estudo de caso conjunto |
+| **19/11 16h** | 3 dias | RFA Agropecuária (Luiza + Fábio Tambelli) — primeira apresentação a investidor-anjo |
+| 05/12 | 19 dias | Visita de campo Fazenda dos Meninos (Pedro + Frederico mapeiam antes) |
+| dez/2026 | — | Chegada do lote de brincos iBoi pra Agraas — coleta sem data |
 
 ---
 
