@@ -3,9 +3,41 @@
 > **Página viva.** Responde "onde estamos?" sem você precisar perguntar.
 > Atualizada ao fim de cada bloco de trabalho, antes do commit.
 >
-> **Última atualização:** 17/11/2026 · reunião de alinhamento com a iBoi **aconteceu hoje** — Lucas anunciou **pivô da Agraas**, detalhes a registrar · correções de 16/11 publicadas · RFA Agropecuária **19/11 16h**
+> **Última atualização:** 17/11/2026 (noite) · reunião iBoi feita — **direção nova em definição** (D-13; detalhes no cofre) · 1ª carga real de animais da FSJBE **duplicou registros** → diagnóstico pronto, limpeza aguarda ordem (D-11) · **bug de plataforma:** pesagem/aplicação/movimentação/RFID não gravam pelo site desde 10/04 (D-12) · RFA Agropecuária **19/11 16h**
 
 ---
+
+## 17/11/2026 (noite) — 1ª carga real da FSJBE e bug de plataforma
+
+**O que aconteceu.** Duas planilhas de animais da FSJBE (exportação de outro
+sistema de gestão) subiram por `/migrar-dados`. O banco ficou com **67% mais
+animais** que as planilhas. Os animais únicos batem 100% (código, sexo,
+nascimento e raça — conferido por hash); o excedente são cópias idênticas.
+Nenhuma pesagem gravou e a categoria ficou vazia → todo o rebanho na conta
+CPC 29 genérica `1.1.06`.
+
+**Causas (logs do Supabase + banco):**
+1. `/api/migrate-animals` checa "já existe?" com `select` sem paginação → a API
+   devolve no máximo 1.000 linhas (logs: `0-999`) → acima disso, reimportar
+   duplica.
+2. Duas importações ao mesmo tempo, sem trava nem índice único
+   `(client_id, internal_code)`.
+3. Execução linha a linha cortada em ~300 s, sem mensagem na tela → o usuário
+   repete.
+4. **Bug de plataforma:** `calculate_agraas_score_v3` faz `SET LOCAL
+   session_replication_role` (migration 123). Pela API isso é negado → falha
+   toda escrita em `weights`, `applications`, `animal_movements`,
+   `animal_rfids`, `animal_certifications` e `events`. Última pesagem,
+   aplicação e movimentação: **10/04/2026**. Pelo console SQL passa (sessão
+   `postgres`), por isso passou despercebido. **A 170 sozinha não destrava
+   aplicação.** Bloqueia o pareamento brinco↔animal do caso iBoi.
+5. Tela: só aceita `.csv` (diz aceitar XLSX), não pula linhas de título,
+   mapeamento por prefixo (coluna sem título casa com qualquer campo), lote
+   escolhido não é enviado, peso gravado com a data da importação, histórico
+   de importações é texto fixo.
+
+**Pendente (Lucas):** limpeza das cópias (D-11) · migration 171 do score
+(D-12) · direção nova (D-13). Importador novo: plano entregue em 17/11.
 
 ## 16/11/2026 — o que mudou desde 09/11
 

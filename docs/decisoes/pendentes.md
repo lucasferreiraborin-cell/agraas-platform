@@ -5,7 +5,7 @@
 > para a próxima entrega, sem cobrar tom.
 >
 > Origem: passagem de bastão de 05/09/2026, seção 6.
-> Última revisão: 2026-09-05.
+> Última revisão: 2026-11-17 (D-11 a D-13; nota em D-03).
 
 ---
 
@@ -35,6 +35,8 @@ Opção A: iBoi entra com ~30% já. Opção B: comercial primeiro, equity depois
 **Padrão assumido:** **B** para todo material externo. Cria e canal contador
 **fora** de exclusividade.
 **Muda quando vier:** define se o kit da iBoi leva LOI ou term sheet.
+**17/11:** a possibilidade de entrar no ecossistema/incubadora da iBoi reabre o
+tema. Padrão segue **B** até o Lucas dizer o contrário.
 
 ### D-04 · Premissas-padrão do livro-razão
 ICP 201–1.000 cabeças, preços 699/499/1.500, churn 3%, grade de opex.
@@ -75,6 +77,29 @@ com **um único caminho de aplicação**.
 **Padrão assumido:** tratada como vigente. O lint de migrations já está no CI e
 nenhuma migration foi aplicada sem ordem.
 **Muda quando vier:** vira regra escrita no `CLAUDE.md`, oponível a qualquer sessão.
+
+### D-11 · Limpeza da base de animais da FSJBE *(17/11)*
+A 1ª carga real gerou cópias idênticas (mesmo código, sexo, nascimento, raça);
+nenhuma pesagem, venda, nota ou score aponta para elas.
+**A:** apagar só as cópias (fica o 1º registro de cada código) e completar
+categoria, peso e genealogia com o importador novo. **B:** apagar a carga
+inteira de 17/11 e reimportar do zero.
+**Padrão assumido:** nada é apagado sem ordem; ninguém sobe de novo pela tela
+atual.
+**Muda quando vier:** painel, rebanho e contas CPC 29 da FSJBE voltam ao real.
+
+### D-12 · Migration 171 — score sem `session_replication_role` *(17/11)*
+**Padrão assumido:** escrita e testada **pelo caminho da API** (não pelo
+console SQL), aplicada só com "aplica 171". Junta-se a 169/170 na fila.
+**Muda quando vier:** pesagem, aplicação, movimentação, RFID e certificação
+voltam a gravar pelo site e pelo app.
+
+### D-13 · Direção nova discutida com parceiro em 17/11
+Detalhes no cofre. Conflita com: agricultura pausada (17/05), canal contador
+(C1, 02/09), amplitude de público, prioridade do estudo de caso (16/11).
+**Padrão assumido:** núcleo fiscal/contábil mantido; pecuária primeiro;
+canais somam; estudo de caso segue em paralelo.
+**Muda quando vier:** `CLAUDE.md` "Foco atual" reescrito e backlog reordenado.
 
 ---
 
