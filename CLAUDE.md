@@ -73,7 +73,21 @@ Abertura de sessão: skill `pauta`. Decisões paradas: `docs/decisoes/pendentes.
 
 ---
 
-## Foco atual (09/2026): wedge fiscal para a pecuária bovina — Cenário C1
+## Foco atual (23/11/2026): Agraas Gestão — mini ERP multiatividade
+
+**Decisão do Lucas, 23/11/2026 (D-13).** A Agraas é plataforma para **pecuaristas e
+agricultores**, várias culturas e criações: o mini ERP do agro operável por duas
+pessoas, pedido pela iBoi (17/11). Revoga o "foco 100% pecuária bovina" de 17/05.
+- Portal novo **`/gestao`** (login `/gestao/entrar`, aba "Gestão rural" no site),
+  mesma conta Supabase; a plataforma atual (`/painel`, rastreio) segue intacta.
+- Núcleo único por **centro de custo** com atividade (`lib/gestao/atividades.ts`,
+  migration 172): nota → conta a pagar/receber → custo do centro → contábil.
+- Carro-chefe: **diesel** (nota → estoque → abastecimento por máquina → custo).
+- Rotas antigas `/agricultura`, `/ovinos`, `/caprinos`, `/aves` seguem redirecionadas
+  até serem religadas ao núcleo (o `/agricultura` antigo tem fluxo de NF-e próprio
+  — unificar antes). Validação de campo começa por bovino + grãos.
+
+### Histórico — foco de 09/2026: wedge fiscal para a pecuária bovina — Cenário C1
 
 **Decisão de comitê, 02/09/2026.** A porta de entrada comercial é a **gestão
 fiscal do produtor**: "toda nota vira custo por animal e FUNRURAL apurado, sem
@@ -277,7 +291,8 @@ Paulo = `pauloborin@agraas.com.br`, Pedro/Ico = `@multbovinos.com.br`.
 - **`docs/STATUS.md` atualizado antes de cada commit** que mude o estado
 - **Migrations:** `npx supabase db push` — nunca SQL manual no dashboard, e só com ordem expressa
 - **Dados fictícios:** nunca criar sem aprovação explícita do Lucas
-- **Frentes pausadas:** não criar copy nova sobre PIF / ovinos / caprinos / aves / agricultura
+- **Frentes pausadas:** não criar copy nova sobre PIF. Agricultura e outras criações voltaram
+  (D-13, 23/11/2026) **pelo portal `/gestao`**; as rotas antigas seguem pausadas
 - **Design system:** manter consistência em todas as páginas
 - **Leaflet:** sempre `dynamic(() => import(...), { ssr: false })`
 - **RLS:** toda nova tabela precisa de `client_id` + política RLS

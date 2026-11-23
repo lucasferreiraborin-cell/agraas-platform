@@ -3,7 +3,28 @@
 > **Página viva.** Responde "onde estamos?" sem você precisar perguntar.
 > Atualizada ao fim de cada bloco de trabalho, antes do commit.
 >
-> **Última atualização:** 17/11/2026 (noite) · reunião iBoi feita — **direção nova em definição** (D-13; detalhes no cofre) · 1ª carga real de animais da FSJBE **duplicou registros** → diagnóstico pronto, limpeza aguarda ordem (D-11) · **bug de plataforma:** pesagem/aplicação/movimentação/RFID não gravam pelo site desde 10/04 (D-12) · RFA Agropecuária **19/11 16h**
+> **Última atualização:** 23/11/2026 · **D-13 decidida:** Agraas Gestão (mini ERP multiatividade, pecuária + agricultura) — portal `/gestao` no ar com telas em ativação; migrations 172/173 aguardando aplicação · reunião iBoi/Felippe **24/11** · pendências anteriores seguem (D-11 limpeza FSJBE, D-12 bug do score)
+
+
+---
+
+## 23/11/2026 — Agraas Gestão (mini ERP multiatividade)
+
+**Decisão (D-13):** plataforma para pecuaristas e agricultores, várias culturas e criações,
+núcleo único por centro de custo. Portal separado `/gestao` (login `/gestao/entrar`, aba
+"Gestão rural" no site); plataforma atual intacta.
+
+**No código:** Início · Notas fiscais (upload XML/PDF pelas rotas existentes, lista unificada
+dos dois fluxos) · Contas a pagar e receber (baixa, parcelamento, saldo 30 dias) · Máquinas e
+diesel (estoque comprado × abastecido, consumo L/h, alerta, tag "em integração") · Insumos
+(histórico de preço) · Atividades (14 atividades, resultado por centro, R$/ha e R$/cabeça) ·
+Fechamento (pendências, CSV do contador, LCDPR). NF-e em XML gera títulos automaticamente
+(parcelas `<dup>`); compra só de diesel entra como estoque (custo no consumo).
+
+**Banco:** migration 172 (centros_custo, titulos_financeiros, maquinas, abastecimentos) e 173
+(seed demo na conta lucas@agraas) — escritas; aplicação autorizada pelo Lucas em 23/11.
+
+**Testes:** 459/459 Jest · tsc limpo · `next build` ok.
 
 ---
 

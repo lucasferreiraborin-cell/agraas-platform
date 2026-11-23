@@ -94,12 +94,6 @@ console SQL), aplicada só com "aplica 171". Junta-se a 169/170 na fila.
 **Muda quando vier:** pesagem, aplicação, movimentação, RFID e certificação
 voltam a gravar pelo site e pelo app.
 
-### D-13 · Direção nova discutida com parceiro em 17/11
-Detalhes no cofre. Conflita com: agricultura pausada (17/05), canal contador
-(C1, 02/09), amplitude de público, prioridade do estudo de caso (16/11).
-**Padrão assumido:** núcleo fiscal/contábil mantido; pecuária primeiro;
-canais somam; estudo de caso segue em paralelo.
-**Muda quando vier:** `CLAUDE.md` "Foco atual" reescrito e backlog reordenado.
 
 ---
 
@@ -120,4 +114,10 @@ Entregar como lista de 5 minutos quando ele tiver janela. Origem: seção 7.
 
 ## Decididas
 
-_(vazio — mover para cá com a data quando vierem)_
+### D-13 · Direção nova — **decidida em 23/11/2026**
+Lucas: a Agraas é plataforma para **pecuaristas e agricultores**, várias culturas e
+criações — o mini ERP pedido pela iBoi. Revoga o "foco 100% pecuária bovina" de
+17/05 e a pausa de agricultura/ovinos/caprinos/aves **como direção**; as rotas
+antigas seguem pausadas até serem religadas ao núcleo único (centro de custo por
+atividade, migration 172). Validação de campo começa por bovino + grãos.
+Pendente: reescrever "Foco atual" do `CLAUDE.md`.

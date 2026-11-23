@@ -16,6 +16,7 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { checkRateLimit, tooManyRequests } from "@/lib/rate-limit";
 import { writeCanonicalInvoice, updateCanonicalStatus } from "@/lib/fiscal/invoice-writer";
 import { writeCanonicalAlerts } from "@/lib/fiscal/alert-writer";
+import { gerarTitulosDaNota } from "@/lib/gestao/titulos";
 import { FISCAL_WRITE_MODE, FISCAL_WRITES_CANONICAL, FISCAL_WRITES_LEGACY } from "@/lib/feature-flags";
 import {
   parseXml, parsePdf, tipoDoArquivo, mensagemUpload, derivarAlertas,
@@ -234,6 +235,25 @@ export async function handleNfeUpload(req: NextRequest): Promise<Response> {
     }
     const { noteId, alerts, hasCritical, canonicalOk, alertasGravados } = salvo;
 
+    // Nota → contas a pagar/receber (Gestão, 23/11/2026). Só XML (PDF não traz
+    // <cobr> confiável). Nunca afeta o upload: gerarTitulosDaNota não lança, e
+    // o try/catch cobre o import. Sem a migration 172 → 'tabela_ausente'.
+    let titulosGerados: number | null = null;
+    if (source === "xml_upload") {
+      try {
+        const r = await gerarTitulosDaNota(supabase, {
+          clientId:        quem.clientId,
+          xml:             nota.header.rawContent,
+          fiscalNoteId:    FISCAL_WRITES_LEGACY ? noteId : null,
+          fiscalInvoiceId: canonicalOk === true ? noteId : null,
+        });
+        if (r.ok) titulosGerados = r.inseridos;
+        else if (r.motivo === "erro") console.error("[fiscal/ingest] títulos da nota:", r.detalhe);
+      } catch (e) {
+        console.error("[fiscal/ingest] títulos da nota:", e instanceof Error ? e.message : String(e));
+      }
+    }
+
     const resumo = {
       numero_nota:  nota.header.numeroNota,
       total_items:  nota.items.length,
@@ -250,7 +270,8 @@ export async function handleNfeUpload(req: NextRequest): Promise<Response> {
       write_mode:   FISCAL_WRITE_MODE,
       canonical_ok: canonicalOk,
       alertas_gravados: alertasGravados,
-      message:      mensagemUpload(resumo) + (alertasGravados ? "" : " · atenção: alertas não gravados"),
+      titulos_gerados: titulosGerados,
+      message:     mensagemUpload(resumo) + (alertasGravados ? "" : " · atenção: alertas não gravados"),
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

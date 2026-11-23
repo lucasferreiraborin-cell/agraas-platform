@@ -13,6 +13,10 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next({ request });
   }
 
+  // Repassa o caminho para o layout raiz: o portal /gestao tem shell próprio e
+  // o layout raiz precisa saber disso para não envolver com a sidebar da plataforma.
+  request.headers.set("x-agraas-path", path);
+
   // 1) Cadeias pausadas → /em-breve
   const PAUSED_PREFIXES = ["/ovinos", "/caprinos", "/aves", "/agricultura"];
   for (const prefix of PAUSED_PREFIXES) {
@@ -58,6 +62,27 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
+
+  // ── Portal Agraas Gestão (mini ERP, 23/11/2026) ────────────────────
+  // Login próprio em /gestao/entrar; o resto de /gestao exige sessão.
+  // Mesma conta da plataforma — só o caminho de entrada e o shell mudam.
+  if (pathname === "/gestao" || pathname.startsWith("/gestao/")) {
+    const isGestaoLogin = pathname.startsWith("/gestao/entrar");
+    if (!user && !isGestaoLogin) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/gestao/entrar";
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
+    if (user && isGestaoLogin) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/gestao";
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
+    return supabaseResponse;
+  }
+
   const isLoginPage = pathname.startsWith("/login");
   const isPublic    = pathname.startsWith("/reset-password")
                    || pathname.startsWith("/passaporte")

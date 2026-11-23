@@ -1,5 +1,6 @@
 import "./globals.css";
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import LogoutButton from "./components/LogoutButton";
@@ -87,6 +88,20 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Portal Agraas Gestão (/gestao) tem shell próprio em app/gestao/layout.tsx.
+  // O caminho vem do proxy (x-agraas-path); aqui só entregamos o documento.
+  const currentPath = (await headers()).get("x-agraas-path") ?? "";
+  if (currentPath === "/gestao" || currentPath.startsWith("/gestao/")) {
+    return (
+      <html lang="pt-BR" className={`${GeistSans.variable} ${GeistMono.variable}`}>
+        <body className="min-h-screen bg-[var(--bg)] text-[var(--text-primary)]">
+          {children}
+          <ToastContainer />
+        </body>
+      </html>
+    );
+  }
+
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
 
