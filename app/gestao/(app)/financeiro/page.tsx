@@ -21,6 +21,7 @@ const AVISOS: Record<string, string> = {
 const ERROS: Record<string, string> = {
   data: "Data da baixa inválida. Use uma data até hoje.",
   valor: "Valor da baixa inválido.",
+  parcial: "Baixa parcial ainda não está disponível: informe o valor total do título.",
   forma: "Escolha a forma de pagamento.",
   "nao-encontrado": "Título não encontrado ou já alterado. A lista foi atualizada.",
   falha: "Não foi possível salvar agora. Tente de novo.",

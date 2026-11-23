@@ -71,6 +71,18 @@ export async function DELETE(req: NextRequest) {
     const apagados = { alertas: 0, itens: 0, nota: 0, canonica: 0 };
     const falhas: string[] = [];
 
+    // Contas a pagar/receber em aberto geradas por esta nota (portal Gestão,
+    // migration 172) são canceladas antes de apagar: sem isso, ficariam órfãs e
+    // a reimportação da mesma nota duplicaria a dívida. Pagas ficam como estão.
+    // Tabela ausente ou erro aqui não impede a exclusão da nota.
+    try {
+      await db.from("titulos_financeiros")
+        .update({ status: "cancelado" })
+        .eq("client_id", donoParaFiltro)
+        .eq("status", "aberto")
+        .or(`fiscal_invoice_id.eq.${noteId},fiscal_note_id.eq.${noteId}`);
+    } catch { /* não bloqueia a exclusão */ }
+
     if (FISCAL_WRITES_LEGACY || legado.data) {
       const [a, i] = await Promise.all([
         db.from("fiscal_notes_alerts_legacy").delete({ count: "exact" }).eq("note_id", noteId),

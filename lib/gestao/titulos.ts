@@ -83,7 +83,8 @@ export async function gerarTitulosDaNota(
     const { data: existentesRows, error: selErr } = await supabase
       .from("titulos_financeiros")
       .select("numero_parcela")
-      .eq(chaveCol, chaveVal);
+      .eq(chaveCol, chaveVal)
+      .eq("client_id", input.clientId);
     if (selErr) {
       if (tabelaAusente(selErr)) return { ok: false, motivo: "tabela_ausente" };
       return { ok: false, motivo: "erro", detalhe: selErr.message };
@@ -95,6 +96,19 @@ export async function gerarTitulosDaNota(
     const ncms = [...input.xml.matchAll(/<(?:[A-Za-z_][\w.-]*:)?NCM>\s*(\d+)\s*</gi)].map(m => m[1]);
     const natureza = dir.tipo === "pagar" && ncms.length > 0 && ncms.every(n => n.startsWith("27101921"))
       ? "estoque" : "custo";
+
+    // Avisos para quem confere: diesel misturado com outros itens (pode contar
+    // duas vezes com os abastecimentos) e direção pagar/receber só suposta.
+    const avisosNota: string[] = [];
+    if (natureza === "custo" && dir.tipo === "pagar" && ncms.some(n => n.startsWith("27101921"))) {
+      avisosNota.push("Nota com diesel e outros itens: o diesel pode contar duas vezes com os abastecimentos — confira.");
+    }
+    if (dir.confianca === "baixa") avisosNota.push(`Direção (${dir.tipo}) suposta: confira se é conta a pagar ou a receber.`);
+
+    // À vista declarado na própria NF-e (indPag=0 em todos os pagamentos):
+    // o título nasce baixado na data de emissão, em vez de virar "vencido".
+    const aVistaPago = dups.origem === "a_vista" && dups.pagamentos.length > 0
+      && dups.pagamentos.every(pg => pg.indPag === 0);
 
     const total = dups.parcelas.length;
     const linhas = dups.parcelas
@@ -108,15 +122,21 @@ export async function gerarTitulosDaNota(
         numero_parcela: p.numero,
         valor: p.valor,
         vencimento: p.vencimento,
-        status: "aberto",
+        status: aVistaPago ? "pago" : "aberto",
+        data_baixa: aVistaPago ? p.vencimento : null,
+        valor_baixa: aVistaPago ? p.valor : null,
         forma_pagamento: dups.formaPagamento,
         fiscal_note_id: fiscalNoteId,
         fiscal_invoice_id: fiscalInvoiceId,
         origem: "nfe",
         natureza,
-        notas: i === arr.length - 1 && dups.divergencia
-          ? `Soma das parcelas (${dups.divergencia.somaParcelas.toFixed(2)}) difere do total da nota (${dups.divergencia.valorNota.toFixed(2)}).`
-          : null,
+        notas: [
+          ...(i === arr.length - 1 && dups.divergencia
+            ? [`Soma das parcelas (${dups.divergencia.somaParcelas.toFixed(2)}) difere do total da nota (${dups.divergencia.valorNota.toFixed(2)}).`]
+            : []),
+          ...(aVistaPago ? ["Baixa automática: pagamento à vista informado na NF-e."] : []),
+          ...avisosNota,
+        ].join(" ") || null,
       }));
 
     let inseridos = 0;

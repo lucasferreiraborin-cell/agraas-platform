@@ -74,7 +74,7 @@ export async function proxy(request: NextRequest) {
       url.search = "";
       return NextResponse.redirect(url);
     }
-    if (user && isGestaoLogin) {
+    if (user && isGestaoLogin && !request.nextUrl.searchParams.has("erro")) {
       const url = request.nextUrl.clone();
       url.pathname = "/gestao";
       url.search = "";

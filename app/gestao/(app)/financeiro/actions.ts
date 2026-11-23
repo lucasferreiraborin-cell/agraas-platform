@@ -23,6 +23,7 @@ function parseValor(bruto: string): number | null {
   let s = bruto.replace(/\s|R\$/g, "");
   if (!s) return null;
   if (s.includes(",")) s = s.replace(/\./g, "").replace(",", ".");
+  else if (/^\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, ""); // "1.500" = mil e quinhentos
   const n = Number(s);
   if (!Number.isFinite(n) || n <= 0 || n > 999_999_999) return null;
   return Math.round(n * 100) / 100;
@@ -73,6 +74,12 @@ export async function darBaixa(fd: FormData) {
   if (!dataValida(dataBaixa) || dataBaixa > hojeISO()) redirect(destino(voltar, { erro: "data" }));
   if (valorBaixa === null) redirect(destino(voltar, { erro: "valor" }));
   if (!(FORMAS as readonly string[]).includes(forma)) redirect(destino(voltar, { erro: "forma" }));
+
+  // Baixa parcial ainda não existe: pagar menos que o título faria o saldo sumir.
+  const { data: atual } = await ctx.supabase
+    .from("titulos_financeiros").select("valor")
+    .eq("id", id).eq("client_id", ctx.clientId).maybeSingle();
+  if (atual && valorBaixa < Number(atual.valor) - 0.005) redirect(destino(voltar, { erro: "parcial" }));
 
   const { data, error } = await ctx.supabase
     .from("titulos_financeiros")

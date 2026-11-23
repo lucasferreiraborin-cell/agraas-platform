@@ -15,7 +15,8 @@ function texto(fd: FormData, chave: string): string {
 /** "1.250,5" ou "1250.5" → número; vazio → null; inválido → NaN. */
 function numero(bruto: string): number | null {
   if (!bruto) return null;
-  const limpo = bruto.includes(",") ? bruto.replace(/\./g, "").replace(",", ".") : bruto;
+  const limpo = bruto.includes(",") ? bruto.replace(/\./g, "").replace(",", ".")
+    : /^\d{1,3}(\.\d{3})+$/.test(bruto) ? bruto.replace(/\./g, "") : bruto;
   return /^\d+(\.\d+)?$/.test(limpo) ? Number(limpo) : Number.NaN;
 }
 

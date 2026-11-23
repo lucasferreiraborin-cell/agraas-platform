@@ -117,7 +117,7 @@ export function resultadoPorCentro(
 
   for (const t of titulos) {
     if (t.status === "cancelado" || !noPeriodo(t.vencimento, periodo)) continue;
-    if (t.tipo === "pagar" && t.natureza === "estoque") continue;
+    if (t.tipo === "pagar" && t.natureza && t.natureza !== "custo") continue;
     const a = alvo(t.centro_custo_id);
     if (t.tipo === "pagar") a.pagar += toNum(t.valor);
     else if (t.tipo === "receber") a.receber += toNum(t.valor);

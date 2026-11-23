@@ -198,7 +198,8 @@ function fakeDb(opts: { existentes?: string[]; selErr?: Erro; insErr?: Erro; ins
     from() {
       return {
         select() {
-          return { eq: () => Promise.resolve({ data: (opts.existentes ?? []).map(n => ({ numero_parcela: n })), error: opts.selErr ?? null }) };
+          const res = Promise.resolve({ data: (opts.existentes ?? []).map(n => ({ numero_parcela: n })), error: opts.selErr ?? null });
+          return { eq: () => ({ eq: () => res }) };
         },
         insert(payload: unknown) {
           inserts.push(payload);
