@@ -89,8 +89,8 @@ export default function GestaoEntrarPage() {
   return (
     <AuthShell
       sidebarTitle="Agraas Gestão"
-      sidebarMessage="A nota entra. Conta a pagar, estoque, custo e contabilidade saem prontos."
-      sidebarBadges={["NF-e", "Contas a pagar", "Diesel", "LCDPR"]}
+      sidebarMessage="A nota entra. Conta a pagar, estoque e custo por atividade saem prontos — e o mês chega organizado ao contador."
+      sidebarBadges={["NF-e", "Contas a pagar", "Diesel", "Custo por atividade"]}
     >
       <Suspense fallback={null}>
         <Formulario />

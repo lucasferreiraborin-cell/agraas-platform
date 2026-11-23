@@ -5,6 +5,8 @@ import { brl, dataBR, num } from "@/lib/gestao/format";
 import { BotaoLink, Cartao, Selo, Tabela, Titulo, Vazio, td, th } from "../../ui";
 import { UUID, statusDaNota, type TomSelo } from "../dados";
 
+export const metadata = { title: "Nota fiscal" };
+
 export const dynamic = "force-dynamic";
 
 type Item = {

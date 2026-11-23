@@ -15,7 +15,7 @@ type Item = { id: string; tom: Tom; texto: string; detalhe?: string; href: strin
 const COLUNAS_TITULO = "tipo, valor, status, vencimento, data_baixa, valor_baixa, centro_custo_id, natureza";
 
 const ATALHOS = [
-  { href: "/gestao/notas", titulo: "Importar nota", texto: "XML, PDF ou foto da NF-e" },
+  { href: "/gestao/notas", titulo: "Importar nota", texto: "XML ou PDF da NF-e" },
   { href: "/gestao/maquinas", titulo: "Registrar abastecimento", texto: "Litros por máquina" },
   { href: "/gestao/financeiro", titulo: "Dar baixa", texto: "Conta paga ou recebida" },
   { href: "/gestao/financeiro/novo", titulo: "Novo lançamento", texto: "Conta a pagar ou a receber" },

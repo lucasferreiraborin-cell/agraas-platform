@@ -95,7 +95,8 @@ export default async function Atividades({ searchParams }: { searchParams: Promi
                       <div className="mb-3">
                         <h3 className="text-[.95rem] font-semibold text-[var(--text-primary)]">{a.nome}</h3>
                         <p className="text-[.78rem] text-[var(--text-muted)]">
-                          Vende em {a.unidadeVenda} · {a.indicadorCusto}
+                          {a.unidadeVenda !== "—" ? `Vende em ${a.unidadeVenda} · ${a.indicadorCusto}` : a.indicadorCusto}
+                          {a.setor === "agricultura" && " · a receita entra na colheita e na venda da safra"}
                         </p>
                       </div>
                       <Tabela>
@@ -158,7 +159,7 @@ export default async function Atividades({ searchParams }: { searchParams: Promi
 
           <p className="text-[.75rem] text-[var(--text-muted)]">
             Custo: contas a pagar com vencimento no mês, mais o diesel abastecido (litros × preço). Receita: contas a receber com vencimento no mês.
-            Quando a compra de diesel também está em conta a pagar, ela aparece nas duas partes.
+            A compra de diesel não entra como custo: ela vai para o estoque e vira custo quando a máquina abastece.
             Total do mês: custo {brl(r.total.custo)} · receita {brl(r.total.receita)} · margem {brl(r.total.margem)}.
           </p>
         </div>

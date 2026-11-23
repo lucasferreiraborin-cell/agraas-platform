@@ -74,7 +74,6 @@ export default async function Fechamento({ searchParams }: { searchParams: Promi
   const total = pendencias.reduce((s, p) => s + p.qtd, 0);
 
   const comMovimento = r.linhas.filter((l) => l.custo > 0 || l.receita > 0);
-  const ano = mes.slice(0, 4);
 
   return (
     <div>
@@ -124,7 +123,7 @@ export default async function Fechamento({ searchParams }: { searchParams: Promi
       </Cartao>
 
       <section aria-labelledby="totais" className="mb-6">
-        <h2 id="totais" className="mb-3 text-[.95rem] font-semibold capitalize text-[var(--text-primary)]">
+        <h2 id="totais" className="mb-3 text-[.95rem] font-semibold text-[var(--text-primary)]">
           Totais de {mesPorExtenso(mes)}
         </h2>
         <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 lg:grid-cols-4">
@@ -181,13 +180,13 @@ export default async function Fechamento({ searchParams }: { searchParams: Promi
           <a href={`/gestao/fechamento/exportar?mes=${mesQuery}`} className={btnPrimario}>
             Pacote do mês (CSV)
           </a>
-          <a href={`/api/export/lcdpr?year=${ano}`} className={btnSecundario}>
-            Livro caixa (LCDPR) de {ano}
-          </a>
+          <span className={`${btnSecundario} cursor-default opacity-60`} aria-disabled="true">
+            Livro caixa e IR rural · em preparação
+          </span>
         </div>
         <p className="mt-3 text-[.78rem] text-[var(--text-muted)]">
           O pacote traz contas e abastecimentos do mês, com separador “;” e vírgula decimal, prontos para abrir no Excel.
-          O livro caixa é anual e usa os lançamentos do módulo fiscal.
+          O livro caixa por regime de caixa sai das baixas registradas aqui.
         </p>
       </Cartao>
     </div>

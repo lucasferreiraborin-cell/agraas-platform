@@ -5,6 +5,8 @@ import { Cartao, EmAtivacao, Kpi, Selo, Tabela, Titulo, Vazio, td, th } from "..
 import EnviarNota from "./EnviarNota";
 import { listarNotas, titulosPorNota, type NotaUnificada, type TitulosDaNota } from "./dados";
 
+export const metadata = { title: "Notas fiscais" };
+
 export const dynamic = "force-dynamic";
 
 function rotuloNota(n: NotaUnificada) {
@@ -85,7 +87,7 @@ export default async function NotasPage() {
                 >
                   <div className="flex items-start justify-between gap-3">
                     <p className="min-w-0 truncate font-semibold text-[var(--text-primary)]" title={n.emitente ?? ""}>
-                      {n.emitente ?? "Emitente não informado"}
+                      {n.emitente ?? "Contraparte não informada"}
                     </p>
                     <p className="shrink-0 font-semibold tabular-nums text-[var(--text-primary)]">{n.valor === null ? "—" : brl(n.valor)}</p>
                   </div>
@@ -103,7 +105,7 @@ export default async function NotasPage() {
             <Tabela>
               <thead>
                 <tr>
-                  <th className={th}>Emitente</th>
+                  <th className={th}>Fornecedor ou comprador</th>
                   <th className={th}>Nota</th>
                   <th className={th}>Emissão</th>
                   <th className={`${th} text-right`}>Valor</th>
@@ -120,7 +122,7 @@ export default async function NotasPage() {
                         className="block truncate font-semibold text-[var(--text-primary)] underline-offset-2 hover:underline focus-visible:underline"
                         title={n.emitente ?? ""}
                       >
-                        {n.emitente ?? "Emitente não informado"}
+                        {n.emitente ?? "Contraparte não informada"}
                       </Link>
                     </td>
                     <td className={`${td} whitespace-nowrap text-[var(--text-secondary)]`}>{rotuloNota(n)}</td>

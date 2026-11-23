@@ -6,7 +6,7 @@ import type { CentroOpcao } from "../SelectCentro";
 import { NovoForm } from "./NovoForm";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Novo lançamento · Agraas Gestão" };
+export const metadata = { title: "Novo lançamento" };
 
 export default async function NovoLancamentoPage({
   searchParams,

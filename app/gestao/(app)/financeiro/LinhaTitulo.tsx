@@ -44,7 +44,7 @@ export function LinhaTitulo({ t, hoje, voltar }: { t: Titulo; hoje: string; volt
           </p>
           <p className="mt-0.5 text-[.84rem] text-[var(--text-secondary)] [overflow-wrap:anywhere]">
             {t.descricao}
-            {t.numero_parcela && <span className="text-[var(--text-muted)]"> · parcela {t.numero_parcela}</span>}
+            {t.numero_parcela && !/parcela/i.test(t.descricao ?? "") && <span className="text-[var(--text-muted)]"> · parcela {t.numero_parcela}</span>}
           </p>
           <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[.78rem] text-[var(--text-muted)]">
             {pago ? (

@@ -47,6 +47,7 @@ const numOuNull = (v: unknown) => (v === null || v === undefined || v === "" || 
 type LinhaCanonica = {
   id: string; number: string | null; series: string | null; access_key: string | null;
   issuer_name: string | null; issuer_cnpj: string | null; issued_at: string | null;
+  recipient_name: string | null; direction: string | null;
   gross_value: number | string | null; status: string | null; funrural_value: number | string | null;
 };
 type LinhaLegado = {
@@ -67,7 +68,7 @@ export type ListaNotas = {
 export async function listarNotas(supabase: Db, clientId: string, limite = 300): Promise<ListaNotas> {
   const canon = await supabase
     .from("fiscal_invoices")
-    .select("id, number, series, access_key, issuer_name, issuer_cnpj, issued_at, gross_value, status, funrural_value")
+    .select("id, number, series, access_key, issuer_name, issuer_cnpj, recipient_name, direction, issued_at, gross_value, status, funrural_value")
     .eq("client_id", clientId)
     .order("issued_at", { ascending: false, nullsFirst: false })
     .limit(limite);
@@ -95,9 +96,14 @@ export async function listarNotas(supabase: Db, clientId: string, limite = 300):
 
   const doCanon = (canon.error ? [] : ((canon.data ?? []) as unknown as LinhaCanonica[])).map<NotaUnificada>((r) => {
     const s = statusDaNota("canonica", r.status);
+    // Na venda (saída) a contraparte que importa é o comprador; vendas antigas
+    // registradas sem NF-e (backfill de sales) não têm número de nota real.
+    const venda = r.direction === "saida";
+    const backfill = /^VENDA-BACKFILL/i.test(r.number ?? "");
     return {
-      id: r.id, origem: "canonica", numero: r.number, serie: r.series, chave: r.access_key,
-      emitente: r.issuer_name, emitenteCnpj: r.issuer_cnpj, data: dia(r.issued_at), valor: numOuNull(r.gross_value),
+      id: r.id, origem: "canonica", numero: backfill ? null : r.number, serie: backfill ? null : r.series, chave: r.access_key,
+      emitente: venda ? (r.recipient_name || (backfill ? "Venda de gado (registro manual)" : r.issuer_name)) : r.issuer_name,
+      emitenteCnpj: venda ? null : r.issuer_cnpj, data: dia(r.issued_at), valor: numOuNull(r.gross_value),
       statusRotulo: s.rotulo, statusTom: s.tom, aConferir: s.aConferir, funrural: numOuNull(r.funrural_value),
     };
   });
@@ -116,7 +122,7 @@ export async function listarNotas(supabase: Db, clientId: string, limite = 300):
       };
     });
 
-  const notas = [...doCanon, ...doLegado].sort((a, b) => ((b.data ?? "") > (a.data ?? "") ? 1 : (b.data ?? "") < (a.data ?? "") ? -1 : 0));
+  const notas = [...doCanon, ...doLegado].filter((n) => n.valor != null || n.data != null).sort((a, b) => ((b.data ?? "") > (a.data ?? "") ? 1 : (b.data ?? "") < (a.data ?? "") ? -1 : 0));
   return { notas, parcial, ausente: canonAusente && legAusente };
 }
 

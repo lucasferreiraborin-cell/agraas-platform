@@ -7,6 +7,8 @@ import {
 } from "@/lib/gestao/insumos";
 import { Cartao, EmAtivacao, Kpi, Selo, Tabela, Titulo, Vazio, td, th } from "../ui";
 
+export const metadata = { title: "Insumos" };
+
 export const dynamic = "force-dynamic";
 
 type Db = GestaoContexto["supabase"];

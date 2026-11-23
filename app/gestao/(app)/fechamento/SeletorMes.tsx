@@ -22,7 +22,7 @@ export default function SeletorMes({ caminho, mes, id }: { caminho: string; mes:
       <Link href={`${caminho}?mes=${prox}`} className={btnSecundario} aria-label={`Próximo mês (${prox})`}>
         <span aria-hidden>→</span>
       </Link>
-      <p className="w-full text-[.85rem] capitalize text-[var(--text-muted)] sm:ml-2 sm:w-auto">{mesPorExtenso(mes)}</p>
+      <p className="sr-only">{mesPorExtenso(mes)}</p>
     </div>
   );
 }

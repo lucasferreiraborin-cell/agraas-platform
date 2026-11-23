@@ -6,7 +6,7 @@ import { LinhaTitulo, type Titulo as Linha } from "./LinhaTitulo";
 import { OpcoesCentro, type CentroOpcao } from "./SelectCentro";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Contas a pagar e receber · Agraas Gestão" };
+export const metadata = { title: "Contas a pagar e receber" };
 
 type Busca = { tipo?: string; centro?: string; de?: string; ate?: string; aviso?: string; erro?: string; n?: string };
 
