@@ -78,7 +78,7 @@ export default async function MaquinasPage() {
         ? { valor: "Conciliado", detalhe: `Diferença de ${litros(Math.abs(estoque.saldo))}, dentro de 5%`, tom: "verde" as const }
         : conferencia.situacao === "abastecido_acima"
           ? { valor: `−${litros(conferencia.litros)}`, detalhe: "Abastecido acima do comprado. Falta nota?", tom: "perigo" as const }
-          : { valor: litros(conferencia.litros), detalhe: "Comprado e não abastecido. Confira o tanque.", tom: "alerta" as const };
+          : { valor: litros(conferencia.litros), detalhe: "Deve estar no tanque. Compare com a régua: a diferença é perda ou desvio.", tom: "neutro" as const };
 
   return (
     <>

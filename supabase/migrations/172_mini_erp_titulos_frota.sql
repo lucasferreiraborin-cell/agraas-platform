@@ -71,6 +71,7 @@ CREATE TABLE IF NOT EXISTS public.titulos_financeiros (
   origem            text NOT NULL DEFAULT 'manual' CHECK (origem IN ('manual','nfe','planilha')),
   -- 'custo' entra no resultado na competência; 'estoque' (ex.: diesel) só no consumo,
   -- para não contar duas vezes; 'investimento' e 'financeiro' ficam fora do custo.
+  -- Só tem efeito em títulos a PAGAR; em 'receber' o valor é ignorado.
   natureza          text NOT NULL DEFAULT 'custo' CHECK (natureza IN ('custo','estoque','investimento','financeiro')),
   notas             text,
   created_at        timestamptz NOT NULL DEFAULT now(),
@@ -159,6 +160,8 @@ CREATE POLICY titulos_access ON public.titulos_financeiros FOR ALL
           (SELECT c.id FROM public.centros_custo c WHERE c.client_id = titulos_financeiros.client_id))
     AND (fiscal_invoice_id IS NULL OR fiscal_invoice_id IN
           (SELECT f.id FROM public.fiscal_invoices f WHERE f.client_id = titulos_financeiros.client_id))
+    AND (fiscal_note_id IS NULL OR fiscal_note_id IN
+          (SELECT n.id FROM public.fiscal_notes n WHERE n.client_id = titulos_financeiros.client_id))
   );
 
 DROP POLICY IF EXISTS maquinas_access ON public.maquinas;
