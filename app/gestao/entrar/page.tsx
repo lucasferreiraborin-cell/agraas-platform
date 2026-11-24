@@ -3,7 +3,6 @@
 import { Suspense, useState } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
 import { ArrowRight, Loader2 } from "lucide-react";
 import AuthShell from "@/app/components/ui/AuthShell";
 
@@ -35,12 +34,12 @@ function Formulario() {
   }
 
   const inputCls =
-    "w-full rounded-xl border border-[var(--border)] bg-white px-4 py-3 text-sm text-[var(--text-primary)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15";
+    "w-full rounded-2xl border border-[var(--border-strong)] bg-white px-4 py-3 text-base sm:text-sm text-[var(--text-primary)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15";
 
   return (
     <>
       <div>
-        <p className="text-[.75rem] font-semibold uppercase tracking-[0.2em] text-[var(--primary)]">Agraas Gestão</p>
+        <p className="text-[.85rem] font-semibold text-[var(--primary)]">Agraas Gestão</p>
         <h1 className="mt-2 text-[1.8rem] font-semibold tracking-[-.02em] text-[var(--text-primary)]">
           Entrar na gestão da fazenda
         </h1>
@@ -70,16 +69,16 @@ function Formulario() {
           <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[.8125rem] text-red-700">{error}</div>
         )}
         <button type="submit" disabled={loading}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--primary)] py-3.5 text-[.9375rem] font-semibold text-white shadow-[var(--shadow-green)] transition-all hover:bg-[var(--primary-hover)] disabled:cursor-not-allowed disabled:opacity-60">
+          className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[var(--primary)] py-3.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)] text-[.9375rem] font-semibold text-white shadow-[var(--shadow-green)] transition-all hover:bg-[var(--primary-hover)] disabled:cursor-not-allowed disabled:opacity-60">
           {loading ? (<><Loader2 size={16} className="animate-spin" /> Entrando</>) : (<>Entrar <ArrowRight size={15} /></>)}
         </button>
       </form>
 
       <p className="mt-8 text-center text-[.8125rem] text-[var(--text-muted)]">
         Esqueceu a senha?{" "}
-        <Link href="/login" className="font-semibold text-[var(--primary)] hover:underline">Recuperar acesso</Link>
+        <a href="/login" className="font-semibold text-[var(--primary)] hover:underline focus-visible:outline-2 focus-visible:outline-[var(--primary)]">Recuperar acesso</a>
         {" · "}
-        <Link href="/login" className="font-semibold text-[var(--primary)] hover:underline">Rastreio e passaporte</Link>
+        <a href="/login" className="font-semibold text-[var(--primary)] hover:underline focus-visible:outline-2 focus-visible:outline-[var(--primary)]">Rastreio e passaporte</a>
       </p>
     </>
   );

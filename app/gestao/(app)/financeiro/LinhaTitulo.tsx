@@ -70,11 +70,11 @@ export function LinhaTitulo({ t, hoje, voltar }: { t: Titulo; hoje: string; volt
 
       <details className="group mt-2.5">
         <summary className={`${btnSecundario} w-full cursor-pointer list-none px-3 py-2 text-[.8rem] sm:w-auto [&::-webkit-details-marker]:hidden`}>
-          {pago ? "Desfazer baixa" : t.tipo === "pagar" ? "Dar baixa (paguei)" : "Dar baixa (recebi)"}
+          {pago ? "Desfazer baixa" : t.tipo === "pagar" ? "Pagar" : "Recebido"}
         </summary>
 
         {pago ? (
-          <form action={desfazerBaixa} className="mt-3 rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] p-3.5">
+          <form action={desfazerBaixa} className="mt-3 rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] p-4">
             <input type="hidden" name="id" value={t.id} />
             <input type="hidden" name="voltar" value={voltar} />
             <p className="text-[.85rem] text-[var(--text-secondary)]">
@@ -83,7 +83,7 @@ export function LinhaTitulo({ t, hoje, voltar }: { t: Titulo; hoje: string; volt
             <button type="submit" className={`${btnPrimario} mt-3 w-full sm:w-auto`}>Confirmar: voltar para em aberto</button>
           </form>
         ) : (
-          <form action={darBaixa} className="mt-3 rounded-xl border border-[var(--border)] bg-[var(--surface-soft)] p-3.5">
+          <form action={darBaixa} className="mt-3 rounded-2xl border border-[var(--border)] bg-[var(--surface-soft)] p-4">
             <input type="hidden" name="id" value={t.id} />
             <input type="hidden" name="voltar" value={voltar} />
             <p className="mb-3 text-[.85rem] text-[var(--text-secondary)]">

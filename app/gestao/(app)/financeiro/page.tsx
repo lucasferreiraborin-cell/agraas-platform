@@ -149,7 +149,7 @@ export default async function FinanceiroPage({ searchParams }: { searchParams: P
     <Link
       href={`/gestao/financeiro?tipo=${cod}`}
       aria-current={tipo === cod ? "page" : undefined}
-      className={`flex-1 rounded-lg px-4 py-2 text-center text-[.88rem] font-semibold transition sm:flex-none ${
+      className={`flex-1 rounded-full px-5 py-2.5 text-center text-[.88rem] font-semibold transition focus-visible:outline-2 focus-visible:outline-[var(--primary)] sm:flex-none ${
         tipo === cod ? "bg-white text-[var(--primary-hover)] shadow-[var(--shadow-soft)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
       }`}
     >
@@ -164,18 +164,18 @@ export default async function FinanceiroPage({ searchParams }: { searchParams: P
       {aviso && <p role="status" className="mb-4 rounded-xl border border-[var(--border)] bg-[var(--primary-soft)] px-4 py-3 text-[.85rem] text-[var(--primary-hover)]">{aviso}</p>}
       {erro && <p role="alert" className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[.85rem] text-red-700">{erro}</p>}
 
-      <nav aria-label="Tipo de conta" className="mb-5 flex gap-1 rounded-xl bg-black/5 p-1 sm:inline-flex">
+      <nav aria-label="Tipo de conta" className="mb-5 flex gap-1 rounded-full bg-black/5 p-1 sm:inline-flex">
         {aba("pagar", "A pagar")}
         {aba("receber", "A receber")}
       </nav>
 
       <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Kpi rotulo="Vencido" valor={brl(soma(vencidas))} tom={vencidas.length ? "perigo" : "neutro"}
-          detalhe={vencidas.length ? `${vencidas.length} ${vencidas.length === 1 ? "título" : "títulos"}` : "Nada em atraso"} />
-        <Kpi rotulo="Vence em 7 dias" valor={brl(soma(semana))} tom={semana.length ? "alerta" : "neutro"}
-          detalhe={`${semana.length} ${semana.length === 1 ? "título" : "títulos"}`} />
-        <Kpi rotulo="Vence em 30 dias" valor={brl(soma(ate30))}
-          detalhe={`${ate30.length} ${ate30.length === 1 ? "título" : "títulos"}, inclui os 7 dias`} />
+          detalhe={vencidas.length ? `${vencidas.length} ${vencidas.length === 1 ? "conta atrasada" : "contas atrasadas"}` : "Nada em atraso"} />
+        <Kpi rotulo="Próximos 7 dias" valor={brl(soma(semana))} tom={semana.length ? "alerta" : "neutro"}
+          detalhe={`${semana.length} ${semana.length === 1 ? "conta" : "contas"}`} />
+        <Kpi rotulo="Próximos 30 dias" valor={brl(soma(ate30))}
+          detalhe={`${ate30.length} ${ate30.length === 1 ? "conta" : "contas"}, inclui os 7 dias`} />
         <Kpi rotulo={rotPago} valor={brl(soma(pagos, "baixa"))} tom="verde"
           detalhe={`${pagos.length} ${pagos.length === 1 ? "baixa" : "baixas"}`} />
       </div>
@@ -187,16 +187,16 @@ export default async function FinanceiroPage({ searchParams }: { searchParams: P
           <>
             <div className="mb-4 grid grid-cols-3 gap-3">
               <div className="min-w-0">
-                <p className="text-[.72rem] font-semibold uppercase tracking-[0.1em] text-[var(--text-muted)]">A receber</p>
-                <p className="truncate text-[1.05rem] font-semibold tabular-nums text-[var(--primary)]" title={brl(totReceber)}>{brl(totReceber)}</p>
+                <p className="text-[.74rem] font-medium text-[var(--text-muted)]">A receber</p>
+                <p className="truncate text-[1.2rem] font-semibold tabular-nums text-[var(--primary)]" title={brl(totReceber)}>{brl(totReceber)}</p>
               </div>
               <div className="min-w-0">
-                <p className="text-[.72rem] font-semibold uppercase tracking-[0.1em] text-[var(--text-muted)]">A pagar</p>
-                <p className="truncate text-[1.05rem] font-semibold tabular-nums text-[var(--text-primary)]" title={brl(totPagar)}>{brl(totPagar)}</p>
+                <p className="text-[.74rem] font-medium text-[var(--text-muted)]">A pagar</p>
+                <p className="truncate text-[1.2rem] font-semibold tabular-nums text-[var(--text-primary)]" title={brl(totPagar)}>{brl(totPagar)}</p>
               </div>
               <div className="min-w-0">
-                <p className="text-[.72rem] font-semibold uppercase tracking-[0.1em] text-[var(--text-muted)]">Saldo</p>
-                <p className={`truncate text-[1.05rem] font-semibold tabular-nums ${saldo < 0 ? "text-[var(--danger)]" : "text-[var(--primary)]"}`} title={brl(saldo)}>{brl(saldo)}</p>
+                <p className="text-[.74rem] font-medium text-[var(--text-muted)]">Saldo</p>
+                <p className={`truncate text-[1.2rem] font-semibold tabular-nums ${saldo < 0 ? "text-[var(--danger)]" : "text-[var(--primary)]"}`} title={brl(saldo)}>{brl(saldo)}</p>
               </div>
             </div>
             <ul className="space-y-3">
@@ -228,7 +228,7 @@ export default async function FinanceiroPage({ searchParams }: { searchParams: P
         )}
       </Cartao>
 
-      <form method="get" className="mb-5 rounded-2xl border border-[var(--border)] bg-white p-4 shadow-[var(--shadow-soft)]">
+      <form method="get" className="mb-5 rounded-3xl border border-[var(--border)] bg-white p-4 shadow-[var(--shadow-soft)] sm:p-5">
         <input type="hidden" name="tipo" value={tipo} />
         <div className="grid gap-3 sm:grid-cols-4 sm:items-end">
           <div>

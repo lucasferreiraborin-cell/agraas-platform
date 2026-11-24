@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { contextoGestao } from "@/lib/gestao/contexto";
-import { GestaoSidebar, GestaoMobileMenu } from "./GestaoNav";
+import { GestaoSidebar, GestaoBottomNav } from "./GestaoNav";
 import GestaoSair from "./GestaoSair";
 
 export const metadata: Metadata = {
@@ -31,7 +31,6 @@ export default async function GestaoLayout({ children }: { children: React.React
         <header className="sticky top-0 z-30 border-b border-black/5 bg-[rgba(244,247,242,0.88)] backdrop-blur-xl">
           <div className="mx-auto flex h-16 max-w-[1280px] items-center justify-between gap-3 px-4 sm:px-6 lg:px-10">
             <div className="flex min-w-0 items-center gap-2">
-              <GestaoMobileMenu />
               <div className="min-w-0">
                 <p className="truncate text-[.95rem] font-semibold tracking-[-0.02em] text-[var(--text-primary)]">
                   {ctx.clientName}
@@ -43,9 +42,10 @@ export default async function GestaoLayout({ children }: { children: React.React
           </div>
         </header>
         <main className="flex-1">
-          <div className="mx-auto max-w-[1280px] px-4 py-6 sm:px-6 lg:px-10 lg:py-8">{children}</div>
+          <div className="mx-auto max-w-[1280px] px-4 pt-6 pb-[calc(6.5rem+env(safe-area-inset-bottom))] sm:px-6 lg:px-10 lg:py-8">{children}</div>
         </main>
       </div>
+      <GestaoBottomNav />
     </div>
   );
 }

@@ -5,10 +5,10 @@ import type { ReactNode } from "react";
 
 export function Titulo({ titulo, subtitulo, acao }: { titulo: string; subtitulo?: string; acao?: ReactNode }) {
   return (
-    <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
       <div className="min-w-0">
-        <h1 className="text-[1.6rem] font-semibold tracking-[-0.03em] text-[var(--text-primary)] sm:text-[1.85rem]">{titulo}</h1>
-        {subtitulo && <p className="mt-1 text-[.9rem] text-[var(--text-muted)]">{subtitulo}</p>}
+        <h1 className="text-[1.65rem] font-semibold tracking-[-0.03em] text-[var(--text-primary)] sm:text-[2rem]">{titulo}</h1>
+        {subtitulo && <p className="mt-1 text-[.9rem] text-[var(--text-secondary)]">{subtitulo}</p>}
       </div>
       {acao && <div className="flex shrink-0 flex-wrap gap-2">{acao}</div>}
     </div>
@@ -19,7 +19,7 @@ type Tom = "neutro" | "verde" | "alerta" | "perigo";
 const TOM_TEXTO: Record<Tom, string> = {
   neutro: "text-[var(--text-primary)]",
   verde: "text-[var(--primary)]",
-  alerta: "text-[#a77a0a]",
+  alerta: "text-[#8a6208]",
   perigo: "text-[var(--danger)]",
 };
 
@@ -27,34 +27,34 @@ export function Kpi({ rotulo, valor, detalhe, tom = "neutro", href }: {
   rotulo: string; valor: string; detalhe?: string; tom?: Tom; href?: string;
 }) {
   const corpo = (
-    <div className="h-full rounded-2xl border border-[var(--border)] bg-white p-4 shadow-[var(--shadow-soft)] transition sm:p-5">
-      <p className="text-[.72rem] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">{rotulo}</p>
-      <p className={`mt-2 text-[1.35rem] font-semibold tracking-[-0.03em] tabular-nums sm:text-[1.55rem] ${TOM_TEXTO[tom]}`}>{valor}</p>
+    <div className="h-full min-w-0 rounded-3xl border border-[var(--border)] bg-white p-4 shadow-[var(--shadow-soft)] transition sm:p-5">
+      <p className="text-[.74rem] font-medium text-[var(--text-muted)]">{rotulo}</p>
+      <p className={`mt-1.5 truncate text-[1.4rem] font-semibold tracking-[-0.03em] tabular-nums sm:text-[1.65rem] ${TOM_TEXTO[tom]}`} title={valor}>{valor}</p>
       {detalhe && <p className="mt-1 text-[.78rem] text-[var(--text-muted)]">{detalhe}</p>}
     </div>
   );
-  return href ? <Link href={href} className="block hover:-translate-y-0.5 transition">{corpo}</Link> : corpo;
+  return href ? <Link href={href} className="block rounded-3xl transition hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]">{corpo}</Link> : corpo;
 }
 
 export function Cartao({ titulo, acao, children, className = "" }: {
   titulo?: string; acao?: ReactNode; children: ReactNode; className?: string;
 }) {
   return (
-    <section className={`rounded-2xl border border-[var(--border)] bg-white shadow-[var(--shadow-soft)] ${className}`}>
+    <section className={`rounded-3xl border border-[var(--border)] bg-white shadow-[var(--shadow-soft)] ${className}`}>
       {(titulo || acao) && (
-        <div className="flex items-center justify-between gap-3 border-b border-[var(--border)] px-4 py-3.5 sm:px-5">
+        <div className="flex items-center justify-between gap-3 border-b border-[var(--border)] px-4 py-4 sm:px-6">
           {titulo && <h2 className="text-[.95rem] font-semibold tracking-[-0.01em] text-[var(--text-primary)]">{titulo}</h2>}
           {acao}
         </div>
       )}
-      <div className="p-4 sm:p-5">{children}</div>
+      <div className="p-4 sm:p-6">{children}</div>
     </section>
   );
 }
 
 export function Vazio({ titulo, texto, acao }: { titulo: string; texto: string; acao?: ReactNode }) {
   return (
-    <div className="rounded-2xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-soft)] px-6 py-10 text-center">
+    <div className="rounded-3xl border border-dashed border-[var(--border-strong)] bg-[var(--surface-soft)] px-6 py-12 text-center">
       <p className="text-[.95rem] font-semibold text-[var(--text-primary)]">{titulo}</p>
       <p className="mx-auto mt-1 max-w-md text-[.85rem] text-[var(--text-muted)]">{texto}</p>
       {acao && <div className="mt-4 flex justify-center">{acao}</div>}
@@ -86,8 +86,8 @@ export function BotaoLink({ href, children, primario = false }: { href: string; 
     <Link
       href={href}
       className={primario
-        ? "inline-flex items-center gap-2 rounded-xl bg-[var(--primary)] px-4 py-2.5 text-[.85rem] font-semibold text-white shadow-[var(--shadow-green)] transition hover:bg-[var(--primary-hover)]"
-        : "inline-flex items-center gap-2 rounded-xl border border-[var(--border-strong)] bg-white px-4 py-2.5 text-[.85rem] font-semibold text-[var(--text-primary)] transition hover:bg-[var(--surface-soft)]"}
+        ? "inline-flex items-center gap-2 rounded-full bg-[var(--primary)] px-5 py-2.5 text-[.85rem] font-semibold text-white shadow-[var(--shadow-green)] transition hover:bg-[var(--primary-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
+        : "inline-flex items-center gap-2 rounded-full border border-[var(--border-strong)] bg-white px-5 py-2.5 text-[.85rem] font-semibold text-[var(--text-primary)] transition hover:bg-[var(--surface-soft)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"}
     >
       {children}
     </Link>
@@ -95,11 +95,11 @@ export function BotaoLink({ href, children, primario = false }: { href: string; 
 }
 
 export const btnPrimario =
-  "inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--primary)] px-4 py-2.5 text-[.85rem] font-semibold text-white shadow-[var(--shadow-green)] transition hover:bg-[var(--primary-hover)] disabled:cursor-not-allowed disabled:opacity-60";
+  "inline-flex items-center justify-center gap-2 rounded-full bg-[var(--primary)] px-5 py-2.5 text-[.85rem] font-semibold text-white shadow-[var(--shadow-green)] transition hover:bg-[var(--primary-hover)] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]";
 export const btnSecundario =
-  "inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--border-strong)] bg-white px-4 py-2.5 text-[.85rem] font-semibold text-[var(--text-primary)] transition hover:bg-[var(--surface-soft)] disabled:opacity-60";
+  "inline-flex items-center justify-center gap-2 rounded-full border border-[var(--border-strong)] bg-white px-5 py-2.5 text-[.85rem] font-semibold text-[var(--text-primary)] transition hover:bg-[var(--surface-soft)] disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]";
 export const campo =
-  "w-full rounded-xl border border-[var(--border)] bg-white px-3.5 py-2.5 text-[.9rem] text-[var(--text-primary)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15";
+  "w-full rounded-2xl border border-[var(--border-strong)] bg-white px-3.5 py-3 text-[1rem] sm:text-[.9rem] text-[var(--text-primary)] outline-none transition placeholder:text-[var(--text-muted)] focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/15";
 export const rotuloCampo = "mb-1.5 block text-[.78rem] font-semibold text-[var(--text-secondary)]";
 
 /** Tabela responsiva: rola na horizontal no celular sem estourar a página. */
