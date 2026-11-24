@@ -115,7 +115,9 @@ export function GestaoBottomNav() {
             className={`${base} ${maisAtivo ? "bg-[var(--primary-soft)] text-[var(--primary-hover)]" : "text-[var(--text-secondary)]"}`}
           >
             <Menu size={21} strokeWidth={maisAtivo ? 2.3 : 1.8} aria-hidden />
-            Mais
+            {/* globals.css aplica `font: inherit` a <button> fora das layers do
+                Tailwind v4 — o tamanho vai num span para valer. */}
+            <span className="text-[.68rem] font-medium">Mais</span>
           </button>
         </div>
       </nav>

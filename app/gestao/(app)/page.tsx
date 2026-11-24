@@ -119,7 +119,7 @@ export default async function Inicio() {
     <div className="space-y-8">
       <div>
         <p className="text-[.85rem] text-[var(--text-secondary)]">{saudacao()}, {clientName}</p>
-        <p className="text-[.75rem] capitalize text-[var(--text-muted)]">{dataExtenso}</p>
+        <p className="text-[.75rem] text-[var(--text-muted)]">{dataExtenso.charAt(0).toUpperCase() + dataExtenso.slice(1).toLowerCase()}</p>
       </div>
 
       <section aria-labelledby="saldo" className="rounded-3xl bg-[linear-gradient(160deg,var(--sidebar)_0%,var(--sidebar-2)_100%)] p-6 text-white shadow-[var(--shadow-green)] sm:p-8">

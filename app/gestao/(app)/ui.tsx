@@ -29,7 +29,7 @@ export function Kpi({ rotulo, valor, detalhe, tom = "neutro", href }: {
   const corpo = (
     <div className="h-full min-w-0 rounded-3xl border border-[var(--border)] bg-white p-4 shadow-[var(--shadow-soft)] transition sm:p-5">
       <p className="text-[.74rem] font-medium text-[var(--text-muted)]">{rotulo}</p>
-      <p className={`mt-1.5 truncate text-[1.4rem] font-semibold tracking-[-0.03em] tabular-nums sm:text-[1.65rem] ${TOM_TEXTO[tom]}`} title={valor}>{valor}</p>
+      <p className={`mt-1.5 truncate text-[clamp(1.05rem,5vw,1.4rem)] font-semibold tracking-[-0.03em] tabular-nums sm:text-[1.65rem] ${TOM_TEXTO[tom]}`} title={valor}>{valor}</p>
       {detalhe && <p className="mt-1 text-[.78rem] text-[var(--text-muted)]">{detalhe}</p>}
     </div>
   );
