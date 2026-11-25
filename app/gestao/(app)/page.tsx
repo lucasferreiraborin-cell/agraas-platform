@@ -31,7 +31,7 @@ export default async function Inicio() {
   const mes = limitesDoMes(hoje);
   const desdeDiesel = [mes.inicio, somaDias(hoje, -34)].sort()[0];
 
-  const [abertosQ, pagosQ, semCentroQ, abastQ, abastSemCentroQ, notasQ, notasLegQ, prox30Q] = await Promise.all([
+  const [abertosQ, pagosQ, semCentroQ, abastQ, abastSemCentroQ, notasQ, notasLegQ, prox30Q, centrosQ] = await Promise.all([
     supabase.from("titulos_financeiros").select(COLUNAS_TITULO)
       .eq("client_id", clientId).eq("status", "aberto").lte("vencimento", somaDias(hoje, 7)).limit(1000),
     supabase.from("titulos_financeiros").select(COLUNAS_TITULO)
@@ -50,7 +50,10 @@ export default async function Inicio() {
     supabase.from("titulos_financeiros").select("tipo, valor")
       .eq("client_id", clientId).eq("status", "aberto")
       .gte("vencimento", hoje).lte("vencimento", somaDias(hoje, 30)).limit(2000),
+    supabase.from("centros_custo").select("id", { count: "exact", head: true }).eq("client_id", clientId),
   ]);
+  // Só convida a configurar quando a tabela existe e o cliente ainda não tem nenhum centro.
+  const semConfiguracao = !centrosQ.error && centrosQ.count === 0;
 
   const financeiroAusente = tabelaAusente(abertosQ.error) || tabelaAusente(pagosQ.error);
   const frotaAusente = tabelaAusente(abastQ.error);
@@ -121,6 +124,19 @@ export default async function Inicio() {
         <p className="text-[.85rem] text-[var(--text-secondary)]">{saudacao()}, {clientName}</p>
         <p className="text-[.75rem] text-[var(--text-muted)]">{dataExtenso.charAt(0).toUpperCase() + dataExtenso.slice(1).toLowerCase()}</p>
       </div>
+
+      {semConfiguracao && (
+        <Link
+          href="/gestao/comecar"
+          className="flex items-center justify-between gap-4 rounded-3xl border border-[var(--primary)]/30 bg-[var(--primary-soft)] p-5 transition hover:bg-[var(--primary-soft)]/70 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--primary)]"
+        >
+          <span className="min-w-0">
+            <span className="block text-[1rem] font-semibold text-[var(--primary-hover)]">Configure sua fazenda em 5 minutos</span>
+            <span className="mt-0.5 block text-[.85rem] text-[var(--text-secondary)]">Diga o que você produz e o resto se organiza.</span>
+          </span>
+          <span aria-hidden className="shrink-0 text-[1.25rem] text-[var(--primary-hover)]">→</span>
+        </Link>
+      )}
 
       <section aria-labelledby="saldo" className="rounded-3xl bg-[linear-gradient(160deg,var(--sidebar)_0%,var(--sidebar-2)_100%)] p-6 text-white shadow-[var(--shadow-green)] sm:p-8">
         <h1 id="saldo" className="text-[.85rem] font-medium text-white/80">Saldo previsto em 30 dias</h1>

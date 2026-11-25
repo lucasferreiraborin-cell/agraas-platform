@@ -3,8 +3,22 @@
 > **Página viva.** Responde "onde estamos?" sem você precisar perguntar.
 > Atualizada ao fim de cada bloco de trabalho, antes do commit.
 >
-> **Última atualização:** 23/11/2026 · **D-13 decidida:** Agraas Gestão (mini ERP multiatividade, pecuária + agricultura) — portal `/gestao` no ar com telas em ativação; migrations 172/173 aguardando aplicação · reunião iBoi/Felippe **24/11** · pendências anteriores seguem (D-11 limpeza FSJBE, D-12 bug do score)
+> **Última atualização:** 25/11/2026 · Agraas Gestão no ar e verificado em produção (17 telas, baixa/desfazer, XML → contas a pagar, isolamento entre clientes) · onboarding guiado `/gestao/comecar` publicado · em construção: OS + custo da safra (174/175), foto da nota + de-para (176), bancos + conciliação (177), multiusuário (178), importador + correção do score (171/179), pacote do contador · pendências antigas: D-11 (limpeza FSJBE), D-12 (171)
 
+
+
+---
+
+## 24–25/11/2026 — Gestão verificado em produção + onboarding
+
+- Verificado em produção (24/11): 17 telas sem erro (desktop e celular), dar baixa/desfazer
+  grava pelo site, XML de NF-e enviado pelo site gera nota + contas a pagar; sem login a API
+  devolve vazio e recusa escrita; cliente comum (FSJBE) não vê nem grava dados de outro cliente
+  (5/5 tentativas bloqueadas); advisors sem achado nas tabelas novas.
+- Publicado: `/gestao/comecar` — configuração guiada em 4 passos (atividades → máquinas → notas → pronto);
+  cartão no Início quando a conta ainda não tem centros de custo.
+- Riscos abertos: conta demo é a única admin (não compartilhar login); proteção de senha vazada
+  desligada no Auth; ~30 funções SECURITY DEFINER executáveis via API (pré-existentes).
 
 ---
 
