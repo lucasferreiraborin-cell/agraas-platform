@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { contextoGestao } from "@/lib/gestao/contexto";
 import { brl, dataBR, hojeISO, limitesDoMes, mesPorExtenso } from "@/lib/gestao/format";
-import { Cartao, EmAtivacao, Kpi, Selo, Tabela, Titulo, Vazio, td, th } from "../ui";
+import { BotaoLink, Cartao, EmAtivacao, Kpi, Selo, Tabela, Titulo, Vazio, td, th } from "../ui";
 import EnviarNota from "./EnviarNota";
 import { listarNotas, titulosPorNota, type NotaUnificada, type TitulosDaNota } from "./dados";
 
@@ -45,7 +45,11 @@ export default async function NotasPage() {
 
   return (
     <>
-      <Titulo titulo="Notas fiscais" subtitulo="Envie a nota. Títulos, estoque e custo saem dela." />
+      <Titulo
+        titulo="Notas fiscais"
+        subtitulo="Envie a nota. Títulos, estoque e custo saem dela."
+        acao={<BotaoLink href="/gestao/notas/produtos">Produtos da nota</BotaoLink>}
+      />
 
       <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
         <Kpi rotulo="Notas no mês" valor={String(doMes.length)} detalhe={mesPorExtenso(hoje)} />
@@ -73,7 +77,7 @@ export default async function NotasPage() {
       {notas.length === 0 ? (
         <Vazio
           titulo="Nenhuma nota ainda"
-          texto="Envie o XML ou o PDF de uma nota de compra. Ela vira títulos a pagar, estoque e custo."
+          texto="Envie o XML, o PDF ou uma foto de uma nota de compra. Ela vira títulos a pagar, estoque e custo."
         />
       ) : (
         <Cartao titulo={`Todas as notas (${notas.length})`}>

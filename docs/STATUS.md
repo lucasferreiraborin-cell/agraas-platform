@@ -15,6 +15,7 @@
   grava pelo site, XML de NF-e enviado pelo site gera nota + contas a pagar; sem login a API
   devolve vazio e recusa escrita; cliente comum (FSJBE) não vê nem grava dados de outro cliente
   (5/5 tentativas bloqueadas); advisors sem achado nas tabelas novas.
+- Publicado (25/11 noite): foto da nota pelo celular (lida por IA, nunca grava nota vazia) e tela "Produtos da nota" (de-para item da nota → produto, com fator de conversão) — esta fica "em ativação" até aplicar a migration 176.
 - Publicado: `/gestao/comecar` — configuração guiada em 4 passos (atividades → máquinas → notas → pronto);
   cartão no Início quando a conta ainda não tem centros de custo.
 - Riscos abertos: conta demo é a única admin (não compartilhar login); proteção de senha vazada

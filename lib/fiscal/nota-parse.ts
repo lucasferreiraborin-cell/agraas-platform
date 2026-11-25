@@ -51,6 +51,8 @@ export type NotaParseada = {
   iaFailed?: boolean;
   iaMotivo?: string;
   extracao:  Extracao;
+  /** "foto" quando veio da câmera (24/11/2026). Só muda o texto do aviso de revisão. */
+  arquivo?:  "pdf" | "foto";
 };
 
 export type FonteNota = "xml_upload" | "pdf_upload" | "csv_import";
@@ -224,11 +226,11 @@ export type AlertaNota = { note_id: string; client_id: string; tipo: string; des
 export const CFOP_RE = /^[123567]\d{3}$/;
 
 export function derivarAlertas(
-  nota: Pick<NotaParseada, "header" | "items" | "iaFailed" | "iaMotivo">,
+  nota: Pick<NotaParseada, "header" | "items" | "iaFailed" | "iaMotivo" | "arquivo">,
   noteId: string,
   clientId: string,
 ): AlertaNota[] {
-  const { header, items, iaFailed = false, iaMotivo } = nota;
+  const { header, items, iaFailed = false, iaMotivo, arquivo } = nota;
   const alerts: AlertaNota[] = [];
 
   for (const it of items) {
@@ -256,12 +258,15 @@ export function derivarAlertas(
   }
 
   if (iaFailed) {
+    // O tipo continua "pdf_revisao_manual" (é o código que as telas e o B0c
+    // conhecem); só o texto distingue a foto.
+    const doc = arquivo === "foto" ? "Foto da nota importada" : "PDF importado";
     alerts.push({
       note_id: noteId, client_id: clientId,
       tipo: "pdf_revisao_manual",
       descricao: iaMotivo
-        ? `PDF importado com extração parcial (${iaMotivo}). Confira os campos antes de usar a nota.`
-        : "PDF importado sem extração completa dos dados. Verifique e preencha os campos manualmente.",
+        ? `${doc} com extração parcial (${iaMotivo}). Confira os campos antes de usar a nota.`
+        : `${doc} sem extração completa dos dados. Verifique e preencha os campos manualmente.`,
       severidade: "aviso",
     });
   }

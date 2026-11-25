@@ -40,7 +40,7 @@ export async function saveNote(
   nota: NotaParseada,
   source: FonteNota,
 ): Promise<ResultadoSave> {
-  const { header, items, richItems, iaFailed = false, iaMotivo } = nota;
+  const { header, items, richItems, iaFailed = false, iaMotivo, arquivo } = nota;
 
   // O id é gerado aqui, não pelo banco: as duas tabelas compartilham a mesma
   // chave (correspondência estabelecida pelo ETL da migration 139), e em modo
@@ -84,7 +84,7 @@ export async function saveNote(
     }
   }
 
-  const alerts = derivarAlertas({ header, items, iaFailed, iaMotivo }, noteId, clientId);
+  const alerts = derivarAlertas({ header, items, iaFailed, iaMotivo, arquivo }, noteId, clientId);
 
   const dbItems = items.map((it) => ({
     note_id: noteId, client_id: clientId,

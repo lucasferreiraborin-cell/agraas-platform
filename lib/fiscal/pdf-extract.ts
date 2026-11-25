@@ -25,6 +25,13 @@
  * O FiscalUpload aborta em 30 s. O SDK recebe 25 s para falhar ANTES do cliente
  * desistir — assim o fallback ainda grava a nota em vez de o usuário ver
  * "tempo limite excedido" com nada salvo.
+ *
+ * ── Foto (24/11/2026) ────────────────────────────────────────────────────────
+ * `extrairNfeDeImagem` usa o MESMO núcleo (modelo, fallback de modelo em 404,
+ * validação zod, nunca lança) com bloco `image` em vez de `document`. Muda só
+ * o que a foto exige: prompt próprio (foto torta/cortada, quadro de
+ * duplicatas, ENTRADA/SAÍDA), max_tokens 8000 e timeout de 50 s — quem chama
+ * é o portal Gestão, que não aborta em 30 s (rota com maxDuration 60).
  */
 
 import Anthropic from "@anthropic-ai/sdk";
@@ -146,6 +153,84 @@ type ClienteMinimo = {
   messages: { create: (params: Record<string, unknown>, opts?: Record<string, unknown>) => Promise<unknown> };
 };
 
+type RespostaModelo = {
+  content: Array<{ type: string; text?: string }>;
+  stop_reason?: string;
+  usage?: { input_tokens?: number; output_tokens?: number };
+};
+
+type ResultadoExtracao<T> =
+  | { origem: "claude"; dados: T; modelo: string; tokens: { entrada: number; saida: number } }
+  | { origem: "fallback"; motivo: string };
+
+function clienteAnthropic(apiKey: string | undefined, timeoutMs: number): ClienteMinimo {
+  return new Anthropic({
+    apiKey,
+    timeout: timeoutMs,
+    // Sem retry: o FiscalUpload aborta em 30 s. Um retry do SDK estouraria
+    // esse orçamento e a nota seria gravada depois de o cliente desistir.
+    maxRetries: 0,
+  }) as unknown as ClienteMinimo;
+}
+
+/**
+ * Núcleo comum PDF/foto: chama o modelo (com fallback de modelo em 404),
+ * valida a resposta e NUNCA lança. O bloco do arquivo vai antes do pedido.
+ */
+async function extrairComClaude<T>(
+  cliente: ClienteMinimo,
+  args: { bloco: Record<string, unknown>; system: string; pedido: string; maxTokens: number; validar: (texto: string) => T | null },
+): Promise<ResultadoExtracao<T>> {
+  const chamar = (model: string) =>
+    cliente.messages.create({
+      model,
+      max_tokens: args.maxTokens,
+      system: args.system,
+      messages: [{ role: "user", content: [args.bloco, { type: "text", text: args.pedido }] }],
+    }) as Promise<RespostaModelo>;
+
+  let modeloUsado = PDF_EXTRACT_MODEL;
+  try {
+    let res: RespostaModelo;
+    try {
+      res = await chamar(PDF_EXTRACT_MODEL);
+    } catch (err) {
+      // 404 = a conta nao tem esse modelo. Qualquer outro erro sobe para o
+      // catch externo e vira fallback com motivo.
+      if (!ehModeloIndisponivel(err)) throw err;
+      modeloUsado = PDF_EXTRACT_MODEL_FALLBACK;
+      res = await chamar(PDF_EXTRACT_MODEL_FALLBACK);
+    }
+
+    if (res.stop_reason === "refusal") {
+      return { origem: "fallback", motivo: "modelo recusou o documento" };
+    }
+
+    const texto = res.content.filter(b => b.type === "text").map(b => b.text ?? "").join("\n");
+    const dados = args.validar(texto);
+    if (!dados) {
+      // Raciocínio interno pode comer o orçamento inteiro (commit 2ceb0be): o
+      // motivo diz isso em vez de parecer erro de formato.
+      return {
+        origem: "fallback",
+        motivo: res.stop_reason === "max_tokens"
+          ? "resposta cortada pelo limite de tokens do modelo"
+          : "resposta do modelo não é JSON válido no formato esperado",
+      };
+    }
+
+    return {
+      origem: "claude",
+      dados,
+      modelo: modeloUsado,
+      tokens: { entrada: res.usage?.input_tokens ?? 0, saida: res.usage?.output_tokens ?? 0 },
+    };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return { origem: "fallback", motivo: `falha na chamada ao modelo: ${msg}` };
+  }
+}
+
 /**
  * Extrai a NF-e de um PDF via Claude.
  *
@@ -168,72 +253,125 @@ export async function extrairNfeDePdf(
     return { origem: "fallback", motivo: `PDF grande demais (${(pdf.length / 1024 / 1024).toFixed(1)} MB)` };
   }
 
-  const cliente: ClienteMinimo =
-    opts.cliente ??
-    (new Anthropic({
-      apiKey,
-      timeout: opts.timeoutMs ?? 25_000,
-      // Sem retry: o FiscalUpload aborta em 30 s. Um retry do SDK estouraria
-      // esse orçamento e a nota seria gravada depois de o cliente desistir.
-      maxRetries: 0,
-    }) as unknown as ClienteMinimo);
+  const cliente = opts.cliente ?? clienteAnthropic(apiKey, opts.timeoutMs ?? 25_000);
+  return extrairComClaude(cliente, {
+    bloco: {
+      type: "document",
+      source: { type: "base64", media_type: "application/pdf", data: pdf.toString("base64") },
+    },
+    system: INSTRUCOES,
+    pedido: "Extraia os dados deste DANFE no formato pedido.",
+    maxTokens: 4000,
+    validar: validarExtracao,
+  });
+}
 
-  const chamar = (model: string) =>
-    cliente.messages.create({
-      model,
-      max_tokens: 4000,
-      system: INSTRUCOES,
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "document",
-              source: { type: "base64", media_type: "application/pdf", data: pdf.toString("base64") },
-            },
-            { type: "text", text: "Extraia os dados deste DANFE no formato pedido." },
-          ],
-        },
-      ],
-    }) as Promise<{
-      content: Array<{ type: string; text?: string }>;
-      stop_reason?: string;
-      usage?: { input_tokens?: number; output_tokens?: number };
-    }>;
+// ---------------------------------------------------------------------------
+// Foto do DANFE (câmera do celular)
+// ---------------------------------------------------------------------------
 
-  let modeloUsado = PDF_EXTRACT_MODEL;
+/** Formatos de imagem que a API aceita. HEIC/HEIF e AVIF não estão entre eles. */
+export const TIPOS_IMAGEM = ["image/jpeg", "image/png", "image/webp", "image/gif"] as const;
+export type TipoImagem = (typeof TIPOS_IMAGEM)[number];
+
+/**
+ * Teto da foto enviada à IA: 3,75 MB de arquivo ≈ 5 MB em base64, o limite
+ * por imagem documentado pela API (documentação de visão da Anthropic —
+ * conferir se a API mudar). O portal reduz a foto no aparelho para algumas
+ * centenas de KB, então isto só barra arquivo que escapou da redução.
+ */
+export const LIMITE_IMAGEM_BYTES = Math.floor(3.75 * 1024 * 1024);
+
+/** "false", "não", "0" → false; qualquer outro texto → true; ausente → true (não barra por omissão). */
+const boolTolerante = z
+  .union([z.boolean(), z.string(), z.number()])
+  .transform(v => (typeof v === "boolean" ? v : !/^(false|nao|não|no|0)$/i.test(String(v).trim())))
+  .catch(true);
+
+const DuplicataSchema = z.object({
+  numero:     strOuVazia,
+  vencimento: strOuVazia,            // YYYY-MM-DD
+  valor:      numOuNull,
+});
+
+const ExtracaoFotoSchema = ExtracaoSchema.extend({
+  documento_fiscal: boolTolerante,
+  /** "0" entrada, "1" saída — como marcado no DANFE; "" se ilegível. */
+  tipo_operacao:    strOuVazia,
+  duplicatas:       z.array(DuplicataSchema).catch([]),
+});
+
+export type ExtracaoFoto = z.infer<typeof ExtracaoFotoSchema>;
+export type ResultadoExtracaoFoto = ResultadoExtracao<ExtracaoFoto>;
+
+const INSTRUCOES_FOTO = `Você lê a FOTO de um DANFE brasileiro (documento auxiliar da NF-e ou da NFC-e), tirada com celular, e devolve os dados estruturados.
+
+Regras:
+- Responda SOMENTE com um objeto JSON válido, sem texto antes ou depois, sem markdown.
+- A foto pode estar inclinada, com sombra, dobrada ou cortada. Leia só o que estiver legível. Campos ausentes, cortados ou ilegíveis: use null para números e "" para textos. NUNCA invente nem complete valor.
+- documento_fiscal: false se a imagem não for um DANFE de NF-e ou NFC-e (boleto, recibo, pedido, orçamento, cupom sem chave de acesso, foto de outra coisa). Nesse caso deixe os demais campos vazios.
+- Números em formato JSON (ponto decimal), sem "R$", sem separador de milhar.
+- data_emissao e vencimento das duplicatas no formato YYYY-MM-DD.
+- chave_acesso: os 44 dígitos, só números, apenas se TODOS estiverem legíveis; senão "".
+- tipo_operacao: "0" se o DANFE marcar ENTRADA, "1" se marcar SAÍDA, "" se não der para ler.
+- ncm: 8 dígitos só números. cfop: 4 dígitos.
+- cst: o CST ou CSOSN do ICMS do item (2 ou 3 dígitos), se impresso.
+- icms_base, icms_aliquota, icms_valor: por item, como impresso na coluna de ICMS do DANFE; null se não houver.
+- duplicatas: uma entrada por linha do quadro FATURA/DUPLICATAS (número, vencimento, valor). Lista vazia se o quadro não existir ou estiver ilegível.
+- confianca: sua confiança de 0 a 1 na leitura como um todo. Use abaixo de 0.7 quando a foto estiver borrada, cortada ou quando emitente, data, valor total ou itens estiverem ilegíveis.
+- observacoes: uma frase curta sobre qualquer limitação da leitura, ou "".
+
+Formato exato:
+{"documento_fiscal":true,"chave_acesso":"","numero_nota":"","serie":"","tipo_operacao":"","emitente_cnpj":"","emitente_nome":"","emitente_uf":"","destinatario_uf":"","destinatario_nome":"","destinatario_cnpj":"","data_emissao":"","valor_total":null,"itens":[{"descricao":"","ncm":"","cfop":"","unidade":"","quantidade":null,"valor_unitario":null,"valor_total":null,"cst":"","icms_base":null,"icms_aliquota":null,"icms_valor":null}],"duplicatas":[{"numero":"","vencimento":"","valor":null}],"confianca":0.0,"observacoes":""}`;
+
+/** Valida a resposta da leitura da foto. Exportada para teste. */
+export function validarExtracaoFoto(texto: string): ExtracaoFoto | null {
+  const json = isolarJson(texto);
+  if (!json) return null;
   try {
-    let res: Awaited<ReturnType<typeof chamar>>;
-    try {
-      res = await chamar(PDF_EXTRACT_MODEL);
-    } catch (err) {
-      // 404 = a conta nao tem esse modelo. Qualquer outro erro sobe para o
-      // catch externo e vira fallback com motivo.
-      if (!ehModeloIndisponivel(err)) throw err;
-      modeloUsado = PDF_EXTRACT_MODEL_FALLBACK;
-      res = await chamar(PDF_EXTRACT_MODEL_FALLBACK);
-    }
-
-    if (res.stop_reason === "refusal") {
-      return { origem: "fallback", motivo: "modelo recusou o documento" };
-    }
-
-    const texto = res.content.filter(b => b.type === "text").map(b => b.text ?? "").join("\n");
-    const dados = validarExtracao(texto);
-    if (!dados) {
-      return { origem: "fallback", motivo: "resposta do modelo não é JSON válido no formato esperado" };
-    }
-
-    return {
-      origem: "claude",
-      dados,
-      modelo: modeloUsado,
-      tokens: { entrada: res.usage?.input_tokens ?? 0, saida: res.usage?.output_tokens ?? 0 },
-    };
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    return { origem: "fallback", motivo: `falha na chamada ao modelo: ${msg}` };
+    const parsed = ExtracaoFotoSchema.safeParse(JSON.parse(json));
+    return parsed.success ? parsed.data : null;
+  } catch {
+    return null;
   }
+}
+
+/**
+ * Extrai a NF-e da FOTO do DANFE via Claude (bloco `image`). Mesmo modelo e
+ * mesmo fallback do PDF. Nunca lança.
+ *
+ * max_tokens 8000: o PDF comprovou 4000 para 1-2 páginas, mas a foto pede
+ * campos a mais (duplicatas) e o modelo raciocina mais em imagem ruim; o
+ * raciocínio já comeu o orçamento inteiro uma vez (commit 2ceb0be). Folga não
+ * custa nada se não for usada; o teto real é o tempo (timeout de 50 s).
+ */
+export async function extrairNfeDeImagem(
+  imagem: Buffer,
+  tipo: TipoImagem,
+  opts: { cliente?: ClienteMinimo; timeoutMs?: number } = {},
+): Promise<ResultadoExtracaoFoto> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!opts.cliente && !apiKey) {
+    return { origem: "fallback", motivo: "ANTHROPIC_API_KEY não configurada" };
+  }
+  if (!imagem || imagem.length === 0) {
+    return { origem: "fallback", motivo: "foto vazia" };
+  }
+  if (!(TIPOS_IMAGEM as readonly string[]).includes(tipo)) {
+    return { origem: "fallback", motivo: `formato de imagem não aceito (${tipo})` };
+  }
+  if (imagem.length > LIMITE_IMAGEM_BYTES) {
+    return { origem: "fallback", motivo: `foto grande demais (${(imagem.length / 1024 / 1024).toFixed(1)} MB)` };
+  }
+
+  const cliente = opts.cliente ?? clienteAnthropic(apiKey, opts.timeoutMs ?? 50_000);
+  return extrairComClaude(cliente, {
+    bloco: { type: "image", source: { type: "base64", media_type: tipo, data: imagem.toString("base64") } },
+    system: INSTRUCOES_FOTO,
+    pedido: "Extraia os dados da nota fiscal desta foto no formato pedido.",
+    maxTokens: 8000,
+    validar: validarExtracaoFoto,
+  });
 }
 
 // ---------------------------------------------------------------------------

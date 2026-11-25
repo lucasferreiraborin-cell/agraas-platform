@@ -26,7 +26,8 @@ type Nota = {
 
 const n = (v: unknown) => (v === null || v === undefined || v === "" || !Number.isFinite(Number(v)) ? null : Number(v));
 const FONTE: Record<string, string> = {
-  xml_upload: "XML enviado", pdf_upload: "PDF enviado", audio_dictation: "Ditado", csv_import: "Planilha",
+  // A foto do DANFE (24/11/2026) também entra como pdf_upload: o CHECK de source não tem valor próprio.
+  xml_upload: "XML enviado", pdf_upload: "PDF ou foto (lido por IA)", audio_dictation: "Ditado", csv_import: "Planilha",
   sefaz_api: "Sincronizada com a SEFAZ", manual: "Lançamento manual",
 };
 const STATUS_TITULO: Record<string, { rotulo: string; tom: TomSelo }> = {
