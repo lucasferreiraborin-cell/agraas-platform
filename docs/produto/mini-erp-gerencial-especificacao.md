@@ -29,7 +29,16 @@ e baixas lançados, relatório batendo com o extrato). Antes disso a conciliaç�
 - **Isolamento**: toda tabela com `client_id` + RLS padrão (`is_admin() OR client_id =
   get_my_client_id()`, WITH CHECK amarrando referências ao mesmo cliente); toda query do
   app filtra `client_id` explicitamente.
-- **Captura flexível**: digitação, upload (XML/PDF/foto), planilha; app/WhatsApp depois.
+- **Captura flexível**: digitação, upload (XML/PDF/foto), planilha; **e-mail dedicado da
+  fazenda** (encaminhar a nota e ela entra) logo após o núcleo; captura automática junto à
+  SEFAZ com certificado digital e canal de WhatsApp (foto de recibo/odômetro, áudio, consultas
+  com validação de campos) na sequência.
+- **Papéis**: dono, escritório (financeiro) e campo (só apontamentos, sem ver financeiro) —
+  parte do MVP, porque a operação é de 1–2 pessoas no escritório + equipe de campo.
+- **Automação sempre revisável**: toda ação automática (cadastro de fornecedor, conversão de
+  unidade, categorização, baixa) fica na trilha de auditoria e pode ser desfeita.
+- **Dados do cliente**: exportação completa self-service a qualquer momento (planilha/CSV),
+  sem depender de pedido ao suporte.
 
 ### Taxonomia sugerida (editável)
 
@@ -63,6 +72,10 @@ e baixas lançados, relatório batendo com o extrato). Antes disso a conciliaç�
    - **Aplicação direta** (máquina ou centro de custo — peça/serviço que já tem destino).
 3. Confirmar gera: entrada no almoxarifado (quantidade, custo unitário da nota), título(s) a
    pagar pela condição de pagamento da nota, e evento de auditoria.
+4. **Conversão de unidade**: o item vem em galão/caixa/saca/tonelada e o produto é controlado
+   em litro/kg/unidade — o vínculo item→produto guarda o fator (ex.: "GL 20L" → 20 L).
+5. **Fornecedor** criado automaticamente pelo emitente da nota; **categoria** sugerida pelo
+   NCM e pelo histórico do produto.
 
 **Saídas** (sem saída não há gestão)
 - Tipos: abastecimento (diesel → máquina), manutenção (peça/óleo → máquina), aplicação
@@ -84,6 +97,11 @@ e baixas lançados, relatório batendo com o extrato). Antes disso a conciliaç�
 - Baixa (data, valor, forma, conta), estorno com motivo — tudo com responsável.
 - Visões: pagar hoje · próximos 15 dias · por fornecedor · por categoria · projeção de caixa.
 - Receber manual (venda de lote, arrendamento, serviço).
+- **Lançamento previsto**: despesas recorrentes (diesel, salários, arrendamento) entram como
+  previsão na projeção de caixa, com destaque visual, e são oficializadas quando a nota ou o
+  pagamento chega.
+- Categorização automática aprendida (por fornecedor e tipo de operação da nota), sempre
+  revisável e registrada na auditoria.
 - Contador/IR: pacote mensal (títulos pagos, entradas de NF, despesas por categoria → conta
   contábil) em planilha; exportação completa dos dados a qualquer momento.
 
