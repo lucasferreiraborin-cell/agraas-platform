@@ -1,310 +1,294 @@
 import Link from "next/link";
-import { contextoGestao, tabelaAusente, type GestaoContexto } from "@/lib/gestao/contexto";
-import { brl, dataBR, diasEntre, hojeISO, num } from "@/lib/gestao/format";
+import { contextoGestao } from "@/lib/gestao/contexto";
+import { brl, hojeISO, somaDias } from "@/lib/gestao/format";
 import {
-  direcaoPorCfop, historicoDePrecos, resumoEstoque,
-  type CompraItem, type HistoricoPreco, type LoteEstoque,
-} from "@/lib/gestao/insumos";
-import { Cartao, EmAtivacao, Kpi, Selo, Tabela, Titulo, Vazio, td, th } from "../ui";
+  alertaEstoque, faltaParaMinimo, saldoPorProduto, saldosPorAlmoxarifado, valorPorCategoria, type SaldoProdutoAlmox,
+} from "@/lib/gestao/estoque";
+import { BotaoLink, Cartao, EmAtivacao, Kpi, Selo, Tabela, Titulo, Vazio, td, th } from "../ui";
+import { carregarCadastros, carregarLotes, carregarMovimentos, TIPO_ALMOX_NOME, type Produto } from "./dados";
+import { listarNotasParaEntrada } from "./entrada/dados";
+import { AbasEstoque, Aviso, Barra, custoUnit, linkTexto, qtd, qtdUn } from "./ui-estoque";
 
-export const metadata = { title: "Insumos" };
-
+export const metadata = { title: "Estoque" };
 export const dynamic = "force-dynamic";
 
-type Db = GestaoContexto["supabase"];
-type Registro = Record<string, string | number | null | undefined>;
-
-const um = <T,>(v: T | T[] | null | undefined): T | null => (Array.isArray(v) ? (v[0] ?? null) : (v ?? null));
-const numero = (v: unknown): number | null => (v === null || v === undefined || v === "" || !Number.isFinite(Number(v)) ? null : Number(v));
-const pct = (v: number) => `${v.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
-
-/** Compras (itens de notas de entrada) do cliente, nas duas tabelas fiscais, sem contar a mesma nota duas vezes. */
-async function carregarCompras(supabase: Db, clientId: string): Promise<{ compras: CompraItem[]; falhou: boolean }> {
-  const [canon, leg] = await Promise.all([
-    supabase
-      .from("fiscal_invoice_items")
-      .select("fiscal_invoice_id, description, unit, unit_price, fiscal_invoices!inner(issued_at, issuer_name, direction, client_id)")
-      .eq("fiscal_invoices.client_id", clientId)
-      .eq("fiscal_invoices.direction", "entrada")
-      .order("created_at", { ascending: false })
-      .limit(2000),
-    supabase
-      .from("fiscal_note_items")
-      .select("note_id, descricao, unidade, valor_unitario, cfop, fiscal_notes!inner(data_emissao, emitente_nome, client_id)")
-      .eq("fiscal_notes.client_id", clientId)
-      .limit(2000),
-  ]);
-
-  const falhou = (!!canon.error && !tabelaAusente(canon.error)) || (!!leg.error && !tabelaAusente(leg.error));
-  if (falhou) console.error("[gestao/estoque] compras:", canon.error?.message, leg.error?.message);
-
-  const compras: CompraItem[] = [];
-  const notasCanonicas = new Set<string>();
-
-  for (const r of (canon.error ? [] : (canon.data ?? [])) as unknown as Array<Registro & { fiscal_invoices: Registro | Registro[] | null }>) {
-    const nf = um(r.fiscal_invoices);
-    const preco = numero(r.unit_price);
-    if (!nf || preco === null || !r.description) continue;
-    const notaId = String(r.fiscal_invoice_id ?? "");
-    notasCanonicas.add(notaId);
-    compras.push({
-      descricao: String(r.description), unidade: (r.unit as string | null) ?? null, preco,
-      data: nf.issued_at ? String(nf.issued_at).slice(0, 10) : null,
-      fornecedor: (nf.issuer_name as string | null) ?? null, notaId,
-    });
-  }
-
-  for (const r of (leg.error ? [] : (leg.data ?? [])) as unknown as Array<Registro & { fiscal_notes: Registro | Registro[] | null }>) {
-    const nf = um(r.fiscal_notes);
-    const preco = numero(r.valor_unitario);
-    const notaId = String(r.note_id ?? "");
-    if (!nf || preco === null || !r.descricao || notasCanonicas.has(notaId)) continue;
-    if (direcaoPorCfop(r.cfop as string | null) === "saida") continue; // venda não é compra de insumo
-    compras.push({
-      descricao: String(r.descricao), unidade: (r.unidade as string | null) ?? null, preco,
-      data: nf.data_emissao ? String(nf.data_emissao).slice(0, 10) : null,
-      fornecedor: (nf.emitente_nome as string | null) ?? null, notaId,
-    });
-  }
-  return { compras, falhou };
-}
-
-async function carregarLotes(supabase: Db, clientId: string): Promise<{ lotes: LoteEstoque[]; ausente: boolean; falhou: boolean }> {
-  const [lotesRes, prodRes] = await Promise.all([
-    supabase.from("stock_batches").select("*").eq("client_id", clientId).limit(2000),
-    supabase.from("products").select("id, name, unit").eq("client_id", clientId).limit(2000),
-  ]);
-  if (tabelaAusente(lotesRes.error)) return { lotes: [], ausente: true, falhou: false };
-  if (lotesRes.error) {
-    console.error("[gestao/estoque] lotes:", lotesRes.error.message);
-    return { lotes: [], ausente: false, falhou: true };
-  }
-  const produtos = new Map<string, { nome: string; unidade: string | null }>();
-  for (const p of (prodRes.error ? [] : (prodRes.data ?? [])) as unknown as Registro[]) {
-    produtos.set(String(p.id), { nome: String(p.name ?? "Produto"), unidade: (p.unit as string | null) ?? null });
-  }
-  const lotes = ((lotesRes.data ?? []) as unknown as Registro[]).map<LoteEstoque>((l) => {
-    const prod = l.product_id ? produtos.get(String(l.product_id)) : undefined;
-    return {
-      productId: l.product_id ? String(l.product_id) : null,
-      nome: prod?.nome ?? (l.supplier_name as string | null) ?? (l.batch_number as string | null) ?? "Item sem cadastro",
-      unidade: prod?.unidade ?? null,
-      quantidade: numero(l.quantity_available) ?? numero(l.quantity) ?? 0,
-      custoUnit: numero(l.unit_cost),
-      validade: l.expiration_date ? String(l.expiration_date).slice(0, 10) : null,
-    };
-  });
-  return { lotes, ausente: false, falhou: !!prodRes.error && !tabelaAusente(prodRes.error) };
-}
-
-function Variacao({ h }: { h: HistoricoPreco }) {
-  if (h.variacao === null || !h.sentido) return <span className="text-[var(--text-muted)]">Primeira compra</span>;
-  if (h.sentido === "estavel") return <span className="text-[var(--text-secondary)]">Estável ({pct(h.variacao)})</span>;
-  const alta = h.sentido === "alta";
+function Passo({ feito, n, children }: { feito: boolean; n: number; children: React.ReactNode }) {
   return (
-    <span
-      className={`font-semibold tabular-nums ${alta ? "text-[var(--danger)]" : "text-[var(--primary)]"}`}
-      aria-label={`${alta ? "Subiu" : "Caiu"} ${pct(Math.abs(h.variacao))}`}
-    >
-      <span aria-hidden="true">{alta ? "▲ +" : "▼ "}</span>{pct(h.variacao).replace("-", "")}
-    </span>
+    <li className="flex items-start gap-3">
+      <span aria-hidden="true" className={`grid size-7 shrink-0 place-items-center rounded-full text-[.8rem] font-semibold ${feito ? "bg-[var(--primary)] text-white" : "border border-[var(--border-strong)] text-[var(--text-secondary)]"}`}>
+        {feito ? "✓" : n}
+      </span>
+      <div className="min-w-0 pt-0.5 text-[.9rem] text-[var(--text-primary)]">
+        <span className="sr-only">{feito ? "Feito: " : "A fazer: "}</span>{children}
+      </div>
+    </li>
   );
 }
 
-const preco = (v: number, un: string | null) => `${brl(v)}${un ? ` / ${un}` : ""}`;
+function TabelaSaldos({ linhas, produtos }: { linhas: SaldoProdutoAlmox[]; produtos: Map<string, Produto> }) {
+  return (
+    <>
+      <ul className="divide-y divide-[var(--border)] sm:hidden">
+        {linhas.map((s) => {
+          const p = produtos.get(s.productId);
+          return (
+            <li key={`${s.productId}-${s.almoxarifadoId}`} className="py-3 first:pt-0 last:pb-0">
+              <div className="flex items-start justify-between gap-3">
+                <Link href={`/gestao/estoque/produtos/${s.productId}`} className={`${linkTexto} min-w-0 [overflow-wrap:anywhere]`}>{p?.nome ?? "Produto"}</Link>
+                <span className={`shrink-0 font-semibold tabular-nums ${s.saldo < 0 ? "text-[var(--danger)]" : ""}`}>{qtdUn(s.saldo, p?.unidade)}</span>
+              </div>
+              <p className="mt-0.5 text-[.8rem] text-[var(--text-muted)]">
+                {s.saldo > 0 ? `${brl(s.valor)}${s.valorParcial ? " (parcial)" : ""} · médio ${custoUnit(s.custoMedio, p?.unidade)}` : "Saldo negativo: falta lançar a nota"}
+              </p>
+            </li>
+          );
+        })}
+      </ul>
+      <div className="hidden sm:block">
+        <Tabela>
+          <thead>
+            <tr>
+              <th className={th}>Produto</th>
+              <th className={`${th} text-right`}>Saldo</th>
+              <th className={`${th} text-right`}>Custo médio</th>
+              <th className={`${th} text-right`}>Valor</th>
+            </tr>
+          </thead>
+          <tbody>
+            {linhas.map((s) => {
+              const p = produtos.get(s.productId);
+              return (
+                <tr key={`${s.productId}-${s.almoxarifadoId}`}>
+                  <td className={`${td} max-w-[300px]`}>
+                    <Link href={`/gestao/estoque/produtos/${s.productId}`} className={`${linkTexto} block truncate`} title={p?.nome}>{p?.nome ?? "Produto"}</Link>
+                  </td>
+                  <td className={`${td} whitespace-nowrap text-right font-semibold tabular-nums ${s.saldo < 0 ? "text-[var(--danger)]" : ""}`}>{qtdUn(s.saldo, p?.unidade)}</td>
+                  <td className={`${td} whitespace-nowrap text-right tabular-nums text-[var(--text-secondary)]`}>{custoUnit(s.custoMedio, p?.unidade)}</td>
+                  <td className={`${td} whitespace-nowrap text-right tabular-nums`}>{s.saldo > 0 ? `${brl(s.valor)}${s.valorParcial ? " *" : ""}` : <Selo tom="perigo">Negativo</Selo>}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </Tabela>
+      </div>
+    </>
+  );
+}
 
 export default async function EstoquePage() {
   const { supabase, clientId } = await contextoGestao();
-  const [{ lotes, ausente, falhou: falhouLotes }, { compras, falhou: falhouCompras }] = await Promise.all([
+  const hoje = hojeISO();
+  const [cad, { lotes, falhou: falhouLotes }, notas, movs] = await Promise.all([
+    carregarCadastros(supabase, clientId),
     carregarLotes(supabase, clientId),
-    carregarCompras(supabase, clientId),
+    listarNotasParaEntrada(supabase, clientId, somaDias(hoje, -90)),
+    carregarMovimentos(supabase, clientId, { limite: 2000, desde: somaDias(hoje, -90) }),
   ]);
 
-  if (ausente) {
+  const pendentesNotas = notas.ausente ? undefined : notas.notas.filter((n) => n.pendentes > 0).length;
+  const cabecalho = (
+    <>
+      <Titulo
+        titulo="Estoque"
+        subtitulo="Saldo por almoxarifado, o que está abaixo do mínimo e quanto dinheiro está parado no estoque."
+        acao={<><BotaoLink href="/gestao/estoque/entrada">Entrada de notas</BotaoLink><BotaoLink href="/gestao/estoque/saida" primario>Registrar saída</BotaoLink></>}
+      />
+      <AbasEstoque ativo="saldos" pendentes={pendentesNotas} />
+    </>
+  );
+
+  if (cad.ausente) {
     return (
       <>
-        <Titulo titulo="Insumos" subtitulo="O que tem no estoque e quanto você pagou." />
-        <EmAtivacao modulo="Estoque de insumos" />
+        {cabecalho}
+        <EmAtivacao modulo="Estoque por almoxarifado" />
+        <p className="mt-4 text-center text-[.85rem] text-[var(--text-muted)]">
+          Enquanto isso, o histórico de preço das suas compras está em <Link href="/gestao/estoque/precos" className={linkTexto}>Preços pagos</Link>.
+        </p>
       </>
     );
   }
 
-  const estoque = resumoEstoque(lotes);
-  const historico = historicoDePrecos(compras);
-  const hoje = hojeISO();
+  const produtos = new Map(cad.produtos.map((p) => [p.id, p]));
+  const saldos = saldosPorAlmoxarifado(lotes);
+  const totais = saldoPorProduto(saldos);
+  const valorTotal = saldos.reduce((s, x) => s + x.valor, 0);
+  const parcial = saldos.some((s) => s.valorParcial && s.saldo > 0);
+  const ativos = cad.produtos.filter((p) => p.ativo);
+  const abaixo = ativos
+    .map((p) => ({ p, saldo: totais.get(p.id)?.saldo ?? 0 }))
+    .filter(({ p, saldo }) => alertaEstoque(saldo, p.minimo, p.maximo) === "abaixo");
+  const acima = ativos.filter((p) => alertaEstoque(totais.get(p.id)?.saldo ?? 0, p.minimo, p.maximo) === "acima");
+  const negativos = saldos.filter((s) => s.saldo < 0);
 
-  const valorEstoque = estoque.reduce((s, p) => s + p.valor, 0);
-  const algumParcial = estoque.some((p) => p.valorParcial);
-  const subiram = historico.filter((h) => h.sentido === "alta");
-  const maiorAlta = subiram[0];
+  const categoriaDoProduto = new Map(cad.produtos.map((p) => [p.id, p.categoriaId]));
+  const nomeCat = new Map(cad.categorias.map((c) => [c.id, c.nome]));
+  const imobilizado = valorPorCategoria(saldos, categoriaDoProduto);
+
+  // Compras que passaram pelo estoque (entrada ou aplicação direta da nota) nos últimos 90 dias.
+  const daNota = movs.movimentos.filter((m) => m.referenciaTabela === "fiscal_invoices" || m.referenciaTabela === "fiscal_notes");
+  const loteFornecedor = new Map(lotes.map((l) => [l.id, l.fornecedor]));
+  const gastoCat = new Map<string, number>();
+  const gastoForn = new Map<string, number>();
+  for (const m of daNota) {
+    const v = m.custoTotal ?? 0;
+    const cat = (m.productId ? categoriaDoProduto.get(m.productId) : null) ?? "";
+    gastoCat.set(cat, (gastoCat.get(cat) ?? 0) + v);
+    const f = (m.loteId ? loteFornecedor.get(m.loteId) : null) ?? "Fornecedor não identificado";
+    gastoForn.set(f, (gastoForn.get(f) ?? 0) + v);
+  }
+  const ordenar = (m: Map<string, number>) => [...m.entries()].filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  const topCat = ordenar(gastoCat);
+  const topForn = ordenar(gastoForn);
+  const maxCat = topCat[0]?.[1] ?? 0;
+  const maxForn = topForn[0]?.[1] ?? 0;
+
+  const temCadastros = cad.categorias.length > 0 && cad.almoxarifados.length > 0;
+  const almoxComSaldo = cad.almoxarifados
+    .map((a) => ({ a, linhas: saldos.filter((s) => s.almoxarifadoId === a.id).sort((x, y) => (produtos.get(x.productId)?.nome ?? "").localeCompare(produtos.get(y.productId)?.nome ?? "", "pt-BR")) }))
+    .filter((g) => g.a.ativo || g.linhas.length > 0);
+  const semAlmox = saldos.filter((s) => s.almoxarifadoId === null);
 
   return (
     <>
-      <Titulo titulo="Insumos" subtitulo="O que tem no estoque e quanto você pagou em cada compra." />
-
-      <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
-        <Kpi rotulo="Itens em estoque" valor={String(estoque.length)} />
-        <Kpi
-          rotulo="Valor em estoque"
-          valor={estoque.length === 0 ? "—" : brl(valorEstoque)}
-          detalhe={algumParcial ? "Parcial: há lotes sem custo" : undefined}
-        />
-        <div className="col-span-2 lg:col-span-1">
-          <Kpi
-            rotulo="Subiram na última compra"
-            valor={String(subiram.length)}
-            tom={subiram.length > 0 ? "perigo" : "neutro"}
-            detalhe={maiorAlta?.variacao != null ? `Maior alta: ${maiorAlta.descricao} (+${pct(maiorAlta.variacao)})` : "Nenhuma alta em vista"}
-          />
-        </div>
-      </div>
-
-      {(falhouLotes || falhouCompras) && (
-        <p role="status" className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-[.83rem] text-amber-800">
-          Parte dos dados não pôde ser lida agora. Os números abaixo podem estar incompletos.
-        </p>
-      )}
-
+      {cabecalho}
       <div className="space-y-5">
-        <Cartao titulo="Estoque atual">
-          {estoque.length === 0 ? (
-            <Vazio
-              titulo="Estoque vazio"
-              texto="Quando uma nota de compra é conferida, os itens entram aqui com quantidade e custo."
-              acao={<Link href="/gestao/notas" className="text-[.85rem] font-semibold text-[var(--primary-hover)] underline underline-offset-2">Enviar uma nota</Link>}
-            />
-          ) : (
-            <>
-              <ul className="divide-y divide-[var(--border)] sm:hidden">
-                {estoque.map((p) => {
-                  const dias = p.proximaValidade ? diasEntre(hoje, p.proximaValidade) : null;
-                  return (
-                    <li key={p.chave} className="py-3 first:pt-0 last:pb-0">
-                      <div className="flex items-start justify-between gap-3">
-                        <p className="min-w-0 font-semibold text-[var(--text-primary)]">{p.nome}</p>
-                        <p className="shrink-0 font-semibold tabular-nums">{num(p.saldo, 2)} {p.unidade ?? ""}</p>
-                      </div>
-                      <p className="mt-0.5 text-[.8rem] text-[var(--text-muted)]">
-                        {p.valor > 0 ? `${brl(p.valor)}${p.valorParcial ? " (parcial)" : ""}` : "Sem custo informado"}
-                        {p.proximaValidade ? ` · validade ${dataBR(p.proximaValidade)}` : ""}
-                      </p>
-                      {dias !== null && dias <= 60 && (
-                        <div className="mt-1.5"><Selo tom={dias < 0 ? "perigo" : "alerta"}>{dias < 0 ? "Vencido" : `Vence em ${dias} dias`}</Selo></div>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-              <div className="hidden sm:block">
-                <Tabela>
-                  <thead>
-                    <tr>
-                      <th className={th}>Insumo</th>
-                      <th className={`${th} text-right`}>Saldo</th>
-                      <th className={`${th} text-right`}>Valor</th>
-                      <th className={th}>Validade</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {estoque.map((p) => {
-                      const dias = p.proximaValidade ? diasEntre(hoje, p.proximaValidade) : null;
-                      return (
-                        <tr key={p.chave}>
-                          <td className={`${td} max-w-[280px]`}>
-                            <span className="block truncate font-semibold" title={p.nome}>{p.nome}</span>
-                            <span className="text-[.78rem] text-[var(--text-muted)]">{p.lotes} {p.lotes === 1 ? "lote" : "lotes"}</span>
-                          </td>
-                          <td className={`${td} whitespace-nowrap text-right tabular-nums`}>{num(p.saldo, 2)} {p.unidade ?? ""}</td>
-                          <td className={`${td} whitespace-nowrap text-right tabular-nums`}>
-                            {p.valor > 0 ? `${brl(p.valor)}${p.valorParcial ? " *" : ""}` : "—"}
-                          </td>
-                          <td className={`${td} whitespace-nowrap`}>
-                            {p.proximaValidade ? (
-                              <span className="inline-flex items-center gap-2">
-                                <span className="tabular-nums">{dataBR(p.proximaValidade)}</span>
-                                {dias !== null && dias <= 60 && <Selo tom={dias < 0 ? "perigo" : "alerta"}>{dias < 0 ? "Vencido" : `${dias} dias`}</Selo>}
-                              </span>
-                            ) : "—"}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </Tabela>
-                {algumParcial && <p className="mt-2 text-[.75rem] text-[var(--text-muted)]">* Valor parcial: há lotes sem custo informado.</p>}
-              </div>
-            </>
-          )}
-        </Cartao>
+        {(cad.falhou || falhouLotes || notas.parcial) && <Aviso tom="alerta">Parte dos dados não pôde ser lida agora. Os números abaixo podem estar incompletos.</Aviso>}
 
-        <Cartao titulo="Quanto você pagou em cada compra">
-          {historico.length === 0 ? (
-            <Vazio
-              titulo="Sem compras para comparar"
-              texto="Com duas notas do mesmo produto, mostramos se o preço subiu e de quanto. Assim a alta na revenda não passa batida."
-              acao={<Link href="/gestao/notas" className="text-[.85rem] font-semibold text-[var(--primary-hover)] underline underline-offset-2">Enviar uma nota</Link>}
-            />
-          ) : (
-            <>
-              <ul className="divide-y divide-[var(--border)] sm:hidden">
-                {historico.map((h) => (
-                  <li key={h.chave} className="py-3 first:pt-0 last:pb-0">
-                    <div className="flex items-start justify-between gap-3">
-                      <p className="min-w-0 font-semibold text-[var(--text-primary)]">{h.descricao}</p>
-                      <p className="shrink-0 text-[.85rem]"><Variacao h={h} /></p>
+        {!temCadastros && (
+          <Cartao titulo="Para começar o estoque">
+            <ol className="space-y-3">
+              <Passo feito={cad.categorias.length > 0} n={1}>
+                <Link href="/gestao/estoque/categorias" className={linkTexto}>Categorias</Link>: use a sugestão em 1 clique (sem “Outros”).
+              </Passo>
+              <Passo feito={cad.almoxarifados.length > 0} n={2}>
+                <Link href="/gestao/estoque/almoxarifados" className={linkTexto}>Almoxarifados</Link>: tanque de diesel (com capacidade), peças, insumos.
+              </Passo>
+              <Passo feito={lotes.length > 0} n={3}>
+                <Link href="/gestao/estoque/entrada" className={linkTexto}>Entrada de notas</Link>: cada item vira produto do estoque com o custo da nota.
+              </Passo>
+            </ol>
+          </Cartao>
+        )}
+
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+          <Kpi rotulo="Dinheiro parado no estoque" valor={brl(valorTotal)} detalhe={parcial ? "Parcial: há lote sem custo" : `${totais.size} ${totais.size === 1 ? "produto" : "produtos"}`} />
+          <Kpi rotulo="Abaixo do mínimo" valor={String(abaixo.length)} tom={abaixo.length > 0 ? "perigo" : "neutro"} detalhe={abaixo.length > 0 ? "Hora de comprar" : "Nada faltando"} />
+          <Kpi rotulo="Acima do máximo" valor={String(acima.length)} tom={acima.length > 0 ? "alerta" : "neutro"} detalhe={acima.length > 0 ? "Dinheiro empatado" : undefined} />
+          <Kpi rotulo="Notas a conferir" valor={pendentesNotas === undefined ? "—" : String(pendentesNotas)} tom={pendentesNotas ? "alerta" : "neutro"} href="/gestao/estoque/entrada" detalhe="Últimos 90 dias" />
+        </div>
+
+        {negativos.length > 0 && (
+          <Aviso tom="erro">
+            {negativos.length} {negativos.length === 1 ? "produto está" : "produtos estão"} com saldo negativo — saiu mais do que entrou. Quase sempre é nota de compra ainda não lançada.{" "}
+            <Link href="/gestao/estoque/entrada" className={linkTexto}>Conferir notas</Link>
+          </Aviso>
+        )}
+
+        {abaixo.length > 0 && (
+          <Cartao titulo="Abaixo do mínimo">
+            <ul className="divide-y divide-[var(--border)]">
+              {abaixo.map(({ p, saldo }) => (
+                <li key={p.id} className="flex flex-col gap-1 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between">
+                  <Link href={`/gestao/estoque/produtos/${p.id}`} className={`${linkTexto} min-w-0 [overflow-wrap:anywhere]`}>{p.nome}</Link>
+                  <p className="text-[.85rem] tabular-nums text-[var(--text-secondary)]">
+                    <span className="font-semibold text-[var(--danger)]">{qtdUn(saldo, p.unidade)}</span> de mínimo {qtdUn(p.minimo, p.unidade)} · faltam {qtdUn(faltaParaMinimo(saldo, p.minimo), p.unidade)}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </Cartao>
+        )}
+
+        {saldos.length === 0 && temCadastros ? (
+          <Vazio
+            titulo="Estoque vazio"
+            texto="Confira a primeira nota de compra: cada item entra no almoxarifado com quantidade e custo."
+            acao={<BotaoLink href="/gestao/estoque/entrada" primario>Conferir notas</BotaoLink>}
+          />
+        ) : (
+          almoxComSaldo.map(({ a, linhas }) => {
+            const valor = linhas.reduce((s, x) => s + x.valor, 0);
+            const litros = a.tipo === "combustivel" ? linhas.reduce((s, x) => s + x.saldo, 0) : null;
+            return (
+              <Cartao
+                key={a.id}
+                titulo={a.nome}
+                acao={<span className="text-[.82rem] tabular-nums text-[var(--text-muted)]">{TIPO_ALMOX_NOME[a.tipo] ?? a.tipo} · {brl(valor)}</span>}
+              >
+                {litros !== null && a.capacidadeLitros ? (
+                  <div className="mb-4">
+                    <div className="mb-1.5 flex items-center justify-between text-[.8rem] text-[var(--text-secondary)]">
+                      <span>{qtd(litros)} de {qtd(a.capacidadeLitros)} L</span>
+                      <Link href="/gestao/estoque/tanque" className={linkTexto}>Conferir com a régua</Link>
                     </div>
-                    <p className="mt-0.5 font-semibold tabular-nums">{preco(h.ultimo.preco, h.unidade)}</p>
-                    <p className="mt-0.5 text-[.8rem] text-[var(--text-muted)]">
-                      {h.ultimo.fornecedor ?? "Fornecedor não informado"} · {dataBR(h.ultimo.data)}
-                    </p>
-                    {h.anterior && (
-                      <p className="mt-0.5 text-[.8rem] text-[var(--text-muted)]">
-                        Antes: {brl(h.anterior.preco)} em {dataBR(h.anterior.data)}{h.anterior.fornecedor ? ` (${h.anterior.fornecedor})` : ""}
-                      </p>
-                    )}
+                    <Barra fracao={litros / a.capacidadeLitros} tom={litros < 0 ? "perigo" : "verde"} />
+                  </div>
+                ) : null}
+                {linhas.length === 0 ? (
+                  <p className="text-[.88rem] text-[var(--text-muted)]">Sem saldo neste almoxarifado.</p>
+                ) : (
+                  <TabelaSaldos linhas={linhas} produtos={produtos} />
+                )}
+              </Cartao>
+            );
+          })
+        )}
+
+        {semAlmox.length > 0 && (
+          <Cartao titulo="Sem almoxarifado">
+            <p className="mb-3 text-[.82rem] text-[var(--text-muted)]">Lotes que entraram pela aprovação da nota na controladoria, antes do controle por almoxarifado. Eles contam no saldo e saem por Saídas → “Sem almoxarifado”.</p>
+            <TabelaSaldos linhas={semAlmox} produtos={produtos} />
+          </Cartao>
+        )}
+
+        {imobilizado.length > 0 && (
+          <Cartao titulo="Dinheiro parado por categoria">
+            <ul className="space-y-3">
+              {imobilizado.map((c) => (
+                <li key={c.categoriaId ?? "sem"}>
+                  <div className="mb-1 flex items-baseline justify-between gap-3 text-[.86rem]">
+                    <span className="min-w-0 text-[var(--text-primary)] [overflow-wrap:anywhere]">{c.categoriaId ? nomeCat.get(c.categoriaId) ?? "Categoria" : "Sem categoria"}</span>
+                    <span className="shrink-0 font-semibold tabular-nums">{brl(c.valor)}{valorTotal > 0 ? <span className="ml-1.5 font-normal text-[var(--text-muted)]">{Math.round((c.valor / valorTotal) * 100)}%</span> : null}</span>
+                  </div>
+                  <Barra fracao={valorTotal > 0 ? c.valor / valorTotal : 0} />
+                </li>
+              ))}
+            </ul>
+          </Cartao>
+        )}
+
+        {(topCat.length > 0 || topForn.length > 0) && (
+          <div className="grid gap-5 lg:grid-cols-2">
+            <Cartao titulo="Compras por categoria · 90 dias">
+              <ul className="space-y-3">
+                {topCat.map(([cat, v]) => (
+                  <li key={cat || "sem"}>
+                    <div className="mb-1 flex items-baseline justify-between gap-3 text-[.86rem]">
+                      <span className="min-w-0 [overflow-wrap:anywhere]">{cat ? nomeCat.get(cat) ?? "Categoria" : "Sem categoria"}</span>
+                      <span className="shrink-0 font-semibold tabular-nums">{brl(v)}</span>
+                    </div>
+                    <Barra fracao={maxCat > 0 ? v / maxCat : 0} />
                   </li>
                 ))}
               </ul>
-              <div className="hidden sm:block">
-                <Tabela>
-                  <thead>
-                    <tr>
-                      <th className={th}>Insumo</th>
-                      <th className={`${th} text-right`}>Último preço</th>
-                      <th className={`${th} text-right`}>Anterior</th>
-                      <th className={th}>Variação</th>
-                      <th className={th}>Fornecedor</th>
-                      <th className={th}>Data</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {historico.map((h) => (
-                      <tr key={h.chave}>
-                        <td className={`${td} max-w-[240px]`}>
-                          <span className="block truncate font-semibold" title={h.descricao}>{h.descricao}</span>
-                          <span className="text-[.78rem] text-[var(--text-muted)]">
-                            {h.compras} {h.compras === 1 ? "compra" : "compras"}
-                            {h.compras > 1 && h.ultimo.preco > h.menorPreco ? ` · menor já pago ${brl(h.menorPreco)}` : ""}
-                          </span>
-                        </td>
-                        <td className={`${td} whitespace-nowrap text-right font-semibold tabular-nums`}>{preco(h.ultimo.preco, h.unidade)}</td>
-                        <td className={`${td} whitespace-nowrap text-right tabular-nums text-[var(--text-secondary)]`}>{h.anterior ? brl(h.anterior.preco) : "—"}</td>
-                        <td className={`${td} whitespace-nowrap`}><Variacao h={h} /></td>
-                        <td className={`${td} max-w-[200px]`}>
-                          <span className="block truncate" title={h.ultimo.fornecedor ?? ""}>{h.ultimo.fornecedor ?? "—"}</span>
-                        </td>
-                        <td className={`${td} whitespace-nowrap tabular-nums`}>{dataBR(h.ultimo.data)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Tabela>
-              </div>
-              <p className="mt-3 text-[.75rem] text-[var(--text-muted)]">
-                Compara o preço unitário das notas de compra do mesmo produto e unidade. Nomes escritos de forma diferente na nota podem aparecer separados.
-              </p>
-            </>
-          )}
-        </Cartao>
+            </Cartao>
+            <Cartao titulo="Compras por fornecedor · 90 dias">
+              <ul className="space-y-3">
+                {topForn.map(([f, v]) => (
+                  <li key={f}>
+                    <div className="mb-1 flex items-baseline justify-between gap-3 text-[.86rem]">
+                      <span className="min-w-0 [overflow-wrap:anywhere]">{f}</span>
+                      <span className="shrink-0 font-semibold tabular-nums">{brl(v)}</span>
+                    </div>
+                    <Barra fracao={maxForn > 0 ? v / maxForn : 0} />
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-3 text-[.75rem] text-[var(--text-muted)]">Notas que passaram pela entrada do estoque (inclusive aplicação direta).</p>
+            </Cartao>
+          </div>
+        )}
       </div>
     </>
   );

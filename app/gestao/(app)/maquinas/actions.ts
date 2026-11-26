@@ -1,9 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { contextoGestao, tabelaAusente } from "@/lib/gestao/contexto";
+import { contextoGestao, tabelaAusente, type GestaoContexto } from "@/lib/gestao/contexto";
 import { hojeISO } from "@/lib/gestao/format";
 import { avisoDeLeitura, lerNumero } from "@/lib/gestao/diesel";
+import { escolherDieselDoTanque, produtoEhDiesel } from "@/lib/gestao/estoque";
 import { carregarComprasDiesel, TIPO_MAQUINA, UUID } from "./dados";
 
 export type EstadoForm = {
@@ -21,6 +22,69 @@ const valoresDe = (fd: FormData, chaves: string[]) => Object.fromEntries(chaves.
 const EM_ATIVACAO = "Máquinas e diesel ainda estão sendo ligados à sua conta. Tente de novo em instantes.";
 
 const CAMPOS_ABASTECIMENTO = ["maquina_id", "litros", "leitura", "centro_custo_id", "data", "operador"];
+
+type Db = GestaoContexto["supabase"];
+
+/**
+ * Abastecimento → saída de diesel do tanque (estoque gerencial, migration 181).
+ * Só acontece quando há produto diesel e tanque (almoxarifado de combustível)
+ * cadastrados; sem isso — ou sem a 181 — o abastecimento vale como sempre.
+ * Nunca derruba o registro: devolve só uma frase para a mensagem de sucesso.
+ * Idempotente no banco (um abastecimento gera no máximo uma saída).
+ */
+async function saidaDoTanque(
+  supabase: Db, clientId: string,
+  ab: { id: string; maquinaId: string; centroId: string | null; litros: number; data: string },
+): Promise<string> {
+  try {
+    const [prod, alm, cat] = await Promise.all([
+      supabase.from("products").select("id, name, ncm, categoria_gerencial_id, almoxarifado_padrao_id").eq("client_id", clientId).eq("active", true).limit(3000),
+      supabase.from("almoxarifados").select("id, tipo, ativo").eq("client_id", clientId),
+      supabase.from("categorias_gerenciais").select("id, nome").eq("client_id", clientId),
+    ]);
+    if (prod.error || alm.error) return ""; // 181 ainda não aplicada (ou leitura falhou)
+    const nomeCat = new Map(((cat.data ?? []) as Array<{ id: string; nome: string }>).map((c) => [c.id, c.nome]));
+    const produtos = ((prod.data ?? []) as Array<Record<string, unknown>>).map((p) => ({
+      id: String(p.id), nome: String(p.name ?? ""), ncm: (p.ncm as string | null) ?? null, ativo: true,
+      categoriaNome: p.categoria_gerencial_id ? nomeCat.get(String(p.categoria_gerencial_id)) ?? null : null,
+      almoxarifadoPadraoId: (p.almoxarifado_padrao_id as string | null) ?? null,
+    }));
+    const tanques = ((alm.data ?? []) as Array<Record<string, unknown>>).map((a) => ({ id: String(a.id), tipo: String(a.tipo), ativo: a.ativo !== false }));
+    const diesel = produtos.filter(produtoEhDiesel);
+    if (diesel.length === 0 || !tanques.some((t) => t.ativo && t.tipo === "combustivel")) return "";
+
+    const { data: lotes } = await supabase.from("stock_batches").select("product_id, almoxarifado_id, quantity_available")
+      .eq("client_id", clientId).in("product_id", diesel.map((d) => d.id));
+    const saldo = (produtoId: string, almoxId: string) =>
+      ((lotes ?? []) as Array<Record<string, unknown>>)
+        .filter((l) => l.product_id === produtoId && l.almoxarifado_id === almoxId)
+        .reduce((s, l) => s + Number(l.quantity_available ?? 0), 0);
+    const escolha = escolherDieselDoTanque(diesel, tanques, saldo);
+    if (!escolha) return "";
+
+    const base = {
+      p_cliente: clientId, p_produto: escolha.produtoId, p_almoxarifado: escolha.almoxarifadoId, p_quantidade: ab.litros,
+      p_destino_tipo: "abastecimento", p_maquina: ab.maquinaId, p_centro: ab.centroId, p_data: ab.data,
+      p_referencia_tabela: "abastecimentos", p_referencia_id: ab.id,
+    };
+    let { error } = await supabase.rpc("registrar_saida_estoque", base);
+    if (error && /saldo_insuficiente/.test(error.message ?? "")) {
+      // O litro já está no trator: registra e deixa o tanque negativo, com motivo, até a nota entrar.
+      ({ error } = await supabase.rpc("registrar_saida_estoque", {
+        ...base, p_permitir_negativo: true, p_motivo: "Abastecimento acima do saldo do tanque: falta lançar nota de diesel?",
+      }));
+      if (!error) return " O tanque ficou negativo no estoque: falta lançar alguma nota de diesel?";
+    }
+    if (error) {
+      console.error("[gestao/maquinas] saída do tanque:", error.code, error.message);
+      return "";
+    }
+    return " Descontado do tanque.";
+  } catch (e) {
+    console.error("[gestao/maquinas] saída do tanque:", e instanceof Error ? e.message : String(e));
+    return "";
+  }
+}
 
 export async function registrarAbastecimento(prev: EstadoForm, fd: FormData): Promise<EstadoForm> {
   const versao = prev.versao + 1;
@@ -86,7 +150,7 @@ export async function registrarAbastecimento(prev: EstadoForm, fd: FormData): Pr
     ? Math.round((compras.reduce((s, c) => s + c.valor, 0) / litrosNotas) * 10000) / 10000
     : null;
 
-  const { error } = await supabase.from("abastecimentos").insert({
+  const { data: novo, error } = await supabase.from("abastecimentos").insert({
     client_id: clientId,
     maquina_id: maquinaId,
     data,
@@ -96,13 +160,17 @@ export async function registrarAbastecimento(prev: EstadoForm, fd: FormData): Pr
     operador,
     centro_custo_id: centroId,
     origem: "manual",
-  });
+  }).select("id").single();
   if (error) return falha(tabelaAusente(error) ? EM_ATIVACAO : "Não foi possível salvar o abastecimento. Tente de novo.");
+
+  // Estoque gerencial: o mesmo litro sai do tanque (sem diesel/tanque cadastrado, nada muda).
+  const tanque = novo ? await saidaDoTanque(supabase, clientId, { id: String(novo.id), maquinaId, centroId, litros, data }) : "";
 
   revalidatePath("/gestao/maquinas");
   revalidatePath(`/gestao/maquinas/${maquinaId}`);
+  if (tanque) revalidatePath("/gestao/estoque", "layout");
   return {
-    ok: "Abastecimento registrado.",
+    ok: `Abastecimento registrado.${tanque}`,
     // Mantém máquina, centro e data para o próximo registro do dia.
     valores: { maquina_id: maquinaId, centro_custo_id: centroId ?? "", data: data === hoje ? "" : data, operador: operador ?? "" },
     versao,

@@ -15,6 +15,7 @@
   grava pelo site, XML de NF-e enviado pelo site gera nota + contas a pagar; sem login a API
   devolve vazio e recusa escrita; cliente comum (FSJBE) não vê nem grava dados de outro cliente
   (5/5 tentativas bloqueadas); advisors sem achado nas tabelas novas.
+- Publicado (26/11 noite): módulo de Estoque (degrau 1) — almoxarifados, categorias gerenciais (sem "outros"), produtos com mínimo/máximo, entrada da nota com conferência e conversão de unidade, saídas, movimentações com responsável, conferência do tanque de diesel; abastecimento gera saída de diesel. Telas "em ativação" até aplicar 176 + 181 (+182 demo). Corrigido: diesel de nota XML real não sumia mais da tela de Máquinas (direção pelo lado do cliente).
 - Publicado (26/11): pacote do contador em Excel (Resumo com fórmulas, títulos pagos e recebidos, em aberto, notas, diesel) e "Seus dados são seus" — .zip com um CSV por tabela + XML das notas + LEIAME; CPF/CNPJ sem perder zeros.
 - Publicado (25/11 noite): foto da nota pelo celular (lida por IA, nunca grava nota vazia) e tela "Produtos da nota" (de-para item da nota → produto, com fator de conversão) — esta fica "em ativação" até aplicar a migration 176.
 - Publicado: `/gestao/comecar` — configuração guiada em 4 passos (atividades → máquinas → notas → pronto);

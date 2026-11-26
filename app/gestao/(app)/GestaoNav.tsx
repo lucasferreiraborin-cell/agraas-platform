@@ -16,7 +16,7 @@ export const GESTAO_ITENS: Item[] = [
   { href: "/gestao/notas",      label: "Notas fiscais",     curto: "Notas",  icon: FileText,       desc: "A nota entra, o resto se lança" },
   { href: "/gestao/financeiro", label: "Contas a pagar e receber", curto: "Contas", icon: Wallet,  desc: "Vencimentos e baixas" },
   { href: "/gestao/maquinas",   label: "Máquinas e diesel", curto: "Diesel", icon: Fuel,           desc: "Abastecimento e custo por máquina" },
-  { href: "/gestao/estoque",    label: "Insumos",           curto: "Insumos", icon: Package,       desc: "Estoque e histórico de preço" },
+  { href: "/gestao/estoque",    label: "Estoque",           curto: "Estoque", icon: Package,       desc: "Saldos, entrada de notas e saídas" },
   { href: "/gestao/atividades", label: "Atividades",        curto: "Atividades", icon: Layers,     desc: "Resultado por lavoura e criação" },
   { href: "/gestao/fechamento", label: "Fechamento do mês", curto: "Fechamento", icon: ClipboardCheck, desc: "Pronto para o contador" },
 ];
