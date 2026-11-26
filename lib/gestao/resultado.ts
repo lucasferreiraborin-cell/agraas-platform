@@ -245,9 +245,13 @@ export function saudacao(agora: Date = new Date()): string {
 
 export const CSV_BOM = "﻿";
 
-/** Texto seguro para CSV ';' — aspas quando preciso e neutraliza fórmulas de planilha. */
+/**
+ * Texto seguro para CSV ';' — aspas quando preciso e neutraliza fórmulas de planilha.
+ * Toda quebra vira espaço: CRLF, LF e também o CR solto, que o Excel lê como fim
+ * de registro (desalinhava as colunas). Caracteres de controle saem.
+ */
 export function csvTexto(v: string | null | undefined): string {
-  let s = (v ?? "").replace(/\r?\n/g, " ").trim();
+  let s = (v ?? "").replace(/[\r\n]+/g, " ").replace(/[^\t\x20-\u{10FFFF}]/gu, "").trim();
   if (/^[=+\-@\t]/.test(s)) s = `'${s}`;
   return /[";]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }

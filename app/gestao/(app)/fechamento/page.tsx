@@ -15,8 +15,16 @@ export const dynamic = "force-dynamic";
 
 type Pendencia = { id: string; texto: string; qtd: number; href: string; acao: string };
 
-export default async function Fechamento({ searchParams }: { searchParams: Promise<{ mes?: string }> }) {
+/** Erros devolvidos pelas rotas de download (pacote, CSV e "seus dados"). */
+const ERROS: Record<string, string> = {
+  pacote: "Não foi possível gerar o pacote do mês agora. Tente de novo em instantes.",
+  dados: "Não foi possível gerar o arquivo com todos os seus dados agora. Tente de novo em instantes.",
+  ativacao: "O módulo ainda está em ativação. Tente em instantes.",
+};
+
+export default async function Fechamento({ searchParams }: { searchParams: Promise<{ mes?: string; erro?: string }> }) {
   const sp = await searchParams;
+  const erro = sp.erro ? ERROS[sp.erro] : undefined;
   const { supabase, clientId } = await contextoGestao();
   const hoje = hojeISO();
   const mes = mesDaQuery(sp.mes, hoje);
@@ -81,11 +89,15 @@ export default async function Fechamento({ searchParams }: { searchParams: Promi
         titulo="Fechamento"
         subtitulo="Resolva as pendências, confira os totais e leve o pacote ao contador."
         acao={
-          <a href={`/gestao/fechamento/exportar?mes=${mesQuery}`} className={btnPrimario}>
+          <a href={`/gestao/fechamento/pacote?mes=${mesQuery}`} className={btnPrimario}>
             Baixar pacote do contador
           </a>
         }
       />
+
+      {erro && (
+        <p role="alert" className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[.85rem] text-red-700">{erro}</p>
+      )}
 
       <SeletorMes caminho="/gestao/fechamento" mes={mes} id="mes-fechamento" />
 
@@ -175,19 +187,39 @@ export default async function Fechamento({ searchParams }: { searchParams: Promi
         </p>
       </Cartao>
 
-      <Cartao titulo="Para o contador">
+      <Cartao titulo="Para o contador" className="mb-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-          <a href={`/gestao/fechamento/exportar?mes=${mesQuery}`} className={btnPrimario}>
-            Pacote do mês (CSV)
+          <a href={`/gestao/fechamento/pacote?mes=${mesQuery}`} className={btnSecundario}>
+            Planilha do mês (Excel)
+          </a>
+          <a href={`/gestao/fechamento/exportar?mes=${mesQuery}`} className={btnSecundario}>
+            Contas e diesel em CSV
           </a>
           <span className={`${btnSecundario} cursor-default opacity-60`} aria-disabled="true">
             Livro caixa e IR rural · em preparação
           </span>
         </div>
         <p className="mt-3 text-[.78rem] text-[var(--text-muted)]">
-          O pacote traz contas e abastecimentos do mês, com separador “;” e vírgula decimal, prontos para abrir no Excel.
-          O livro caixa por regime de caixa sai das baixas registradas aqui.
+          A planilha separa o mês em abas: pagamentos e recebimentos pela data da baixa (com CPF/CNPJ, nota, parcela,
+          forma, conta e centro), contas em aberto, notas do mês, diesel por máquina e um resumo com totais em fórmula.
+          O CSV traz contas e abastecimentos com “;” e vírgula decimal.
         </p>
+      </Cartao>
+
+      <Cartao titulo="Seus dados são seus">
+        <p className="text-[.9rem] text-[var(--text-primary)]">
+          Baixe tudo quando quiser: centros de custo, contas a pagar e receber, contas bancárias, máquinas,
+          abastecimentos e notas com itens.
+        </p>
+        <p className="mt-1 text-[.78rem] text-[var(--text-muted)]">
+          Um arquivo .zip com uma planilha CSV por assunto, o XML de cada nota e um LEIAME explicando cada coluna.
+          Abre no Excel; serve para guardar, levar ao contador ou usar em outro sistema.
+        </p>
+        <div className="mt-4">
+          <a href="/gestao/fechamento/meus-dados" className={btnSecundario}>
+            Baixar todos os meus dados
+          </a>
+        </div>
       </Cartao>
     </div>
   );
